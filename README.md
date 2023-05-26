@@ -3,7 +3,7 @@ The Silica game [https://silicagame.com/news/welcome] currently only has listen 
 
 ## Silica Listen Server Requirements
 - 50Mbps upload bandwidth available [speedtest.org]
-- - Individual clients use about ~50kbps download bandwidth and ~1,300kbps upload bandwidth
+-- Individual clients use about ~50kbps download bandwidth and ~1,300kbps upload bandwidth
 - 32GB RAM
 - Decent CPU
 - Top-of-the-line GPU if you want to host and play
