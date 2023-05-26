@@ -8,7 +8,7 @@ The Silica game [https://silicagame.com/news/welcome] currently only has listen 
 - Top-of-the-line GPU if you want to host and play
 
 ## MelonLoader Mods for Silica Listen Server
-# Friendly Fire Limits
+### Friendly Fire Limits
 Install: Copy the `Si_FriendlyFireLimits\bin\Si_FriendlyFireLimits.dll` into your `Silica\Mods` directory
 - Directly hurting another player with bullets is blocked
 - AoE for explosions still applies friendly fire
