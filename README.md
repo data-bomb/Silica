@@ -8,6 +8,9 @@ The Silica game [https://silicagame.com/news/welcome] currently only has listen 
 - Decent CPU
 - Top-of-the-line GPU if you want to host and play
 
+## MelonLoader Mods for Silica Listen Server
+# Friendly Fire Limits
+
 ## Server Setup Instructions
 1. Install MelonLoader using the Manual Installation method for 64-bit games [https://melonwiki.xyz/#/README?id=manual-installation]
 2. Install the GamePriority Mod into your `Silica\Mods` directory
