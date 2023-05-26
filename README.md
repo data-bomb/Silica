@@ -10,6 +10,10 @@ The Silica game [https://silicagame.com/news/welcome] currently only has listen 
 
 ## MelonLoader Mods for Silica Listen Server
 # Friendly Fire Limits
+Install: Copy the `Si_FriendlyFireLimits\bin\Si_FriendlyFireLimits.dll` into your `Silica\Mods` directory
+- Directly hurting another player with bullets is blocked
+- AoE for explosions still applies friendly fire
+- Hurting friendly structures is limited (explosions still cause significant damage but bullets/chomps are more limited)
 
 ## Server Setup Instructions
 1. Install MelonLoader using the Manual Installation method for 64-bit games [https://melonwiki.xyz/#/README?id=manual-installation]
