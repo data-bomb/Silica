@@ -1,10 +1,12 @@
 # Running a Silica Listen Server
-The Silica game [https://silicagame.com/news/welcome] currently only has P2P listen servers available. If you would like to host a P2P server while the host is afk then some automation is needed to select the gamemode at the beginning of each round.
+The Silica game [https://silicagame.com/news/welcome] currently only has listen servers available. If you would like to host a server while the host is afk then some automation is needed to select the gamemode at the beginning of each round.
 
 ## Silica Listen Server Requirements
-- 50Mbps upload bandwidth available [speedtest.org] (Server only uses ~5Mbps download bandwidth)
+- 50Mbps upload bandwidth available [speedtest.org]
+- - Individual clients use about ~50kbps download bandwidth and ~1,300kbps upload bandwidth
 - 32GB RAM
 - Decent CPU
+- Top-of-the-line GPU if you want to host and play
 
 ## Server Setup Instructions
 1. Install MelonLoader using the Manual Installation method for 64-bit games [https://melonwiki.xyz/#/README?id=manual-installation]
