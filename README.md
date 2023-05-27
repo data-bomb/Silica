@@ -15,7 +15,7 @@ The Silica game [https://silicagame.com/news/welcome] currently only has listen 
 ### Auto Teams Mode Select (Si_AutoTeamsSelect)
 Install: Copy the `Si_AutoTeamsSelect.dll` into your `Silica\Mods` directory
 - Generates a config entry in your `Silica\UserData\MelonPreferences.cfg` file for `VersusAutoSelectMode`
-- Valid configuration options are `HUMANS_VS_HUMANS`, `HUMANS_VS_ALIENS`, or `HUMANS_VS_HUMANS_VS_ALIENS`
+- Valid configuration options are `"HUMANS_VS_HUMANS"`, `"HUMANS_VS_ALIENS"`, or `"HUMANS_VS_HUMANS_VS_ALIENS"`
 - Automatically selects the mode of your choice each time the listen server restarts (allows near-headless operations)
 
 ### GamePriority (https://github.com/MintLily/GamePriority/releases)
