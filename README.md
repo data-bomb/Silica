@@ -7,6 +7,10 @@ The Silica game [https://silicagame.com/news/welcome] currently only has listen 
 - Decent CPU
 - Top-of-the-line GPU if you want to host and play
 
+## Server Setup Instructions
+1. Install MelonLoader using the Manual Installation method for 64-bit games [https://melonwiki.xyz/#/README?id=manual-installation]
+2. Install any other mods desired in your `Silica\Mods` directory
+
 ## MelonLoader Mods for Silica Listen Server
 ### Auto Teams Mode Select (Si_AutoTeamsSelect)
 Install: Copy the `Si_AutoTeamsSelect.dll` into your `Silica\Mods` directory
@@ -14,27 +18,26 @@ Install: Copy the `Si_AutoTeamsSelect.dll` into your `Silica\Mods` directory
 - Valid configuration options are `HUMANS_VS_HUMANS`, `HUMANS_VS_ALIENS`, or `HUMANS_VS_HUMANS_VS_ALIENS`
 - Automatically selects the mode of your choice each time the listen server restarts (allows near-headless operations)
 
+### GamePriority (https://github.com/MintLily/GamePriority/releases)
+Install: Copy the `GamePriority.dll` into your `Silica\Mods` directory
+- Generates a config entry in your `Silica\UserData\MelonPreferences.cfg` file for `SetGamePriorityToHigh`
+- Valid configuration options are `true` or `false`
+
 ### Friendly Fire Limits (Si_FriendlyFireLimits) - Currently Not Working
 Install: Copy the `Si_FriendlyFireLimits.dll` into your `Silica\Mods` directory
 - Directly hurting another player with bullets is blocked
 - AoE for explosions still applies friendly fire
 - Hurting friendly structures is limited (explosions still cause significant damage but bullets/chomps are more limited)
 
-## Server Setup Instructions
-1. Install MelonLoader using the Manual Installation method for 64-bit games [https://melonwiki.xyz/#/README?id=manual-installation]
-2. Install the GamePriority Mod into your `Silica\Mods` directory
-3. Set `SetGamePriorityToHigh = true` in your `Silica\UserData\MelonPreferences.cfg` file
-4. Install AutoHotKey v2 [https://www.autohotkey.com/v2/]
-5. Place the `AutoGamemodeSelect.ahk` script in your `Silica` directory
-6. Optional: Configure the Logging option in the script. Default is to log who wins each round.
-7. Right-click the `AutoGamemodeSelect.ahk` script and select `Run script`
-8. Perform the script validation activity
-
-## Script Validation Activity Instructions
-1. Launch a Humans vs. Aliens mode Silica server
-2. Activate the console (~)
-3. Type `cheats` in the console
-4. Type `delete structure` in the console. You should fall to the ground.
-5. Type `destroy` in the console. You should see the red scratches across both teams now.
-6. Use the hot-key Ctrl+Alt+Z. If everything goes well you should see a `Setup Validated` message.
-7. If not then the `GameMidAdjustX` and `GameMidAdjustY` may need adjustment in the `GrabSilicaColors` function
+## Legacy AutoHotKey Install and Validation
+1. Install AutoHotKey v2 [https://www.autohotkey.com/v2/]
+2. Place the `AutoGamemodeSelect.ahk` script in your `Silica` directory
+3. Optional: Configure the Logging option in the script. Default is to log who wins each round.
+4. Launch a Humans vs. Aliens mode Silica server
+5. Right-click the `AutoGamemodeSelect.ahk` script and select `Run script`
+6. Activate the console (~)
+7. Type `cheats` in the console
+8. Type `delete structure` in the console. You should fall to the ground.
+9. Type `destroy` in the console. You should see the red scratches across both teams now.
+10. Use the hot-key Ctrl+Alt+Z. If everything goes well you should see a `Setup Validated` message.
+11. If not then the `GameMidAdjustX` and `GameMidAdjustY` may need adjustment in the `GrabSilicaColors` function
