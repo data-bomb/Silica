@@ -29,7 +29,7 @@ Install: Copy the `Si_FriendlyFireLimits.dll` into your `Silica\Mods` directory
 - AoE for explosions still applies friendly fire
 - Hurting friendly structures is limited (explosions still cause significant damage but bullets/chomps are more limited)
 
-## Legacy AutoHotKey Install and Validation
+### Legacy AutoHotKey Install and Validation
 1. Install AutoHotKey v2 [https://www.autohotkey.com/v2/]
 2. Place the `AutoGamemodeSelect.ahk` script in your `Silica` directory
 3. Optional: Configure the Logging option in the script. Default is to log who wins each round.
