@@ -18,6 +18,12 @@ Install: Copy the `Si_AutoTeamsSelect.dll` into your `Silica\Mods` directory
 - Valid configuration options are `"HUMANS_VS_HUMANS"`, `"HUMANS_VS_ALIENS"`, or `"HUMANS_VS_HUMANS_VS_ALIENS"`
 - Automatically selects the mode of your choice each time the listen server restarts (allows near-headless operations)
 
+### Auto Kick on Negative Kills (Si_AutoKickNegativeKills)
+Install: Copy the `Si_AutoKickNegativeKills.dll` into your `Silica\Mods` directory
+- Generates a config entry in your `Silica\UserData\MelonPreferences.cfg` file for `AutoKickNegativeKillsThreshold`
+- Valid configuration options are any negative number representing targeted negative kill threshold (default `-100`)
+- Automatically detects players who go below the threshold, sends a chat message, then kicks the player
+
 ### GamePriority (https://github.com/MintLily/GamePriority/releases)
 Install: Copy the `GamePriority.dll` into your `Silica\Mods` directory
 - Generates a config entry in your `Silica\UserData\MelonPreferences.cfg` file for `SetGamePriorityToHigh`
