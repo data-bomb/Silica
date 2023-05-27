@@ -8,7 +8,13 @@ The Silica game [https://silicagame.com/news/welcome] currently only has listen 
 - Top-of-the-line GPU if you want to host and play
 
 ## MelonLoader Mods for Silica Listen Server
-### Friendly Fire Limits
+### Auto Teams Mode Select (Si_AutoTeamsSelect)
+Install: Copy the `Si_AutoTeamsSelect.dll` into your `Silica\Mods` directory
+- Generates a config entry in your `Silica\UserData\MelonPreferences.cfg` file for `VersusAutoSelectMode`
+- Valid configuration options are `HUMANS_VS_HUMANS`, `HUMANS_VS_ALIENS`, or `HUMANS_VS_HUMANS_VS_ALIENS`
+- Automatically selects the mode of your choice each time the listen server restarts (allows near-headless operations)
+
+### Friendly Fire Limits (Si_FriendlyFireLimits) - Currently Not Working
 Install: Copy the `Si_FriendlyFireLimits.dll` into your `Silica\Mods` directory
 - Directly hurting another player with bullets is blocked
 - AoE for explosions still applies friendly fire
