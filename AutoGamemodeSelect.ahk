@@ -8,6 +8,21 @@
 ; where the host is not actively playing them game and is staring at
 ; the team selection screen.
 ;
+; Note: This script is now deprecated. Use Si_AutoTeamsSelect instead when possible.
+;
+; Steps to Use
+; 1. Install AutoHotKey v2 [https://www.autohotkey.com/v2/]
+; 2. Place the `AutoGamemodeSelect.ahk` script in your `Silica` directory
+; 3. Optional: Configure the Logging option in the script. Default is to log who wins each round.
+; 4. Launch a Humans vs. Aliens mode Silica server
+; 5. Right-click the `AutoGamemodeSelect.ahk` script and select `Run script`
+; 6. Activate the console (~)
+; 7. Type `cheats` in the console
+; 8. Type `delete structure` in the console. You should fall to the ground.
+; 9. Type `destroy` in the console. You should see the red scratches across both teams now.
+; 10. Use the hot-key Ctrl+Alt+Z. If everything goes well you should see a `Setup Validated` message.
+; 11. If not then the `GameMidAdjustX` and `GameMidAdjustY` may need adjustment in the `GrabSilicaColors` function
+;
 ; * Version History *
 ; v1.0.0 22 May 2023 Initial public release
 ; 
