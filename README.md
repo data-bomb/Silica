@@ -43,15 +43,5 @@ Can automatically change the priority of the game executable upon launch
 ~~- AoE for explosions still applies friendly fire~~
 ~~- Hurting friendly structures is limited (explosions still cause significant damage but bullets/chomps are more limited)~~
 
-### Legacy AutoHotKey Install and Validation
-1. Install AutoHotKey v2 [https://www.autohotkey.com/v2/]
-2. Place the `AutoGamemodeSelect.ahk` script in your `Silica` directory
-3. Optional: Configure the Logging option in the script. Default is to log who wins each round.
-4. Launch a Humans vs. Aliens mode Silica server
-5. Right-click the `AutoGamemodeSelect.ahk` script and select `Run script`
-6. Activate the console (~)
-7. Type `cheats` in the console
-8. Type `delete structure` in the console. You should fall to the ground.
-9. Type `destroy` in the console. You should see the red scratches across both teams now.
-10. Use the hot-key Ctrl+Alt+Z. If everything goes well you should see a `Setup Validated` message.
-11. If not then the `GameMidAdjustX` and `GameMidAdjustY` may need adjustment in the `GrabSilicaColors` function
+### Thank You
+Special thanks to Silentstorm, GrahamKracker, nighthalk and others in the MelonLoader community for being very supportive.
