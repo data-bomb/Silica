@@ -52,4 +52,4 @@ Can automatically change the priority of the game executable upon launch
 ~~- Hurting friendly structures is limited (explosions still cause significant damage but bullets/chomps are more limited)~~
 
 ### Thank You
-Special thanks to Silentstorm, GrahamKracker, nighthalk and others in the MelonLoader community for being very supportive.
+Special thanks to Silentstorm, GrahamKracker, nighthalk and others in the MelonLoader community for being very welcoming and supportive.
