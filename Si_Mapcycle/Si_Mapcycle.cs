@@ -6,7 +6,7 @@ using UnityEngine;
 using System.Timers;
 using MelonLoader.Utils;
 
-[assembly: MelonInfo(typeof(MapCycleMod), "[Si] Mapcycle", "1.0.0", "databomb", "https://github.com/data-bomb/Silica_ListenServer")]
+[assembly: MelonInfo(typeof(MapCycleMod), "[Si] Mapcycle", "1.0.1", "databomb", "https://github.com/data-bomb/Silica_ListenServer")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_Mapcycle
@@ -60,7 +60,6 @@ namespace Si_Mapcycle
 
         private static void HandleTimerChangeLevel(object source, ElapsedEventArgs e)
         {
-            MelonLogger.Msg("Reached timer callback");
             MapCycleMod.bTimerExpired = true;
         }
 
