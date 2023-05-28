@@ -1,5 +1,5 @@
 # Running a Silica Listen Server
-The Silica game [https://silicagame.com/news/welcome] currently only has listen servers available. If you would like to host a server while the host is afk then some automation is needed to select the gamemode at the beginning of each round.
+The Silica game [https://silicagame.com/news/welcome] was released in May 2023 with only Listen Server capability. Dedicated Server support is planned but finding a consistent experience on Listen Servers can be challenging. If you would like to host a Listen Server 24/7 then some additional automation is neccessary.
 
 ## Silica Listen Server Requirements
 - 50Mbps upload bandwidth available [speedtest.org] (Individual clients use about ~50kbps download bandwidth and ~1,300kbps upload bandwidth)
