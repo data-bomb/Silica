@@ -13,7 +13,7 @@ The Silica game [https://silicagame.com/news/welcome] currently only has listen 
 
 ## MelonLoader Mods for Silica Listen Server
 ### Auto Teams Mode Select (Si_AutoTeamsSelect)
-Automatically selects the mode of your choice each time the listen server restarts (allows near-headless operations)
+Automatically selects the mode (e.g., Humans vs. Aliens) of your choice each time the listen server restarts (allows near-headless operations)
 Install: Copy the `Si_AutoTeamsSelect.dll` into your `Silica\Mods` directory
 - Generates a config entry in your `Silica\UserData\MelonPreferences.cfg` file for `VersusAutoSelectMode`
 - Valid configuration options are `"HUMANS_VS_HUMANS"`, `"HUMANS_VS_ALIENS"`, or `"HUMANS_VS_HUMANS_VS_ALIENS"`
