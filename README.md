@@ -11,6 +11,8 @@ The Silica game [https://silicagame.com/news/welcome] was released in May 2023 w
 1. Install MelonLoader using the Manual Installation method for 64-bit games [https://melonwiki.xyz/#/README?id=manual-installation]
 2. Install any other mods desired in your `Silica\Mods` directory
 
+The default Silica installation directory is `C:\Program Files (x86)\Steam\steamapps\common\Silica\Mods`
+
 ## MelonLoader Mods for Silica Listen Server
 ### Auto Teams Mode Select (Si_AutoTeamsSelect)
 Automatically selects the mode (e.g., Humans vs. Aliens) of your choice each time the listen server restarts (allows near-headless operations)
