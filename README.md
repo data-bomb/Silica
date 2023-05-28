@@ -18,6 +18,13 @@ Automatically selects the mode (e.g., Humans vs. Aliens) of your choice each tim
 - Generates a config entry in your `Silica\UserData\MelonPreferences.cfg` file for `VersusAutoSelectMode`
 - Valid configuration options are `"HUMANS_VS_HUMANS"`, `"HUMANS_VS_ALIENS"`, or `"HUMANS_VS_HUMANS_VS_ALIENS"`
 
+### Mapcycle (Si_Mapcycle)
+Automatically changes the map 20 seconds after the round ends to the next map in the cycle
+- Install: copy the `Si_Mapcycle.dll` into your `Silica\Mods` directory
+- Launch the game then close it. This generates a `mapcycle.txt` file in your `Silica\UserData` directory
+- Modify the mapcycle as desired. Repeating maps within the mapcycle is acceptable to make some maps more common than others.
+- Note: Changing the mapcycle file currently requires a game restart for the change to be recognized.
+
 ### Auto Kick on Negative Kills (Si_AutoKickNegativeKills)
 Automatically detects players who go below the threshold, sends a chat message, then kicks the player
 - Install: Copy the `Si_AutoKickNegativeKills.dll` into your `Silica\Mods` directory
