@@ -13,23 +13,24 @@ The Silica game [https://silicagame.com/news/welcome] currently only has listen 
 
 ## MelonLoader Mods for Silica Listen Server
 ### Auto Teams Mode Select (Si_AutoTeamsSelect)
+Automatically selects the mode of your choice each time the listen server restarts (allows near-headless operations)
 Install: Copy the `Si_AutoTeamsSelect.dll` into your `Silica\Mods` directory
 - Generates a config entry in your `Silica\UserData\MelonPreferences.cfg` file for `VersusAutoSelectMode`
 - Valid configuration options are `"HUMANS_VS_HUMANS"`, `"HUMANS_VS_ALIENS"`, or `"HUMANS_VS_HUMANS_VS_ALIENS"`
-- Automatically selects the mode of your choice each time the listen server restarts (allows near-headless operations)
 
 ### Auto Kick on Negative Kills (Si_AutoKickNegativeKills)
+Automatically detects players who go below the threshold, sends a chat message, then kicks the player
 Install: Copy the `Si_AutoKickNegativeKills.dll` into your `Silica\Mods` directory
 - Generates a config entry in your `Silica\UserData\MelonPreferences.cfg` file for `AutoKickNegativeKillsThreshold`
 - Valid configuration options are any negative number representing targeted negative kill threshold (default `-100`)
-- Automatically detects players who go below the threshold, sends a chat message, then kicks the player
 
 ### GamePriority (https://github.com/MintLily/GamePriority/releases)
+Can automatically change the priority of the game executable upon launch
 Install: Copy the `GamePriority.dll` into your `Silica\Mods` directory
 - Generates a config entry in your `Silica\UserData\MelonPreferences.cfg` file for `SetGamePriorityToHigh`
 - Valid configuration options are `true` or `false`
 
-### Friendly Fire Limits (Si_FriendlyFireLimits) - Currently Not Working
+### Friendly Fire Limits (Si_FriendlyFireLimits) - Currently Not Working - Under Investigation
 Install: Copy the `Si_FriendlyFireLimits.dll` into your `Silica\Mods` directory
 - Directly hurting another player with bullets is blocked
 - AoE for explosions still applies friendly fire
