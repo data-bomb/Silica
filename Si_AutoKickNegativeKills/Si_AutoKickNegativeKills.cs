@@ -1,4 +1,4 @@
-/*
+﻿/*
  Silica Auto-Kick Negative Kills Mod
  Copyright (C) 2023 by databomb
  
@@ -29,7 +29,7 @@ using MelonLoader;
 using Si_AutoKickNegativeKills;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(AutoKickNegativeKills), "[Si] Auto-Kick Negative Kills", "1.0.1", "databomb", "https://github.com/data-bomb/Silica_ListenServer")]
+[assembly: MelonInfo(typeof(AutoKickNegativeKills), "[Si] Auto-Kick Negative Kills", "1.0.2", "databomb", "https://github.com/data-bomb/Silica_ListenServer")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_AutoKickNegativeKills
@@ -85,8 +85,10 @@ namespace Si_AutoKickNegativeKills
 
                                 if (currentKillScore < _NegativeKillsThreshold.Value)
                                 {
-                                    MelonLogger.Msg("Kicked " + attackerPlayer.PlayerName + " (" + attackerPlayer.ToString + ")");
-                                    attackerPlayer.SendChatMessage("<<< violated team-killing rules and was kicked.");
+                                    String sPlayerNameToKick = attackerPlayer.PlayerName;
+                                    MelonLogger.Msg("Kicked " + sPlayerNameToKick + " (" + attackerPlayer.ToString + ")");
+                                    Il2Cpp.Player serverPlayer = Il2Cpp.NetworkGameServer.GetServerPlayer();
+                                    Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, 0, sPlayerNameToKick + " was kicked for teamkilling.", false);
                                     Il2Cpp.NetworkGameServer.KickPlayer(attackerPlayer);
                                 }
                             }
