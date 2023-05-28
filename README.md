@@ -2,7 +2,7 @@
 The Silica game [https://silicagame.com/news/welcome] was released in May 2023 with only Listen Server capability. Dedicated Server support is planned but finding a consistent experience on Listen Servers can be challenging. If you would like to host a Listen Server 24/7 then some additional automation is neccessary.
 
 ## Silica Listen Server Requirements
-- 50Mbps upload bandwidth available [speedtest.org] (Individual clients use about ~50kbps download bandwidth and ~1,300kbps upload bandwidth)
+- 50Mbps upload bandwidth available [https://speedtest.org] (Individual clients use about ~50kbps download bandwidth and ~1,300kbps upload bandwidth)
 - 32GB RAM
 - Decent CPU
 - Top-of-the-line GPU if you want to host and play
