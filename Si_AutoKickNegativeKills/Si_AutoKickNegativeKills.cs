@@ -4,7 +4,7 @@ using MelonLoader;
 using Si_AutoKickNegativeKills;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(AutoKickNegativeKills), "[Si] Auto-Kick Negative Kills", "1.0.0", "databomb", "https://github.com/data-bomb/Silica_ListenServer")]
+[assembly: MelonInfo(typeof(AutoKickNegativeKills), "[Si] Auto-Kick Negative Kills", "1.0.1", "databomb", "https://github.com/data-bomb/Silica_ListenServer")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_AutoKickNegativeKills
@@ -26,17 +26,6 @@ namespace Si_AutoKickNegativeKills
             if (_NegativeKillsThreshold == null)
             {
                 _NegativeKillsThreshold = _modCategory.CreateEntry<int>(ModEntryString, -100);
-            }
-        }
-
-        static GameMode gameModeInstance;
-
-        [HarmonyPatch(typeof(Il2Cpp.MusicJukeboxHandler), nameof(Il2Cpp.MusicJukeboxHandler.OnGameStarted))]
-        private static class ApplyPatch_OnGameStarted
-        {
-            public static void Postfix(Il2Cpp.MusicJukeboxHandler __instance, Il2Cpp.GameMode __0)
-            {
-                AutoKickNegativeKills.gameModeInstance = __0;
             }
         }
 
@@ -73,7 +62,7 @@ namespace Si_AutoKickNegativeKills
                                 {
                                     MelonLogger.Msg("Kicked " + attackerPlayer.PlayerName + " (" + attackerPlayer.ToString + ")");
                                     attackerPlayer.SendChatMessage("<<< violated team-killing rules and was kicked.");
-                                    gameModeInstance.KickPlayer(attackerPlayer);
+                                    Il2Cpp.NetworkGameServer.KickPlayer(attackerPlayer);
                                 }
                             }
                         }
