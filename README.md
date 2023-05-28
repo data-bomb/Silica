@@ -1,6 +1,8 @@
 # Running a Silica Listen Server
 The Silica game [https://silicagame.com/news/welcome] was released in May 2023 with only Listen Server capability. Dedicated Server support is planned but finding a consistent experience on Listen Servers can be challenging. If you would like to host a Listen Server 24/7 then some additional automation is neccessary.
 
+Note: These mods are for hosts running Listen Servers only. Do not attempt to use any of these as a client. If you are a host and want to switch to a client then remove all of your MelonLoader Mods before connecting as a client!
+
 ## Silica Listen Server Requirements
 - 50Mbps upload bandwidth available [https://speedtest.org] (Individual clients use about ~50kbps download bandwidth and ~1,300kbps upload bandwidth)
 - 32GB RAM
