@@ -31,10 +31,10 @@ Can automatically change the priority of the game executable upon launch
 - Valid configuration options are `true` or `false`
 
 ### Friendly Fire Limits (Si_FriendlyFireLimits) - Currently Not Working - Under Investigation
-~~- Install: Copy the `Si_FriendlyFireLimits.dll` into your `Silica\Mods` directory
-~~- Directly hurting another player with bullets is blocked
-~~- AoE for explosions still applies friendly fire
-~~- Hurting friendly structures is limited (explosions still cause significant damage but bullets/chomps are more limited)
+~~- Install: Copy the `Si_FriendlyFireLimits.dll` into your `Silica\Mods` directory~~
+~~- Directly hurting another player with bullets is blocked~~
+~~- AoE for explosions still applies friendly fire~~
+~~- Hurting friendly structures is limited (explosions still cause significant damage but bullets/chomps are more limited)~~
 
 ### Legacy AutoHotKey Install and Validation
 1. Install AutoHotKey v2 [https://www.autohotkey.com/v2/]
