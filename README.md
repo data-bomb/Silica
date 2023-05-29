@@ -46,7 +46,7 @@ Automatically detects players who go below the threshold, sends a chat message, 
 ### Headquarterless Humans Lose (Si_HQlessHumansLose)
 Just like the Alien team losing their last Nest, when a Human team loses their last HQ then they are eliminated from the round.
 - Install: Copy the `Si_HQlessHumansLose.dll` into your `Silica\Mods` directory
-- Testing Status: Needs further testing in-game.
+- Testing Status: Confirmed working
 
 ### GamePriority (https://github.com/MintLily/GamePriority/releases)
 Can automatically change the priority of the game executable upon launch
