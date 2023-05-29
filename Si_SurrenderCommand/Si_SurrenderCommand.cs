@@ -1,4 +1,4 @@
-/*
+﻿/*
  Silica Surrender Command Mod
  Copyright (C) 2023 by databomb
  
@@ -28,7 +28,7 @@ using Microsoft.VisualBasic;
 using Si_SurrenderCommand;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(SurrenderCommand), "[Si] Surrender Command", "1.1.0", "databomb")]
+[assembly: MelonInfo(typeof(SurrenderCommand), "[Si] Surrender Command", "1.1.1", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_SurrenderCommand
@@ -111,11 +111,6 @@ namespace Si_SurrenderCommand
 
                             // notify all players
                             Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, 0, sCallingPlayer + " used !surrender to end the round", false);
-                        }
-                        else
-                        {
-                            // notify player on invalid usage
-                            Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, 0, sCallingPlayer + "- !surrender can only be used when the game is in-progress", false);
                         }
                     }
                     else
