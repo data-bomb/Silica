@@ -41,6 +41,7 @@ Automatically detects players who go below the threshold, sends a chat message, 
 - Install: Copy the `Si_AutoKickNegativeKills.dll` into your `Silica\Mods` directory
 - Generates a config entry in your `Silica\UserData\MelonPreferences.cfg` file for `AutoKickNegativeKillsThreshold`
 - Valid configuration options are any negative number representing targeted negative kill threshold (default `-100`)
+- Testing Status: Kick functionality has not been encountered/tested at this time. Everything else tested.
 
 ### GamePriority (https://github.com/MintLily/GamePriority/releases)
 Can automatically change the priority of the game executable upon launch
