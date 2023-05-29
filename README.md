@@ -29,7 +29,7 @@ Automatically changes the map 20 seconds after the round ends to the next map in
 - Launch the game then close it. This generates a `mapcycle.txt` file in your `Silica\UserData` directory
 - Modify the mapcycle as desired. Repeating maps within the mapcycle is acceptable to make some maps more common than others.
 - Note: Changing the mapcycle file currently requires a game restart for the change to be recognized.
-- Testing Status: Users report extremely dark screens after the map change. May not be suitable for servers at this time until the underyling game bug is fixed.
+- Testing Status: Users report extremely dark screens after the map change. May not be suitable for servers at this time until the underyling cause is fixed.
 
 ### Surrender Command (Si_SurrenderCommand)
 Allows each team's commander to use a `!surrender` command to give up early
