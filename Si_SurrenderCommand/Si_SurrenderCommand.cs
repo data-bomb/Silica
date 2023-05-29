@@ -28,10 +28,8 @@ using Microsoft.VisualBasic;
 using Si_SurrenderCommand;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(SurrenderCommand), "[Si] Surrender Command", "1.1.2", "databomb", "https://github.com/data-bomb/Silica_ListenServer"))]
+[assembly: MelonInfo(typeof(SurrenderCommand), "[Si] Surrender Command", "1.1.3", "databomb", "https://github.com/data-bomb/Silica_ListenServer")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
-
-
 
 namespace Si_SurrenderCommand
 {
