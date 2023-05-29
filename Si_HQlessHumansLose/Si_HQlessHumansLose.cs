@@ -28,13 +28,14 @@ using MelonLoader;
 using Si_HQlessHumansLose;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(HQlessHumansLose), "[Si] HQless Humans Lose", "1.0.2", "databomb", "https://github.com/data-bomb/Silica_ListenServer")]
+[assembly: MelonInfo(typeof(HQlessHumansLose), "[Si] HQless Humans Lose", "1.0.3", "databomb", "https://github.com/data-bomb/Silica_ListenServer")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_HQlessHumansLose
 {
     public class HQlessHumansLose : MelonMod
     {
+        const string ChatPrefix = "[BOT] ";
 
         [HarmonyPatch(typeof(Il2Cpp.MP_Strategy), nameof(Il2Cpp.MP_Strategy.OnStructureDestroyed))]
         private static class ApplyPatch_OnStructureDestroyed
@@ -63,14 +64,15 @@ namespace Si_HQlessHumansLose
 
                         if (iHeadquartersCount == 0)
                         {
-                            // the end is nigh!
-                            Il2Cpp.Player serverPlayer = Il2Cpp.NetworkGameServer.GetServerPlayer();
-                            Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, 0, "[BOT] " + sStructureTeam + " lost their last HQ and was eliminated", false);
-                            // end the game
+                            // destroy all team's structures
                             for (int i = 0; i < StructureTeam.Structures.Count; i++)
                             {
                                 StructureTeam.Structures[i].DamageManager.SetHealth01(0.0f);
                             }
+
+                            // the end is nigh!
+                            Il2Cpp.Player serverPlayer = Il2Cpp.NetworkGameServer.GetServerPlayer();
+                            Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, 0, ChatPrefix + sStructureTeam + " lost their last HQ and was eliminated", false);
                         }    
                     }
                 }
