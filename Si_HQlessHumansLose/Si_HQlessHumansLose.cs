@@ -28,7 +28,7 @@ using MelonLoader;
 using Si_HQlessHumansLose;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(HQlessHumansLose), "[Si] HQless Humans Lose", "1.0.0", "databomb", "https://github.com/data-bomb/Silica_ListenServer")]
+[assembly: MelonInfo(typeof(HQlessHumansLose), "[Si] HQless Humans Lose", "1.0.2", "databomb", "https://github.com/data-bomb/Silica_ListenServer")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_HQlessHumansLose
@@ -63,6 +63,9 @@ namespace Si_HQlessHumansLose
 
                         if (iHeadquartersCount == 0)
                         {
+                            // the end is nigh!
+                            Il2Cpp.Player serverPlayer = Il2Cpp.NetworkGameServer.GetServerPlayer();
+                            Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, 0, "[BOT] " + sStructureTeam + " lost their last HQ and was eliminated", false);
                             // end the game
                             for (int i = 0; i < StructureTeam.Structures.Count; i++)
                             {
