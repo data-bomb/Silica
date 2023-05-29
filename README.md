@@ -21,6 +21,7 @@ Automatically selects the mode (e.g., Humans vs. Aliens) of your choice each tim
 - Install: Copy the `Si_AutoTeamsSelect.dll` into your `Silica\Mods` directory
 - Generates a config entry in your `Silica\UserData\MelonPreferences.cfg` file for `VersusAutoSelectMode`
 - Valid configuration options are `"HUMANS_VS_HUMANS"`, `"HUMANS_VS_ALIENS"`, or `"HUMANS_VS_HUMANS_VS_ALIENS"`
+- Testing Status: Confirmed working
 
 ### Mapcycle (Si_Mapcycle)
 Automatically changes the map 20 seconds after the round ends to the next map in the cycle
@@ -28,10 +29,12 @@ Automatically changes the map 20 seconds after the round ends to the next map in
 - Launch the game then close it. This generates a `mapcycle.txt` file in your `Silica\UserData` directory
 - Modify the mapcycle as desired. Repeating maps within the mapcycle is acceptable to make some maps more common than others.
 - Note: Changing the mapcycle file currently requires a game restart for the change to be recognized.
+- Testing Status: Users report extremely dark screens after the map change. May not be suitable for servers at this time until the underyling game bug is fixed.
 
 ### Surrender Command (Si_SurrenderCommand)
 Allows each team's commander to use a `!surrender` command to give up early
 - Install: Copy the `Si_SurrenderCommand.dll` into your `Silica\Mods` directory
+- Testing Status: Additional tests still needed but prototype works. May encounter double chat replies.
 
 ### Auto Kick on Negative Kills (Si_AutoKickNegativeKills)
 Automatically detects players who go below the threshold, sends a chat message, then kicks the player
@@ -44,6 +47,7 @@ Can automatically change the priority of the game executable upon launch
 - Install: Copy the `GamePriority.dll` into your `Silica\Mods` directory
 - Generates a config entry in your `Silica\UserData\MelonPreferences.cfg` file for `SetGamePriorityToHigh`
 - Valid configuration options are `true` or `false`
+- Testing Status: Confirmed working
 
 ### Friendly Fire Limits (Si_FriendlyFireLimits) - Currently Not Working - Under Investigation
 ~~- Install: Copy the `Si_FriendlyFireLimits.dll` into your `Silica\Mods` directory~~
