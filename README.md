@@ -34,7 +34,7 @@ Automatically changes the map 20 seconds after the round ends to the next map in
 ### Surrender Command (Si_SurrenderCommand)
 Allows each team's commander to use a `!surrender` command to give up early
 - Install: Copy the `Si_SurrenderCommand.dll` into your `Silica\Mods` directory
-- Testing Status: Additional tests still needed but prototype works. May encounter double chat replies.
+- Testing Status: Confirmed working in most instances. Some reports of issues that warrant more testing.
 
 ### Auto Kick on Negative Kills (Si_AutoKickNegativeKills)
 Automatically detects players who go below the threshold, sends a chat message, then kicks the player
