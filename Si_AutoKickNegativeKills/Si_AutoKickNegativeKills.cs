@@ -29,7 +29,7 @@ using MelonLoader;
 using Si_AutoKickNegativeKills;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(AutoKickNegativeKills), "[Si] Auto-Kick Negative Kills", "1.0.2", "databomb", "https://github.com/data-bomb/Silica_ListenServer")]
+[assembly: MelonInfo(typeof(AutoKickNegativeKills), "[Si] Auto-Kick Negative Kills", "1.0.3", "databomb", "https://github.com/data-bomb/Silica_ListenServer")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_AutoKickNegativeKills
@@ -83,12 +83,19 @@ namespace Si_AutoKickNegativeKills
                                 short currentKillScore = attackerPlayer.m_Kills;
                                 MelonLogger.Msg(attackerPlayer.PlayerName + " destroyed a friendly unit with kill score of " + currentKillScore.ToString());
 
+                                // check if another player was the victim
+                                Il2Cpp.Player serverPlayer = Il2Cpp.NetworkGameServer.GetServerPlayer();
+                                if (victimPlayer != null)
+                                {
+                                    MelonLogger.Msg(attackerPlayer.PlayerName + " team killed " + victimPlayer.PlayerName);
+                                    Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, 0, "[BOT] " + attackerPlayer.PlayerName + " team killed " + victimPlayer.PlayerName, false);
+                                }
+
                                 if (currentKillScore < _NegativeKillsThreshold.Value)
                                 {
                                     String sPlayerNameToKick = attackerPlayer.PlayerName;
                                     MelonLogger.Msg("Kicked " + sPlayerNameToKick + " (" + attackerPlayer.ToString + ")");
-                                    Il2Cpp.Player serverPlayer = Il2Cpp.NetworkGameServer.GetServerPlayer();
-                                    Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, 0, sPlayerNameToKick + " was kicked for teamkilling.", false);
+                                    Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, 0, "[BOT] " + sPlayerNameToKick + " was kicked for teamkilling.", false);
                                     Il2Cpp.NetworkGameServer.KickPlayer(attackerPlayer);
                                 }
                             }
