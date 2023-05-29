@@ -5,7 +5,7 @@ Note: These mods are for hosts running Listen Servers only. Do not attempt to us
 
 ## Silica Listen Server Requirements
 - 50Mbps upload bandwidth available [https://speedtest.org] (Individual clients use about ~50kbps download bandwidth and ~1,300kbps upload bandwidth)
-- 32GB RAM
+- 64GB RAM
 - Decent CPU
 - Top-of-the-line GPU if you want to host and play
 
