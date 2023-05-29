@@ -28,13 +28,18 @@ using Microsoft.VisualBasic;
 using Si_SurrenderCommand;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(SurrenderCommand), "[Si] Surrender Command", "1.1.1", "databomb", "https://github.com/data-bomb/Silica_ListenServer"))]
+[assembly: MelonInfo(typeof(SurrenderCommand), "[Si] Surrender Command", "1.1.2", "databomb", "https://github.com/data-bomb/Silica_ListenServer"))]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
+
+
 
 namespace Si_SurrenderCommand
 {
+
     public class SurrenderCommand : MelonMod
     {
+        const string ChatPrefix = "[BOT] ";
+
         [HarmonyPatch(typeof(Il2Cpp.Player), nameof(Il2Cpp.Player.SendChatMessage))]
         private static class ApplyChatSendSurrenderPatch
         {
@@ -61,18 +66,18 @@ namespace Si_SurrenderCommand
                             }
 
                             // notify all players
-                            Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, 0, sCallingPlayer + " used !surrender to end the round", false);
+                            Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, 0, ChatPrefix + sCallingPlayer + " used !surrender to end", false);
                         }
                         else
                         {
                             // notify player on invalid usage
-                            Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, 0, sCallingPlayer + "- !surrender can only be used when the game is in-progress", false);
+                            Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, 0, ChatPrefix + sCallingPlayer + "- !surrender can only be used when the game is in-progress", false);
                         }
                     }
                     else
                     {
                         // notify player on invalid usage
-                        Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, 0, sCallingPlayer + "- only commanders can use !surrender", false);
+                        Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, 0, ChatPrefix + sCallingPlayer + " - only commanders can use !surrender", false);
                     }
 
                     // prevent chat message from reaching clients
@@ -110,13 +115,13 @@ namespace Si_SurrenderCommand
                             }
 
                             // notify all players
-                            Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, 0, sCallingPlayer + " used !surrender to end the round", false);
+                            Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, 0, ChatPrefix + sCallingPlayer + " used !surrender to end", false);
                         }
                     }
                     else
                     {
                         // notify player on invalid usage
-                        Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, 0, sCallingPlayer + "- only commanders can use !surrender", false);
+                        Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, 0, ChatPrefix + sCallingPlayer + " - only commanders can use !surrender", false);
                     }
                 }
             }
