@@ -1,5 +1,5 @@
 # Running a Silica Listen Server
-The Silica game [https://silicagame.com/news/welcome] was released in May 2023 with only Listen Server capability. Dedicated Server support is planned but finding a consistent experience on Listen Servers can be challenging. If you would like to host a Listen Server 24/7 then some additional automation is neccessary.
+The Silica game [https://silicagame.com/news/welcome] was released in May 2023 with only Listen Server capability. Dedicated Server support is planned but finding a consistent experience on Listen Servers can be challenging. If you would like to host a Listen Server 24/7 then some additional automation is neccessary. The intention here is to go quick and provide functionality during the interim development period, so the quality of code is not a priority at the moment. Once dedicated servers are released then the approach to server-side modding may need to be re-visited.
 
 Note: These mods are for hosts running Listen Servers only. Do not attempt to use any of these as a client. If you are a host and want to switch to a client then remove all of your MelonLoader Mods before connecting as a client!
 
@@ -47,6 +47,11 @@ Automatically detects players who go below the threshold, sends a chat message, 
 Just like the Alien team losing their last Nest, when a Human team loses their last HQ then they are eliminated from the round.
 - Install: Copy the `Si_HQlessHumansLose.dll` into your `Silica\Mods` directory
 - Testing Status: Confirmed working
+
+### Basic Banlist (Si_BasicBanlist)
+Retains memory of kicked players across server instances in a Json file.
+- Install: Copy the `Si_BasicBanlist.dll` into your `Silica\Mods` directory
+- Testing Status: None! Requires significant testing of all aspects of the code and kick operation is commented out due to lack of testing
 
 ### GamePriority (https://github.com/MintLily/GamePriority/releases)
 Can automatically change the priority of the game executable upon launch
