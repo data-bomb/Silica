@@ -14,8 +14,6 @@ Note: These mods are for hosts running Listen Servers only. Do not attempt to us
 Note: The default location for `Silica.exe` will be in the `C:\Program Files (x86)\Steam\steamapps\common\Silica\` directory
 2. Install any other mods desired in your `Silica\Mods` directory
 
-The default Silica installation directory is `C:\Program Files (x86)\Steam\steamapps\common\Silica\`
-
 ## MelonLoader Mods for Silica Listen Server
 ### Auto Teams Mode Select (Si_AutoTeamsSelect)
 Automatically selects the mode (e.g., Humans vs. Aliens) of your choice each time the listen server restarts. This is a must have for unattended operation and much more reliable than the initial approach of an AutoHotKey script.
