@@ -12,6 +12,7 @@ Note: These mods are for hosts running Listen Servers only. Do not attempt to us
 ## Server Setup Instructions
 1. Install MelonLoader using the Manual Installation method for 64-bit games [https://melonwiki.xyz/#/README?id=manual-installation]
 2. Install any other mods desired in your `Silica\Mods` directory
+
 Note: The default location for `Silica.exe` will be in the `C:\Program Files (x86)\Steam\steamapps\common\Silica\` directory
 
 ## MelonLoader Mods for Silica Listen Server
