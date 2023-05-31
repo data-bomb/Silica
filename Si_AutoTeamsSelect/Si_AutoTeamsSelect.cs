@@ -1,34 +1,10 @@
-/*
- Silica Auto Teams Select Mod
- Copyright (C) 2023 by databomb
- 
- * Description *
- For Silica listen servers, automatically selects the game mode 
- (e.g., "Humans vs. Aliens") to allow listen servers to operate
- without constant monitoring from the host.
-
- * License *
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
- 
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
- 
- You should have received a copy of the GNU General Public License
- along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
-
-using HarmonyLib;
+﻿using HarmonyLib;
 using Il2Cpp;
 using MelonLoader;
 using UnityEngine;
 using VersusTeamsAutoSelect;
 
-[assembly: MelonInfo(typeof(VersusTeamsAutoSelectMod), "[Si] Versus Auto-Select Team", "1.0.0", "databomb", "https://github.com/data-bomb/Silica_ListenServer")]
+[assembly: MelonInfo(typeof(VersusTeamsAutoSelectMod), "[Si] Versus Auto-Select Team", "1.0.1", "databomb", "https://github.com/data-bomb/Silica_ListenServer")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace VersusTeamsAutoSelect
@@ -36,6 +12,18 @@ namespace VersusTeamsAutoSelect
 
     public class VersusTeamsAutoSelectMod : MelonMod
     {
+        public static void PrintError(Exception exception, string message = null)
+        {
+            if (message != null)
+            {
+                MelonLogger.Error(message);
+            }
+            string error = exception.Message;
+            error += "\n" + exception.TargetSite;
+            error += "\n" + exception.StackTrace;
+            MelonLogger.Error(error);
+        }
+
         static MelonPreferences_Category _modCategory;
         static MelonPreferences_Entry<Il2Cpp.MP_Strategy.ETeamsVersus> _versusAutoSelectMode;
 
@@ -59,8 +47,15 @@ namespace VersusTeamsAutoSelect
         {
             public static void Postfix(Il2Cpp.MP_Strategy __instance)
             {
-                Il2Cpp.MP_Strategy.ETeamsVersus versusMode = VersusTeamsAutoSelectMod._versusAutoSelectMode.Value;
-                __instance.SetTeamVersusMode(versusMode);
+                try
+                {
+                    Il2Cpp.MP_Strategy.ETeamsVersus versusMode = VersusTeamsAutoSelectMod._versusAutoSelectMode.Value;
+                    __instance.SetTeamVersusMode(versusMode);
+                }
+                catch (Exception error)
+                {
+                    PrintError(error, "Failed to run Restart");
+                }
             }
         }
     }
