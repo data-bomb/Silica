@@ -51,7 +51,7 @@ Just like the Alien team losing their last Nest, when a Human team loses their l
 ### Basic Banlist (Si_BasicBanlist)
 Retains memory of kicked players across server instances in a Json file.
 - Install: Copy the `Si_BasicBanlist.dll` into your `Silica\Mods` directory
-- Testing Status: None! Requires significant testing of all aspects of the code and kick operation is commented out due to lack of testing
+- Testing Status: Mostly tested. Kick GUI functionality has not been encountered/tested at this time. Everything else tested.
 
 ### GamePriority (https://github.com/MintLily/GamePriority/releases)
 Can automatically change the priority of the game executable upon launch
