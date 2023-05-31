@@ -29,7 +29,7 @@ using MelonLoader;
 using Si_HQlessHumansLose;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(HQlessHumansLose), "[Si] HQless Humans Lose", "1.0.4", "databomb", "https://github.com/data-bomb/Silica_ListenServer")]
+[assembly: MelonInfo(typeof(HQlessHumansLose), "[Si] HQless Humans Lose", "1.0.5", "databomb", "https://github.com/data-bomb/Silica_ListenServer")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_HQlessHumansLose
@@ -57,37 +57,40 @@ namespace Si_HQlessHumansLose
             {
                 try
                 {
-                    Il2Cpp.Team StructureTeam = __0.Team;
-
-                    String sStructureTeam = StructureTeam.TeamName;
-
-                    if (sStructureTeam.Contains("Human"))
+                    if (Il2Cpp.GameMode.CurrentGameMode.GameOngoing)
                     {
-                        // did they just lose a headquarters?
-                        if (__0.ToString().Contains("Headq"))
-                        {
-                            // find if it was the last headquarters
-                            // start at -1 because destroyed HQ is counted
-                            int iHeadquartersCount = -1;
-                            for (int i = 0; i < StructureTeam.Structures.Count; i++)
-                            {
-                                if (StructureTeam.Structures[i].ToString().Contains("Headq"))
-                                {
-                                    iHeadquartersCount++;
-                                }
-                            }
+                        Il2Cpp.Team StructureTeam = __0.Team;
 
-                            if (iHeadquartersCount == 0)
+                        String sStructureTeam = StructureTeam.TeamName;
+
+                        if (sStructureTeam.Contains("Human"))
+                        {
+                            // did they just lose a headquarters?
+                            if (__0.ToString().Contains("Headq"))
                             {
-                                // destroy all team's structures
+                                // find if it was the last headquarters
+                                // start at -1 because destroyed HQ is counted
+                                int iHeadquartersCount = -1;
                                 for (int i = 0; i < StructureTeam.Structures.Count; i++)
                                 {
-                                    StructureTeam.Structures[i].DamageManager.SetHealth01(0.0f);
+                                    if (StructureTeam.Structures[i].ToString().Contains("Headq"))
+                                    {
+                                        iHeadquartersCount++;
+                                    }
                                 }
 
-                                // the end is nigh!
-                                Il2Cpp.Player serverPlayer = Il2Cpp.NetworkGameServer.GetServerPlayer();
-                                Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, 0, ChatPrefix + sStructureTeam + " lost their last HQ and was eliminated", false);
+                                if (iHeadquartersCount == 0)
+                                {
+                                    // destroy all team's structures
+                                    for (int i = 0; i < StructureTeam.Structures.Count; i++)
+                                    {
+                                        StructureTeam.Structures[i].DamageManager.SetHealth01(0.0f);
+                                    }
+
+                                    // the end is nigh!
+                                    Il2Cpp.Player serverPlayer = Il2Cpp.NetworkGameServer.GetServerPlayer();
+                                    Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, 0, ChatPrefix + sStructureTeam + " lost their last HQ and was eliminated", false);
+                                }
                             }
                         }
                     }
