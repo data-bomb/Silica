@@ -48,6 +48,11 @@ Just like the Alien team losing their last Nest, when a Human team loses their l
 - Install: Copy the `Si_HQlessHumansLose.dll` into your `Silica\Mods` directory
 - Testing Status: Confirmed working
 
+### Basic Team Balance (Si_BasicTeamBalance)
+Only allows players to cause so much team imbalance; otherwise, this mod will deny the player's request to switch teams if it's too disruptive to balance. Current imbalance threshold is 3+ player difference between teams.
+- Install: Copy the `Si_BasicTeamBalance.dll` into your `Silica\Mods` directory
+- Testing Status: Mostly tested. Alternate team's playercount on join has not been tested.
+
 ### Basic Banlist (Si_BasicBanlist)
 Retains memory of kicked players across server instances in a Json file.
 - Install: Copy the `Si_BasicBanlist.dll` into your `Silica\Mods` directory
