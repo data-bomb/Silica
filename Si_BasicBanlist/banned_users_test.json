@@ -1,0 +1,20 @@
+[
+  {
+    "OffenderSteamId": 768746512375065,
+    "OffenderName": "Crash Override",
+    "UnixBanTime": 123456789,
+    "Comments": "banned by databomb"
+  },
+  {
+    "OffenderSteamId": 766616512375098,
+    "OffenderName": "Lord Nikon",
+    "UnixBanTime": 65,
+    "Comments": "banned by databomb"
+  },
+  {
+    "OffenderSteamId": 765616512375053,
+    "OffenderName": "Acid Burn",
+    "UnixBanTime": 1685463520,
+    "Comments": "banned by databomb"
+  }
+]
