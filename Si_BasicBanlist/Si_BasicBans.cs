@@ -1,4 +1,4 @@
-/*
+﻿/*
  Silica Basic Banlist Mod
  Copyright (C) 2023 by databomb
  
@@ -29,7 +29,7 @@ using Newtonsoft.Json;
 using Si_BasicBanlist;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(BasicBanlist), "[Si] Basic Banlist", "0.9.0", "databomb")]
+[assembly: MelonInfo(typeof(BasicBanlist), "[Si] Basic Banlist", "0.9.8", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_BasicBanlist
@@ -73,10 +73,8 @@ namespace Si_BasicBanlist
                     using (StreamReader banFileStream = File.OpenText(BasicBanlist.banListFile))
                     {
                         String JsonRaw = banFileStream.ReadToEnd();
-
-                        MelonLogger.Msg(JsonRaw);
-
                         MasterBanList = JsonConvert.DeserializeObject<List<BanEntry>>(JsonRaw);
+                        MelonLogger.Msg("Loaded Silica banlist with " + MasterBanList.Count + " entries.");
                     }
                 }
                 else
@@ -114,20 +112,15 @@ namespace Si_BasicBanlist
 
                     // convert back to json string
                     String JsonRaw = JsonConvert.SerializeObject(BasicBanlist.MasterBanList, Formatting.Indented);
-                    MelonLogger.Msg(JsonRaw);
-                    // write to file
+
                     try
                     {
-                        if (File.Exists(BasicBanlist.banListFile))
-                        {
-                            File.WriteAllText(BasicBanlist.banListFile, JsonRaw);
-                        }
+                        File.WriteAllText(BasicBanlist.banListFile, JsonRaw);
                     }
                     catch (Exception exception)
                     {
                         MelonLogger.Msg(exception.ToString());
                     }
-                    
                 }
 
                 return true;
@@ -139,13 +132,15 @@ namespace Si_BasicBanlist
         {
             public static void Postfix(Il2Cpp.GameMode __instance, Il2Cpp.Player __0)
             {
-                // check if player was previously banned
-                long JoiningPlayerSteamId = long.Parse(__0.ToString().Split('_')[1]);
-                if (BasicBanlist.MasterBanList.Find(i => i.OffenderSteamId == JoiningPlayerSteamId) != null)
+                if (__0 != null)
                 {
-                    MelonLogger.Msg("Found match in ban database for: " + __0.ToString());
-                    // perform kick
-                    //Il2Cpp.NetworkGameServer.KickPlayer(__0);
+                    // check if player was previously banned
+                    long JoiningPlayerSteamId = long.Parse(__0.ToString().Split('_')[1]);
+                    if (BasicBanlist.MasterBanList.Find(i => i.OffenderSteamId == JoiningPlayerSteamId) != null)
+                    {
+                        MelonLogger.Msg("Kicking " + __0.ToString() + " for matching an entry in the banlist.");
+                        Il2Cpp.NetworkGameServer.KickPlayer(__0);
+                    }
                 }
             }
         }
