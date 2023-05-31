@@ -51,7 +51,7 @@ Just like the Alien team losing their last Nest, when a Human team loses their l
 ### Basic Team Balance (Si_BasicTeamBalance)
 Only allows players to cause so much team imbalance; otherwise, this mod will deny the player's request to switch teams if it's too disruptive to balance. Current imbalance threshold is 3+ player difference between teams.
 - Install: Copy the `Si_BasicTeamBalance.dll` into your `Silica\Mods` directory
-- Testing Status: Mostly tested. Alternate team's playercount on join has not been tested.
+- Testing Status: Causes major issues each time the round restarts where clients can't pick a team and have to rejoin the server. Requires additional investigation
 
 ### Basic Banlist (Si_BasicBanlist)
 Retains memory of kicked players across server instances in a Json file.
