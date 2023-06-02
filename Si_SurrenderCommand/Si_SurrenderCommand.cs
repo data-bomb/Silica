@@ -28,7 +28,7 @@ using Microsoft.VisualBasic;
 using Si_SurrenderCommand;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(SurrenderCommand), "[Si] Surrender Command", "1.1.4", "databomb", "https://github.com/data-bomb/Silica_ListenServer")]
+[assembly: MelonInfo(typeof(SurrenderCommand), "[Si] Surrender Command", "1.1.5", "databomb", "https://github.com/data-bomb/Silica_ListenServer")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_SurrenderCommand
@@ -40,12 +40,12 @@ namespace Si_SurrenderCommand
         {
             if (message != null)
             {
-                MelonLogger.LogError(message);
+                MelonLogger.Msg(message);
             }
             string error = exception.Message;
             error += "\n" + exception.TargetSite;
             error += "\n" + exception.StackTrace;
-            MelonLogger.LogError(error);
+            MelonLogger.Error(error);
         }
 
         const string ChatPrefix = "[BOT] ";
@@ -99,7 +99,7 @@ namespace Si_SurrenderCommand
                 }
                 catch (Exception error)
                 {
-                    PrintError(error, "Failed to run SendChatMessage");
+                    SurrenderCommand.PrintError(error, "Failed to run SendChatMessage");
                 }
 
                 return true;
@@ -146,7 +146,7 @@ namespace Si_SurrenderCommand
                 }
                 catch (Exception error)
                 {
-                    PrintError(error, "Failed to run MessageReceived");
+                    SurrenderCommand.PrintError(error, "Failed to run MessageReceived");
                 }
             }
         }
