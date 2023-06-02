@@ -30,7 +30,7 @@ using Newtonsoft.Json;
 using Si_BasicBanlist;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(BasicBanlist), "[Si] Basic Banlist", "0.9.9", "databomb")]
+[assembly: MelonInfo(typeof(BasicBanlist), "[Si] Basic Banlist", "1.0.0", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_BasicBanlist
@@ -64,7 +64,7 @@ namespace Si_BasicBanlist
         {
             if (message != null)
             {
-                MelonLogger.Error(message);
+                MelonLogger.Msg(message);
             }
             string error = exception.Message;
             error += "\n" + exception.TargetSite;
@@ -73,7 +73,7 @@ namespace Si_BasicBanlist
         }
 
         static List<BanEntry> MasterBanList;
-        static String banListFile = MelonEnvironment.UserDataDirectory + "\\banned_users.json";
+        static String banListFile = System.IO.Path.Combine(MelonEnvironment.UserDataDirectory, "banned_users.json");
 
         public override void OnInitializeMelon()
         {
@@ -91,12 +91,13 @@ namespace Si_BasicBanlist
                 }
                 else
                 {
+                    MelonLogger.Msg("Did not find banned_users.json file. No banlist entries loaded.");
                     MasterBanList = new List<BanEntry>();
                 }
             }
             catch (Exception error)
             {
-                PrintError(error, "Failed to load Silica banlist");
+                BasicBanlist.PrintError(error, "Failed to load Silica banlist");
             }
         }
 
@@ -133,7 +134,7 @@ namespace Si_BasicBanlist
                 }
                 catch (Exception error)
                 {
-                    PrintError(error, "Failed to run KickPlayer");
+                    BasicBanlist.PrintError(error, "Failed to run KickPlayer");
                 }
 
                 return true;
@@ -160,7 +161,7 @@ namespace Si_BasicBanlist
                 }
                 catch (Exception error)
                 {
-                    PrintError(error, "Failed to run OnPlayerJoinedBase");
+                    BasicBanlist.PrintError(error, "Failed to run OnPlayerJoinedBase");
                 }
             }
         }
