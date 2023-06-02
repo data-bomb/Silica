@@ -1,10 +1,11 @@
 ﻿using HarmonyLib;
 using Il2Cpp;
 using MelonLoader;
+using System.Timers;
 using UnityEngine;
 using VersusTeamsAutoSelect;
 
-[assembly: MelonInfo(typeof(VersusTeamsAutoSelectMod), "[Si] Versus Auto-Select Team", "1.0.1", "databomb", "https://github.com/data-bomb/Silica_ListenServer")]
+[assembly: MelonInfo(typeof(VersusTeamsAutoSelectMod), "[Si] Versus Auto-Select Team", "1.0.2", "databomb", "https://github.com/data-bomb/Silica_ListenServer")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace VersusTeamsAutoSelect
@@ -12,11 +13,17 @@ namespace VersusTeamsAutoSelect
 
     public class VersusTeamsAutoSelectMod : MelonMod
     {
+        static MP_Strategy strategyInstance;
+        static bool bTimerExpired;
+        static bool bRestartHasppened;
+
+        private static System.Timers.Timer DelayTimer;
+
         public static void PrintError(Exception exception, string message = null)
         {
             if (message != null)
             {
-                MelonLogger.Error(message);
+                MelonLogger.Msg(message);
             }
             string error = exception.Message;
             error += "\n" + exception.TargetSite;
@@ -42,6 +49,38 @@ namespace VersusTeamsAutoSelect
             }
         }
 
+        private static void HandleTimerAutoRestart(object source, ElapsedEventArgs e)
+        {
+            VersusTeamsAutoSelectMod.bTimerExpired = true;
+        }
+
+        [HarmonyPatch(typeof(Il2Cpp.GameMode), nameof(Il2Cpp.GameMode.Update))]
+        private static class ApplyPatch_GameModeUpdate
+        {
+            private static void Postfix(Il2Cpp.GameMode __instance)
+            {
+                try
+                {
+                    // check if timer expired
+                    if (VersusTeamsAutoSelectMod.bRestartHasppened == true && VersusTeamsAutoSelectMod.bTimerExpired == true)
+                    {
+                        VersusTeamsAutoSelectMod.bRestartHasppened = false;
+                        Il2Cpp.MP_Strategy.ETeamsVersus versusMode = VersusTeamsAutoSelectMod._versusAutoSelectMode.Value;
+
+                        if (VersusTeamsAutoSelectMod.strategyInstance != null)
+                        {
+                            VersusTeamsAutoSelectMod.strategyInstance.SetTeamVersusMode(versusMode);
+                            MelonLogger.Msg("Selected Versus Mode for new round");
+                        }
+                    }
+                }
+                catch (Exception error)
+                {
+                    VersusTeamsAutoSelectMod.PrintError(error, "Failed to run Update");
+                }
+            }
+        }
+
         [HarmonyPatch(typeof(Il2Cpp.MP_Strategy), nameof(Il2Cpp.MP_Strategy.Restart))]
         public static class ApplyPatchSelectHumansVersusAliens
         {
@@ -49,12 +88,20 @@ namespace VersusTeamsAutoSelect
             {
                 try
                 {
-                    Il2Cpp.MP_Strategy.ETeamsVersus versusMode = VersusTeamsAutoSelectMod._versusAutoSelectMode.Value;
-                    __instance.SetTeamVersusMode(versusMode);
+                    VersusTeamsAutoSelectMod.strategyInstance = __instance;
+                    VersusTeamsAutoSelectMod.bTimerExpired = false;
+                    VersusTeamsAutoSelectMod.bRestartHasppened = true;
+
+                    // introduce a delay to account for issue on latest game version causing clients and server to become desynchronized
+                    double interval = 2000.0;
+                    VersusTeamsAutoSelectMod.DelayTimer = new System.Timers.Timer(interval);
+                    VersusTeamsAutoSelectMod.DelayTimer.Elapsed += new ElapsedEventHandler(VersusTeamsAutoSelectMod.HandleTimerAutoRestart);
+                    VersusTeamsAutoSelectMod.DelayTimer.AutoReset = false;
+                    VersusTeamsAutoSelectMod.DelayTimer.Enabled = true;
                 }
                 catch (Exception error)
                 {
-                    PrintError(error, "Failed to run Restart");
+                    VersusTeamsAutoSelectMod.PrintError(error, "Failed to run Restart");
                 }
             }
         }
