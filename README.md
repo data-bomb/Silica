@@ -38,10 +38,10 @@ Allows each team's commander to use a `!surrender` command to give up early
 - Testing Status: Confirmed working
 
 ### Auto Kick on Negative Kills (Si_AutoKickNegativeKills)
-Automatically detects players who go below the threshold, sends a chat message, then kicks the player
+Notifies everyone of team-kills in public chat and automatically kicks players who go below a certain kill point threshold
 - Install: Copy the `Si_AutoKickNegativeKills.dll` into your `Silica\Mods` directory
 - Generates a config entry in your `Silica\UserData\MelonPreferences.cfg` file for `AutoKickNegativeKillsThreshold`
-- Valid configuration options are any negative number representing targeted negative kill threshold (default `-100`)
+- Valid configuration options are any negative number representing targeted negative kill threshold (default `-80`)
 - Testing Status: Kick functionality has not been encountered/tested at this time. Everything else tested.
 
 ### Headquarterless Humans Lose (Si_HQlessHumansLose)
