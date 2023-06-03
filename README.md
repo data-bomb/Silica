@@ -57,6 +57,7 @@ Only allows players to cause so much team imbalance; otherwise, this mod will de
 ### Basic Banlist (Si_BasicBanlist)
 Retains memory of kicked players across server instances in a Json file.
 - Install: Copy the `Si_BasicBanlist.dll` into your `Silica\Mods` directory
+- Bans are stored in the `Silica\UserData\banned_users.json` file
 - Testing Status: Mostly tested. Kick GUI functionality has not been encountered/tested at this time. Everything else tested.
 
 ### GamePriority (https://github.com/MintLily/GamePriority/releases)
