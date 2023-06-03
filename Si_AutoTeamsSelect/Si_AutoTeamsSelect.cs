@@ -5,7 +5,7 @@ using System.Timers;
 using UnityEngine;
 using VersusTeamsAutoSelect;
 
-[assembly: MelonInfo(typeof(VersusTeamsAutoSelectMod), "[Si] Versus Auto-Select Team", "1.0.2", "databomb", "https://github.com/data-bomb/Silica_ListenServer")]
+[assembly: MelonInfo(typeof(VersusTeamsAutoSelectMod), "[Si] Versus Auto-Select Team", "1.0.3", "databomb", "https://github.com/data-bomb/Silica_ListenServer")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace VersusTeamsAutoSelect
@@ -16,6 +16,7 @@ namespace VersusTeamsAutoSelect
         static MP_Strategy strategyInstance;
         static bool bTimerExpired;
         static bool bRestartHasppened;
+        static KeyCode overrideKey;
 
         private static System.Timers.Timer DelayTimer;
 
@@ -39,6 +40,8 @@ namespace VersusTeamsAutoSelect
         
         public override void OnInitializeMelon()
         {
+            overrideKey = KeyCode.Space;
+
             if (_modCategory == null)
             {
                 _modCategory = MelonPreferences.CreateCategory(ModCategory);
@@ -69,8 +72,16 @@ namespace VersusTeamsAutoSelect
 
                         if (VersusTeamsAutoSelectMod.strategyInstance != null)
                         {
-                            VersusTeamsAutoSelectMod.strategyInstance.SetTeamVersusMode(versusMode);
-                            MelonLogger.Msg("Selected Versus Mode for new round");
+                            // check for override key to allow host to manually select the versus mode
+                            if (Input.GetKeyDown(overrideKey))
+                            {
+                                MelonLogger.Msg("Skipped Versus Mode selection for this round. Select desired Versus Mode manually.");
+                            }
+                            else
+                            {
+                                VersusTeamsAutoSelectMod.strategyInstance.SetTeamVersusMode(versusMode);
+                                MelonLogger.Msg("Selected Versus Mode for new round");
+                            }
                         }
                     }
                 }
