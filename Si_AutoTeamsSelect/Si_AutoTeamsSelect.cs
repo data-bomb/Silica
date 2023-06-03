@@ -5,7 +5,7 @@ using System.Timers;
 using UnityEngine;
 using VersusTeamsAutoSelect;
 
-[assembly: MelonInfo(typeof(VersusTeamsAutoSelectMod), "[Si] Versus Auto-Select Team", "1.0.3", "databomb", "https://github.com/data-bomb/Silica_ListenServer")]
+[assembly: MelonInfo(typeof(VersusTeamsAutoSelectMod), "[Si] Versus Auto-Select Team", "1.0.4", "databomb", "https://github.com/data-bomb/Silica_ListenServer")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace VersusTeamsAutoSelect
@@ -73,7 +73,7 @@ namespace VersusTeamsAutoSelect
                         if (VersusTeamsAutoSelectMod.strategyInstance != null)
                         {
                             // check for override key to allow host to manually select the versus mode
-                            if (Input.GetKeyDown(overrideKey))
+                            if (Input.GetKey(overrideKey))
                             {
                                 MelonLogger.Msg("Skipped Versus Mode selection for this round. Select desired Versus Mode manually.");
                             }
