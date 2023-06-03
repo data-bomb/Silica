@@ -6,13 +6,13 @@ Note: These mods are for hosts running Listen Servers only. Do not attempt to us
 ## Mod Summary
 | Mod Name | Version   | Link |
 |---------:|-----------|------|
-| Auto Teams Mode Select | 1.0.2 | [Download](Si_AutoTeamsSelect/bin/Si_AutoTeamsSelect.dll) |
+| Auto Teams Mode Select | 1.0.2 | [Download](https://github.com/data-bomb/Silica_ListenServer/blob/main/Si_AutoTeamsSelect/bin/Si_AutoTeamsSelect.dll) |
 | Mapcycle | 1.0.1 | Broken |
-| Surrender Command | 1.1.5 | [Download](Si_SurrenderCommand/bin/Si_SurrenderCommand.dll) |
-| Auto Kick on Negative Kills | 1.0.5 | [Download](Si_AutoKickNegativeKills/bin/Si_AutoKickNegativeKills.dll) |
-| Headquarterless Humans Lose | 1.0.6 | [Download](Si_HQlessHumansLose/bin/Si_HQlessHumansLose.dll) |
+| Surrender Command | 1.1.5 | [Download](https://github.com/data-bomb/Silica_ListenServer/blob/main/Si_SurrenderCommand/bin/Si_SurrenderCommand.dll) |
+| Auto Kick on Negative Kills | 1.0.5 | [Download](https://github.com/data-bomb/Silica_ListenServer/blob/main/Si_AutoKickNegativeKills/bin/Si_AutoKickNegativeKills.dll) |
+| Headquarterless Humans Lose | 1.0.6 | [Download](https://github.com/data-bomb/Silica_ListenServer/blob/main/Si_HQlessHumansLose/bin/Si_HQlessHumansLose.dll) |
 | Basic Team Balance | 0.9.2 | Broken |
-| Basic Banlist | 1.0.0 | [Download](Si_BasicBanlist/bin/Si_BasicBanlist.dll) |
+| Basic Banlist | 1.0.0 | [Download](https://github.com/data-bomb/Silica_ListenServer/blob/main/Si_BasicBanlist/bin/Si_BasicBanlist.dll) |
 | GamePriority | 2.0.1 | [Download](https://github.com/MintLily/GamePriority/releases/download/2.0.1/GamePriority.dll) |
 
 
