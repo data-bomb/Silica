@@ -6,7 +6,7 @@ Note: These mods are for hosts running Listen Servers only. Do not attempt to us
 ## Mod Summary
 | Mod Name | Version   | Link |
 |---------:|-----------|------|
-| Auto Teams Mode Select | 1.0.2 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/Si_AutoTeamsSelect/bin/Si_AutoTeamsSelect.dll) |
+| Auto Teams Mode Select | 1.0.2 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_AutoTeamsSelect/bin/Si_AutoTeamsSelect.dll) |
 | Mapcycle | 1.0.1 | Broken |
 | Surrender Command | 1.1.5 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/blob/main/Si_SurrenderCommand/bin/Si_SurrenderCommand.dll) |
 | Auto Kick on Negative Kills | 1.0.5 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/blob/main/Si_AutoKickNegativeKills/bin/Si_AutoKickNegativeKills.dll) |
