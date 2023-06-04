@@ -15,6 +15,7 @@ Note: These mods are for hosts running Listen Servers only. Do not attempt to us
 | Basic Banlist | 1.0.0 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_BasicBanlist/bin/Si_BasicBanlist.dll) |
 | Commander Management | 0.9.3 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_CommManagement/bin/Si_CommManagement.dll) |
 | GamePriority | 2.0.1 | [Download](https://github.com/MintLily/GamePriority/releases/download/2.0.1/GamePriority.dll) |
+| Friendly Fire Limits | 1.0.0 | Not Ready - Mod Bug(s) |
 
 
 ## Silica Listen Server Requirements
