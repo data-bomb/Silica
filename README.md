@@ -78,7 +78,7 @@ Retains memory of kicked players across server instances in a Json file.
 Allows `!demote <team>` admin command as well as `!cmdrban <player>` which retains memory of players not allowed to play commander across server instances in a Json file.
 - Install: Copy the `Si_CommManagement.dll` into your `Silica\Mods` directory
 - Bans are stored in the `Silica\UserData\commander_bans.json` file
-- Testing Status: Tested locally but need to test with other players to confirm
+- Testing Status: Confirmed working
 
 ### GamePriority (https://github.com/MintLily/GamePriority/releases)
 Can automatically change the priority of the game executable upon launch
