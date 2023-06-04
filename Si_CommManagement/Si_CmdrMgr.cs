@@ -31,8 +31,9 @@ using Si_CommanderManagement;
 using System.Xml;
 using UnityEngine;
 using static MelonLoader.MelonLogger;
+using static Si_CommanderManagement.CommanderManager;
 
-[assembly: MelonInfo(typeof(CommanderManager), "[Si] Commander Management", "0.9.3", "databomb")]
+[assembly: MelonInfo(typeof(CommanderManager), "[Si] Commander Management", "0.9.4", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_CommanderManagement
@@ -40,6 +41,10 @@ namespace Si_CommanderManagement
     public class CommanderManager : MelonMod
     {
         const string ChatPrefix = "[BOT] ";
+        const int MaxTeams = 3;
+        const int AlienTeam = 0;
+        const int CentauriTeam = 1;
+        const int SolTeam = 2;
 
         public class BanEntry
         {
@@ -77,6 +82,8 @@ namespace Si_CommanderManagement
             MelonLogger.Error(error);
         }
 
+        static List<Player>[] commanderApplicants;
+
         static List<BanEntry> MasterBanList;
         static String banListFile = System.IO.Path.Combine(MelonEnvironment.UserDataDirectory, "commander_bans.json");
 
@@ -99,6 +106,11 @@ namespace Si_CommanderManagement
                     MelonLogger.Msg("Did not find commander_bans.json file. No commander ban entries loaded.");
                     MasterBanList = new List<BanEntry>();
                 }
+
+                CommanderManager.commanderApplicants = new List<Player>[MaxTeams];
+                CommanderManager.commanderApplicants[AlienTeam] = new List<Player>();
+                CommanderManager.commanderApplicants[CentauriTeam] = new List<Player>();
+                CommanderManager.commanderApplicants[SolTeam] = new List<Player>();
             }
             catch (Exception error)
             {
@@ -136,7 +148,6 @@ namespace Si_CommanderManagement
                 {
                     iTargetCount++;
                     targetPlayer = players[i];
-                    
                 }
             }
 
@@ -147,7 +158,6 @@ namespace Si_CommanderManagement
 
             return targetPlayer;
         }
-
 
         // may need to re-think this approach on preventing commander promotion
         [HarmonyPatch(typeof(Il2Cpp.MP_Strategy), nameof(Il2Cpp.MP_Strategy.GetStrategyCommanderTeamSetup))]
@@ -181,6 +191,91 @@ namespace Si_CommanderManagement
             }
         }
 
+        [HarmonyPatch(typeof(Il2Cpp.MusicJukeboxHandler), nameof(Il2Cpp.MusicJukeboxHandler.OnGameInit))]
+        private static class ApplyPatchOnGameInit
+        {
+            public static void Postfix(Il2Cpp.MusicJukeboxHandler __instance, Il2Cpp.GameMode __0)
+            {
+                try
+                {
+                    MelonLogger.Msg("OnGameInit Fired.");
+
+                    if (CommanderManager.commanderApplicants[AlienTeam].Count > 0)
+                    {
+                        MelonLogger.Msg("Clearing Alien applicants.");
+                        CommanderManager.commanderApplicants[AlienTeam].Clear();
+                    }
+                    if (CommanderManager.commanderApplicants[CentauriTeam].Count > 0)
+                    {
+                        MelonLogger.Msg("Clearing Centauri applicants.");
+                        CommanderManager.commanderApplicants[CentauriTeam].Clear();
+                    }
+                    if (CommanderManager.commanderApplicants[SolTeam].Count > 0)
+                    {
+                        MelonLogger.Msg("Clearing Sol applicants.");
+                        CommanderManager.commanderApplicants[SolTeam].Clear();
+                    }
+                }
+                catch (Exception error)
+                {
+                    CommanderManager.PrintError(error, "Failed to run OnGameInit");
+                }
+            }
+        }
+
+        [HarmonyPatch(typeof(Il2Cpp.MusicJukeboxHandler), nameof(Il2Cpp.MusicJukeboxHandler.OnGameStarted))]
+        private static class ApplyPatchOnGameStarted
+        {
+            public static void Postfix(Il2Cpp.MusicJukeboxHandler __instance, Il2Cpp.GameMode __0)
+            {
+                try
+                {
+                    MelonLogger.Msg("OnGameStarted Fired. Finding commanders.");
+
+                    Il2Cpp.Player serverPlayer = Il2Cpp.NetworkGameServer.GetServerPlayer();
+                    // *** TODO: need to account for if a player leaves the game within the 30 second window
+                    System.Random randomIndex = new System.Random();
+                    if (CommanderManager.commanderApplicants[AlienTeam].Count > 0)
+                    {
+                        int iAlienCommanderIndex = randomIndex.Next(0, CommanderManager.commanderApplicants[AlienTeam].Count - 1);
+                        Il2Cpp.Player AlienCommander = CommanderManager.commanderApplicants[AlienTeam][iAlienCommanderIndex];
+
+                        if (AlienCommander != null && AlienCommander.Team.Index == AlienTeam)
+                        {
+                            Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, ChatPrefix + "Promoted " + AlienCommander.PlayerName + " to Alien commander", false);
+                            PromoteToCommander(AlienCommander);
+                        }
+                    }
+                    if (CommanderManager.commanderApplicants[CentauriTeam].Count > 0)
+                    {
+                        int iCentauriCommanderIndex = randomIndex.Next(0, CommanderManager.commanderApplicants[CentauriTeam].Count - 1);
+                        Il2Cpp.Player CentauriCommander = CommanderManager.commanderApplicants[CentauriTeam][iCentauriCommanderIndex];
+
+                        if (CentauriCommander != null && CentauriCommander.Team.Index == CentauriTeam)
+                        {
+                            Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, ChatPrefix + "Promoted " + CentauriCommander.PlayerName + " to Centauri commander", false);
+                            PromoteToCommander(CentauriCommander);
+                        }
+                    }
+                    if (CommanderManager.commanderApplicants[SolTeam].Count > 0)
+                    {
+                        int iSolCommanderIndex = randomIndex.Next(0, CommanderManager.commanderApplicants[SolTeam].Count - 1);
+                        Il2Cpp.Player SolCommander = CommanderManager.commanderApplicants[SolTeam][iSolCommanderIndex];
+
+                        if (SolCommander != null && SolCommander.Team.Index == SolTeam)
+                        {
+                            Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, ChatPrefix + "Promoted " + SolCommander.PlayerName + " to Sol commander", false);
+                            PromoteToCommander(SolCommander);
+                        }
+                    }
+                }
+                catch (Exception error)
+                {
+                    CommanderManager.PrintError(error, "Failed to run OnGameStarted");
+                }
+            }
+        }
+
         [HarmonyPatch(typeof(Il2Cpp.MP_Strategy), nameof(Il2Cpp.MP_Strategy.SetCommander))]
         private static class ApplyPatchSetCommander
         {
@@ -201,6 +296,23 @@ namespace Si_CommanderManagement
                             SendToInfantry(__1);
                             // respawn
                             GameMode.CurrentGameMode.SpawnUnitForPlayer(__1, __0);
+
+                            __1 = null;
+                            return false;
+                        }
+
+                        // check if they're trying to join before the 30 second countdown expires and the game begins
+                        if (Il2Cpp.GameMode.CurrentGameMode.Started && !Il2Cpp.GameMode.CurrentGameMode.GameBegun)
+                        {
+                            Il2Cpp.Player serverPlayer = Il2Cpp.NetworkGameServer.GetServerPlayer();
+                            Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, ChatPrefix + __1.PlayerName + " has applied for commander.", false);
+
+                            // need to get the player back to Infantry and not stuck in no-clip
+                            SendToInfantry(__1);
+                            // respawn
+                            GameMode.CurrentGameMode.SpawnUnitForPlayer(__1, __0);
+
+                            CommanderManager.commanderApplicants[__1.Team.Index].Add(__1);
 
                             __1 = null;
                             return false;
@@ -233,7 +345,7 @@ namespace Si_CommanderManagement
                 Il2Cpp.MP_Strategy strategyInstance = GameObject.FindObjectOfType<Il2Cpp.MP_Strategy>();
 
                 DemoteTeamsCommander(strategyInstance, playerTeam);
-                Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, 0, ChatPrefix + thisBan.OffenderName + " was demoted", false);
+                Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, ChatPrefix + thisBan.OffenderName + " was demoted", false);
             }
 
             // are we already banned?
@@ -251,8 +363,15 @@ namespace Si_CommanderManagement
 
                 System.IO.File.WriteAllText(CommanderManager.banListFile, JsonRaw);
 
-                Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, 0, ChatPrefix + thisBan.OffenderName + " was temporarily banned from being a commander", false);
+                Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, ChatPrefix + thisBan.OffenderName + " was temporarily banned from being a commander", false);
             }
+        }
+
+        public static void PromoteToCommander(Il2Cpp.Player CommanderPlayer)
+        {
+            Il2Cpp.MP_Strategy strategyInstance = GameObject.FindObjectOfType<Il2Cpp.MP_Strategy>();
+            strategyInstance.SetCommander(CommanderPlayer.Team, CommanderPlayer);
+            strategyInstance.RPC_SynchCommander(CommanderPlayer.Team);
         }
 
         public static void DemoteTeamsCommander(Il2Cpp.MP_Strategy strategyInstance, Il2Cpp.Team TargetTeam)
@@ -283,7 +402,7 @@ namespace Si_CommanderManagement
 
                         if (__instance != serverPlayer)
                         {
-                            Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, 0, ChatPrefix + __instance.PlayerName + " is not authorized to use !demote", false);
+                            Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, ChatPrefix + __instance.PlayerName + " is not authorized to use !demote", false);
                             return false;
                         }
 
@@ -291,7 +410,7 @@ namespace Si_CommanderManagement
                         int iArguments = __0.Split(' ').Count();
                         if (iArguments > 2)
                         {
-                            Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, 0, ChatPrefix + __instance.PlayerName + ": Too many arguments specified", false);
+                            Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, ChatPrefix + __instance.PlayerName + ": Too many arguments specified", false);
                             return false;
                         }
 
@@ -335,7 +454,7 @@ namespace Si_CommanderManagement
                             if (iTargetTeamIndex < 0)
                             {
                                 // notify player on invalid usage
-                                Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, 0, ChatPrefix + __instance.PlayerName + ": Valid targets are Alien, Centauri, or Sol", false);
+                                Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, ChatPrefix + __instance.PlayerName + ": Valid targets are Alien, Centauri, or Sol", false);
                                 return false;
                             }
                         }
@@ -349,17 +468,17 @@ namespace Si_CommanderManagement
                             if (bHasCommander)
                             {
                                 DemoteTeamsCommander(strategyInstance, TargetTeam);
-                                Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, 0, ChatPrefix + TargetTeam.TeamName + "'s commander was demoted", false);
+                                Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, ChatPrefix + TargetTeam.TeamName + "'s commander was demoted", false);
                                 return false;
                             }
                             else
                             {
-                                Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, 0, ChatPrefix + __instance.PlayerName + ": No commander found on specified team", false);
+                                Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, ChatPrefix + __instance.PlayerName + ": No commander found on specified team", false);
                             }
                         }
                         else
                         {
-                            Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, 0, ChatPrefix + __instance.PlayerName + ": No valid team found", false);
+                            Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, ChatPrefix + __instance.PlayerName + ": No valid team found", false);
                         }
 
                         return false;
@@ -374,7 +493,7 @@ namespace Si_CommanderManagement
 
                         if (__instance != serverPlayer)
                         {
-                            Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, 0, ChatPrefix + __instance.PlayerName + " is not authorized to use !cmdrban", false);
+                            Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, ChatPrefix + __instance.PlayerName + " is not authorized to use !cmdrban", false);
                             return false;
                         }
 
@@ -382,7 +501,7 @@ namespace Si_CommanderManagement
                         int iArguments = __0.Split(' ').Count();
                         if (iArguments > 2)
                         {
-                            Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, 0, ChatPrefix + __instance.PlayerName + ": Too many arguments specified", false);
+                            Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, ChatPrefix + __instance.PlayerName + ": Too many arguments specified", false);
                             return false;
                         }
 
@@ -391,7 +510,7 @@ namespace Si_CommanderManagement
 
                         if (PlayerToCmdrBan == null)
                         {
-                            Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, 0, ChatPrefix + __instance.PlayerName + ": Ambiguous or invalid target", false);
+                            Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, ChatPrefix + __instance.PlayerName + ": Ambiguous or invalid target", false);
                             return false;
                         }
                         
@@ -423,7 +542,7 @@ namespace Si_CommanderManagement
 
                         if (__0 != serverPlayer)
                         {
-                            Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, 0, ChatPrefix + __0.PlayerName + " is not authorized to use !demote", false);
+                            Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, ChatPrefix + __0.PlayerName + " is not authorized to use !demote", false);
                             return;
                         }
 
@@ -431,7 +550,7 @@ namespace Si_CommanderManagement
                         int iArguments = __1.Split(' ').Count();
                         if (iArguments > 2)
                         {
-                            Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, 0, ChatPrefix + __0.PlayerName + ": Too many arguments specified", false);
+                            Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, ChatPrefix + __0.PlayerName + ": Too many arguments specified", false);
                             return;
                         }
 
@@ -475,7 +594,7 @@ namespace Si_CommanderManagement
                             if (iTargetTeamIndex < 0)
                             {
                                 // notify player on invalid usage
-                                Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, 0, ChatPrefix + __0.PlayerName + ": Valid targets are Alien, Centauri, or Sol", false);
+                                Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, ChatPrefix + __0.PlayerName + ": Valid targets are Alien, Centauri, or Sol", false);
                                 return;
                             }
                         }
@@ -490,18 +609,18 @@ namespace Si_CommanderManagement
                             {
                                 // demote
                                 DemoteTeamsCommander(strategyInstance, TargetTeam);
-                                Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, 0, ChatPrefix + TargetTeam.TeamName + "'s commander was demoted", false);
+                                Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, ChatPrefix + TargetTeam.TeamName + "'s commander was demoted", false);
                                 return;
                             }
                             else
                             {
-                                Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, 0, ChatPrefix + __0.PlayerName + ": No commander found on specified team", false);
+                                Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, ChatPrefix + __0.PlayerName + ": No commander found on specified team", false);
                                 return;
                             }
                         }
                         else
                         {
-                            Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, 0, ChatPrefix + __0.PlayerName + ": No valid team found", false);
+                            Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, ChatPrefix + __0.PlayerName + ": No valid team found", false);
                             return;
                         } 
                     }
@@ -515,7 +634,7 @@ namespace Si_CommanderManagement
 
                         if (__0 != serverPlayer)
                         {
-                            Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, 0, ChatPrefix + __0.PlayerName + " is not authorized to use !cmdrban", false);
+                            Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, ChatPrefix + __0.PlayerName + " is not authorized to use !cmdrban", false);
                             return;
                         }
 
@@ -523,7 +642,7 @@ namespace Si_CommanderManagement
                         int iArguments = __1.Split(' ').Count();
                         if (iArguments > 2)
                         {
-                            Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, 0, ChatPrefix + __0.PlayerName + ": Too many arguments specified", false);
+                            Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, ChatPrefix + __0.PlayerName + ": Too many arguments specified", false);
                             return;
                         }
 
@@ -532,7 +651,7 @@ namespace Si_CommanderManagement
 
                         if (PlayerToCmdrBan == null)
                         {
-                            Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, 0, ChatPrefix + __0.PlayerName + ": Ambiguous or invalid target", false);
+                            Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, ChatPrefix + __0.PlayerName + ": Ambiguous or invalid target", false);
                             return;
                         }
 
