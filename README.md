@@ -13,6 +13,7 @@ Note: These mods are for hosts running Listen Servers only. Do not attempt to us
 | Headquarterless Humans Lose | 1.0.6 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_HQlessHumansLose/bin/Si_HQlessHumansLose.dll) |
 | Basic Team Balance | 0.9.2 | Not Ready - Mod Bug(s) |
 | Basic Banlist | 1.0.0 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_BasicBanlist/bin/Si_BasicBanlist.dll) |
+| Commander Management | 0.9.2 | Testing Needed |
 | GamePriority | 2.0.1 | [Download](https://github.com/MintLily/GamePriority/releases/download/2.0.1/GamePriority.dll) |
 
 
