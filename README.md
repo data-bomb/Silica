@@ -13,7 +13,7 @@ Note: These mods are for hosts running Listen Servers only. Do not attempt to us
 | Headquarterless Humans Lose | 1.0.6 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_HQlessHumansLose/bin/Si_HQlessHumansLose.dll) |
 | Basic Team Balance | 0.9.2 | Not Ready - Mod Bug(s) |
 | Basic Banlist | 1.0.0 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_BasicBanlist/bin/Si_BasicBanlist.dll) |
-| Commander Management | 0.9.2 | Testing Needed |
+| Commander Management | 0.9.3 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_CommManagement/bin/Si_CommManagement.dll) |
 | GamePriority | 2.0.1 | [Download](https://github.com/MintLily/GamePriority/releases/download/2.0.1/GamePriority.dll) |
 
 
@@ -78,7 +78,7 @@ Retains memory of kicked players across server instances in a Json file.
 Allows `!demote <team>` admin command as well as `!cmdrban <player>` which retains memory of players not allowed to play commander across server instances in a Json file.
 - Install: Copy the `Si_CommManagement.dll` into your `Silica\Mods` directory
 - Bans are stored in the `Silica\UserData\commander_bans.json` file
-- Testing Status: Almost nothing is tested yet.
+- Testing Status: Tested locally but need to test with other players to confirm
 
 ### GamePriority (https://github.com/MintLily/GamePriority/releases)
 Can automatically change the priority of the game executable upon launch
