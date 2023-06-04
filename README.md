@@ -13,7 +13,7 @@ Note: These mods are for hosts running Listen Servers only. Do not attempt to us
 | Headquarterless Humans Lose | 1.0.6 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_HQlessHumansLose/bin/Si_HQlessHumansLose.dll) |
 | Basic Team Balance | 0.9.2 | Not Ready - Mod Bug(s) |
 | Basic Banlist | 1.0.0 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_BasicBanlist/bin/Si_BasicBanlist.dll) |
-| Commander Management | 0.9.3 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_CommManagement/bin/Si_CommManagement.dll) |
+| Commander Management | 0.9.4 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_CommManagement/bin/Si_CommManagement.dll) |
 | GamePriority | 2.0.1 | [Download](https://github.com/MintLily/GamePriority/releases/download/2.0.1/GamePriority.dll) |
 | Friendly Fire Limits | 1.0.0 | Not Ready - Mod Bug(s) |
 
@@ -76,10 +76,10 @@ Retains memory of kicked players across server instances in a Json file.
 - Testing Status: Mostly tested. Kick GUI functionality has not been encountered/tested at this time. Everything else tested.
 
 ### Commander Management (Si_CommManagement)
-Allows `!demote <team>` admin command as well as `!cmdrban <player>` which retains memory of players not allowed to play commander across server instances in a Json file.
+Randomly selects a team's commander from the pool of qualified applicants when the round starts. Allows `!demote <team>` admin command as well as `!cmdrban <player>` which retains memory of players not allowed to play commander across server instances in a Json file.
 - Install: Copy the `Si_CommManagement.dll` into your `Silica\Mods` directory
 - Bans are stored in the `Silica\UserData\commander_bans.json` file
-- Testing Status: Confirmed working
+- Testing Status: Mostly tested. Random commander applicant system needs testing
 
 ### GamePriority (https://github.com/MintLily/GamePriority/releases)
 Can automatically change the priority of the game executable upon launch
