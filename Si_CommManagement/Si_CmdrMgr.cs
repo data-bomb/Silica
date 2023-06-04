@@ -32,7 +32,7 @@ using System.Xml;
 using UnityEngine;
 using static MelonLoader.MelonLogger;
 
-[assembly: MelonInfo(typeof(CommanderManager), "[Si] Commander Management", "0.9.2", "databomb")]
+[assembly: MelonInfo(typeof(CommanderManager), "[Si] Commander Management", "0.9.3", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_CommanderManagement
@@ -106,6 +106,21 @@ namespace Si_CommanderManagement
             }
         }
 
+        public static void SendToInfantry(Il2Cpp.Player FormerCommander)
+        {
+            Il2Cpp.GameByteStreamWriter theRoleStream;
+            theRoleStream = Il2Cpp.GameMode.CurrentGameMode.CreateRPCPacket(2);
+            if (theRoleStream == null)
+            {
+                return;
+            }
+
+            theRoleStream.WriteUInt64(FormerCommander.PlayerID.m_SteamID);
+            theRoleStream.WriteByte((byte)FormerCommander.PlayerChannel);
+            theRoleStream.WriteByte((byte)Il2Cpp.MP_Strategy.ETeamRole.INFANTRY);
+            Il2Cpp.GameMode.CurrentGameMode.SendRPCPacket(theRoleStream);
+        }
+
         public static Il2Cpp.Player? FindTargetPlayer(String sTarget)
         {
             Il2Cpp.Player targetPlayer = null;
@@ -146,9 +161,10 @@ namespace Si_CommanderManagement
                     {
                         // check if player is allowed to be commander
                         long JoiningPlayerSteamId = long.Parse(__0.ToString().Split('_')[1]);
-                        if (CommanderManager.MasterBanList.Find(i => i.OffenderSteamId == JoiningPlayerSteamId) != null)
+                        CommanderManager.BanEntry banEntry = CommanderManager.MasterBanList.Find(i => i.OffenderSteamId == JoiningPlayerSteamId);
+                        if (banEntry != null)
                         {
-                            MelonLogger.Msg("Preventing " + __0.ToString() + " from selecting commander.");
+                            MelonLogger.Msg("Preventing " + banEntry.OffenderName + " from selecting commander.");
 
                             __0 = null;
                             __result = null;
@@ -176,9 +192,15 @@ namespace Si_CommanderManagement
                     {
                         // check if player is allowed to be commander
                         long JoiningPlayerSteamId = long.Parse(__1.ToString().Split('_')[1]);
-                        if (CommanderManager.MasterBanList.Find(i => i.OffenderSteamId == JoiningPlayerSteamId) != null)
+                        CommanderManager.BanEntry banEntry = CommanderManager.MasterBanList.Find(i => i.OffenderSteamId == JoiningPlayerSteamId);
+                        if (banEntry != null)
                         {
-                            MelonLogger.Msg("Preventing " + __0.ToString() + " from playing as commander.");
+                            MelonLogger.Msg("Preventing " + banEntry.OffenderName + " from playing as commander.");
+
+                            // need to get the player back to Infantry and not stuck in no-clip
+                            SendToInfantry(__1);
+                            // respawn
+                            GameMode.CurrentGameMode.SpawnUnitForPlayer(__1, __0);
 
                             __1 = null;
                             return false;
@@ -211,7 +233,7 @@ namespace Si_CommanderManagement
                 Il2Cpp.MP_Strategy strategyInstance = GameObject.FindObjectOfType<Il2Cpp.MP_Strategy>();
 
                 DemoteTeamsCommander(strategyInstance, playerTeam);
-                Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, 0, ChatPrefix + thisBan.OffenderName + "was demoted", false);
+                Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, 0, ChatPrefix + thisBan.OffenderName + " was demoted", false);
             }
 
             // are we already banned?
@@ -229,17 +251,19 @@ namespace Si_CommanderManagement
 
                 System.IO.File.WriteAllText(CommanderManager.banListFile, JsonRaw);
 
-                Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, 0, ChatPrefix + thisBan.OffenderName + "was temporarily banned from being a commander", false);
+                Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, 0, ChatPrefix + thisBan.OffenderName + " was temporarily banned from being a commander", false);
             }
         }
 
         public static void DemoteTeamsCommander(Il2Cpp.MP_Strategy strategyInstance, Il2Cpp.Team TargetTeam)
         {
+            Il2Cpp.Player DemotedCommander = strategyInstance.GetCommanderForTeam(TargetTeam);
             strategyInstance.SetCommander(TargetTeam, null);
             strategyInstance.RPC_SynchCommander(TargetTeam);
-
-            // *** TODO: Ex-commander is glitched in no-clip mode. Need to manually set a request role to change back to Infantry
-            //strategyInstance.RPC_RequestRole(MP_Strategy.ETeamRole.INFANTRY);
+            // need to get the player back to Infantry and not stuck in no-clip
+            SendToInfantry(DemotedCommander);
+            // respawn
+            GameMode.CurrentGameMode.SpawnUnitForPlayer(DemotedCommander, TargetTeam);
         }
 
         [HarmonyPatch(typeof(Il2Cpp.Player), nameof(Il2Cpp.Player.SendChatMessage))]
