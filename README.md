@@ -1,7 +1,7 @@
 # Running a Silica Listen Server
 The Silica game [https://silicagame.com/news/welcome] was released in May 2023 with only Listen Server capability. Dedicated Server support is planned but finding a consistent and enjoyable experience on Listen Servers can be challenging. Some functionality is still missing from the base game that makes playing the game more enjoyable, and if you would like to host a Listen Server 24/7 then some additional automation is neccessary. The intention here is to go quick and provide functionality during the interim development period, so the quality of code is not a priority at the moment. Once dedicated servers are released then the approach to server-side modding may need to be re-visited.
 
-Note: These mods are for hosts running Listen Servers only. Do not attempt to use any of these as a client. If you are a host and want to switch to a client then remove all of your MelonLoader Mods before connecting as a client!
+**Note:** *These mods are for hosts running Listen Servers only. Do not attempt to use any of these as a client. If you are a host and want to switch to a client then remove all of your MelonLoader Mods before connecting as a client!*
 
 ## Mod Summary
 | Mod Name | Version   | Link |
