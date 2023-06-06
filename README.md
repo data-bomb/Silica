@@ -79,7 +79,7 @@ Retains memory of kicked players across server instances in a Json file.
 Randomly selects a team's commander from the pool of qualified applicants when the round starts. Allows `!demote <team>` admin command as well as `!cmdrban <player>` which retains memory of players not allowed to play commander across server instances in a Json file.
 - Install: Copy the `Si_CommManagement.dll` into your `Silica\Mods` directory
 - Bans are stored in the `Silica\UserData\commander_bans.json` file
-- Testing Status: Mostly tested. Random commander applicant system needs testing
+- Testing Status: Commanders need to push T to re-select Commamder but their spot is being reserved by the server. Additional troubleshooting needed to make it a seemless promotion to commander.
 
 ### GamePriority (https://github.com/MintLily/GamePriority/releases)
 Can automatically change the priority of the game executable upon launch
