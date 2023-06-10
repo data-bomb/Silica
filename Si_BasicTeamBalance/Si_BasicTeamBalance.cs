@@ -32,7 +32,7 @@ using System.Linq.Expressions;
 using UnityEngine;
 using Il2CppSystem.Runtime.CompilerServices;
 
-[assembly: MelonInfo(typeof(BasicTeamBalance), "[Si] Basic Team Balance", "1.0.3", "databomb")]
+[assembly: MelonInfo(typeof(BasicTeamBalance), "[Si] Basic Team Balance", "1.0.4", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_BasicTeamBalance
@@ -58,6 +58,8 @@ namespace Si_BasicTeamBalance
         static MelonPreferences_Entry<float> _TwoTeamBalanceAddend;
         static MelonPreferences_Entry<float> _ThreeTeamBalanceDivisor;
         static MelonPreferences_Entry<float> _ThreeTeamBalanceAddend;
+
+        static Il2Cpp.Player? LastPlayerChatMessage;
 
         private const string ModCategory = "Silica";
 
@@ -274,6 +276,14 @@ namespace Si_BasicTeamBalance
                                             Il2Cpp.Team? ForcedTeam = FindLowestPopulationTeam(versusMode);
                                             if (ForcedTeam != null)
                                             {
+                                                // avoid chat spam
+                                                if (LastPlayerChatMessage != JoiningPlayer)
+                                                {
+                                                    Il2Cpp.Player serverPlayer = Il2Cpp.NetworkGameServer.GetServerPlayer();
+                                                    Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, ChatPrefix + JoiningPlayer.PlayerName + "'s was forced to " + ForcedTeam.TeamName + " to fix imbalance.", false);
+                                                    LastPlayerChatMessage = JoiningPlayer;
+                                                }
+
                                                 MelonLogger.Msg(JoiningPlayer.PlayerName + " was forced to the other team due to team imbalance");
 
                                                 JoiningPlayer.Team = ForcedTeam;
@@ -281,6 +291,14 @@ namespace Si_BasicTeamBalance
 
                                                 return false;
                                             }
+                                        }
+                                        
+                                        // avoid chat spam
+                                        if (LastPlayerChatMessage != JoiningPlayer)
+                                        {
+                                            Il2Cpp.Player serverPlayer = Il2Cpp.NetworkGameServer.GetServerPlayer();
+                                            Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, ChatPrefix + JoiningPlayer.PlayerName + "'s switch was denied due to imbalance.", false);
+                                            LastPlayerChatMessage = JoiningPlayer;
                                         }
 
                                         MelonLogger.Msg(JoiningPlayer.PlayerName + "'s team switch was denied due to team imbalance");
