@@ -11,7 +11,7 @@ The Silica game [https://silicagame.com/news/welcome] was released in May 2023 w
 | Surrender Command | 1.1.5 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_SurrenderCommand/bin/Si_SurrenderCommand.dll) |
 | Auto Kick on Negative Kills | 1.0.5 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_AutoKickNegativeKills/bin/Si_AutoKickNegativeKills.dll) |
 | Headquarterless Humans Lose | 1.0.6 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_HQlessHumansLose/bin/Si_HQlessHumansLose.dll) |
-| Basic Team Balance | 0.9.2 | Not Ready - Mod Bug(s) |
+| Basic Team Balance | 1.0.0 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_BasicTeamBalance/bin/Si_BasicTeamBalance.dll) |
 | Basic Banlist | 1.0.0 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_BasicBanlist/bin/Si_BasicBanlist.dll) |
 | Commander Management | 0.9.4 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_CommManagement/bin/Si_CommManagement.dll) |
 | GamePriority | 2.0.1 | [Download](https://github.com/MintLily/GamePriority/releases/download/2.0.1/GamePriority.dll) |
@@ -65,9 +65,11 @@ Just like the Alien team losing their last Nest, when a Human team loses their l
 - Testing Status: Confirmed working
 
 ### Basic Team Balance (Si_BasicTeamBalance)
-Only allows players to cause so much team imbalance; otherwise, this mod will deny the player's request to switch teams if it's too disruptive to balance. Current imbalance threshold is 3+ player difference between teams.
+Only allows players to cause so much team imbalance; otherwise, this mod will deny the player's request to switch teams if it's too disruptive to balance. The imbalance is determined by a formula: `Ceiling((Current Server Player Count / Balance Divisor) + Balance Addend)`. There are separate team balance divisor and addends for two and three team versus variants in the config file.
 - Install: Copy the `Si_BasicTeamBalance.dll` into your `Silica\Mods` directory
-- Testing Status: Causes major issues each time the round restarts where clients can't pick a team and have to rejoin the server. Requires additional investigation
+- Generates config entries in your `Silica\UserData\MelonPreferences.cfg` file for `TeamBalance_TwoTeam_Divisor` (default: 8.0), `TeamBalance_TwoTeam_Addend` (default: 1.0), `TeamBalance_ThreeTeam_Divisor` (default: 10.0), and `TeamBalance_ThreeTeam_Addend` (default: 0.0). 
+- Valid divisor configuration options are any positive number (cannot be zero). Valid addend configuration options are any positive number or also zero.
+- Testing Status: Mostly tested. Configuration options are currently untested.
 
 ### Basic Banlist (Si_BasicBanlist)
 Retains memory of kicked players across server instances in a Json file.
