@@ -32,7 +32,7 @@ using System.Linq.Expressions;
 using UnityEngine;
 using Il2CppSystem.Runtime.CompilerServices;
 
-[assembly: MelonInfo(typeof(BasicTeamBalance), "[Si] Basic Team Balance", "1.0.0", "databomb")]
+[assembly: MelonInfo(typeof(BasicTeamBalance), "[Si] Basic Team Balance", "1.0.1", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_BasicTeamBalance
@@ -97,37 +97,31 @@ namespace Si_BasicTeamBalance
             }
         }
 
-        // Team Index 0 - Alien
-        // Team Index 1 - Human (Centauri)
-        // Team Index 2 - Human (Sol)
-        public static bool JoinCausesImbalance(Il2Cpp.Team? TargetTeam)
+        public static int GetNumberOfTeams(Il2Cpp.MP_Strategy.ETeamsVersus versusMode)
         {
-            if (TargetTeam == null)
-            {
-                return false;
-            }
-
-            Il2Cpp.MP_Strategy strategyInstance = GameObject.FindObjectOfType<Il2Cpp.MP_Strategy>();
-            Il2Cpp.MP_Strategy.ETeamsVersus versusMode = strategyInstance.TeamsVersus;
-
-            Il2Cpp.Team? LowestPopTeam = null;
-            int LowestTeamNumPlayers = 37;
             int NumActiveTeams = 0;
-
             switch (versusMode)
             {
                 case MP_Strategy.ETeamsVersus.HUMANS_VS_ALIENS:
                 case MP_Strategy.ETeamsVersus.HUMANS_VS_HUMANS:
-                {
+                    {
                         NumActiveTeams = 2;
                         break;
-                }
+                    }
                 case MP_Strategy.ETeamsVersus.HUMANS_VS_HUMANS_VS_ALIENS:
-                {
+                    {
                         NumActiveTeams = 3;
                         break;
-                }
+                    }
             }
+
+            return NumActiveTeams;
+        }
+
+        public static Il2Cpp.Team FindLowestPopulationTeam(Il2Cpp.MP_Strategy.ETeamsVersus versusMode)
+        {
+            int LowestTeamNumPlayers = 37;
+            Il2Cpp.Team? LowestPopTeam = null;
 
             for (int i = 0; i < Il2Cpp.Team.Teams.Count; i++)
             {
@@ -149,6 +143,26 @@ namespace Si_BasicTeamBalance
                 }
             }
 
+            return LowestPopTeam;
+        }
+
+        // Team Index 0 - Alien
+        // Team Index 1 - Human (Centauri)
+        // Team Index 2 - Human (Sol)
+        public static bool JoinCausesImbalance(Il2Cpp.Team? TargetTeam)
+        {
+            if (TargetTeam == null)
+            {
+                return false;
+            }
+
+            Il2Cpp.MP_Strategy strategyInstance = GameObject.FindObjectOfType<Il2Cpp.MP_Strategy>();
+            Il2Cpp.MP_Strategy.ETeamsVersus versusMode = strategyInstance.TeamsVersus;
+
+            Il2Cpp.Team? LowestPopTeam = null;
+            int NumActiveTeams = GetNumberOfTeams(versusMode);
+            LowestPopTeam = FindLowestPopulationTeam(versusMode);
+
             // are we already trying to join the team with lowest pop or did we have an error?
             if (LowestPopTeam == null || LowestPopTeam == TargetTeam)
             {
@@ -157,7 +171,7 @@ namespace Si_BasicTeamBalance
 
             // what's the player count difference?
             int TargetTeamPop = TargetTeam.GetNumPlayers();
-            int PlayerDifference = TargetTeamPop - LowestTeamNumPlayers;
+            int PlayerDifference = TargetTeamPop - LowestPopTeam.GetNumPlayers();
             // as a positive number only
             if (PlayerDifference < 0)
             {
@@ -219,9 +233,24 @@ namespace Si_BasicTeamBalance
                                 {
                                     if (JoiningPlayer != null)
                                     {
+                                        // if the player hasn't joined a team yet, force them to the other team
+                                        if (JoiningPlayer.Team == null)
+                                        {
+                                            Il2Cpp.MP_Strategy strategyInstance = GameObject.FindObjectOfType<Il2Cpp.MP_Strategy>();
+                                            Il2Cpp.MP_Strategy.ETeamsVersus versusMode = strategyInstance.TeamsVersus;
+                                            Il2Cpp.Team? ForcedTeam = FindLowestPopulationTeam(versusMode);
+                                            if (ForcedTeam != null)
+                                            {
+                                                MelonLogger.Msg(JoiningPlayer.PlayerName + " was forced to the other team due to team imbalance");
+
+                                                JoiningPlayer.Team = ForcedTeam;
+                                                NetworkLayer.SendPlayerSelectTeam(JoiningPlayer, ForcedTeam);
+
+                                                return false;
+                                            }
+                                        }
+
                                         MelonLogger.Msg(JoiningPlayer.PlayerName + "'s team switch was denied due to team imbalance");
-                                        //Il2Cpp.Player serverPlayer = Il2Cpp.NetworkGameServer.GetServerPlayer();
-                                        //Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, ChatPrefix + JoiningPlayer.PlayerName + "'s team switch was denied due to imbalance", false);
                                     }
 
                                     SendClearRequest(PlayerSteam64, PlayerChannel);
