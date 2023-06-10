@@ -65,7 +65,7 @@ Just like the Alien team losing their last Nest, when a Human team loses their l
 - Testing Status: Confirmed working
 
 ### Basic Team Balance (Si_BasicTeamBalance)
-Only allows players to cause so much team imbalance; otherwise, this mod will deny the player's request to switch teams if it's too disruptive to balance. The imbalance is determined by a formula: `Ceiling((Current Server Player Count / Balance Divisor) + Balance Addend)`. There are separate team balance divisor and addends for two and three team versus variants in the config file.
+Only allows players to cause so much team imbalance; otherwise, this mod will deny the player's request to switch teams if it's too disruptive to balance. The maximum permissible imbalance (measured in player count difference between teams) is determined by a formula: `Ceiling((Current Server Player Count / Balance Divisor) + Balance Addend)`. There are separate team balance divisor and addends for two and three team versus variants in the config file.
 - Install: Copy the `Si_BasicTeamBalance.dll` into your `Silica\Mods` directory
 - Generates config entries in your `Silica\UserData\MelonPreferences.cfg` file for `TeamBalance_TwoTeam_Divisor` (default: 8.0), `TeamBalance_TwoTeam_Addend` (default: 1.0), `TeamBalance_ThreeTeam_Divisor` (default: 10.0), and `TeamBalance_ThreeTeam_Addend` (default: 0.0). 
 - Valid divisor configuration options are any positive number (cannot be zero). Valid addend configuration options are any positive number or also zero.
