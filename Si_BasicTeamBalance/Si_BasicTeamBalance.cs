@@ -32,7 +32,7 @@ using System.Linq.Expressions;
 using UnityEngine;
 using Il2CppSystem.Runtime.CompilerServices;
 
-[assembly: MelonInfo(typeof(BasicTeamBalance), "[Si] Basic Team Balance", "1.0.2", "databomb")]
+[assembly: MelonInfo(typeof(BasicTeamBalance), "[Si] Basic Team Balance", "1.0.3", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_BasicTeamBalance
@@ -99,18 +99,18 @@ namespace Si_BasicTeamBalance
 
         public static bool OneFactionEliminated()
         {
-            int iTeamsWithMajorStructures = 0;
+            int TeamsWithMajorStructures = 0;
             for (int i = 0; i < Il2Cpp.Team.Teams.Count; i++)
             {
                 Il2Cpp.Team? thisTeam = Il2Cpp.Team.Teams[i];
                 int thisTeamMajorStructures = thisTeam.NumMajorStructures;
                 if (thisTeamMajorStructures > 0)
                 {
-                    iTeamsWithMajorStructures++;
+                    TeamsWithMajorStructures++;
                 }
             }
 
-            if (iTeamsWithMajorStructures < 3)
+            if (TeamsWithMajorStructures < 3)
             {
                 return true;
             }
@@ -118,7 +118,7 @@ namespace Si_BasicTeamBalance
             return false;
         }
 
-        public static int GetNumberOfTeams(Il2Cpp.MP_Strategy.ETeamsVersus versusMode)
+        public static int GetNumberOfActiveTeams(Il2Cpp.MP_Strategy.ETeamsVersus versusMode)
         {
             int NumActiveTeams = 0;
             switch (versusMode)
@@ -163,6 +163,10 @@ namespace Si_BasicTeamBalance
                 {
                     continue;
                 }
+                else if (versusMode == MP_Strategy.ETeamsVersus.HUMANS_VS_HUMANS_VS_ALIENS && thisTeam.NumMajorStructures == 0)
+                {
+                    continue;
+                }
 
                 int thisTeamNumPlayers = thisTeam.GetNumPlayers();
                 if (thisTeamNumPlayers < LowestTeamNumPlayers)
@@ -189,7 +193,7 @@ namespace Si_BasicTeamBalance
             Il2Cpp.MP_Strategy.ETeamsVersus versusMode = strategyInstance.TeamsVersus;
 
             Il2Cpp.Team? LowestPopTeam = null;
-            int NumActiveTeams = GetNumberOfTeams(versusMode);
+            int NumActiveTeams = GetNumberOfActiveTeams(versusMode);
             LowestPopTeam = FindLowestPopulationTeam(versusMode);
 
             // are we already trying to join the team with lowest pop or did we have an error?
