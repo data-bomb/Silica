@@ -32,7 +32,7 @@ using System.Linq.Expressions;
 using UnityEngine;
 using Il2CppSystem.Runtime.CompilerServices;
 
-[assembly: MelonInfo(typeof(BasicTeamBalance), "[Si] Basic Team Balance", "1.0.1", "databomb")]
+[assembly: MelonInfo(typeof(BasicTeamBalance), "[Si] Basic Team Balance", "1.0.2", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_BasicTeamBalance
@@ -97,6 +97,27 @@ namespace Si_BasicTeamBalance
             }
         }
 
+        public static bool OneFactionEliminated()
+        {
+            int iTeamsWithMajorStructures = 0;
+            for (int i = 0; i < Il2Cpp.Team.Teams.Count; i++)
+            {
+                Il2Cpp.Team? thisTeam = Il2Cpp.Team.Teams[i];
+                int thisTeamMajorStructures = thisTeam.NumMajorStructures;
+                if (thisTeamMajorStructures > 0)
+                {
+                    iTeamsWithMajorStructures++;
+                }
+            }
+
+            if (iTeamsWithMajorStructures < 3)
+            {
+                return true;
+            }
+
+            return false;
+        }
+
         public static int GetNumberOfTeams(Il2Cpp.MP_Strategy.ETeamsVersus versusMode)
         {
             int NumActiveTeams = 0;
@@ -110,7 +131,15 @@ namespace Si_BasicTeamBalance
                     }
                 case MP_Strategy.ETeamsVersus.HUMANS_VS_HUMANS_VS_ALIENS:
                     {
-                        NumActiveTeams = 3;
+                        // need to determine if one faction has been eliminated
+                        if (OneFactionEliminated())
+                        {
+                            NumActiveTeams = 2;
+                        }
+                        else
+                        {
+                            NumActiveTeams = 3;
+                        }    
                         break;
                     }
             }
