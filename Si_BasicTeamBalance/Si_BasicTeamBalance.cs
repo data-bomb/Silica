@@ -1,5 +1,5 @@
 ﻿/*
- Silica Auto Teams Select Mod
+ Silica Basic Team Balance Mod
  Copyright (C) 2023 by databomb
  
  * Description *
@@ -26,27 +26,164 @@ using Il2Cpp;
 using Il2CppSteamworks;
 using Il2CppSystem.IO;
 using MelonLoader;
+using Unity.Burst;
 using Si_BasicTeamBalance;
 using System.Linq.Expressions;
 using UnityEngine;
+using Il2CppSystem.Runtime.CompilerServices;
 
-[assembly: MelonInfo(typeof(BasicTeamBalance), "[Si] Basic Team Balance", "0.9.2", "databomb")]
+[assembly: MelonInfo(typeof(BasicTeamBalance), "[Si] Basic Team Balance", "1.0.0", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_BasicTeamBalance
 {
     public class BasicTeamBalance : MelonMod
     {
-        public static void PrintError(Exception exception, string message=null)
+        const string ChatPrefix = "[BOT] ";
+
+        public static void PrintError(Exception exception, string message = null)
         {
             if (message != null)
             {
-                MelonLogger.Error(message);
+                MelonLogger.Msg(message);
             }
             string error = exception.Message;
             error += "\n" + exception.TargetSite;
             error += "\n" + exception.StackTrace;
             MelonLogger.Error(error);
+        }
+
+        static MelonPreferences_Category _modCategory;
+        static MelonPreferences_Entry<float> _TwoTeamBalanceDivisor;
+        static MelonPreferences_Entry<float> _TwoTeamBalanceAddend;
+        static MelonPreferences_Entry<float> _ThreeTeamBalanceDivisor;
+        static MelonPreferences_Entry<float> _ThreeTeamBalanceAddend;
+
+        private const string ModCategory = "Silica";
+
+        public override void OnInitializeMelon()
+        {
+            if (_modCategory == null)
+            {
+                _modCategory = MelonPreferences.CreateCategory(ModCategory);
+            }
+            if (_TwoTeamBalanceDivisor == null)
+            {
+                _TwoTeamBalanceDivisor = _modCategory.CreateEntry<float>("TeamBalance_TwoTeam_Divisor", 8.0f);
+            }
+            if (_TwoTeamBalanceAddend == null)
+            {
+                _TwoTeamBalanceAddend = _modCategory.CreateEntry<float>("TeamBalance_TwoTeam_Addend", 1.0f);
+            }
+            if (_ThreeTeamBalanceDivisor == null)
+            {
+                _ThreeTeamBalanceDivisor = _modCategory.CreateEntry<float>("TeamBalance_ThreeTeam_Divisor", 10.0f);
+            }
+            if (_ThreeTeamBalanceAddend == null)
+            {
+                _ThreeTeamBalanceAddend = _modCategory.CreateEntry<float>("TeamBalance_ThreeTeam_Addend", 0.0f);
+            }
+        }
+
+        public static void SendClearRequest(ulong thisPlayerSteam64, int thisPlayerChannel)
+        {
+             // send RPC_ClearRequest
+            Il2Cpp.GameByteStreamWriter clearWriteInstance = Il2Cpp.GameMode.CurrentGameMode.CreateRPCPacket(3);
+            if (clearWriteInstance != null)
+            {
+                clearWriteInstance.WriteUInt64(thisPlayerSteam64);
+                clearWriteInstance.WriteByte((byte)thisPlayerChannel);
+                Il2Cpp.GameMode.CurrentGameMode.SendRPCPacket(clearWriteInstance);
+            }
+        }
+
+        // Team Index 0 - Alien
+        // Team Index 1 - Human (Centauri)
+        // Team Index 2 - Human (Sol)
+        public static bool JoinCausesImbalance(Il2Cpp.Team? TargetTeam)
+        {
+            if (TargetTeam == null)
+            {
+                return false;
+            }
+
+            Il2Cpp.MP_Strategy strategyInstance = GameObject.FindObjectOfType<Il2Cpp.MP_Strategy>();
+            Il2Cpp.MP_Strategy.ETeamsVersus versusMode = strategyInstance.TeamsVersus;
+
+            Il2Cpp.Team? LowestPopTeam = null;
+            int LowestTeamNumPlayers = 37;
+            int NumActiveTeams = 0;
+
+            switch (versusMode)
+            {
+                case MP_Strategy.ETeamsVersus.HUMANS_VS_ALIENS:
+                case MP_Strategy.ETeamsVersus.HUMANS_VS_HUMANS:
+                {
+                        NumActiveTeams = 2;
+                        break;
+                }
+                case MP_Strategy.ETeamsVersus.HUMANS_VS_HUMANS_VS_ALIENS:
+                {
+                        NumActiveTeams = 3;
+                        break;
+                }
+            }
+
+            for (int i = 0; i < Il2Cpp.Team.Teams.Count; i++)
+            {
+                Il2Cpp.Team? thisTeam = Il2Cpp.Team.Teams[i];
+                if (versusMode == MP_Strategy.ETeamsVersus.HUMANS_VS_HUMANS && i == 0)
+                {
+                    continue;
+                }
+                else if (versusMode == MP_Strategy.ETeamsVersus.HUMANS_VS_ALIENS && i == 1)
+                {
+                    continue;
+                }
+
+                int thisTeamNumPlayers = thisTeam.GetNumPlayers();
+                if (thisTeamNumPlayers < LowestTeamNumPlayers)
+                {
+                    LowestTeamNumPlayers = thisTeamNumPlayers;
+                    LowestPopTeam = thisTeam;
+                }
+            }
+
+            // are we already trying to join the team with lowest pop or did we have an error?
+            if (LowestPopTeam == null || LowestPopTeam == TargetTeam)
+            {
+                return false;
+            }
+
+            // what's the player count difference?
+            int TargetTeamPop = TargetTeam.GetNumPlayers();
+            int PlayerDifference = TargetTeamPop - LowestTeamNumPlayers;
+            // as a positive number only
+            if (PlayerDifference < 0)
+            {
+                PlayerDifference = -PlayerDifference;
+            }
+
+            // determine maximum allowed difference
+            int TotalNumPlayers = Il2Cpp.Player.Players.Count;
+            int MaxDifferenceAllowed;
+            if (NumActiveTeams == 2)
+            {
+                MaxDifferenceAllowed = (int)Math.Ceiling((TotalNumPlayers / _TwoTeamBalanceDivisor.Value) + _TwoTeamBalanceAddend.Value);
+            }
+            // more strict enforcement for Humans vs Humans vs Aliens
+            else
+            {
+                MaxDifferenceAllowed = (int)Math.Ceiling((TotalNumPlayers / _ThreeTeamBalanceDivisor.Value) + _ThreeTeamBalanceAddend.Value);
+            }
+
+
+            if (PlayerDifference > MaxDifferenceAllowed)
+            {
+                return true;
+            }
+
+            return false;
         }
 
         [HarmonyPatch(typeof(Il2Cpp.MP_Strategy), nameof(Il2Cpp.MP_Strategy.ProcessNetRPC))]
@@ -56,87 +193,58 @@ namespace Si_BasicTeamBalance
             {
                 try
                 {
-                    if (__0 != null)
+                    if (__instance != null && __0 != null)
                     {
                         // check for RPC_RequestJoinTeam byte
                         if (__1 == 1)
                         {
-                            if (Il2Cpp.GameMode.CurrentGameMode.GameOngoing)
+                            ulong PlayerSteam64 = __0.ReadUInt64();
+                            Il2CppSteamworks.CSteamID PlayerCSteamID = new CSteamID(PlayerSteam64);
+                            PlayerCSteamID.m_SteamID = PlayerSteam64;
+                            int PlayerChannel = __0.ReadByte();
+                            Il2Cpp.Player JoiningPlayer = Il2Cpp.Player.FindPlayer(PlayerCSteamID, PlayerChannel);
+                            Il2Cpp.Team? TargetTeam = __0.ReadTeam();
+
+                            if (JoiningPlayer == null)
                             {
-                                MelonLogger.Msg("RPC_RequestJoinTeam received");
-
-                                ulong PlayerSteam64 = __0.ReadUInt64();
-                                int PlayerChannel = __0.ReadByte();
-                                Il2CppSteamworks.CSteamID PlayerCSteamID = new CSteamID(PlayerSteam64);
-                                PlayerCSteamID.m_SteamID = PlayerSteam64;
-                                Il2Cpp.Player JoiningPlayer = Il2Cpp.Player.FindPlayer(PlayerCSteamID, PlayerChannel);
-                                Il2Cpp.Team TargetTeam = __0.ReadTeam();
-                                if (JoiningPlayer != null && TargetTeam != null)
-                                {
-                                    // get team counts
-                                    int iTargetTeamCount = TargetTeam.GetNumPlayers();
-                                    int iTargetTeamIndex = TargetTeam.Index;
-                                    MelonLogger.Msg(TargetTeam.TeamName + " (target) has playercount: " + iTargetTeamCount.ToString());
-
-                                    Il2Cpp.Team CurrentTeam = JoiningPlayer.m_Team;
-                                    int iCurrentTeamCount = 0;
-                                    if (CurrentTeam != null)
-                                    {
-                                        iCurrentTeamCount = JoiningPlayer.m_Team.GetNumPlayers();
-                                        MelonLogger.Msg(JoiningPlayer.m_Team.TeamName + " (current) has playercount: " + iCurrentTeamCount.ToString());
-                                    }
-                                    else
-                                    {
-                                        // grab opposing team player count
-                                        // Team Index 0 - Alien
-                                        // Team Index 1 - Human (Centauri)
-                                        // Team Index 2 - Human (Sol)
-                                        int iOtherTeamIndex = (iTargetTeamIndex == 0) ? 2 : 0;
-
-                                        // TODO: Account for HvHvA mode
-                                        /* int iOtherTeamCount = 0;
-                                        for (int i = 0; i < Il2Cpp.Team.Teams.Count; i++)
-                                        {
-                                            if (i == iTargetTeamIndex)
-                                            {
-                                                continue;
-                                            }
-
-                                            iOtherTeamCount = Il2Cpp.Team.Teams[i].GetNumPlayers();
-                                        }
-                                        */
-
-                                        iCurrentTeamCount = Il2Cpp.Team.Teams[iOtherTeamIndex].GetNumPlayers();
-                                        MelonLogger.Msg(JoiningPlayer.PlayerName + " joined from null team so used team index " + iOtherTeamIndex.ToString() + " and found playercount: " + iCurrentTeamCount.ToString());
-                                    }
-
-                                    // would this cause an imbalance? or are they already on the team?
-                                    // TODO: make the amount of imbalance a MelonLoader configuration option
-                                    if ((iTargetTeamCount - iCurrentTeamCount > 2) || (CurrentTeam == TargetTeam))
-                                    {
-                                        MelonLogger.Msg("Sending Clear Request");
-                                        // send RPC_ClearRequest
-                                        Il2Cpp.GameByteStreamWriter clearWriteInstance = Il2Cpp.GameMode.CurrentGameMode.CreateRPCPacket(3);
-                                        if (clearWriteInstance != null)
-                                        {
-                                            clearWriteInstance.WriteUInt64(PlayerSteam64);
-                                            clearWriteInstance.WriteByte((byte)JoiningPlayer.PlayerChannel);
-                                            Il2Cpp.GameMode.CurrentGameMode.SendRPCPacket(clearWriteInstance);
-                                        }
-                                        return false;
-                                    }
-
-                                    MelonLogger.Msg("Allow the join...");
-                                    JoiningPlayer.Team = TargetTeam;
-                                    Il2Cpp.NetworkLayer.SendPlayerSelectTeam(JoiningPlayer, TargetTeam);
-                                }
-
                                 return false;
                             }
+
+                            Il2Cpp.Team mTeam = JoiningPlayer.m_Team;
+
+                            if (!UnityEngine.Object.Equals(mTeam, TargetTeam))
+                            {
+                                // this would normally get processed but check for imbalance
+                                if (JoinCausesImbalance(TargetTeam))
+                                {
+                                    if (JoiningPlayer != null)
+                                    {
+                                        MelonLogger.Msg(JoiningPlayer.PlayerName + "'s team switch was denied due to team imbalance");
+                                        //Il2Cpp.Player serverPlayer = Il2Cpp.NetworkGameServer.GetServerPlayer();
+                                        //Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, ChatPrefix + JoiningPlayer.PlayerName + "'s team switch was denied due to imbalance", false);
+                                    }
+
+                                    SendClearRequest(PlayerSteam64, PlayerChannel);
+                                }
+                                else
+                                {
+                                    if (JoiningPlayer != null)
+                                    {
+                                        JoiningPlayer.Team = TargetTeam;
+                                        NetworkLayer.SendPlayerSelectTeam(JoiningPlayer, TargetTeam);
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                SendClearRequest(PlayerSteam64, PlayerChannel);
+                            }
+
+                            return false;
                         }
                     }
                 }
-                 catch (Exception error) 
+                catch (Exception error)
                 {
                     PrintError(error, "Failed to run ProcessNetRPC");
                 }
