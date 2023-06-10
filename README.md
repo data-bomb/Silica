@@ -52,7 +52,7 @@ Allows each team's commander to use a `!surrender` command to give up early
 - Install: Copy the `Si_SurrenderCommand.dll` into your `Silica\Mods` directory
 - Testing Status: Confirmed working
 
-### Auto Kick on Negative Kills (Si_AutoKickNegativeKills)
+### Anti-Grief (Si_AutoKickNegativeKills)
 Notifies everyone of team-kills in public chat and automatically kicks players who go below a certain kill point threshold
 - Install: Copy the `Si_AutoKickNegativeKills.dll` into your `Silica\Mods` directory
 - Generates a config entry in your `Silica\UserData\MelonPreferences.cfg` file for `AutoKickNegativeKillsThreshold`
