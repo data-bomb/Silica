@@ -96,5 +96,5 @@ Can automatically change the priority of the game executable upon launch
 ~~- AoE for explosions still applies friendly fire~~
 ~~- Hurting friendly structures is limited (explosions still cause significant damage but bullets/chomps are more limited)~~
 
-### Thank You
+### Credits
 Special thanks to Silentstorm, GrahamKracker, nighthalk and others in the MelonLoader community for being welcoming and supportive to an unusual use case of MelonLoader.
