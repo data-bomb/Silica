@@ -32,7 +32,7 @@ using UnityEngine;
 using System.Xml;
 using System.Timers;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "0.8.3", "databomb")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "0.8.5", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_Logging
@@ -101,10 +101,9 @@ namespace Si_Logging
             {
                 MelonLogger.Msg(message);
             }
-            string error = exception.Message;
-            error += "\n" + exception.TargetSite;
-            error += "\n" + exception.StackTrace;
-            MelonLogger.Error(error);
+            MelonLogger.Error(exception.Message);
+            MelonLogger.Error(exception.StackTrace);
+            MelonLogger.Error(exception.TargetSite);
         }
 
         public override void OnInitializeMelon()
@@ -295,7 +294,8 @@ namespace Si_Logging
                     string theNewTeamName;
                     if (__2 == null)
                     {
-                        theNewTeamName = "";
+                        // this happens at the begginning of each map and isn't useful logging information
+                        return;
                     }
                     else
                     {
@@ -401,6 +401,10 @@ namespace Si_Logging
         // 061. Team Objectives/Actions - Victory
         // 062. World Objectives/Actions - Round_Win
         // 065. Round-End Team Score Report
+        // 067. Round-End Player Score Report
+
+        static bool firedRoundEndOnce;
+
         [HarmonyPatch(typeof(Il2Cpp.MusicJukeboxHandler), nameof(Il2Cpp.MusicJukeboxHandler.OnGameEnded))]
         private static class ApplyPatchOnGameEnded
         {
@@ -408,30 +412,47 @@ namespace Si_Logging
             {
                 try
                 {
-                    string VictoryLogLine = "Team \"" + __1.TeamName + "\" triggered \"Victory\"";
-                    PrintLogLine(VictoryLogLine);
-
-                    Il2Cpp.MP_Strategy strategyInstance = GameObject.FindObjectOfType<Il2Cpp.MP_Strategy>();
-                    Il2Cpp.MP_Strategy.ETeamsVersus versusMode = strategyInstance.TeamsVersus;
-
-                    for (int i = 0; i < Il2Cpp.Team.Teams.Count; i++)
+                    if (!firedRoundEndOnce)
                     {
-                        Il2Cpp.Team? thisTeam = Il2Cpp.Team.Teams[i];
-                        if (versusMode == MP_Strategy.ETeamsVersus.HUMANS_VS_HUMANS && i == 0)
+                        firedRoundEndOnce = true;
+
+                        string VictoryLogLine = "Team \"" + __1.TeamName + "\" triggered \"Victory\"";
+                        PrintLogLine(VictoryLogLine);
+
+                        Il2Cpp.MP_Strategy strategyInstance = GameObject.FindObjectOfType<Il2Cpp.MP_Strategy>();
+                        Il2Cpp.MP_Strategy.ETeamsVersus versusMode = strategyInstance.TeamsVersus;
+
+                        for (int i = 0; i < Il2Cpp.Team.Teams.Count; i++)
                         {
-                            continue;
-                        }
-                        else if (versusMode == MP_Strategy.ETeamsVersus.HUMANS_VS_ALIENS && i == 1)
-                        {
-                            continue;
+                            Il2Cpp.Team? thisTeam = Il2Cpp.Team.Teams[i];
+                            if (versusMode == MP_Strategy.ETeamsVersus.HUMANS_VS_HUMANS && i == 0)
+                            {
+                                continue;
+                            }
+                            else if (versusMode == MP_Strategy.ETeamsVersus.HUMANS_VS_ALIENS && i == 1)
+                            {
+                                continue;
+                            }
+
+                            // TODO: Investigate what else to use for team score. Add up all player scores? For now resources is used but it's not using Total acculumated resources so need to find something else.
+                            string TeamLogLine = "Team \"" + thisTeam.TeamName + "\" scored \"" + thisTeam.TotalResources.ToString() + "\" with \"" + thisTeam.GetNumPlayers().ToString() + "\" players";
+                            PrintLogLine(TeamLogLine);
                         }
 
-                        string TeamLogLine = "Team \"" + thisTeam.TeamName + "\" scored \"" + thisTeam.TotalResources.ToString() + "\" with \"" + thisTeam.GetNumPlayers().ToString() + "\" players";
-                        PrintLogLine(TeamLogLine);
+                        for (int i = 0; i < Il2Cpp.Player.Players.Count; i++)
+                        {
+                            if (Il2Cpp.Player.Players[i] != null)
+                            {
+                                Il2Cpp.Player thisPlayer = Il2Cpp.Player.Players[i];
+                                int userID = Math.Abs(thisPlayer.GetInstanceID());
+                                string PlayerLogLine = "Player \"" + thisPlayer.PlayerName + "<" + userID + "><" + thisPlayer.ToString().Split('_')[1] + "><" + thisPlayer.m_Team.TeamName + ">\" scored \"" + thisPlayer.m_Score + "\" (kills \"" + thisPlayer.m_Kills + "\") (deaths \"" + thisPlayer.m_Deaths + "\")";
+                                PrintLogLine(PlayerLogLine);
+                            }
+                        }
+
+                        string RoundWinLogLine = "World triggered \"Round_Win\"";
+                        PrintLogLine(RoundWinLogLine);
                     }
-
-                    string RoundWinLogLine = "World triggered \"Round_Win\"";
-                    PrintLogLine(RoundWinLogLine);
                 }
                 catch (Exception error)
                 {
@@ -452,10 +473,27 @@ namespace Si_Logging
             }
         }*/
 
-        // TODO: 062. World Objectives/Actions - Round_Start
+        // 062. World Objectives/Actions - Round_Start
+        [HarmonyPatch(typeof(Il2Cpp.MusicJukeboxHandler), nameof(Il2Cpp.MusicJukeboxHandler.OnGameStarted))]
+        private static class ApplyPatchOnGameStarted
+        {
+            public static void Postfix(Il2Cpp.MusicJukeboxHandler __instance, Il2Cpp.GameMode __0)
+            {
+                try
+                {
+                    string RoundWinLogLine = "World triggered \"Round_Start\"";
+                    PrintLogLine(RoundWinLogLine);
+
+                    firedRoundEndOnce = false;
+                }
+                catch (Exception error)
+                {
+                    PrintError(error, "Failed to run OnGameStarted");
+                }
+            }
+        }
 
         // 063. Chat
-        // TODO: Fix error- Object reference not set to an instance of an object.
         [HarmonyPatch(typeof(Il2CppSilica.UI.Chat), nameof(Il2CppSilica.UI.Chat.MessageReceived))]
         private static class ApplyPatchMessageReceived
         {
@@ -467,16 +505,26 @@ namespace Si_Logging
                     {
                         int userID = Math.Abs(__0.GetInstanceID());
 
+                        string teamName;
+                        if (__0.m_Team == null)
+                        {
+                            teamName = "";
+                        }
+                        else
+                        {
+                            teamName = __0.m_Team.TeamName;
+                        }
+
                         // __2 true = team-only message
                         if (__2 == false)
                         {
-                            string LogLine = "\"" + __0.PlayerName + "<" + userID + "><" + __0.ToString().Split('_')[1] + "><" + __0.m_Team.TeamName + ">\" say \"" + __1 + "\"";
+                            string LogLine = "\"" + __0.PlayerName + "<" + userID + "><" + __0.ToString().Split('_')[1] + "><" + teamName + ">\" say \"" + __1 + "\"";
                             PrintLogLine(LogLine);
                             
                         }
                         else
                         {
-                            string LogLine = "\"" + __0.PlayerName + "<" + userID + "><" + __0.ToString().Split('_')[1] + "><" + __0.m_Team.TeamName + ">\" say_team \"" + __1 + "\"";
+                            string LogLine = "\"" + __0.PlayerName + "<" + userID + "><" + __0.ToString().Split('_')[1] + "><" + teamName + ">\" say_team \"" + __1 + "\"";
                             PrintLogLine(LogLine);
                         }
                     }
@@ -494,8 +542,6 @@ namespace Si_Logging
 
         // 066. Private Chat
         // None for now. Re-evaluate with updates
-
-        // 067. Round-End Player Score Report
 
         // 068. Weapon Selection
         // None for now. Re-evaluate with updates
