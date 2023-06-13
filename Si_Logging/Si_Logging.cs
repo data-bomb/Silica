@@ -32,7 +32,7 @@ using UnityEngine;
 using System.Xml;
 using System.Timers;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "0.8.5", "databomb")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "0.8.6", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_Logging
@@ -179,16 +179,20 @@ namespace Si_Logging
             {
                 try
                 {
-                    /* fix to grab from earlier source
-                     *  [18:11:33.064] [UnityExplorer] [Unity] SERVER - InformDisconnect: [unknown]
-                        [18:11:33.067] [UnityExplorer] [Unity] Player ID: 76561197981746273, channel: 0 left
-                        [18:11:33.069] [UnityExplorer] [Unity] Deleted 0 network objects for player ID: '76561197981746273', channel: 0
-                        [18:11:33.069] [Half-Life_Logger] Failed to run OnPlayerLeftBase
-                     */
                     if (__0 != null)
                     {
                         int userID = Math.Abs(__0.GetInstanceID());
-                        string LogLine = "\"" + __0.PlayerName + "<" + userID + "><" + __0.ToString().Split('_')[1] + "><" + __0.m_Team.TeamName + ">\" disconnected";
+                        string teamName;
+                        if (__0.m_Team == null)
+                        {
+                            teamName = "";
+                        }
+                        else
+                        {
+                            teamName = __0.m_Team.TeamName;
+                        }
+
+                        string LogLine = "\"" + __0.PlayerName + "<" + userID + "><" + __0.ToString().Split('_')[1] + "><" + teamName + ">\" disconnected";
                         PrintLogLine(LogLine);
                     }
                 }
@@ -355,6 +359,7 @@ namespace Si_Logging
                     {
                         // Attacker
                         Il2Cpp.BaseGameObject attackerBase = Il2Cpp.GameFuncs.GetBaseGameObject(__2);
+
                         if (attackerBase != null)
                         {
                             Il2Cpp.NetworkComponent attackerNetComp = attackerBase.NetworkComponent;
@@ -379,8 +384,28 @@ namespace Si_Logging
                                     {
                                         structName = __0.ToString();
                                     }
+
+                                    string attackerPlayerTeam;
+                                    if (attackerPlayer.m_Team == null)
+                                    {
+                                        attackerPlayerTeam = "";
+                                    }
+                                    else
+                                    {
+                                        attackerPlayerTeam = attackerPlayer.m_Team.TeamName;
+                                    }
+
+                                    string structTeam;
+                                    if (__0.m_Team == null)
+                                    {
+                                        structTeam = "";
+                                    }
+                                    else
+                                    {
+                                        structTeam = __0.m_Team.TeamName;
+                                    }
   
-                                    string LogLine = "\"" + attackerPlayer.PlayerName + "<" + userID + "><" + attackerPlayer.ToString().Split('_')[1] + "><" + attackerPlayer.m_Team.TeamName + ">\" triggered \"structure_kill\" (structure \"" + structName + "\") (struct_team \"" + __0.m_Team.TeamName + "\")";
+                                    string LogLine = "\"" + attackerPlayer.PlayerName + "<" + userID + "><" + attackerPlayer.ToString().Split('_')[1] + "><" + attackerPlayerTeam + ">\" triggered \"structure_kill\" (structure \"" + structName + "\") (struct_team \"" + structTeam + "\")";
                                     PrintLogLine(LogLine);
                                 }
 
@@ -445,7 +470,18 @@ namespace Si_Logging
                             {
                                 Il2Cpp.Player thisPlayer = Il2Cpp.Player.Players[i];
                                 int userID = Math.Abs(thisPlayer.GetInstanceID());
-                                string PlayerLogLine = "Player \"" + thisPlayer.PlayerName + "<" + userID + "><" + thisPlayer.ToString().Split('_')[1] + "><" + thisPlayer.m_Team.TeamName + ">\" scored \"" + thisPlayer.m_Score + "\" (kills \"" + thisPlayer.m_Kills + "\") (deaths \"" + thisPlayer.m_Deaths + "\")";
+
+                                string playerTeam;
+                                if (thisPlayer.m_Team == null)
+                                {
+                                    playerTeam = "";
+                                }
+                                else
+                                {
+                                    playerTeam = thisPlayer.m_Team.TeamName;
+                                }
+
+                                string PlayerLogLine = "Player \"" + thisPlayer.PlayerName + "<" + userID + "><" + thisPlayer.ToString().Split('_')[1] + "><" + playerTeam + ">\" scored \"" + thisPlayer.m_Score + "\" (kills \"" + thisPlayer.m_Kills + "\") (deaths \"" + thisPlayer.m_Deaths + "\")";
                                 PrintLogLine(PlayerLogLine);
                             }
                         }
@@ -462,6 +498,24 @@ namespace Si_Logging
         }
 
         // 061. Team Objectives/Actions - Research Tier
+        /*[HarmonyPatch(typeof(Il2Cpp.Team), nameof(Il2Cpp.Team.UpdateTechnologyTier))]
+        private static class ApplyPatchUpdateTechnologyTier
+        {
+            public static void Postfix(Il2Cpp.Team __instance)
+            {
+                try
+                {
+                    
+                }
+                catch (Exception error)
+                {
+                    PrintError(error, "Failed to run UpdateTechnologyTier");
+                }
+            }
+        }*/
+
+
+
         /*[HarmonyPatch(typeof(Il2Cpp.Team))]
         [HarmonyPatch(nameof(Il2Cpp.Team.CurrentTechnologyTier), MethodType.Setter)]
         private static class ApplyPatchOnSetTechnologyTier
