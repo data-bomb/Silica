@@ -14,7 +14,7 @@ The Silica game [https://silicagame.com/news/welcome] was released in May 2023 w
 | Basic Team Balance | 1.0.5 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_BasicTeamBalance/bin/Si_BasicTeamBalance.dll) |
 | Basic Banlist | 1.0.1 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_BasicBanlist/bin/Si_BasicBanlist.dll) |
 | Commander Management | 0.9.4 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_CommManagement/bin/Si_CommManagement.dll) |
-| Logging | 0.8.6 | Not Ready - Mod Bug(s) |
+| Logging | 0.8.6 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_Logging/bin/Si_Logging.dll) |
 | GamePriority | 2.0.1 | [Download](https://github.com/MintLily/GamePriority/releases/download/2.0.1/GamePriority.dll) |
 | Friendly Fire Limits | 1.0.0 | Not Ready - Mod Bug(s) |
 
