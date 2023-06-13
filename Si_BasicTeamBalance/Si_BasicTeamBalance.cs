@@ -32,7 +32,7 @@ using System.Linq.Expressions;
 using UnityEngine;
 using Il2CppSystem.Runtime.CompilerServices;
 
-[assembly: MelonInfo(typeof(BasicTeamBalance), "[Si] Basic Team Balance", "1.0.4", "databomb")]
+[assembly: MelonInfo(typeof(BasicTeamBalance), "[Si] Basic Team Balance", "1.0.5", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_BasicTeamBalance
@@ -280,11 +280,11 @@ namespace Si_BasicTeamBalance
                                                 if (LastPlayerChatMessage != JoiningPlayer)
                                                 {
                                                     Il2Cpp.Player serverPlayer = Il2Cpp.NetworkGameServer.GetServerPlayer();
-                                                    Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, ChatPrefix + JoiningPlayer.PlayerName + "'s was forced to " + ForcedTeam.TeamName + " to fix imbalance.", false);
+                                                    Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, ChatPrefix + JoiningPlayer.PlayerName + " was forced to " + ForcedTeam.TeamName + " to fix imbalance.", false);
                                                     LastPlayerChatMessage = JoiningPlayer;
                                                 }
 
-                                                MelonLogger.Msg(JoiningPlayer.PlayerName + " was forced to the other team due to team imbalance");
+                                                MelonLogger.Msg(JoiningPlayer.PlayerName + " was forced to " + ForcedTeam.TeamName + " to fix imbalance.");
 
                                                 JoiningPlayer.Team = ForcedTeam;
                                                 NetworkLayer.SendPlayerSelectTeam(JoiningPlayer, ForcedTeam);
