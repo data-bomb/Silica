@@ -32,7 +32,7 @@ using UnityEngine;
 using System.Xml;
 using System.Timers;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "0.8.6", "databomb")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "0.8.7", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_Logging
@@ -212,7 +212,16 @@ namespace Si_Logging
                 try
                 {
                     int userID = Math.Abs(__0.GetInstanceID());
-                    string LogLine = "Kick: \"" + __0.PlayerName + "<" + userID + "><" + __0.ToString().Split('_')[1] + "><" + __0.m_Team.TeamName + "\" was kicked by \"Console\" (message \"\")";
+                    string teamName;
+                    if ( __0.m_Team == null)
+                    {
+                        teamName = "";
+                    }
+                    else
+                    {
+                        teamName = __0.m_Team.TeamName;
+                    }
+                    string LogLine = "Kick: \"" + __0.PlayerName + "<" + userID + "><" + __0.ToString().Split('_')[1] + "><" + teamName + "\" was kicked by \"Console\" (message \"\")";
                     PrintLogLine(LogLine);
                 }
                 catch (Exception error)
