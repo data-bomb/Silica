@@ -32,7 +32,7 @@ using System.Linq.Expressions;
 using UnityEngine;
 using Il2CppSystem.Runtime.CompilerServices;
 
-[assembly: MelonInfo(typeof(BasicTeamBalance), "[Si] Basic Team Balance", "1.0.5", "databomb")]
+[assembly: MelonInfo(typeof(BasicTeamBalance), "[Si] Basic Team Balance", "1.0.6", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_BasicTeamBalance
@@ -165,7 +165,8 @@ namespace Si_BasicTeamBalance
                 {
                     continue;
                 }
-                else if (versusMode == MP_Strategy.ETeamsVersus.HUMANS_VS_HUMANS_VS_ALIENS && thisTeam.NumMajorStructures == 0)
+                // has the team been eliminated?
+                else if (versusMode == MP_Strategy.ETeamsVersus.HUMANS_VS_HUMANS_VS_ALIENS && thisTeam.BaseStructure == null)
                 {
                     continue;
                 }
