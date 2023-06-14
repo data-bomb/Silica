@@ -13,7 +13,7 @@ The Silica game [https://silicagame.com/news/welcome] was released in May 2023 w
 | Headquarterless Humans Lose | 1.0.6 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_HQlessHumansLose/bin/Si_HQlessHumansLose.dll) |
 | Basic Team Balance | 1.0.5 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_BasicTeamBalance/bin/Si_BasicTeamBalance.dll) |
 | Basic Banlist | 1.0.1 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_BasicBanlist/bin/Si_BasicBanlist.dll) |
-| Commander Management | 0.9.4 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_CommManagement/bin/Si_CommManagement.dll) |
+| Commander Management | 1.0.2 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_CommManagement/bin/Si_CommManagement.dll) |
 | Logging | 0.8.6 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_Logging/bin/Si_Logging.dll) |
 | GamePriority | 2.0.1 | [Download](https://github.com/MintLily/GamePriority/releases/download/2.0.1/GamePriority.dll) |
 | Friendly Fire Limits | 1.0.0 | Not Ready - Mod Bug(s) |
@@ -79,7 +79,7 @@ Retains memory of kicked players across server instances in a Json file.
 - Testing Status: Mostly tested. Kick GUI functionality has not been encountered/tested at this time. Everything else tested.
 
 ### Commander Management (Si_CommManagement)
-Randomly selects a team's commander from the pool of qualified applicants when the round starts. Allows `!demote <team>` admin command as well as `!cmdrban <player>` which retains memory of players not allowed to play commander across server instances in a Json file.
+Randomly selects a team's commander from the pool of qualified applicants when the round starts. Allows `!demote <team>` admin command as well as `!cmdrban <player>` which retains memory of players not allowed to play commander across server instances in a Json file. Prevents the same commander from being randomly chosen two consecutive rounds.
 - Install: Copy the `Si_CommManagement.dll` into your `Silica\Mods` directory
 - Bans are stored in the `Silica\UserData\commander_bans.json` file
 - Testing Status: Commanders need to push T to re-select Commamder but their spot is being reserved by the server. Additional troubleshooting needed to make it a seemless promotion to commander.
