@@ -32,7 +32,7 @@ using UnityEngine;
 using System.Xml;
 using System.Timers;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "0.8.7", "databomb")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "0.8.8", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_Logging
@@ -40,7 +40,7 @@ namespace Si_Logging
     // https://developer.valvesoftware.com/wiki/HL_Log_Standard
     public class HL_Logging : MelonMod
     {
-        public static void PrintLogLine(string LogMessage)
+        public static void PrintLogLine(string LogMessage, bool suppressConsoleOutput = false)
         {
             if (LogMessage != null)
             {
@@ -52,7 +52,12 @@ namespace Si_Logging
                     AddFirstLogLine();
                 }
                 string LogLine = GetLogPrefix() + LogMessage;
-                MelonLogger.Msg(LogLine);
+
+                if (!suppressConsoleOutput)
+                {
+                    MelonLogger.Msg(LogLine);
+                }
+
                 System.IO.File.AppendAllText(CurrentLogFile, LogLine + Environment.NewLine);
             }
         }
@@ -233,7 +238,6 @@ namespace Si_Logging
 
         // 053. Suicides
         // 057. Kills
-        // TODO: Grab weapon names instead of damage type
         [HarmonyPatch(typeof(Il2Cpp.MP_Strategy), nameof(Il2Cpp.MP_Strategy.OnUnitDestroyed))]
         private static class ApplyPatchOnUnitDestroyed
         {
@@ -264,14 +268,14 @@ namespace Si_Logging
                                     if (attackerPlayer == victimPlayer)
                                     {
                                         
-                                        string LogLine = "\"" + victimPlayer.PlayerName + "<" + victimUserID + "><" + victimPlayer.ToString().Split('_')[1] + "><" + victimPlayer.m_Team.TeamName + ">\" committed suicide with \"" + __1.ToString() + "\"";
+                                        string LogLine = "\"" + victimPlayer.PlayerName + "<" + victimUserID + "><" + victimPlayer.ToString().Split('_')[1] + "><" + victimPlayer.m_Team.TeamName + ">\" committed suicide with \"" + __2.ToString().Split('(')[0] + "\"";
                                         PrintLogLine(LogLine);
                                     }
                                     // human-controlled player killed another human-controlled player
                                     else
                                     {
                                         int attackerUserID = Math.Abs(attackerPlayer.GetInstanceID());
-                                        string LogLine = "\"" + attackerPlayer.PlayerName + "<" + attackerUserID + "><" + attackerPlayer.ToString().Split('_')[1] + "><" + attackerPlayer.m_Team.TeamName + ">\" killed \"" + victimPlayer.PlayerName + "<" + victimUserID + "><" + victimPlayer.ToString().Split('_')[1] + "><" + victimPlayer.m_Team.TeamName + ">\" with \"" + __1.ToString() + "\"";
+                                        string LogLine = "\"" + attackerPlayer.PlayerName + "<" + attackerUserID + "><" + attackerPlayer.ToString().Split('_')[1] + "><" + attackerPlayer.m_Team.TeamName + ">\" killed \"" + victimPlayer.PlayerName + "<" + victimUserID + "><" + victimPlayer.ToString().Split('_')[1] + "><" + victimPlayer.m_Team.TeamName + ">\" with \"" + __2.ToString().Split('(')[0] + "\"";
                                         PrintLogLine(LogLine);
                                     }
                                 }
@@ -350,13 +354,58 @@ namespace Si_Logging
             }
         }
 
-        // TODO: 058. Injuring
+        // 058. Injuring
+        [HarmonyPatch(typeof(Il2Cpp.DamageManager), nameof(Il2Cpp.DamageManager.OnDamageReceived))]
+        private static class ApplyPatchOnDamageReceived
+        {
+            public static void Postfix(Il2Cpp.DamageManager __instance, UnityEngine.Collider __0, float __1, Il2Cpp.EDamageType __2, UnityEngine.GameObject __3, UnityEngine.Vector3 __4)
+            {
+                // was it a human-controlled instigator?
+                if (__3 != null)
+                {
+                    Il2Cpp.BaseGameObject attackerBase = Il2Cpp.GameFuncs.GetBaseGameObject(__3);
+                    if (attackerBase != null)
+                    {
+                        Il2Cpp.NetworkComponent attackerNetComp = attackerBase.NetworkComponent;
+                        if (attackerNetComp != null)
+                        {
+                            Il2Cpp.Player attackerPlayer = attackerNetComp.OwnerPlayer;
+
+                            if (attackerPlayer != null)
+                            {
+                                // find if victim was human-controlled or a structure
+                                Il2Cpp.BaseGameObject victimBase = __instance.Owner;
+                                if (victimBase != null)
+                                {
+                                    Il2Cpp.NetworkComponent victimNetComp = victimBase.NetworkComponent;
+                                    if (victimNetComp != null)
+                                    {
+                                        Il2Cpp.Player victimPlayer = victimNetComp.OwnerPlayer;
+                                        if (victimPlayer != null)
+                                        {
+                                            // was daamge greater than 1?
+                                            int damage = (int)Math.Ceiling(__1);
+                                            if (damage > 1)
+                                            {
+                                                int attackerUserID = Math.Abs(attackerPlayer.GetInstanceID());
+                                                int victimUserID = Math.Abs(victimPlayer.GetInstanceID());
+                                                string LogLine = "\"" + attackerPlayer.PlayerName + "<" + attackerUserID + "><" + attackerPlayer.ToString().Split('_')[1] + "><" + attackerPlayer.m_Team.TeamName + ">\" attacked \"" + victimPlayer.PlayerName + "<" + victimUserID + "><" + victimPlayer.ToString().Split('_')[1] + "><" + victimPlayer.m_Team.TeamName + ">\" with \"" + __3.ToString().Split('(')[0] + "\"" + " (damage \"" + damage.ToString() + "\")";
+                                                PrintLogLine(LogLine, true);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
 
         // 059. Player-Player Actions
         // None for now. Re-evaluate with updates
 
         // 060. Player Objectives/Actions - Structure Kill
-        // TODO: Fix error- Object reference not set to an instance of an object.
         [HarmonyPatch(typeof(Il2Cpp.MP_Strategy), nameof(Il2Cpp.MP_Strategy.OnStructureDestroyed))]
         private static class ApplyPatchOnStructureDestroyed
         {
