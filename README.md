@@ -9,7 +9,7 @@ The Silica game [https://silicagame.com/news/welcome] was released in May 2023 w
 | Auto Teams Mode Select | 1.0.4 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_AutoTeamsSelect/bin/Si_AutoTeamsSelect.dll) |
 | Mapcycle | 1.0.1 | Not Ready - Game Bug(s) |
 | SiRAC (Anti-Cheat) | 0.7.6 | Restricted Access - By Request Only |
-| Surrender Command | 1.1.5 | Broken after 15-June-2023 Update [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_SurrenderCommand/bin/Si_SurrenderCommand.dll) |
+| Surrender Command | 1.1.7 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_SurrenderCommand/bin/Si_SurrenderCommand.dll) |
 | Anti-Grief | 1.0.5 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_AutoKickNegativeKills/bin/Si_AutoKickNegativeKills.dll) |
 | Headquarterless Humans Lose | 1.0.6 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_HQlessHumansLose/bin/Si_HQlessHumansLose.dll) |
 | Basic Team Balance | 1.0.7 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_BasicTeamBalance/bin/Si_BasicTeamBalance.dll) |
