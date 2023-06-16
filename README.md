@@ -30,6 +30,7 @@ The Silica game [https://silicagame.com/news/welcome] was released in May 2023 w
 1. Install .NET 6.0 Runtime x64 [https://dotnet.microsoft.com/en-us/download/dotnet/6.0]
 2. Install MelonLoader using the Manual Installation method for 64-bit games [https://melonwiki.xyz/#/README?id=manual-installation]
 3. Install any desired mods in your `Silica\Mods` directory
+4. Make sure that the server name reflects that there are mods
 
 Note: The default location for `Silica.exe` will be in the `C:\Program Files (x86)\Steam\steamapps\common\Silica\` directory
 
