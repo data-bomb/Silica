@@ -15,6 +15,7 @@ The Silica game [https://silicagame.com/news/welcome] was released in May 2023 w
 | Basic Team Balance | 1.0.7 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_BasicTeamBalance/bin/Si_BasicTeamBalance.dll) |
 | Basic Banlist | 1.0.1 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_BasicBanlist/bin/Si_BasicBanlist.dll) |
 | Commander Management | 1.0.2 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_CommManagement/bin/Si_CommManagement.dll) |
+| AFK Manager | 0.8.1 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_AFKManager/bin/Si_AFKManager.dll) |
 | Logging | 0.8.8 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_Logging/bin/Si_Logging.dll) |
 | GamePriority | 2.0.1 | [Download](https://github.com/MintLily/GamePriority/releases/download/2.0.1/GamePriority.dll) |
 | Friendly Fire Limits | 1.0.0 | Not Ready - Mod Bug(s) |
@@ -85,6 +86,12 @@ Randomly selects a team's commander from the pool of qualified applicants when t
 - Install: Copy the `Si_CommManagement.dll` into your `Silica\Mods` directory
 - Bans are stored in the `Silica\UserData\commander_bans.json` file
 - Testing Status: Commanders need to push T to re-select Commamder but their spot is being reserved by the server. Additional troubleshooting needed to make it a seemless promotion to commander.
+
+### AFK Manager (Si_AFKManager)
+Allows `!afk <player>` and `!kick <player>` admin commands to soft-disconnect clients who are then free to rejoin within the server session.
+- Install: Copy the `Si_AFKManager.dll` into your `Silica\Mods` directory
+- Future Plans: Add timers with AFK counters to track players who are not on a team
+- Testing Status: Limited testing
 
 ### Logging (Si_Logging)
 Generates a log file in the Half-Life Log Standard format and replicates the log details to the server console.
