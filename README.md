@@ -18,8 +18,7 @@ The Silica game [https://silicagame.com/news/welcome] was released in May 2023 w
 | AFK Manager | 0.8.1 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_AFKManager/bin/Si_AFKManager.dll) |
 | Logging | 0.8.8 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_Logging/bin/Si_Logging.dll) |
 | GamePriority | 2.0.1 | [Download](https://github.com/MintLily/GamePriority/releases/download/2.0.1/GamePriority.dll) |
-| Friendly Fire Limits | 1.0.0 | Not Ready - Mod Bug(s) |
-
+| Friendly Fire Limits | 1.1.4 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_FriendlyFireLimits/bin/Si_FriendlyFireLimits.dll) |
 
 ## Silica Listen Server Requirements
 - 50Mbps upload bandwidth available [https://speedtest.org] (Individual clients use about ~50kbps download bandwidth and ~1,300kbps upload bandwidth)
@@ -106,11 +105,12 @@ Can automatically change the priority of the game executable upon launch
 - Valid configuration options are `true` or `false`
 - Testing Status: Confirmed working
 
-### Friendly Fire Limits (Si_FriendlyFireLimits) - Currently Not Working - Under Investigation
-~~- Install: Copy the `Si_FriendlyFireLimits.dll` into your `Silica\Mods` directory~~
-~~- Directly hurting another player with bullets is blocked~~
-~~- AoE for explosions still applies friendly fire~~
-~~- Hurting friendly structures is limited (explosions still cause significant damage but bullets/chomps are more limited)~~
+### Friendly Fire Limits (Si_FriendlyFireLimits)
+Configurable options for hosts to adjust percentages of friendly fire. The Unit to Unit multiplier controls how much damage a unit (e.g., creature, soldier, vehicle) does to a friendly unit. The Structure Non-Explosion multiplier controls how much damage is done by any damage type other than explosion to friendly structures. The Structure Explosion multiplier controls how much damage is done by just explosions to friendly structures.
+- Install: Copy the `Si_FriendlyFireLimits.dll` into your `Silica\Mods` directory
+- Generates config entries in your `Silica\UserData\MelonPreferences.cfg` file for `FriendlyFire_UnitAttacked_DamageMultiplier` (default: 0.05), `FriendlyFire_StructureAttacked_DamageMultiplier_Exp` (default: 0.65), `TeamBalance_ThreeTeam_Divisor` (default: 10.0), and `FriendlyFire_StructureAttacked_DamageMultiplier_NonExp` (default: 0.15)
+- Valid configuration options are decimal values between 0.0 and 1.0
+- Testing Status: Not fully tested
 
 ### Credits
 Special thanks to Silentstorm, GrahamKracker, nighthalk and others in the MelonLoader community for being welcoming and supportive to an unusual use case of MelonLoader.
