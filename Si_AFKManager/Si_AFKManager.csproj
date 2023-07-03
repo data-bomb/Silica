@@ -25,6 +25,9 @@
     <Reference Include="MelonLoader">
       <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Silica\MelonLoader\net6\MelonLoader.dll</HintPath>
     </Reference>
+    <Reference Include="Si_AdminExtension">
+      <HintPath>..\Si_AdminExtension\bin\Debug\net6.0\Si_AdminExtension.dll</HintPath>
+    </Reference>
     <Reference Include="UnityEngine">
       <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Silica\MelonLoader\Il2CppAssemblies\UnityEngine.dll</HintPath>
     </Reference>

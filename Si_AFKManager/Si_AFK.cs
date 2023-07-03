@@ -23,157 +23,44 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using HarmonyLib;
 using Il2Cpp;
+using Il2CppSystem.Runtime.Remoting.Channels;
 using MelonLoader;
 using Si_AFKManager;
+using AdminExtension;
+using Il2CppBehaviorDesigner.Runtime.Formations.Tasks;
 
-[assembly: MelonInfo(typeof(AwayFromKeyboard), "AFK Manager", "0.8.1", "databomb")]
+[assembly: MelonInfo(typeof(AwayFromKeyboard), "AFK Manager", "1.0.0", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_AFKManager
 {
     public class AwayFromKeyboard : MelonMod
     {
-        public static void PrintError(Exception exception, string? message = null)
+        static bool AdminModAvailable = false;
+
+        public override void OnLateInitializeMelon()
         {
-            if (message != null)
-            {
-                MelonLogger.Msg(message);
-            }
-            string error = exception.Message;
-            error += "\n" + exception.TargetSite;
-            error += "\n" + exception.StackTrace;
-            MelonLogger.Error(error);
+            AdminModAvailable = RegisteredMelons.Any(m => m.Info.Name == "Admin Mod");
         }
 
-        const string ChatPrefix = "<b><color=#DDE98C>[<color=#C4983F>BOT<color=#DDE98C>]</b> ";
-
-        public static string GetTeamColor(Il2Cpp.Player player)
+        public static bool KickPlayer(Il2Cpp.Player playerToKick)
         {
-            if (player == null)
-            {
-                return "<color=#FFFFFF>";
-            }
-            Il2Cpp.Team? team = player.m_Team;
-            if (team == null)
-            {
-                return "<color=#FFFFFF>";
-            }
-            int teamIndex = team.Index;
-
-            switch (teamIndex)
-            {
-                // Alien
-                case 0:
-                    return "<color=#70FF70>";
-                // Centauri
-                case 1:
-                    return "<color=#FF7070>";
-                // Sol
-                case 2:
-                    return "<color=#7070FF>";
-                default:
-                    return "<color=#FFFFFF>";
-            }
-        }
-
-        public static Il2Cpp.Player? FindTargetPlayer(String sTarget)
-        {
-            Il2Cpp.Player? targetPlayer = null;
-            int iTargetCount = 0;
-
-            // loop through all players
-            Il2CppSystem.Collections.Generic.List<Il2Cpp.Player> players = Il2Cpp.Player.Players;
-            int iPlayerCount = players.Count;
-
-            for (int i = 0; i < iPlayerCount; i++)
-            {
-                if (players[i].PlayerName.Contains(sTarget))
-                {
-                    iTargetCount++;
-                    targetPlayer = players[i];
-                }
-            }
-
-            if (iTargetCount != 1)
-            {
-                targetPlayer = null;
-            }
-
-            return targetPlayer;
-        }
-
-        public static void KickWithoutBan(Il2Cpp.Player playerToKick)
-        {
-            // gather information to log in the banlist
             Il2Cpp.Player serverPlayer = Il2Cpp.NetworkGameServer.GetServerPlayer();
-            string teamColor = GetTeamColor(playerToKick);
 
             if (playerToKick == serverPlayer)
             {
-                Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, ChatPrefix + teamColor + playerToKick.PlayerName + "<color=#DDE98C> is host and cannot be targeted", false);
-                return;
+                return false;
             }
 
             Il2CppSteamworks.CSteamID serverSteam = NetworkGameServer.GetServerID();
             int playerChannel = playerToKick.PlayerChannel;
             Il2CppSteamworks.CSteamID playerSteam = playerToKick.PlayerID;
 
-            Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, ChatPrefix + teamColor + playerToKick.PlayerName + "<color=#DDE98C> disconnected", false);
-
             Il2Cpp.NetworkLayer.SendPlayerConnectResponse(ENetworkPlayerConnectType.Kicked, playerSteam, playerChannel, serverSteam);
             Il2Cpp.Player.RemovePlayer(playerSteam, playerChannel);
             NetworkLayer.SendPlayerConnect(ENetworkPlayerConnectType.Disconnected, playerSteam, playerChannel);
-        }
 
-        [HarmonyPatch(typeof(Il2Cpp.Player), nameof(Il2Cpp.Player.SendChatMessage))]
-        private static class ApplySendChatDemoteCommandPatch
-        {
-            public static bool Prefix(Il2Cpp.Player __instance, bool __result, string __0, bool __1)
-            {
-                try
-                {
-                    bool bIsKickCommand = (String.Equals(__0.Split(' ')[0], "!kick", StringComparison.OrdinalIgnoreCase) ||
-                                                    String.Equals(__0.Split(' ')[0], "!afk", StringComparison.OrdinalIgnoreCase));
-                    if (bIsKickCommand)
-                    {
-                        // check for authorized. for now, only server operator is considered authorized
-                        Il2Cpp.Player serverPlayer = Il2Cpp.NetworkGameServer.GetServerPlayer();
-                        String teamColor = GetTeamColor(__instance);
-
-                        if (__instance != serverPlayer)
-                        {
-                            Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, ChatPrefix + teamColor + __instance.PlayerName + "<color=#DDE98C> is not authorized to use " + __0.Split(' ')[0], false);
-                            return false;
-                        }
-
-                        // count number of arguments
-                        int argumentCount = __0.Split(' ').Count();
-                        if (argumentCount > 2)
-                        {
-                            Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, ChatPrefix + teamColor + __instance.PlayerName + "<color=#DDE98C>: Too many arguments specified", false);
-                            return false;
-                        }
-
-                        String sTarget = __0.Split(' ')[1];
-                        Il2Cpp.Player? playerToKick = FindTargetPlayer(sTarget);
-
-                        if (playerToKick == null)
-                        {
-                            Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, ChatPrefix + teamColor + __instance.PlayerName + "<color=#DDE98C>: Ambiguous or invalid target", false);
-                            return false;
-                        }
-
-                        KickWithoutBan(playerToKick);
-                        return false;
-                    }
-                }
-                catch (Exception error)
-                {
-                    PrintError(error, "Failed to run SendChatMessage");
-                }
-
-                return true;
-            }
+            return true;
         }
 
         [HarmonyPatch(typeof(Il2Cpp.MusicJukeboxHandler), nameof(Il2Cpp.MusicJukeboxHandler.OnGameStarted))]
@@ -187,7 +74,7 @@ namespace Si_AFKManager
                 }
                 catch (Exception error)
                 {
-                    PrintError(error, "Failed to run OnGameStarted");
+                    HelperMethods.PrintError(error, "Failed to run OnGameStarted");
                 }
             }
         }
@@ -195,49 +82,89 @@ namespace Si_AFKManager
         [HarmonyPatch(typeof(Il2CppSilica.UI.Chat), nameof(Il2CppSilica.UI.Chat.MessageReceived))]
         private static class ApplyReceiveChatKickCommandPatch
         {
+            private static void HandleChat(object sender, System.EventArgs e)
+            {
+                // Add your form load event handling code here.
+            }
+
             public static void Postfix(Il2CppSilica.UI.Chat __instance, Il2Cpp.Player __0, string __1, bool __2)
             {
                 try
                 {
-                    bool bIsKickCommand = (String.Equals(__1.Split(' ')[0], "!kick", StringComparison.OrdinalIgnoreCase) ||
-                                                    String.Equals(__1.Split(' ')[0], "!afk", StringComparison.OrdinalIgnoreCase));
-                    if (bIsKickCommand)
+                    // each faction has its own chat manager but by looking at alien and only global messages this catches commands only once
+                    if (__instance.ToString().Contains("alien") && __2 == false)
                     {
-                        // check for authorized. for now, only server operator is considered authorized
-                        Il2Cpp.Player serverPlayer = Il2Cpp.NetworkGameServer.GetServerPlayer();
-                        String teamColor = GetTeamColor(__0);
-
-                        if (__0 != serverPlayer)
+                        bool bIsKickCommand = (String.Equals(__1.Split(' ')[0], "!kick", StringComparison.OrdinalIgnoreCase) ||
+                                                    String.Equals(__1.Split(' ')[0], "!afk", StringComparison.OrdinalIgnoreCase));
+                        if (bIsKickCommand)
                         {
-                            Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, ChatPrefix + teamColor + __0.PlayerName + "<color=#DDE98C> is not authorized to use " + __1.Split(' ')[0], false);
-                            return;
+                            // check for authorized
+                            if (!AdminModAvailable)
+                            {
+                                // default to only server operator is considered authorized
+                                Il2Cpp.Player serverPlayer = Il2Cpp.NetworkGameServer.GetServerPlayer();
+                                if (serverPlayer != __0)
+                                {
+                                    HelperMethods.ReplyToCommand_Player(__0, "cannot use " + __1.Split(' ')[0]);
+                                    return;
+                                }
+                            }
+                            else
+                            {
+                                if (!__0.CanAdminExecute(Power.Kick))
+                                {
+                                    HelperMethods.ReplyToCommand_Player(__0, "cannot use " + __1.Split(' ')[0]);
+                                    return;
+                                }
+                            }
+
+                            // validate argument count
+                            int argumentCount = __1.Split(' ').Count() - 1;
+                            if (argumentCount > 1)
+                            {
+                                HelperMethods.ReplyToCommand(__1.Split(' ')[0] + ": Too many arguments");
+                                return;
+                            }
+                            else if (argumentCount < 1)
+                            {
+                                HelperMethods.ReplyToCommand(__1.Split(' ')[0] + ": Too few arguments");
+                                return;
+                            }
+
+                            // validate argument contents
+                            String sTarget = __1.Split(' ')[1];
+                            Il2Cpp.Player? playerToKick = HelperMethods.FindTargetPlayer(sTarget);
+
+                            if (playerToKick == null)
+                            {
+                                HelperMethods.ReplyToCommand(__1.Split(' ')[0] + ": Ambiguous or invalid target");
+                                return;
+                            }
+
+                            if (__0.CanAdminTarget(playerToKick))
+                            {
+                                if (KickPlayer(playerToKick))
+                                {
+                                    HelperMethods.AlertAdminActivity(__0, playerToKick, "kicked");
+                                }
+                                else
+                                {
+                                    HelperMethods.ReplyToCommand_Player(playerToKick, "is the host and cannot be targeted");
+                                }
+                            }
+                            else
+                            {
+                                HelperMethods.ReplyToCommand_Player(playerToKick, "is immune due to level");
+                            }
                         }
-
-                        // count number of arguments
-                        int argumentCount = __1.Split(' ').Count();
-                        if (argumentCount > 2)
-                        {
-                            Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, ChatPrefix + teamColor + __0.PlayerName + "<color=#DDE98C>: Too many arguments specified", false);
-                            return;
-                        }
-
-                        String sTarget = __1.Split(' ')[1];
-                        Il2Cpp.Player? playerToKick = FindTargetPlayer(sTarget);
-
-                        if (playerToKick == null)
-                        {
-                            Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, ChatPrefix + teamColor + __0.PlayerName + "<color=#DDE98C>: Ambiguous or invalid target", false);
-                            return;
-                        }
-
-                        KickWithoutBan(playerToKick);
-                        return;
                     }
                 }
                 catch (Exception error)
                 {
-                    PrintError(error, "Failed to run MessageReceived");
+                    HelperMethods.PrintError(error, "Failed to run MessageReceived");
                 }
+
+                return;
             }
         }
     }
