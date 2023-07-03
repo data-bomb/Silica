@@ -6,6 +6,7 @@ The Silica game [https://silicagame.com/news/welcome] was released in May 2023 w
 ## Mod Summary
 | Mod Name | Version   | Link |
 |---------:|-----------|------|
+| Admin Mod | 1.0.0 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_AdminMod/bin/Si_AdminMod.dll) |
 | Auto Teams Mode Select | 1.0.4 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_AutoTeamsSelect/bin/Si_AutoTeamsSelect.dll) |
 | Mapcycle | 1.0.1 | Not Ready - Game Bug(s) |
 | SiRAC (Anti-Cheat) | 0.7.6 | Restricted Access - By Request Only |
@@ -20,21 +21,35 @@ The Silica game [https://silicagame.com/news/welcome] was released in May 2023 w
 | GamePriority | 2.0.1 | [Download](https://github.com/MintLily/GamePriority/releases/download/2.0.1/GamePriority.dll) |
 | Friendly Fire Limits | 1.1.4 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_FriendlyFireLimits/bin/Si_FriendlyFireLimits.dll) |
 
+## Extension Summary
+| Mod Name | Version   | Link |
+|---------:|-----------|------|
+| Admin Extension | 1.0.0 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_AdminExtension/bin/Si_AdminExtension.dll) |
+
 ## Silica Listen Server Requirements
-- 50Mbps upload bandwidth available [https://speedtest.org] (Individual clients use about ~50kbps download bandwidth and ~1,300kbps upload bandwidth)
-- 64GB RAM
+- 50Mbps upload bandwidth available [https://speedtest.org] (Individual clients can use about ~50kbps download bandwidth and up to ~1,500kbps upload bandwidth)
+- 32GB+ RAM
 - Decent CPU
 - Top-of-the-line GPU if you want to host and play
 
 ## Server Setup Instructions
-1. Install .NET 6.0 Runtime x64 [https://dotnet.microsoft.com/en-us/download/dotnet/6.0]
-2. Install MelonLoader using the Manual Installation method for 64-bit games [https://melonwiki.xyz/#/README?id=manual-installation]
-3. Install any desired mods in your `Silica\Mods` directory
-4. Make sure that the server name reflects that there are mods
+1. Install Silica
+2. Install .NET 6.0 Runtime x64 [https://dotnet.microsoft.com/en-us/download/dotnet/6.0]
+3. Install MelonLoader using the Manual Installation method for 64-bit games [https://melonwiki.xyz/#/README?id=manual-installation]
+4. Place the Admin Extension in your `Silica\Mods` directory
+5. Install any desired mods in your `Silica\Mods` directory
+6. Make sure that the server name reflects that there are mods so players can choose between mods and a vanilla game experience
 
 Note: The default location for `Silica.exe` will be in the `C:\Program Files (x86)\Steam\steamapps\common\Silica\` directory
 
 ## MelonLoader Mods for Silica Listen Server
+### Admin Mod (Si_AdminMod)
+Allows host to use `!addadmin` command and extends admin methods to the game's Player class for use with other mods
+- Prerequisites: Ensure the Admin Extension is installed
+- Install: Copy the `Si_AdminMod.dll` into your `Silica\Mods` directory
+- Admins are stored in the `Silica\UserData\admins.json` file
+- Testing Status: Mostly tested
+
 ### Auto Teams Mode Select (Si_AutoTeamsSelect)
 Automatically selects the mode (e.g., Humans vs. Aliens) of your choice each time the listen server restarts. This is a must have for unattended operation and much more reliable than the initial approach of an AutoHotKey script.
 - Install: Copy the `Si_AutoTeamsSelect.dll` into your `Silica\Mods` directory
@@ -113,4 +128,4 @@ Configurable options for hosts to adjust percentages of friendly fire. The Unit 
 - Testing Status: Not fully tested
 
 ### Credits
-Special thanks to Silentstorm, GrahamKracker, nighthalk and others in the MelonLoader community for being welcoming and supportive to an unusual use case of MelonLoader.
+Special thanks to Silentstorm, GrahamKracker, Auri, nighthalk and others in the MelonLoader community for being welcoming and supportive to an unusual use case of MelonLoader.
