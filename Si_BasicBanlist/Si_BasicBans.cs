@@ -28,9 +28,9 @@ using MelonLoader;
 using MelonLoader.Utils;
 using Newtonsoft.Json;
 using Si_BasicBanlist;
-using UnityEngine;
+using AdminExtension;
 
-[assembly: MelonInfo(typeof(BasicBanlist), "[Si] Basic Banlist", "1.0.0", "databomb")]
+[assembly: MelonInfo(typeof(BasicBanlist), "[Si] Basic Banlist", "1.1.0", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_BasicBanlist
@@ -60,20 +60,17 @@ namespace Si_BasicBanlist
                 set;
             }
         }
-        public static void PrintError(Exception exception, string message = null)
-        {
-            if (message != null)
-            {
-                MelonLogger.Msg(message);
-            }
-            string error = exception.Message;
-            error += "\n" + exception.TargetSite;
-            error += "\n" + exception.StackTrace;
-            MelonLogger.Error(error);
-        }
 
         static List<BanEntry> MasterBanList;
         static String banListFile = System.IO.Path.Combine(MelonEnvironment.UserDataDirectory, "banned_users.json");
+        static bool AdminModAvailable = false;
+
+        public static void UpdateBanFile()
+        {
+            // convert back to json string
+            String JsonRaw = JsonConvert.SerializeObject(BasicBanlist.MasterBanList, Formatting.Indented);
+            System.IO.File.WriteAllText(BasicBanlist.banListFile, JsonRaw);
+        }
 
         public override void OnInitializeMelon()
         {
@@ -97,8 +94,84 @@ namespace Si_BasicBanlist
             }
             catch (Exception error)
             {
-                BasicBanlist.PrintError(error, "Failed to load Silica banlist");
+                HelperMethods.PrintError(error, "Failed to load Silica banlist (OnInitializeMelon)");
             }
+        }
+
+        public override void OnLateInitializeMelon()
+        {
+            AdminModAvailable = RegisteredMelons.Any(m => m.Info.Name == "Admin Mod");
+
+            if (AdminModAvailable)
+            {
+                HelperMethods.CommandCallback banCallback = Command_Ban;
+                HelperMethods.RegisterAdminCommand("!ban", banCallback, Power.Ban);
+                HelperMethods.RegisterAdminCommand("!kickban", banCallback, Power.Ban);
+            }
+            else
+            {
+                MelonLogger.Warning("Dependency missing: Admin Mod");
+            }
+        }
+
+        public void Command_Ban(Il2Cpp.Player callerPlayer, String args)
+        {
+            // validate argument count
+            int argumentCount = args.Split(' ').Count() - 1;
+            if (argumentCount > 1)
+            {
+                HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Too many arguments");
+                return;
+            }
+            else if (argumentCount < 1)
+            {
+                HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Too few arguments");
+                return;
+            }
+
+            // validate argument contents
+            String sTarget = args.Split(' ')[1];
+            Il2Cpp.Player? playerToBan = HelperMethods.FindTargetPlayer(sTarget);
+
+            if (playerToBan == null)
+            {
+                HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Ambiguous or invalid target");
+                return;
+            }
+
+            if (callerPlayer.CanAdminTarget(playerToBan))
+            {
+                BanEntry thisBan = GenerateBanEntry(playerToBan, callerPlayer);
+
+                // are we already banned?
+                if (BasicBanlist.MasterBanList.Find(i => i.OffenderSteamId == thisBan.OffenderSteamId) != null)
+                {
+                    MelonLogger.Msg("Player name (" + thisBan.OffenderName + ") SteamID (" + thisBan.OffenderSteamId.ToString() + ") already on banlist.");
+                }
+                else
+                {
+                    MelonLogger.Msg("Added player name (" + thisBan.OffenderName + ") SteamID (" + thisBan.OffenderSteamId.ToString() + ") to the banlist.");
+                    BasicBanlist.MasterBanList.Add(thisBan);
+                    UpdateBanFile();
+                }
+
+                Il2Cpp.NetworkGameServer.KickPlayer(playerToBan);
+                HelperMethods.AlertAdminActivity(callerPlayer, playerToBan, "banned");
+            }
+            else
+            {
+                HelperMethods.ReplyToCommand_Player(playerToBan, "is immune due to level");
+            }
+        }
+
+        public static BanEntry GenerateBanEntry(Il2Cpp.Player player, Il2Cpp.Player admin)
+        {
+            BanEntry thisBan = new BanEntry();
+            thisBan.OffenderSteamId = long.Parse(player.ToString().Split('_')[1]);
+            thisBan.OffenderName = player.PlayerName;
+            thisBan.UnixBanTime = (int)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
+            thisBan.Comments = "banned by " + admin.PlayerName;
+            return thisBan;
         }
 
         [HarmonyPatch(typeof(Il2Cpp.NetworkGameServer), nameof(Il2Cpp.NetworkGameServer.KickPlayer))]
@@ -108,12 +181,7 @@ namespace Si_BasicBanlist
             {
                 try
                 {
-                    // gather information to log in the banlist
-                    BasicBanlist.BanEntry thisBan = new BanEntry();
-                    thisBan.OffenderSteamId = long.Parse(__0.ToString().Split('_')[1]);
-                    thisBan.OffenderName = __0.PlayerName;
-                    thisBan.UnixBanTime = (int)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
-                    thisBan.Comments = "banned by " + Il2Cpp.NetworkGameServer.GetServerPlayer().PlayerName;
+                    BanEntry thisBan = GenerateBanEntry(__0, Il2Cpp.NetworkGameServer.GetServerPlayer());
 
                     // are we already banned?
                     if (BasicBanlist.MasterBanList.Find(i => i.OffenderSteamId == thisBan.OffenderSteamId) != null)
@@ -124,17 +192,12 @@ namespace Si_BasicBanlist
                     {
                         MelonLogger.Msg("Added player name (" + thisBan.OffenderName + ") SteamID (" + thisBan.OffenderSteamId.ToString() + ") to the banlist.");
                         BasicBanlist.MasterBanList.Add(thisBan);
-
-                        // convert back to json string
-                        String JsonRaw = JsonConvert.SerializeObject(BasicBanlist.MasterBanList, Formatting.Indented);
-
-                        System.IO.File.WriteAllText(BasicBanlist.banListFile, JsonRaw);
-
+                        UpdateBanFile();
                     }
                 }
                 catch (Exception error)
                 {
-                    BasicBanlist.PrintError(error, "Failed to run KickPlayer");
+                    HelperMethods.PrintError(error, "Failed to run NetworkGameServer::KickPlayer");
                 }
 
                 return true;
@@ -161,7 +224,7 @@ namespace Si_BasicBanlist
                 }
                 catch (Exception error)
                 {
-                    BasicBanlist.PrintError(error, "Failed to run OnPlayerJoinedBase");
+                    HelperMethods.PrintError(error, "Failed to run GameMode::OnPlayerJoinedBase");
                 }
             }
         }
