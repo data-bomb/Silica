@@ -25,10 +25,8 @@ using Il2Cpp;
 using Il2CppSilica.UI;
 using MelonLoader;
 using SilicaAdminMod;
-using static SilicaAdminMod.SiAdminMod;
-using static System.Net.Mime.MediaTypeNames;
 
-[assembly: MelonInfo(typeof(SiAdminMod), "Admin Extension", "1.0.0", "databomb")]
+[assembly: MelonInfo(typeof(SiAdminMod), "Admin Extension", "1.1.0", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace AdminExtension
@@ -68,6 +66,13 @@ namespace AdminExtension
     {
         const string defaultColor = "<color=#DDE98C>";
         const string chatPrefix = "<b>" + defaultColor + "[<color=#DFA725>SAM" + defaultColor + "]</b> ";
+
+        public delegate void CommandCallback(Il2Cpp.Player callerPlayer, String args);
+
+        public static void RegisterAdminCommand(String adminCommand, CommandCallback adminCallback, Power adminPower)
+        {
+            SiAdminMod.RegisterAdminCommand(adminCommand, adminCallback, adminPower);
+        }
 
         public static void ReplyToCommand(params string[] messages)
         {
@@ -268,6 +273,25 @@ namespace AdminExtension
             }
 
             return powers;
+        }
+        public static bool KickPlayer(Il2Cpp.Player playerToKick)
+        {
+            Il2Cpp.Player serverPlayer = Il2Cpp.NetworkGameServer.GetServerPlayer();
+
+            if (playerToKick == serverPlayer)
+            {
+                return false;
+            }
+
+            Il2CppSteamworks.CSteamID serverSteam = NetworkGameServer.GetServerID();
+            int playerChannel = playerToKick.PlayerChannel;
+            Il2CppSteamworks.CSteamID playerSteam = playerToKick.PlayerID;
+
+            Il2Cpp.NetworkLayer.SendPlayerConnectResponse(ENetworkPlayerConnectType.Kicked, playerSteam, playerChannel, serverSteam);
+            Il2Cpp.Player.RemovePlayer(playerSteam, playerChannel);
+            NetworkLayer.SendPlayerConnect(ENetworkPlayerConnectType.Disconnected, playerSteam, playerChannel);
+
+            return true;
         }
     }
 
