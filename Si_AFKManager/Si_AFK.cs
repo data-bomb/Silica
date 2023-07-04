@@ -27,7 +27,7 @@ using MelonLoader;
 using Si_AFKManager;
 using AdminExtension;
 
-[assembly: MelonInfo(typeof(AwayFromKeyboard), "AFK Manager", "1.1.0", "databomb")]
+[assembly: MelonInfo(typeof(AwayFromKeyboard), "AFK Manager", "1.1.1", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_AFKManager
@@ -54,13 +54,6 @@ namespace Si_AFKManager
 
         public void Command_Kick(Il2Cpp.Player callerPlayer, String args)
         {
-            // check for authorized
-            if (!callerPlayer.CanAdminExecute(Power.Kick))
-            {
-                HelperMethods.ReplyToCommand_Player(callerPlayer, "cannot use " + args.Split(' ')[0]);
-                return;
-            }
-
             // validate argument count
             int argumentCount = args.Split(' ').Count() - 1;
             if (argumentCount > 1)
