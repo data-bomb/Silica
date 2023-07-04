@@ -28,7 +28,7 @@ using Newtonsoft.Json;
 using AdminExtension;
 using MelonLoader.Utils;
 
-[assembly: MelonInfo(typeof(SiAdminMod), "Admin Mod", "1.1.0", "databomb")]
+[assembly: MelonInfo(typeof(SiAdminMod), "Admin Mod", "1.1.1", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace SilicaAdminMod
@@ -202,6 +202,13 @@ namespace SilicaAdminMod
                         AdminCommand? checkCommand = AdminCommands.Find(i => i.AdminCommandText == thisCommandText);
                         if (checkCommand != null)
                         {
+                            // do they have the matching power?
+                            if (!__0.CanAdminExecute(checkCommand.AdminPower))
+                            {
+                                HelperMethods.ReplyToCommand_Player(__0, "cannot use " + thisCommandText);
+                                return;
+                            }
+
                             // run the callback
                             checkCommand.AdminCallback(__0, __1);
                         }
