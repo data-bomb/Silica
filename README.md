@@ -6,7 +6,7 @@ The Silica game [https://silicagame.com/news/welcome] was released in May 2023 w
 ## Mod Summary
 | Mod Name | Version   | Link |
 |---------:|-----------|------|
-| Admin Mod | 1.0.0 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_AdminMod/bin/Si_AdminMod.dll) |
+| Admin Mod | 1.1.1 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_AdminMod/bin/Si_AdminMod.dll) |
 | Auto Teams Mode Select | 1.0.4 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_AutoTeamsSelect/bin/Si_AutoTeamsSelect.dll) |
 | Mapcycle | 1.0.1 | Not Ready - Game Bug(s) |
 | SiRAC (Anti-Cheat) | 0.7.6 | Restricted Access - By Request Only |
@@ -16,7 +16,7 @@ The Silica game [https://silicagame.com/news/welcome] was released in May 2023 w
 | Basic Team Balance | 1.0.7 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_BasicTeamBalance/bin/Si_BasicTeamBalance.dll) |
 | Basic Banlist | 1.0.1 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_BasicBanlist/bin/Si_BasicBanlist.dll) |
 | Commander Management | 1.0.2 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_CommManagement/bin/Si_CommManagement.dll) |
-| AFK Manager | 0.8.1 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_AFKManager/bin/Si_AFKManager.dll) |
+| AFK Manager | 1.1.1 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_AFKManager/bin/Si_AFKManager.dll) |
 | Logging | 0.8.8 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_Logging/bin/Si_Logging.dll) |
 | GamePriority | 2.0.1 | [Download](https://github.com/MintLily/GamePriority/releases/download/2.0.1/GamePriority.dll) |
 | Friendly Fire Limits | 1.1.4 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_FriendlyFireLimits/bin/Si_FriendlyFireLimits.dll) |
@@ -24,7 +24,7 @@ The Silica game [https://silicagame.com/news/welcome] was released in May 2023 w
 ## Extension Summary
 | Mod Name | Version   | Link |
 |---------:|-----------|------|
-| Admin Extension | 1.0.0 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_AdminExtension/bin/Si_AdminExtension.dll) |
+| Admin Extension | 1.1.0 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_AdminExtension/bin/Si_AdminExtension.dll) |
 
 ## Silica Listen Server Requirements
 - 50Mbps upload bandwidth available [https://speedtest.org] (Individual clients can use about ~50kbps download bandwidth and up to ~1,500kbps upload bandwidth)
