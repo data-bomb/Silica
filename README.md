@@ -19,6 +19,7 @@ The Silica game [https://silicagame.com/news/welcome] was released in May 2023 w
 | AFK Manager | 1.1.1 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_AFKManager/bin/Si_AFKManager.dll) |
 | Logging | 0.8.8 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_Logging/bin/Si_Logging.dll) |
 | GamePriority | 2.0.1 | [Download](https://github.com/MintLily/GamePriority/releases/download/2.0.1/GamePriority.dll) |
+| End Round | 1.0.0 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_EndRound/bin/Si_EndRound.dll) |
 | Friendly Fire Limits | 1.1.4 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_FriendlyFireLimits/bin/Si_FriendlyFireLimits.dll) |
 
 ## Extension Summary
@@ -116,6 +117,11 @@ Can automatically change the priority of the game executable upon launch
 - Install: Copy the `GamePriority.dll` into your `Silica\Mods` directory
 - Generates a config entry in your `Silica\UserData\MelonPreferences.cfg` file for `SetGamePriorityToHigh`
 - Valid configuration options are `true` or `false`
+- Testing Status: Confirmed working
+
+### End Round (Si_EndRound)
+Allows `!endround` and `!endgame` admin commands to force the current round to end.
+- Install: Copy the `Si_EndRound.dll` into your `Silica\Mods` directory
 - Testing Status: Confirmed working
 
 ### Friendly Fire Limits (Si_FriendlyFireLimits)
