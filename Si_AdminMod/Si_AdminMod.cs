@@ -22,20 +22,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 using HarmonyLib;
-using Il2Cpp;
 using MelonLoader;
 using SilicaAdminMod;
 using Newtonsoft.Json;
-using UnityEngine;
 using AdminExtension;
 using MelonLoader.Utils;
-using Il2CppSilica.UI;
-using MelonLoader.TinyJSON;
-using static SilicaAdminMod.SiAdminMod;
-using MelonLoader.ICSharpCode.SharpZipLib.Tar;
-using System.Text.RegularExpressions;
 
-[assembly: MelonInfo(typeof(SiAdminMod), "Admin Mod", "1.0.0", "databomb")]
+[assembly: MelonInfo(typeof(SiAdminMod), "Admin Mod", "1.1.0", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace SilicaAdminMod
@@ -44,7 +37,24 @@ namespace SilicaAdminMod
     {
         static String adminFile = System.IO.Path.Combine(MelonEnvironment.UserDataDirectory, "admins.json");
 
-
+        public class AdminCommand
+        {
+            public String AdminCommandText
+            {
+                get;
+                set;
+            }
+            public HelperMethods.CommandCallback AdminCallback
+            {
+                get;
+                set;
+            }
+            public Power AdminPower
+            {
+                get;
+                set;
+            }
+        }
 
         public class Admin
         {
@@ -81,12 +91,15 @@ namespace SilicaAdminMod
             }
         }
 
-        static List<Admin>? AdminList;
+        static List<Admin> AdminList;
+        static List<AdminCommand> AdminCommands;
 
         public override void OnInitializeMelon()
         {
             try
             {
+                AdminCommands = new List<AdminCommand>();
+
                 if (System.IO.File.Exists(adminFile))
                 {
                     // Open the stream and read it back.
@@ -131,6 +144,15 @@ namespace SilicaAdminMod
             System.IO.File.WriteAllText(adminFile, JsonRaw);
         }
 
+        public static void RegisterAdminCommand(String adminCommand, HelperMethods.CommandCallback adminCallback, Power adminPower)
+        {
+            AdminCommand thisCommand = new AdminCommand();
+            thisCommand.AdminCommandText = adminCommand;
+            thisCommand.AdminCallback = adminCallback;
+            thisCommand.AdminPower = adminPower;
+            AdminCommands.Add(thisCommand);
+        }
+
         public static bool AddAdmin(Il2Cpp.Player player, String powerText, byte level)
         {
             Admin admin = new Admin();
@@ -165,6 +187,36 @@ namespace SilicaAdminMod
             return false;
         }
 
+        [HarmonyPatch(typeof(Il2CppSilica.UI.Chat), nameof(Il2CppSilica.UI.Chat.MessageReceived))]
+        private static class ApplyReceiveChatKickCommandPatch
+        {
+            public static void Postfix(Il2CppSilica.UI.Chat __instance, Il2Cpp.Player __0, string __1, bool __2)
+            {
+                try
+                {
+                    // each faction has its own chat manager but by looking at alien and only global messages this catches commands only once
+                    if (__instance.ToString().Contains("alien") && __2 == false)
+                    {
+                        // check if the first portion matches an admin command
+                        String thisCommandText = __1.Split(' ')[0];
+                        AdminCommand? checkCommand = AdminCommands.Find(i => i.AdminCommandText == thisCommandText);
+                        if (checkCommand != null)
+                        {
+                            // run the callback
+                            checkCommand.AdminCallback(__0, __1);
+                        }
+                    }
+                }
+                catch (Exception error)
+                {
+                    HelperMethods.PrintError(error, "Failed to run MessageReceived");
+                }
+
+                return;
+            }
+        }
+
+        // SendChatMessage will only fire for the local user, the host
         [HarmonyPatch(typeof(Il2Cpp.Player), nameof(Il2Cpp.Player.SendChatMessage))]
         private static class Patch_SendChatMessage_AdminCommands
         {
