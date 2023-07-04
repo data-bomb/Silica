@@ -28,7 +28,7 @@ using Newtonsoft.Json;
 using AdminExtension;
 using MelonLoader.Utils;
 
-[assembly: MelonInfo(typeof(SiAdminMod), "Admin Mod", "1.1.1", "databomb")]
+[assembly: MelonInfo(typeof(SiAdminMod), "Admin Mod", "1.1.2", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace SilicaAdminMod
@@ -188,7 +188,7 @@ namespace SilicaAdminMod
         }
 
         [HarmonyPatch(typeof(Il2CppSilica.UI.Chat), nameof(Il2CppSilica.UI.Chat.MessageReceived))]
-        private static class ApplyReceiveChatKickCommandPatch
+        private static class Patch_MessageReceived_AdminCommands
         {
             public static void Postfix(Il2CppSilica.UI.Chat __instance, Il2Cpp.Player __0, string __1, bool __2)
             {
@@ -203,7 +203,9 @@ namespace SilicaAdminMod
                         if (checkCommand != null)
                         {
                             // do they have the matching power?
-                            if (!__0.CanAdminExecute(checkCommand.AdminPower))
+                            Power callerPowers = __0.GetAdminPowers();
+
+                            if (!PowerInPowers(checkCommand.AdminPower, callerPowers))
                             {
                                 HelperMethods.ReplyToCommand_Player(__0, "cannot use " + thisCommandText);
                                 return;
