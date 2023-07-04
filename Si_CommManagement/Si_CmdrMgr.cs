@@ -25,19 +25,16 @@
 
 using HarmonyLib;
 using Il2Cpp;
-using Il2CppSilica.UI;
-using Il2CppSystem.IO;
 using MelonLoader;
 using MelonLoader.Utils;
 using Newtonsoft.Json;
 using Si_CommanderManagement;
-using System.Linq;
-using System.Xml;
 using UnityEngine;
+using AdminExtension;
+using Il2CppSteamworks;
 using static MelonLoader.MelonLogger;
-using static Si_CommanderManagement.CommanderManager;
 
-[assembly: MelonInfo(typeof(CommanderManager), "[Si] Commander Management", "1.0.2", "databomb")]
+[assembly: MelonInfo(typeof(CommanderManager), "[Si] Commander Management", "1.1.0", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_CommanderManagement
@@ -74,21 +71,10 @@ namespace Si_CommanderManagement
             }
         }
 
-        public static void PrintError(Exception exception, string? message = null)
-        {
-            if (message != null)
-            {
-                MelonLogger.Msg(message);
-            }
-            string error = exception.Message;
-            error += "\n" + exception.TargetSite;
-            error += "\n" + exception.StackTrace;
-            MelonLogger.Error(error);
-        }
-
         static List<Player>[] commanderApplicants;
         static List<Player> previousCommanders;
         static bool bOnGameInitFired;
+        static bool AdminModAvailable = false;
 
         static List<BanEntry> MasterBanList;
         static String banListFile = System.IO.Path.Combine(MelonEnvironment.UserDataDirectory, "commander_bans.json");
@@ -138,7 +124,26 @@ namespace Si_CommanderManagement
             }
             catch (Exception error)
             {
-                CommanderManager.PrintError(error, "Failed to load Silica commander balist");
+                HelperMethods.PrintError(error, "Failed to load Silica commander balist (OnInitializeMelon)");
+            }
+        }
+
+        public override void OnLateInitializeMelon()
+        {
+            AdminModAvailable = RegisteredMelons.Any(m => m.Info.Name == "Admin Mod");
+
+            if (AdminModAvailable)
+            {
+                HelperMethods.CommandCallback commanderBanCallback = Command_CommanderBan;
+                HelperMethods.RegisterAdminCommand("!cmdrban", commanderBanCallback, Power.Commander);
+                HelperMethods.RegisterAdminCommand("!commanderban", commanderBanCallback, Power.Commander);
+
+                HelperMethods.CommandCallback commanderDemoteCallback = Command_CommanderDemote;
+                HelperMethods.RegisterAdminCommand("!demote", commanderDemoteCallback, Power.Commander);
+            }
+            else
+            {
+                MelonLogger.Warning("Dependency missing: Admin Mod");
             }
         }
 
@@ -155,32 +160,6 @@ namespace Si_CommanderManagement
             theRoleStream.WriteByte((byte)FormerCommander.PlayerChannel);
             theRoleStream.WriteByte((byte)Il2Cpp.MP_Strategy.ETeamRole.INFANTRY);
             Il2Cpp.GameMode.CurrentGameMode.SendRPCPacket(theRoleStream);
-        }
-
-        public static Il2Cpp.Player? FindTargetPlayer(String sTarget)
-        {
-            Il2Cpp.Player? targetPlayer = null;
-            int iTargetCount = 0;
-
-            // loop through all players
-            Il2CppSystem.Collections.Generic.List<Il2Cpp.Player> players = Il2Cpp.Player.Players;
-            int iPlayerCount = players.Count;
-
-            for (int i = 0; i < iPlayerCount; i++)
-            {
-                if (players[i].PlayerName.Contains(sTarget))
-                {
-                    iTargetCount++;
-                    targetPlayer = players[i];
-                }
-            }
-
-            if (iTargetCount != 1)
-            {
-                targetPlayer = null;
-            }
-
-            return targetPlayer;
         }
 
         // may need to re-think this approach on preventing commander promotion
@@ -208,7 +187,7 @@ namespace Si_CommanderManagement
                 }
                 catch (Exception error)
                 {
-                    CommanderManager.PrintError(error, "Failed to run GetStrategyCommanderTeamSetup");
+                    HelperMethods.PrintError(error, "Failed to run MP_Strategy::GetStrategyCommanderTeamSetup");
                 }
 
                 return true;
@@ -260,7 +239,7 @@ namespace Si_CommanderManagement
                 }
                 catch (Exception error)
                 {
-                    CommanderManager.PrintError(error, "Failed to run OnGameInit");
+                    HelperMethods.PrintError(error, "Failed to run MusicJukeboxHandler::OnGameInit");
                 }
             }
         }
@@ -316,7 +295,7 @@ namespace Si_CommanderManagement
                 }
                 catch (Exception error)
                 {
-                    CommanderManager.PrintError(error, "Failed to run OnGameStarted");
+                    HelperMethods.PrintError(error, "Failed to run MusicJukeboxHandler::OnGameStarted");
                 }
             }
         }
@@ -371,7 +350,7 @@ namespace Si_CommanderManagement
                 }
                 catch (Exception error)
                 {
-                    CommanderManager.PrintError(error, "Failed to run SetCommander");
+                    HelperMethods.PrintError(error, "Failed to run MP_Strategy::SetCommander");
                 }
 
                 return true;
@@ -455,284 +434,131 @@ namespace Si_CommanderManagement
             GameMode.CurrentGameMode.SpawnUnitForPlayer(DemotedCommander, TargetTeam);
         }
 
-        [HarmonyPatch(typeof(Il2Cpp.Player), nameof(Il2Cpp.Player.SendChatMessage))]
-        private static class ApplySendChatDemoteCommandPatch
+        public void Command_CommanderDemote(Il2Cpp.Player callerPlayer, String args)
         {
-            public static bool Prefix(Il2Cpp.Player __instance, bool __result, string __0, bool __1)
+            // count number of arguments
+            int argumentCount = args.Split(' ').Count() - 1;
+            if (argumentCount > 1)
             {
-                try
+                HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Too many arguments");
+                return;
+            }
+
+            int targetTeamIndex = -1;
+            Il2Cpp.MP_Strategy strategyInstance = GameObject.FindObjectOfType<Il2Cpp.MP_Strategy>();
+
+            // if no team was specified then try and use current team of the admin
+            if (argumentCount == 0)
+            {
+                Il2Cpp.Team? callerTeam = callerPlayer.Team;
+                if (callerTeam != null)
                 {
-                    bool bIsDemoteCommand = String.Equals(__0.Split(' ')[0], "!demote", StringComparison.OrdinalIgnoreCase);
-                    if (bIsDemoteCommand)
-                    {
-                        __result = false;
-
-                        // check for authorized. for now, only server operator is considered authorized
-                        Il2Cpp.Player serverPlayer = Il2Cpp.NetworkGameServer.GetServerPlayer();
-
-                        if (__instance != serverPlayer)
-                        {
-                            Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, ChatPrefix + __instance.PlayerName + " is not authorized to use !demote", false);
-                            return false;
-                        }
-
-                        // count number of arguments
-                        int iArguments = __0.Split(' ').Count();
-                        if (iArguments > 2)
-                        {
-                            Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, ChatPrefix + __instance.PlayerName + ": Too many arguments specified", false);
-                            return false;
-                        }
-
-                        int iTargetTeamIndex = -1;
-                        Il2Cpp.MP_Strategy strategyInstance = GameObject.FindObjectOfType<Il2Cpp.MP_Strategy>();
-
-                        // if no team was specified then use current team
-                        if (iArguments == 1)
-                        {
-                            iTargetTeamIndex = serverPlayer.Team.Index;
-                        }
-                        else
-                        {
-                            // second argument targets team where current commander needs to get demoted
-                            String sTarget = __0.Split(' ')[1];
-
-                            if (String.Equals(sTarget, "Human", StringComparison.OrdinalIgnoreCase))
-                            {
-                                // check gamemode - if Humans vs Aliens or the other ones
-                                if (strategyInstance.TeamsVersus == Il2Cpp.MP_Strategy.ETeamsVersus.HUMANS_VS_ALIENS)
-                                {
-                                    // if it's human vs aliens then human translates to the Human (Sol) team index
-                                    iTargetTeamIndex = 2;
-                                }
-                                // otherwise, it's ambigious and we can't make a decision
-                            }
-                            else if (String.Equals(sTarget, "Alien", StringComparison.OrdinalIgnoreCase))
-                            {
-                                iTargetTeamIndex = 0;
-                            }
-                            else if (sTarget.Contains("Cent", StringComparison.OrdinalIgnoreCase))
-                            {
-                                iTargetTeamIndex = 1;
-                            }
-                            else if (String.Equals(sTarget, "Sol", StringComparison.OrdinalIgnoreCase))
-                            {
-                                iTargetTeamIndex = 2;
-                            }
-
-                            // check if we still don't have a valid target
-                            if (iTargetTeamIndex < 0)
-                            {
-                                // notify player on invalid usage
-                                Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, ChatPrefix + __instance.PlayerName + ": Valid targets are Alien, Centauri, or Sol", false);
-                                return false;
-                            }
-                        }
-
-                        Il2Cpp.Team TargetTeam = Il2Cpp.Team.GetTeamByIndex(iTargetTeamIndex);
-                        if (TargetTeam != null)
-                        {
-                            // check if they have a commander to demote
-                            bool bHasCommander = (strategyInstance.GetCommanderForTeam(TargetTeam) != null);
-
-                            if (bHasCommander)
-                            {
-                                DemoteTeamsCommander(strategyInstance, TargetTeam);
-                                Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, ChatPrefix + TargetTeam.TeamName + "'s commander was demoted", false);
-                                return false;
-                            }
-                            else
-                            {
-                                Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, ChatPrefix + __instance.PlayerName + ": No commander found on specified team", false);
-                            }
-                        }
-                        else
-                        {
-                            Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, ChatPrefix + __instance.PlayerName + ": No valid team found", false);
-                        }
-
-                        return false;
-                    }
-
-                    bool bIsCommanderBanCommand = (String.Equals(__0.Split(' ')[0], "!commanderban", StringComparison.OrdinalIgnoreCase) ||
-                                String.Equals(__0.Split(' ')[0], "!cmdrban", StringComparison.OrdinalIgnoreCase));
-                    if (bIsCommanderBanCommand)
-                    {
-                        // check for authorized. for now, only server operator is considered authorized
-                        Il2Cpp.Player serverPlayer = Il2Cpp.NetworkGameServer.GetServerPlayer();
-
-                        if (__instance != serverPlayer)
-                        {
-                            Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, ChatPrefix + __instance.PlayerName + " is not authorized to use !cmdrban", false);
-                            return false;
-                        }
-
-                        // count number of arguments
-                        int iArguments = __0.Split(' ').Count();
-                        if (iArguments > 2)
-                        {
-                            Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, ChatPrefix + __instance.PlayerName + ": Too many arguments specified", false);
-                            return false;
-                        }
-
-                        String sTarget = __0.Split(' ')[1];
-                        Il2Cpp.Player? PlayerToCmdrBan = FindTargetPlayer(sTarget);
-
-                        if (PlayerToCmdrBan == null)
-                        {
-                            Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, ChatPrefix + __instance.PlayerName + ": Ambiguous or invalid target", false);
-                            return false;
-                        }
-                        
-                        AddCommanderBan(PlayerToCmdrBan);
-                        return false;
-                    }
+                    targetTeamIndex = callerPlayer.Team.Index;
                 }
-                catch (Exception error)
+                else
                 {
-                    CommanderManager.PrintError(error, "Failed to run SendChatMessage");
+                    HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Too few arguments");
+                    return;
+                }
+            }
+            // argument is present and targets team where current commander needs to get demoted
+            else
+            {
+                String targetTeamText = args.Split(' ')[1];
+
+                if (String.Equals(targetTeamText, "Human", StringComparison.OrdinalIgnoreCase))
+                {
+                    // check gamemode - if Humans vs Aliens or the other ones
+                    if (strategyInstance.TeamsVersus == Il2Cpp.MP_Strategy.ETeamsVersus.HUMANS_VS_ALIENS)
+                    {
+                        // if it's human vs aliens then human translates to the Human (Sol) team index
+                        targetTeamIndex = 2;
+                    }
+                    // otherwise, it's ambigious and we can't make a decision
+                }
+                else if (String.Equals(targetTeamText, "Alien", StringComparison.OrdinalIgnoreCase))
+                {
+                    targetTeamIndex = 0;
+                }
+                else if (targetTeamText.Contains("Cent", StringComparison.OrdinalIgnoreCase))
+                {
+                    targetTeamIndex = 1;
+                }
+                else if (String.Equals(targetTeamText, "Sol", StringComparison.OrdinalIgnoreCase))
+                {
+                    targetTeamIndex = 2;
                 }
 
-                return true;
+                // check if we still don't have a valid target
+                if (targetTeamIndex < 0)
+                {
+                    HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Valid targets are Alien, Centauri, or Sol");
+                    return;
+                }
+            }
+
+            Il2Cpp.Team targetTeam = Il2Cpp.Team.GetTeamByIndex(targetTeamIndex);
+            if (targetTeam != null)
+            {
+                // check if they have a commander to demote
+                Il2Cpp.Player? targetPlayer = strategyInstance.GetCommanderForTeam(targetTeam);
+
+                // team has a commander if targetPlayer isn't null
+                if (targetPlayer != null)
+                {
+                    if (callerPlayer.CanAdminTarget(targetPlayer))
+                    {
+                        DemoteTeamsCommander(strategyInstance, targetTeam);
+                        HelperMethods.AlertAdminActivity(callerPlayer, targetPlayer, "demoted");
+                    }
+                    else
+                    {
+                        HelperMethods.ReplyToCommand_Player(targetPlayer, "is immune due to level");
+                    }
+                }
+                else
+                {
+                    HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": No commander found on specified team");
+                }
+            }
+            else
+            {
+                HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": No valid team found");
             }
         }
 
-        [HarmonyPatch(typeof(Il2CppSilica.UI.Chat), nameof(Il2CppSilica.UI.Chat.MessageReceived))]
-        private static class ApplyReceiveChatDemoteCommandPatch
+        public void Command_CommanderBan(Il2Cpp.Player callerPlayer, String args)
         {
-            public static void Postfix(Il2CppSilica.UI.Chat __instance, Il2Cpp.Player __0, string __1, bool __2)
+            // count number of arguments
+            int argumentCount = args.Split(' ').Count() - 1;
+            if (argumentCount > 1)
             {
-                try
-                {
-                    bool bIsDemoteCommand = String.Equals(__1.Split(' ')[0], "!demote", StringComparison.OrdinalIgnoreCase);
-                    if (bIsDemoteCommand)
-                    {
-                        // check for authorized. for now, only server operator is considered authorized
-                        Il2Cpp.Player serverPlayer = Il2Cpp.NetworkGameServer.GetServerPlayer();
+                HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Too many arguments");
+                return;
+            }
+            else if (argumentCount < 1)
+            {
+                HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Too few arguments");
+                return;
+            }
 
-                        if (__0 != serverPlayer)
-                        {
-                            Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, ChatPrefix + __0.PlayerName + " is not authorized to use !demote", false);
-                            return;
-                        }
+            String sTarget = args.Split(' ')[1];
+            Il2Cpp.Player? PlayerToCmdrBan = HelperMethods.FindTargetPlayer(sTarget);
 
-                        // count number of arguments
-                        int iArguments = __1.Split(' ').Count();
-                        if (iArguments > 2)
-                        {
-                            Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, ChatPrefix + __0.PlayerName + ": Too many arguments specified", false);
-                            return;
-                        }
+            if (PlayerToCmdrBan == null)
+            {
+                HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Ambiguous or invalid target");
+                return;
+            }
 
-                        int iTargetTeamIndex = -1;
-                        Il2Cpp.MP_Strategy strategyInstance = GameObject.FindObjectOfType<Il2Cpp.MP_Strategy>();
-
-                        // if no team was specified then use current team
-                        if (iArguments == 1)
-                        {
-                            iTargetTeamIndex = serverPlayer.Team.Index;
-                        }
-                        else
-                        {
-                            // second argument targets team where current commander needs to get demoted
-                            String sTarget = __1.Split(' ')[1];
-
-                            if (String.Equals(sTarget, "Human", StringComparison.OrdinalIgnoreCase))
-                            {
-                                // check gamemode - if Humans vs Aliens or the other ones
-                                if (strategyInstance.TeamsVersus == Il2Cpp.MP_Strategy.ETeamsVersus.HUMANS_VS_ALIENS)
-                                {
-                                    // if it's human vs aliens then human translates to the Human (Sol) team index
-                                    iTargetTeamIndex = 2;
-                                }
-                                // otherwise, it's ambigious and we can't make a decision
-                            }
-                            else if (String.Equals(sTarget, "Alien", StringComparison.OrdinalIgnoreCase))
-                            {
-                                iTargetTeamIndex = 0;
-                            }
-                            else if (sTarget.Contains("Cent", StringComparison.OrdinalIgnoreCase))
-                            {
-                                iTargetTeamIndex = 1;
-                            }
-                            else if (String.Equals(sTarget, "Sol", StringComparison.OrdinalIgnoreCase))
-                            {
-                                iTargetTeamIndex = 2;
-                            }
-
-                            // check if we still don't have a valid target
-                            if (iTargetTeamIndex < 0)
-                            {
-                                // notify player on invalid usage
-                                Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, ChatPrefix + __0.PlayerName + ": Valid targets are Alien, Centauri, or Sol", false);
-                                return;
-                            }
-                        }
-
-                        Il2Cpp.Team TargetTeam = Il2Cpp.Team.GetTeamByIndex(iTargetTeamIndex);
-                        if (TargetTeam != null)
-                        {
-                            // check if they have a commander to demote
-                            bool bHasCommander = (strategyInstance.GetCommanderForTeam(TargetTeam) != null);
-
-                            if (bHasCommander)
-                            {
-                                // demote
-                                DemoteTeamsCommander(strategyInstance, TargetTeam);
-                                Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, ChatPrefix + TargetTeam.TeamName + "'s commander was demoted", false);
-                                return;
-                            }
-                            else
-                            {
-                                Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, ChatPrefix + __0.PlayerName + ": No commander found on specified team", false);
-                                return;
-                            }
-                        }
-                        else
-                        {
-                            Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, ChatPrefix + __0.PlayerName + ": No valid team found", false);
-                            return;
-                        } 
-                    }
-
-                    bool bIsCommanderBanCommand = (String.Equals(__1.Split(' ')[0], "!commanderban", StringComparison.OrdinalIgnoreCase) || 
-                                                    String.Equals(__1.Split(' ')[0], "!cmdrban", StringComparison.OrdinalIgnoreCase));
-                    if (bIsCommanderBanCommand)
-                    {
-                        // check for authorized. for now, only server operator is considered authorized
-                        Il2Cpp.Player serverPlayer = Il2Cpp.NetworkGameServer.GetServerPlayer();
-
-                        if (__0 != serverPlayer)
-                        {
-                            Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, ChatPrefix + __0.PlayerName + " is not authorized to use !cmdrban", false);
-                            return;
-                        }
-
-                        // count number of arguments
-                        int iArguments = __1.Split(' ').Count();
-                        if (iArguments > 2)
-                        {
-                            Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, ChatPrefix + __0.PlayerName + ": Too many arguments specified", false);
-                            return;
-                        }
-
-                        String sTarget = __1.Split(' ')[1];
-                        Il2Cpp.Player? PlayerToCmdrBan = FindTargetPlayer(sTarget);
-
-                        if (PlayerToCmdrBan == null)
-                        {
-                            Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, ChatPrefix + __0.PlayerName + ": Ambiguous or invalid target", false);
-                            return;
-                        }
-
-                        AddCommanderBan(PlayerToCmdrBan);
-                        return;
-                    }
-                }
-                catch (Exception error)
-                {
-                    CommanderManager.PrintError(error, "Failed to run MessageReceived");
-                }
+            if (callerPlayer.CanAdminTarget(PlayerToCmdrBan))
+            {
+                AddCommanderBan(PlayerToCmdrBan);
+                HelperMethods.AlertAdminActivity(callerPlayer, PlayerToCmdrBan, "commander banned");
+            }
+            else
+            {
+                HelperMethods.ReplyToCommand_Player(PlayerToCmdrBan, "is immune due to level");
             }
         }
     }
