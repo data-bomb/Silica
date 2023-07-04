@@ -27,16 +27,16 @@ The Silica game [https://silicagame.com/news/welcome] was released in May 2023 w
 | Admin Extension | 1.1.0 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_AdminExtension/bin/Si_AdminExtension.dll) |
 
 ## Silica Listen Server Requirements
-- 50Mbps upload bandwidth available [https://speedtest.org] (Individual clients can use about ~50kbps download bandwidth and up to ~1,500kbps upload bandwidth)
+- 50Mbps upload bandwidth available (Individual clients can use about ~50kbps download bandwidth and up to ~1,500kbps upload bandwidth)
 - 32GB+ RAM
 - Decent CPU
 - Top-of-the-line GPU if you want to host and play
 
 ## Server Setup Instructions
 1. Install Silica
-2. Install .NET 6.0 Runtime x64 [https://dotnet.microsoft.com/en-us/download/dotnet/6.0]
-3. Install MelonLoader using the Manual Installation method for 64-bit games [https://melonwiki.xyz/#/README?id=manual-installation]
-4. Place the Admin Extension in your `Silica\MelonLoader\net6` directory
+2. Install [.NET 6.0 Runtime x64](https://dotnet.microsoft.com/en-us/download/dotnet/6.0)
+3. Install [MelonLoader using the Manual Installation](https://melonwiki.xyz/#/README?id=manual-installation) method for 64-bit games
+4. Place the Admin Extension (`Si_AdminExtension.dll`) in your `Silica\MelonLoader\net6` directory
 5. Install any desired mods in your `Silica\Mods` directory
 6. Kind suggestion to ensure that the server name reflects that there are mods so players can choose between mods and a vanilla game experience
 
