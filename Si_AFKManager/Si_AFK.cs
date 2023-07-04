@@ -23,13 +23,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using HarmonyLib;
 using Il2Cpp;
-using Il2CppSystem.Runtime.Remoting.Channels;
 using MelonLoader;
 using Si_AFKManager;
 using AdminExtension;
-using Il2CppBehaviorDesigner.Runtime.Formations.Tasks;
 
-[assembly: MelonInfo(typeof(AwayFromKeyboard), "AFK Manager", "1.0.0", "databomb")]
+[assembly: MelonInfo(typeof(AwayFromKeyboard), "AFK Manager", "1.1.0", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_AFKManager
@@ -41,26 +39,66 @@ namespace Si_AFKManager
         public override void OnLateInitializeMelon()
         {
             AdminModAvailable = RegisteredMelons.Any(m => m.Info.Name == "Admin Mod");
+
+            if (AdminModAvailable)
+            {
+                HelperMethods.CommandCallback kickCallback = Command_Kick;
+                HelperMethods.RegisterAdminCommand("!kick", kickCallback, Power.Kick);
+                HelperMethods.RegisterAdminCommand("!afk", kickCallback, Power.Kick);
+            }
+            else
+            {
+                MelonLogger.Warning("Dependency missing: Admin Mod");
+            }
         }
 
-        public static bool KickPlayer(Il2Cpp.Player playerToKick)
+        public void Command_Kick(Il2Cpp.Player callerPlayer, String args)
         {
-            Il2Cpp.Player serverPlayer = Il2Cpp.NetworkGameServer.GetServerPlayer();
-
-            if (playerToKick == serverPlayer)
+            // check for authorized
+            if (!callerPlayer.CanAdminExecute(Power.Kick))
             {
-                return false;
+                HelperMethods.ReplyToCommand_Player(callerPlayer, "cannot use " + args.Split(' ')[0]);
+                return;
             }
 
-            Il2CppSteamworks.CSteamID serverSteam = NetworkGameServer.GetServerID();
-            int playerChannel = playerToKick.PlayerChannel;
-            Il2CppSteamworks.CSteamID playerSteam = playerToKick.PlayerID;
+            // validate argument count
+            int argumentCount = args.Split(' ').Count() - 1;
+            if (argumentCount > 1)
+            {
+                HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Too many arguments");
+                return;
+            }
+            else if (argumentCount < 1)
+            {
+                HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Too few arguments");
+                return;
+            }
 
-            Il2Cpp.NetworkLayer.SendPlayerConnectResponse(ENetworkPlayerConnectType.Kicked, playerSteam, playerChannel, serverSteam);
-            Il2Cpp.Player.RemovePlayer(playerSteam, playerChannel);
-            NetworkLayer.SendPlayerConnect(ENetworkPlayerConnectType.Disconnected, playerSteam, playerChannel);
+            // validate argument contents
+            String sTarget = args.Split(' ')[1];
+            Il2Cpp.Player? playerToKick = HelperMethods.FindTargetPlayer(sTarget);
 
-            return true;
+            if (playerToKick == null)
+            {
+                HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Ambiguous or invalid target");
+                return;
+            }
+
+            if (callerPlayer.CanAdminTarget(playerToKick))
+            {
+                if (HelperMethods.KickPlayer(playerToKick))
+                {
+                    HelperMethods.AlertAdminActivity(callerPlayer, playerToKick, "kicked");
+                }
+                else
+                {
+                    HelperMethods.ReplyToCommand_Player(playerToKick, "is the host and cannot be targeted");
+                }
+            }
+            else
+            {
+                HelperMethods.ReplyToCommand_Player(playerToKick, "is immune due to level");
+            }
         }
 
         [HarmonyPatch(typeof(Il2Cpp.MusicJukeboxHandler), nameof(Il2Cpp.MusicJukeboxHandler.OnGameStarted))]
@@ -76,95 +114,6 @@ namespace Si_AFKManager
                 {
                     HelperMethods.PrintError(error, "Failed to run OnGameStarted");
                 }
-            }
-        }
-
-        [HarmonyPatch(typeof(Il2CppSilica.UI.Chat), nameof(Il2CppSilica.UI.Chat.MessageReceived))]
-        private static class ApplyReceiveChatKickCommandPatch
-        {
-            private static void HandleChat(object sender, System.EventArgs e)
-            {
-                // Add your form load event handling code here.
-            }
-
-            public static void Postfix(Il2CppSilica.UI.Chat __instance, Il2Cpp.Player __0, string __1, bool __2)
-            {
-                try
-                {
-                    // each faction has its own chat manager but by looking at alien and only global messages this catches commands only once
-                    if (__instance.ToString().Contains("alien") && __2 == false)
-                    {
-                        bool bIsKickCommand = (String.Equals(__1.Split(' ')[0], "!kick", StringComparison.OrdinalIgnoreCase) ||
-                                                    String.Equals(__1.Split(' ')[0], "!afk", StringComparison.OrdinalIgnoreCase));
-                        if (bIsKickCommand)
-                        {
-                            // check for authorized
-                            if (!AdminModAvailable)
-                            {
-                                // default to only server operator is considered authorized
-                                Il2Cpp.Player serverPlayer = Il2Cpp.NetworkGameServer.GetServerPlayer();
-                                if (serverPlayer != __0)
-                                {
-                                    HelperMethods.ReplyToCommand_Player(__0, "cannot use " + __1.Split(' ')[0]);
-                                    return;
-                                }
-                            }
-                            else
-                            {
-                                if (!__0.CanAdminExecute(Power.Kick))
-                                {
-                                    HelperMethods.ReplyToCommand_Player(__0, "cannot use " + __1.Split(' ')[0]);
-                                    return;
-                                }
-                            }
-
-                            // validate argument count
-                            int argumentCount = __1.Split(' ').Count() - 1;
-                            if (argumentCount > 1)
-                            {
-                                HelperMethods.ReplyToCommand(__1.Split(' ')[0] + ": Too many arguments");
-                                return;
-                            }
-                            else if (argumentCount < 1)
-                            {
-                                HelperMethods.ReplyToCommand(__1.Split(' ')[0] + ": Too few arguments");
-                                return;
-                            }
-
-                            // validate argument contents
-                            String sTarget = __1.Split(' ')[1];
-                            Il2Cpp.Player? playerToKick = HelperMethods.FindTargetPlayer(sTarget);
-
-                            if (playerToKick == null)
-                            {
-                                HelperMethods.ReplyToCommand(__1.Split(' ')[0] + ": Ambiguous or invalid target");
-                                return;
-                            }
-
-                            if (__0.CanAdminTarget(playerToKick))
-                            {
-                                if (KickPlayer(playerToKick))
-                                {
-                                    HelperMethods.AlertAdminActivity(__0, playerToKick, "kicked");
-                                }
-                                else
-                                {
-                                    HelperMethods.ReplyToCommand_Player(playerToKick, "is the host and cannot be targeted");
-                                }
-                            }
-                            else
-                            {
-                                HelperMethods.ReplyToCommand_Player(playerToKick, "is immune due to level");
-                            }
-                        }
-                    }
-                }
-                catch (Exception error)
-                {
-                    HelperMethods.PrintError(error, "Failed to run MessageReceived");
-                }
-
-                return;
             }
         }
     }
