@@ -38,9 +38,7 @@ The Silica game [https://silicagame.com/news/welcome] was released in May 2023 w
 3. Install MelonLoader using the Manual Installation method for 64-bit games [https://melonwiki.xyz/#/README?id=manual-installation]
 4. Place the Admin Extension in your `Silica\MelonLoader\net6` directory
 5. Install any desired mods in your `Silica\Mods` directory
-6. Make sure that the server name reflects that there are mods so players can choose between mods and a vanilla game experience
-
-Note: The default location for `Silica.exe` will be in the `C:\Program Files (x86)\Steam\steamapps\common\Silica\` directory
+6. Kind suggestion to ensure that the server name reflects that there are mods so players can choose between mods and a vanilla game experience
 
 ## MelonLoader Mods for Silica Listen Server
 ### Admin Mod (Si_AdminMod)
