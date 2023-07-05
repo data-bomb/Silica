@@ -27,8 +27,9 @@ using Il2Cpp;
 using HarmonyLib;
 using Si_FriendlyFireLimits;
 using static MelonLoader.MelonLogger;
+using System.Diagnostics;
 
-[assembly: MelonInfo(typeof(FriendlyFireLimits), "Friendly Fire Limits", "1.1.4", "databomb")]
+[assembly: MelonInfo(typeof(FriendlyFireLimits), "Friendly Fire Limits", "1.1.5", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_FriendlyFireLimits
@@ -55,9 +56,12 @@ namespace Si_FriendlyFireLimits
         }
 
         static MelonPreferences_Category _modCategory;
-        static MelonPreferences_Entry<float> _UnitOnUnitDamageMultipler;
+        static MelonPreferences_Entry<float> _UnitOnUnitNonExplosionDamageMultipler;
+        static MelonPreferences_Entry<float> _UnitOnUnitExplosionDamageMultiplier;
         static MelonPreferences_Entry<float> _UnitOnStructureExplosionDamageMultiplier;
         static MelonPreferences_Entry<float> _UnitOnStructureNonExplosionDamageMultiplier;
+        static MelonPreferences_Entry<bool> _HarvesterPassthrough;
+
 
         private const string ModCategory = "Silica";
 
@@ -67,9 +71,13 @@ namespace Si_FriendlyFireLimits
             {
                 _modCategory = MelonPreferences.CreateCategory(ModCategory);
             }
-            if (_UnitOnUnitDamageMultipler == null)
+            if (_UnitOnUnitNonExplosionDamageMultipler == null)
             {
-                _UnitOnUnitDamageMultipler = _modCategory.CreateEntry<float>("FriendlyFire_UnitAttacked_DamageMultiplier", 0.05f);
+                _UnitOnUnitNonExplosionDamageMultipler = _modCategory.CreateEntry<float>("FriendlyFire_UnitAttacked_DamageMultiplier", 0.05f);
+            }
+            if (_UnitOnUnitExplosionDamageMultiplier == null)
+            {
+                _UnitOnUnitExplosionDamageMultiplier = _modCategory.CreateEntry<float>("FriendlyFire_UnitAttacked_DamageMultiplier_Exp", 0.8f);
             }
             if (_UnitOnStructureExplosionDamageMultiplier == null)
             {
@@ -78,6 +86,10 @@ namespace Si_FriendlyFireLimits
             if (_UnitOnStructureNonExplosionDamageMultiplier == null)
             {
                 _UnitOnStructureNonExplosionDamageMultiplier = _modCategory.CreateEntry<float>("FriendlyFire_StructureAttacked_DamageMultiplier_NonExp", 0.15f);
+            }
+            if (_HarvesterPassthrough == null)
+            {
+                _HarvesterPassthrough = _modCategory.CreateEntry<bool>("FriendlyFire_Passthrough_Harvester_Damage", true);
             }
         }
 
@@ -158,28 +170,38 @@ namespace Si_FriendlyFireLimits
                                 // block units attacking friendly units
                                 if (victimType == Il2Cpp.ObjectInfoType.Unit && attackerType == Il2Cpp.ObjectInfoType.Unit)
                                 {
-                                    // but don't block AoE and don't block if victim is a harvester
-                                    if (damagetype != Il2Cpp.EDamageType.Explosion && victimBase.ObjectInfo.UnitType != Il2Cpp.UnitType.Harvester)
+                                    // check if we should skip harvester damage
+                                    if (_HarvesterPassthrough.Value && victimBase.ObjectInfo.UnitType == Il2Cpp.UnitType.Harvester)
                                     {
-                                        // set damage to 0.0f
-                                        byte[] modifiedDamage = BitConverter.GetBytes(damage * _UnitOnUnitDamageMultipler.Value);
-                                        for (int i = 0; i < modifiedDamage.Length; i++)
-                                        {
-                                            __0[8 + i] = modifiedDamage[i];
-                                        }
-
                                         return;
                                     }
+
+                                    // AoE does more damage (by default)
+                                    byte[] modifiedDamage;
+                                    if (damagetype != Il2Cpp.EDamageType.Explosion)
+                                    {
+                                        modifiedDamage = BitConverter.GetBytes(damage * _UnitOnUnitExplosionDamageMultiplier.Value);
+                                    }
+                                    else
+                                    {
+                                        modifiedDamage = BitConverter.GetBytes(damage * _UnitOnUnitNonExplosionDamageMultipler.Value);
+                                    }
+
+                                    for (int i = 0; i < modifiedDamage.Length; i++)
+                                    {
+                                        __0[8 + i] = modifiedDamage[i];
+                                    }
+
+                                    return;
                                 }
 
                                 // reduce damage of units attacking friendly structures
                                 if (victimType == Il2Cpp.ObjectInfoType.Structure && attackerType == Il2Cpp.ObjectInfoType.Unit)
                                 {
-                                    // AoE goes through with more damage
+                                    // AoE goes through with more damage (by default)
                                     byte[] modifiedDamage;
                                     if (damagetype == Il2Cpp.EDamageType.Explosion)
                                     {
-                                        // set damage to 0.0f
                                         modifiedDamage = BitConverter.GetBytes(damage * _UnitOnStructureExplosionDamageMultiplier.Value);
                                     }
                                     else
@@ -198,7 +220,7 @@ namespace Si_FriendlyFireLimits
                 }
                 catch (Exception error)
                 {
-                    PrintError(error, "Failed to run GetGameByteStreamReader");
+                    PrintError(error, "Failed to run GameByteStreamReader::GetGameByteStreamReader");
                 }
             }
         }
@@ -232,7 +254,7 @@ namespace Si_FriendlyFireLimits
                             // but don't block AoE and don't block if victim is a harvester
                             if (__2 != Il2Cpp.EDamageType.Explosion && victimBase.ObjectInfo.UnitType != Il2Cpp.UnitType.Harvester)
                             {
-                                __result = __1 * _UnitOnUnitDamageMultipler.Value;
+                                __result = __1 * _UnitOnUnitNonExplosionDamageMultipler.Value;
                                 return false;
                             }
                         }
@@ -256,7 +278,7 @@ namespace Si_FriendlyFireLimits
                 }
                 catch (Exception error)
                 {
-                    PrintError(error, "Failed to run ApplyDamage");
+                    PrintError(error, "Failed to run DamageManager::ApplyDamage");
                 }
 
                 return true;
