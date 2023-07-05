@@ -32,7 +32,7 @@ using UnityEngine;
 using System.Xml;
 using System.Timers;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "0.8.8", "databomb")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "0.8.9", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_Logging
@@ -613,7 +613,8 @@ namespace Si_Logging
             {
                 try
                 {
-                    if (__instance != null && __0 != null)
+                    // each faction has its own chat manager but by looking at alien and only global messages this catches commands only once
+                    if (__instance != null && __0 != null && __instance.ToString().Contains("alien"))
                     {
                         int userID = Math.Abs(__0.GetInstanceID());
 
@@ -644,7 +645,7 @@ namespace Si_Logging
                 }
                 catch (Exception error)
                 {
-                    PrintError(error, "Failed to run MessageReceived");
+                    PrintError(error, "Failed to run Chat::MessageReceived");
                 }
             }
         }
