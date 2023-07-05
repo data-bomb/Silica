@@ -43,8 +43,7 @@
 5. Install any desired mods in your `Silica\Mods` directory
 6. Kind suggestion to ensure that the server name reflects that there are mods so players can choose between mods and a vanilla game experience
 
-### Mod Descriptions
-https://github.com/data-bomb/Silica_ListenServer/wiki/Mod-Descriptions
+### [Mod Descriptions](https://github.com/data-bomb/Silica_ListenServer/wiki/Mod-Descriptions)
 
 ### Credits
-Special thanks to Silentstorm, GrahamKracker, Auri, nighthalk and others in the MelonLoader community for being welcoming and supportive to an unusual use case of MelonLoader.
+Special thanks to Silentstorm, GrahamKracker, AuriRex, nighthalk and others in the MelonLoader community for being welcoming and supportive to an unusual use case of MelonLoader.
