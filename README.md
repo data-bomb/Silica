@@ -1,5 +1,8 @@
+style
+{
 p {
   text-align: center;
+}
 }
 
 # ![Silica Logo](https://silicagame.com/_next/static/media/silica_logo.37ea77ee.svg) <p>+</p>  <img src="https://raw.githubusercontent.com/LavaGang/MelonLoader.Installer/master/Resources/ML_Text.png" width="300" style="float:right" />
