@@ -1,6 +1,5 @@
 
-
-![Silica Logo](https://silicagame.com/_next/static/media/silica_logo.37ea77ee.svg) <img src="https://cdn.pixabay.com/photo/2012/04/10/23/39/sign-27080_1280.png" width="50" style="float:center" />  <img src="https://raw.githubusercontent.com/LavaGang/MelonLoader.Installer/master/Resources/ML_Text.png" width="300" style="float:right" />
+<img src="https://silicagame.com/_next/static/media/silica_logo.37ea77ee.svg" width="50" style="float:left" /> <img src="https://cdn.pixabay.com/photo/2012/04/10/23/39/sign-27080_1280.png" width="50" style="float:center" />  <img src="https://raw.githubusercontent.com/LavaGang/MelonLoader.Installer/master/Resources/ML_Text.png" width="300" style="float:right" />
 
 # Running a Silica Listen Server
 [Silica](https://silicagame.com/news/welcome) was released in May 2023 as an Early Access game with only Listen Server capability. Dedicated Server support is planned but finding a consistent and enjoyable experience on Listen Servers can be challenging. Some functionality is still missing from the base game that makes playing the game less enjoyable and prone to balance and abuse issues, and if you would like to host a Listen Server 24/7 then some additional automation is neccessary. The intention here is to go quick and provide functionality during the interim development period, so the quality of code is not a priority at the moment. Once dedicated servers are released then the approach to server-side modding may need to be re-visited.
