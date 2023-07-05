@@ -44,8 +44,11 @@
 2. Install [.NET 6.0 Runtime x64](https://dotnet.microsoft.com/en-us/download/dotnet/6.0)
 3. Install [MelonLoader using the Manual Installation](https://melonwiki.xyz/#/README?id=manual-installation) method for 64-bit games
 4. Place the Admin Extension (`Si_AdminExtension.dll`) in your `Silica\MelonLoader\net6` directory
-5. Install any desired mods in your `Silica\Mods` directory
-6. Kind suggestion to ensure that the server name reflects that there are mods so players can choose between mods and a vanilla game experience
+5. Place any desired mods in your `Silica\Mods` directory
+6. Launch the game and then exit the game to populate configuration parameters
+7. Review and modify the Silica configuration parameters in your `Silica\UserData\MelonPreferences.cfg` file
+
+Kind suggestion to ensure that the server name reflects that there are mods so players can choose between mods and a vanilla game experience
 
 ### [Mod Descriptions](https://github.com/data-bomb/Silica_ListenServer/wiki/Mod-Descriptions)
 
