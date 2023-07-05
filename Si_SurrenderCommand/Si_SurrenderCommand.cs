@@ -27,8 +27,9 @@ using MelonLoader;
 using Microsoft.VisualBasic;
 using Si_SurrenderCommand;
 using UnityEngine;
+using AdminExtension;
 
-[assembly: MelonInfo(typeof(SurrenderCommand), "[Si] Surrender Command", "1.1.7", "databomb", "https://github.com/data-bomb/Silica_ListenServer")]
+[assembly: MelonInfo(typeof(SurrenderCommand), "[Si] Surrender Command", "1.1.8", "databomb", "https://github.com/data-bomb/Silica_ListenServer")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_SurrenderCommand
@@ -36,38 +37,6 @@ namespace Si_SurrenderCommand
 
     public class SurrenderCommand : MelonMod
     {
-        public static void PrintError(Exception exception, string? message = null)
-        {
-            if (message != null)
-            {
-                MelonLogger.Msg(message);
-            }
-            string error = exception.Message;
-            error += "\n" + exception.TargetSite;
-            error += "\n" + exception.StackTrace;
-            MelonLogger.Error(error);
-        }
-
-        const string ChatPrefix = "<b><color=#DDE98C>[<color=#C4983F>Surrender<color=#DDE98C>]</b> ";
-
-        public static string GetTeamColor(int teamIndex)
-        {
-            switch (teamIndex)
-            {
-                // Alien
-                case 0:
-                    return "<color=#70FF70>";
-                // Centauri
-                case 1:
-                    return "<color=#FF7070>";
-                // Sol
-                case 2:
-                    return "<color=#7070FF>";
-                default:
-                    return "<color=#FFFFFF>";
-            }
-        }
-
         public static bool IsCommander(Il2Cpp.Player thePlayer)
         {
             if (thePlayer == null)
@@ -92,64 +61,6 @@ namespace Si_SurrenderCommand
             return false;
         }
 
-        [HarmonyPatch(typeof(Il2Cpp.Player), nameof(Il2Cpp.Player.SendChatMessage))]
-        private static class ApplyChatSendSurrenderPatch
-        {
-            public static bool Prefix(Il2Cpp.Player __instance, bool __result, string __0, bool __1)
-            {
-                try
-                {
-                    bool bIsSurrenderCommand = String.Equals(__0, "!surrender", StringComparison.OrdinalIgnoreCase);
-                    if (bIsSurrenderCommand)
-                    {
-                        String sCallingPlayer = __instance.PlayerName;
-                        Il2Cpp.Player serverPlayer = Il2Cpp.NetworkGameServer.GetServerPlayer();
-                        String sTeamColor = GetTeamColor(__instance.m_Team.Index);
-
-                        // check if we are actually a commander
-                        bool bIsCommander = IsCommander(__instance);
-
-                        if (bIsCommander)
-                        {
-                            // is there a game currently started?
-                            if (Il2Cpp.GameMode.CurrentGameMode.GameOngoing)
-                            {
-                                // destroy all structures on team that's surrendering
-                                Il2Cpp.Team SurrenderTeam = __instance.Team;
-                                for (int i = 0; i < SurrenderTeam.Structures.Count; i++)
-                                {
-                                    SurrenderTeam.Structures[i].DamageManager.SetHealth01(0.0f);
-                                }
-
-                                // notify all players
-                                Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, 0, ChatPrefix + sTeamColor + sCallingPlayer + "<color=#DDE98C> used !surrender to end", false);
-                            }
-                            else
-                            {
-                                // notify player on invalid usage
-                                Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, 0, ChatPrefix + sTeamColor + sCallingPlayer + "<color=#DDE98C> - !surrender can only be used when the game is in-progress", false);
-                            }
-                        }
-                        else
-                        {
-                            // notify player on invalid usage
-                            Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, 0, ChatPrefix + sTeamColor + sCallingPlayer + "<color=#DDE98C> - only commanders can use !surrender", false);
-                        }
-
-                        // prevent chat message from reaching clients
-                        __result = false;
-                        return false;
-                    }
-                }
-                catch (Exception error)
-                {
-                    SurrenderCommand.PrintError(error, "Failed to run SendChatMessage");
-                }
-
-                return true;
-            }
-        }
-
         [HarmonyPatch(typeof(Il2CppSilica.UI.Chat), nameof(Il2CppSilica.UI.Chat.MessageReceived))]
         private static class ApplyChatReceiveSurrenderPatch
         {
@@ -157,42 +68,42 @@ namespace Si_SurrenderCommand
             {
                 try
                 {
-                    bool bIsSurrenderCommand = String.Equals(__1, "!surrender", StringComparison.OrdinalIgnoreCase);
-                    if (bIsSurrenderCommand)
+                    // each faction has its own chat manager but by looking at alien and only global messages this catches commands only once
+                    if (__instance.ToString().Contains("alien") && __2 == false)
                     {
-                        String sCallingPlayer = __0.PlayerName;
-                        Il2Cpp.Player serverPlayer = Il2Cpp.NetworkGameServer.GetServerPlayer();
-                        String sTeamColor = GetTeamColor(__0.m_Team.Index);
-
-                        // check if we are actually a commander
-                        bool bIsCommander = IsCommander(__0);
-
-                        if (bIsCommander)
+                        bool isSurrenderCommand = String.Equals(__1, "!surrender", StringComparison.OrdinalIgnoreCase);
+                        if (isSurrenderCommand)
                         {
-                            // is there a game currently started?
-                            if (Il2Cpp.GameMode.CurrentGameMode.GameOngoing)
+                            // check if we are actually a commander
+                            bool isCommander = IsCommander(__0);
+
+                            if (isCommander)
                             {
-                                // destroy all structures on team that's surrendering
-                                Il2Cpp.Team SurrenderTeam = __0.Team;
-                                for (int i = 0; i < SurrenderTeam.Structures.Count; i++)
+                                // is there a game currently started?
+                                if (Il2Cpp.GameMode.CurrentGameMode.GameOngoing)
                                 {
-                                    SurrenderTeam.Structures[i].DamageManager.SetHealth01(0.0f);
-                                }
+                                    // destroy all structures on team that's surrendering
+                                    Il2Cpp.Team SurrenderTeam = __0.Team;
+                                    for (int i = 0; i < SurrenderTeam.Structures.Count; i++)
+                                    {
+                                        SurrenderTeam.Structures[i].DamageManager.SetHealth01(0.0f);
+                                    }
 
-                                // notify all players
-                                Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, 0, ChatPrefix + sTeamColor + sCallingPlayer + "<color=#DDE98C> used !surrender to end", false);
+                                    // notify all players
+                                    HelperMethods.ReplyToCommand_Player(__0, "used !surrender to end");
+                                }
                             }
-                        }
-                        else
-                        {
-                            // notify player on invalid usage
-                            Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, 0, ChatPrefix + sTeamColor + sCallingPlayer + "<color=#DDE98C> - only commanders can use !surrender", false);
+                            else
+                            {
+                                // notify player on invalid usage
+                                HelperMethods.ReplyToCommand_Player(__0, ": only commanders can use !surrender");
+                            }
                         }
                     }
                 }
                 catch (Exception error)
                 {
-                    SurrenderCommand.PrintError(error, "Failed to run MessageReceived");
+                    HelperMethods.PrintError(error, "Failed to run Chat::MessageReceived");
                 }
             }
         }
