@@ -26,7 +26,7 @@ using Il2CppSilica.UI;
 using MelonLoader;
 using SilicaAdminMod;
 
-[assembly: MelonInfo(typeof(SiAdminMod), "Admin Extension", "1.1.0", "databomb")]
+[assembly: MelonInfo(typeof(SiAdminMod), "Admin Extension", "1.1.3", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace AdminExtension
@@ -77,19 +77,25 @@ namespace AdminExtension
         public static void ReplyToCommand(params string[] messages)
         {
             Il2Cpp.Player serverPlayer = Il2Cpp.NetworkGameServer.GetServerPlayer();
-            Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, chatPrefix + String.Concat(messages), false);
+            serverPlayer.SendChatMessage(chatPrefix + String.Concat(messages), false);
         }
 
         public static void ReplyToCommand_Player(Il2Cpp.Player player, params string[] messages)
         {
             Il2Cpp.Player serverPlayer = Il2Cpp.NetworkGameServer.GetServerPlayer();
-            Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, chatPrefix + GetTeamColor(player) + player.PlayerName + defaultColor + " " + String.Concat(messages), false);
+            serverPlayer.SendChatMessage(chatPrefix + GetTeamColor(player) + player.PlayerName + defaultColor + " " + String.Concat(messages), false);
         }
 
         public static void AlertAdminActivity(Il2Cpp.Player adminPlayer, Il2Cpp.Player targetPlayer, string action)
         {
             Il2Cpp.Player serverPlayer = Il2Cpp.NetworkGameServer.GetServerPlayer();
-            Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, chatPrefix + GetAdminColor() + adminPlayer.PlayerName + defaultColor + " " + action + " " + GetTeamColor(targetPlayer) + targetPlayer.PlayerName, false);
+            serverPlayer.SendChatMessage(chatPrefix + GetAdminColor() + adminPlayer.PlayerName + defaultColor + " " + action + " " + GetTeamColor(targetPlayer) + targetPlayer.PlayerName, false);
+        }
+
+        public static void AlertAdminAction(Il2Cpp.Player adminPlayer, string action)
+        {
+            Il2Cpp.Player serverPlayer = Il2Cpp.NetworkGameServer.GetServerPlayer();
+            serverPlayer.SendChatMessage(chatPrefix + GetAdminColor() + adminPlayer.PlayerName + defaultColor + " " + action, false);
         }
 
         public static void PrintError(Exception exception, string? message = null)
