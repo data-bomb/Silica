@@ -1,0 +1,15 @@
+[
+  {
+    "Version": "1.1.8",
+    "UpdateNotes": "Minor bug fixes",
+    "StoreBackup": true,
+    "Dependencies":
+    {
+        "AdminExtension": {
+            "WebLocation": "https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_AdminExtension/bin/Si_AdminExtension.dll",
+            "LocalLocation": "MelonLoader\net6",
+            "ForceUpdate": false
+        }
+    },
+  }
+]
