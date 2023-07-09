@@ -3,7 +3,9 @@
 	"RemotePath": "bin",
 	"UpdateNotes": "Minor bug fixes",
 	"StoreBackup": true,
-	"Dependencies": [{
+	"Dependencies":
+	[
+		{
 			"Filename": "Si_AdminExtension.dll",
 			"RemoteURL": "https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_AdminExtension/bin",
 			"LocalPath": "MelonLoader\net6",
