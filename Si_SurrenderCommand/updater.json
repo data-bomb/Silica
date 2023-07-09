@@ -3,19 +3,16 @@
 	"RemotePath": "bin",
 	"UpdateNotes": "Minor bug fixes",
 	"StoreBackup": true,
-	"Dependencies":
-	{
-		"Si_AdminExtension.dll":
-		{
+	"Dependencies": [{
+		"Si_AdminExtension.dll": {
 			"RemoteURL": "https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_AdminExtension/bin/Si_AdminExtension.dll",
 			"LocalPath": "MelonLoader\net6",
 			"ForceUpdate": false
 		},
-		"LICENSE":
-		{
+		"LICENSE": {
 			"RemoteURL": "https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/LICENSE",
 			"LocalPath": "MelonLoader\net6",
 			"ForceUpdate": false
 		}
-	}
+	}]
 }
