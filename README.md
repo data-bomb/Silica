@@ -9,9 +9,6 @@
 
 **Note:** *These mods are for hosts running Listen Servers only. Do not attempt to use any of these as a client. If you are a host and want to switch to a client then remove all of your MelonLoader Mods before connecting as a client!*
 
-## How to Show Love
-<a href="https://www.buymeacoffee.com/databomb" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-orange.png" alt="Buy Me A Coffee" height="41" width="174"></a>
-
 ## Mod Summary
 | Mod Name | Version   | Link |
 |---------:|-----------|------|
@@ -56,6 +53,9 @@
 Kind suggestion to ensure that the server name reflects that there are mods so players can choose between mods and a vanilla game experience
 
 ## [Mod Descriptions](https://github.com/data-bomb/Silica_ListenServer/wiki/Mod-Descriptions)
+
+## How to Show Love
+<a href="https://www.buymeacoffee.com/databomb" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-orange.png" alt="Buy Me A Coffee" height="41" width="174"></a>
 
 ## Credits
 Special thanks to Silentstorm, GrahamKracker, AuriRex, nighthalk and others in the MelonLoader community for being welcoming and supportive to an unusual use case of MelonLoader.
