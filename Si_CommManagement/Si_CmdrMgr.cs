@@ -34,13 +34,16 @@ using AdminExtension;
 using Il2CppSteamworks;
 using static MelonLoader.MelonLogger;
 
-[assembly: MelonInfo(typeof(CommanderManager), "[Si] Commander Management", "1.1.0", "databomb")]
+[assembly: MelonInfo(typeof(CommanderManager), "[Si] Commander Management", "1.1.2", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_CommanderManagement
 {
     public class CommanderManager : MelonMod
     {
+        static MelonPreferences_Category _modCategory;
+        static MelonPreferences_Entry<bool> _BlockRoundStartUntilEnoughApplicants;
+
         const string ChatPrefix = "[BOT] ";
         const int MaxTeams = 3;
         const int AlienTeam = 0;
@@ -81,6 +84,16 @@ namespace Si_CommanderManagement
 
         public override void OnInitializeMelon()
         {
+            if (_modCategory == null)
+            {
+                _modCategory = MelonPreferences.CreateCategory("Silica");
+            }
+            if (_BlockRoundStartUntilEnoughApplicants == null)
+            {
+                // default of 7 minutes between announcements
+                _BlockRoundStartUntilEnoughApplicants = _modCategory.CreateEntry<bool>("BlockRoundStartUntilCommandersApplied", true);
+            }
+
             try
             {
                 if (System.IO.File.Exists(CommanderManager.banListFile))
@@ -124,7 +137,7 @@ namespace Si_CommanderManagement
             }
             catch (Exception error)
             {
-                HelperMethods.PrintError(error, "Failed to load Silica commander balist (OnInitializeMelon)");
+                HelperMethods.PrintError(error, "Failed to load Silica commander banlist (OnInitializeMelon)");
             }
         }
 
@@ -560,6 +573,51 @@ namespace Si_CommanderManagement
             {
                 HelperMethods.ReplyToCommand_Player(PlayerToCmdrBan, "is immune due to level");
             }
+        }
+
+        [HarmonyPatch(typeof(Il2Cpp.GameMode), nameof(Il2Cpp.GameMode.CreateRPCPacket))]
+        private static class CommanderManager_Patch_GameMode_GameByteStreamWriter
+        {
+            static void Postfix(Il2Cpp.GameMode __instance, Il2Cpp.GameByteStreamWriter __result, byte __0)
+            {
+                if (_BlockRoundStartUntilEnoughApplicants.Value)
+                {
+                    MP_Strategy strategyInstance = GameObject.FindObjectOfType<Il2Cpp.MP_Strategy>();
+
+                    // is this the countdown timer for the round to start?
+                    if (__0 == (byte)MP_Strategy.ERPCs.TIMER_UPDATE && !strategyInstance.GameOver)
+                    {
+                        if (!AllTeamsHaveCommanderApplicants() && strategyInstance.Timer < 5f)
+                        {
+                            // reset timer value and keep counting down
+                            strategyInstance.Timer = 20f;
+                            HelperMethods.ReplyToCommand("Round cannot start because all teams don't have a commander");
+                        }
+                    }
+                }
+            }
+        }
+
+        public static bool AllTeamsHaveCommanderApplicants()
+        {
+            for (int i = 0; i < Team.Teams.Count; i++)
+            {
+                if (Team.Teams[i] == null)
+                {
+                    continue;
+                }
+
+                // does the team have at least 1 player?
+                if (Team.Teams[i].GetNumPlayers() >= 1)
+                {
+                    if (commanderApplicants[i].Count == 0)
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            return true;
         }
     }
 }
