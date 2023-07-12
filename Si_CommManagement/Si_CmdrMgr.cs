@@ -34,7 +34,7 @@ using AdminExtension;
 using Il2CppSteamworks;
 using static MelonLoader.MelonLogger;
 
-[assembly: MelonInfo(typeof(CommanderManager), "[Si] Commander Management", "1.1.2", "databomb")]
+[assembly: MelonInfo(typeof(CommanderManager), "[Si] Commander Management", "1.1.3", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_CommanderManagement
@@ -591,9 +591,59 @@ namespace Si_CommanderManagement
                         {
                             // reset timer value and keep counting down
                             strategyInstance.Timer = 20f;
-                            HelperMethods.ReplyToCommand("Round cannot start because all teams don't have a commander");
+                            HelperMethods.ReplyToCommand("Round cannot start because all teams don't have a commander. Chat !commander to apply.");
                         }
                     }
+                }
+            }
+        }
+
+        [HarmonyPatch(typeof(Il2CppSilica.UI.Chat), nameof(Il2CppSilica.UI.Chat.MessageReceived))]
+        private static class CommanderManager_Patch_Chat_MessageReceived
+        {
+            public static void Postfix(Il2CppSilica.UI.Chat __instance, Il2Cpp.Player __0, string __1, bool __2)
+            {
+                try
+                {
+                    // each faction has its own chat manager but by looking at alien and only global messages this catches commands only once
+                    if (__instance.ToString().Contains("alien") && __2 == false)
+                    {
+                        bool isCommanderCommand = String.Equals(__1, "!commander", StringComparison.OrdinalIgnoreCase);
+                        if (isCommanderCommand)
+                        {
+                            if (__0.Team == null)
+                            {
+                                HelperMethods.ReplyToCommand_Player(__0, "is not on a valid team");
+                                return;
+                            }
+
+                            // check if they're trying to apply for commander before the 30 second countdown expires and the game begins
+                            if (Il2Cpp.GameMode.CurrentGameMode.Started && !Il2Cpp.GameMode.CurrentGameMode.GameBegun)
+                            {
+
+                                // check if we are already on the commander applicant list
+                                bool hasApplied = commanderApplicants[__0.m_Team.Index].Any(k => k == __0);
+
+                                if (!hasApplied)
+                                {
+                                    commanderApplicants[__0.Team.Index].Add(__0);
+                                    HelperMethods.ReplyToCommand_Player(__0, "applied for commander");
+                                }
+                                else
+                                {
+                                    HelperMethods.ReplyToCommand_Player(__0, "already appplied for commander");
+                                }
+                            }
+                            else
+                            {
+                                HelperMethods.ReplyToCommand_Player(__0, "cannot apply for commander during the game");
+                            }
+                        }
+                    }
+                }
+                catch (Exception error)
+                {
+                    HelperMethods.PrintError(error, "Failed to run Chat::MessageReceived");
                 }
             }
         }
