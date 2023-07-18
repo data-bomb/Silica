@@ -26,19 +26,33 @@ using Il2Cpp;
 using MelonLoader;
 using Si_AFKManager;
 using AdminExtension;
+using System.Timers;
+using UnityEngine;
+using System.Timers;
 
-[assembly: MelonInfo(typeof(AwayFromKeyboard), "AFK Manager", "1.1.1", "databomb")]
+[assembly: MelonInfo(typeof(AwayFromKeyboard), "AFK Manager", "1.1.2", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_AFKManager
 {
     public class AwayFromKeyboard : MelonMod
     {
+        public class AFKCount
+        {
+            public Il2Cpp.Player Player { get; set; }
+            public uint Minutes { get; set; }
+        }
+
+        static System.Timers.Timer afkTimer;
         static bool AdminModAvailable = false;
+        static List<AFKCount> AFKTracker;
+        static bool oneMinuteCheckTime;
 
         public override void OnLateInitializeMelon()
         {
             AdminModAvailable = RegisteredMelons.Any(m => m.Info.Name == "Admin Mod");
+
+            AFKTracker = new List<AFKCount>();
 
             if (AdminModAvailable)
             {
@@ -50,6 +64,12 @@ namespace Si_AFKManager
             {
                 MelonLogger.Warning("Dependency missing: Admin Mod");
             }
+
+            double interval = 60000.0f;
+            afkTimer = new System.Timers.Timer(interval);
+            afkTimer.Elapsed += new ElapsedEventHandler(timerCallbackOneMinute);
+            afkTimer.AutoReset = true;
+            afkTimer.Enabled = true;
         }
 
         public void Command_Kick(Il2Cpp.Player callerPlayer, String args)
@@ -101,11 +121,57 @@ namespace Si_AFKManager
             {
                 try
                 {
-                    // TODO: Begin timer to track AFK players every 30 seconds
+                    // TODO: Begin timer to track AFK players every minute
+
+
                 }
                 catch (Exception error)
                 {
                     HelperMethods.PrintError(error, "Failed to run OnGameStarted");
+                }
+            }
+        }
+
+        private static void timerCallbackOneMinute(object source, ElapsedEventArgs e)
+        {
+            oneMinuteCheckTime = true;
+        }
+
+        [HarmonyPatch(typeof(Il2Cpp.MusicJukeboxHandler), nameof(Il2Cpp.MusicJukeboxHandler.Update))]
+        private static class ApplyPatch_MusicJukeboxHandlerUpdate
+        {
+            private static void Postfix(Il2Cpp.MusicJukeboxHandler __instance)
+            {
+                try
+                {
+                    // check if timer expired while the game is in-progress
+                    if (Il2Cpp.GameMode.CurrentGameMode.GameOngoing == true && oneMinuteCheckTime == true)
+                    {
+                        oneMinuteCheckTime = false;
+
+                        // TODO: loop through all players and check for anyone on a null team
+                    }
+                }
+                catch (Exception exception)
+                {
+                    HelperMethods.PrintError(exception, "Failed in MusicJukeboxHandler::Update");
+                }
+            }
+        }
+
+        // clear all AFK counters
+        [HarmonyPatch(typeof(Il2Cpp.MusicJukeboxHandler), nameof(Il2Cpp.MusicJukeboxHandler.OnGameEnded))]
+        private static class ApplyPatchOnGameEnded
+        {
+            public static void Postfix(Il2Cpp.MusicJukeboxHandler __instance, Il2Cpp.GameMode __0, Il2Cpp.Team __1)
+            {
+                try
+                {
+                    AFKTracker.Clear();
+                }
+                catch (Exception error)
+                {
+                    HelperMethods.PrintError(error, "Failed to run MusicJukeboxHandler::OnGameEnded");
                 }
             }
         }
