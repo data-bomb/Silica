@@ -30,7 +30,7 @@ using System.Timers;
 using UnityEngine;
 using System.Timers;
 
-[assembly: MelonInfo(typeof(AwayFromKeyboard), "AFK Manager", "1.1.4", "databomb")]
+[assembly: MelonInfo(typeof(AwayFromKeyboard), "AFK Manager", "1.1.5", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_AFKManager
@@ -47,6 +47,7 @@ namespace Si_AFKManager
         static bool AdminModAvailable = false;
         static List<AFKCount> AFKTracker;
         static bool oneMinuteCheckTime;
+        static bool skippedFirstCheck;
 
         static MelonPreferences_Category _modCategory;
         static MelonPreferences_Entry<bool> Pref_AFK_KickIfServerNotFull;
@@ -164,16 +165,17 @@ namespace Si_AFKManager
         }
 
         [HarmonyPatch(typeof(Il2Cpp.MusicJukeboxHandler), nameof(Il2Cpp.MusicJukeboxHandler.Update))]
-        private static class ApplyPatch_MusicJukeboxHandlerUpdate
+        private static class ApplyPatch_MusicJukeboxHandler_Update
         {
             private static void Postfix(Il2Cpp.MusicJukeboxHandler __instance)
             {
                 try
                 {
+
                     // check if timer expired while the game is in-progress
-                    if (Il2Cpp.GameMode.CurrentGameMode.GameOngoing == true && oneMinuteCheckTime == true)
+                    if (Il2Cpp.GameMode.CurrentGameMode.GameOngoing == true && oneMinuteCheckTime == true && skippedFirstCheck == true)
                     {
-                        MelonLogger.Msg("AFK Timer fired");
+                        //MelonLogger.Msg("AFK Timer fired");
 
                         oneMinuteCheckTime = false;
                         
@@ -222,6 +224,13 @@ namespace Si_AFKManager
                             }
                         }
                     }
+
+                    // skip the first timer expiration so we're at least a minute into the round
+                    if (Il2Cpp.GameMode.CurrentGameMode.GameOngoing == true && oneMinuteCheckTime == true && skippedFirstCheck == false)
+                    {
+                        oneMinuteCheckTime = false;
+                        skippedFirstCheck = true;
+                    }
                 }
                 catch (Exception exception)
                 {
@@ -230,14 +239,31 @@ namespace Si_AFKManager
             }
         }
 
+        [HarmonyPatch(typeof(Il2Cpp.MusicJukeboxHandler), nameof(Il2Cpp.MusicJukeboxHandler.OnGameStarted))]
+        private static class ApplyPatch_MusicJukeboxHandler_OnGameStarted
+        {
+            public static void Postfix(Il2Cpp.MusicJukeboxHandler __instance, Il2Cpp.GameMode __0)
+            {
+                try
+                {
+                    skippedFirstCheck = false;
+                }
+                catch (Exception error)
+                {
+                    HelperMethods.PrintError(error, "Failed to run MusicJukeboxHandler::OnGameStarted");
+                }
+            }
+        }
+
         // clear all AFK counters
         [HarmonyPatch(typeof(Il2Cpp.MusicJukeboxHandler), nameof(Il2Cpp.MusicJukeboxHandler.OnGameEnded))]
-        private static class ApplyPatchOnGameEnded
+        private static class ApplyPatch_MusicJukeboxHandler_OnGameEnded
         {
             public static void Postfix(Il2Cpp.MusicJukeboxHandler __instance, Il2Cpp.GameMode __0, Il2Cpp.Team __1)
             {
                 try
                 {
+                    skippedFirstCheck = false;
                     AFKTracker.Clear();
                 }
                 catch (Exception error)
