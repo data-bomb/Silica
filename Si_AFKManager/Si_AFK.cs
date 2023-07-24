@@ -30,7 +30,7 @@ using System.Timers;
 using UnityEngine;
 using System.Timers;
 
-[assembly: MelonInfo(typeof(AwayFromKeyboard), "AFK Manager", "1.1.2", "databomb")]
+[assembly: MelonInfo(typeof(AwayFromKeyboard), "AFK Manager", "1.1.3", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_AFKManager
@@ -57,8 +57,9 @@ namespace Si_AFKManager
             if (AdminModAvailable)
             {
                 HelperMethods.CommandCallback kickCallback = Command_Kick;
+                HelperMethods.CommandCallback afkCallback = Command_AFK;
                 HelperMethods.RegisterAdminCommand("!kick", kickCallback, Power.Kick);
-                HelperMethods.RegisterAdminCommand("!afk", kickCallback, Power.Kick);
+                HelperMethods.RegisterAdminCommand("!afk", afkCallback, Power.Kick);
             }
             else
             {
@@ -114,22 +115,17 @@ namespace Si_AFKManager
             }
         }
 
-        [HarmonyPatch(typeof(Il2Cpp.MusicJukeboxHandler), nameof(Il2Cpp.MusicJukeboxHandler.OnGameStarted))]
-        private static class ApplyPatchOnGameStarted
+        public void Command_AFK(Il2Cpp.Player callerPlayer, String args)
         {
-            public static void Postfix(Il2Cpp.MusicJukeboxHandler __instance, Il2Cpp.GameMode __0)
+            // validate argument count
+            int argumentCount = args.Split(' ').Count() - 1;
+            if (argumentCount > 0)
             {
-                try
-                {
-                    // TODO: Begin timer to track AFK players every minute
-
-
-                }
-                catch (Exception error)
-                {
-                    HelperMethods.PrintError(error, "Failed to run OnGameStarted");
-                }
+                HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Too many arguments");
+                return;
             }
+
+            HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": " + AFKTracker.Count.ToString() + " players with AFK counters");
         }
 
         private static void timerCallbackOneMinute(object source, ElapsedEventArgs e)
@@ -147,9 +143,37 @@ namespace Si_AFKManager
                     // check if timer expired while the game is in-progress
                     if (Il2Cpp.GameMode.CurrentGameMode.GameOngoing == true && oneMinuteCheckTime == true)
                     {
-                        oneMinuteCheckTime = false;
+                        MelonLogger.Msg("AFK Timer fired");
 
-                        // TODO: loop through all players and check for anyone on a null team
+                        oneMinuteCheckTime = false;
+                        
+                        foreach (Il2Cpp.Player player in Il2Cpp.Player.Players)
+                        {
+                            if (player != null)
+                            {
+                                if (player.Team == null)
+                                {
+                                    MelonLogger.Msg("Found " + player.PlayerName + " didn't pick a team yet");
+                                    int afkIndex = AFKTracker.FindIndex(p => p.Player == player);
+                                    // they were AFK for another minute
+                                    if (afkIndex >= 0)
+                                    {
+                                        AFKTracker[afkIndex].Minutes += 1;
+                                    }
+                                    // they weren't being tracked yet
+                                    else
+                                    {
+                                        AFKCount afkPlayer = new AFKCount();
+                                        afkPlayer.Player = player;
+                                        afkPlayer.Minutes = 1;
+
+                                        AFKTracker.Add(afkPlayer);
+                                    }
+
+                                    // TODO: Check if they were AFK for too long
+                                }
+                            }
+                        }
                     }
                 }
                 catch (Exception exception)
