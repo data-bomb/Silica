@@ -30,7 +30,7 @@ using System.Timers;
 using UnityEngine;
 using System.Timers;
 
-[assembly: MelonInfo(typeof(AwayFromKeyboard), "AFK Manager", "1.1.5", "databomb")]
+[assembly: MelonInfo(typeof(AwayFromKeyboard), "AFK Manager", "1.1.6", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_AFKManager
@@ -156,7 +156,42 @@ namespace Si_AFKManager
                 return;
             }
 
-            HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": " + AFKTracker.Count.ToString() + " players with AFK counters");
+
+
+            // force kick now
+            if (Pref_AFK_KickIfServerNotFull.Value)
+            {
+                foreach (Il2Cpp.Player player in Il2Cpp.Player.Players)
+                {
+                    if (player == null)
+                    {
+                        continue;
+                    }
+
+                    if (player.Team != null)
+                    {
+                        continue;
+                    }
+
+                    int afkIndex = AFKTracker.FindIndex(p => p.Player == player);
+                    // they were AFK for some time
+                    if (afkIndex >= 0)
+                    {
+                        MelonLogger.Msg("Found player " + AFKTracker[afkIndex].Player.PlayerName + " AFK for " + AFKTracker[afkIndex].Minutes.ToString());
+
+                        if (AFKTracker[afkIndex].Minutes >= Pref_AFK_MinutesBeforeKick.Value)
+                        {
+                            // kick immediately
+                            MelonLogger.Msg("Kicking " + AFKTracker[afkIndex].Player.PlayerName + " for being AFK too long");
+                            AFKTracker.RemoveAt(afkIndex);
+                        }
+                    }
+                }
+            }
+            else
+            {
+                HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": server already immediately kicks AFK players");
+            }
         }
 
         private static void timerCallbackOneMinute(object source, ElapsedEventArgs e)
@@ -181,47 +216,54 @@ namespace Si_AFKManager
                         
                         foreach (Il2Cpp.Player player in Il2Cpp.Player.Players)
                         {
-                            if (player != null)
+                            if (player == null)
                             {
-                                if (player.Team == null)
+                                continue;
+                            }
+
+                            if (player.Team != null)
+                            {
+                                continue;
+                            }
+
+                            MelonLogger.Msg("Found " + player.PlayerName + " didn't pick a team yet");
+                            int afkIndex = AFKTracker.FindIndex(p => p.Player == player);
+                            // they were AFK for another minute
+                            if (afkIndex >= 0)
+                            {
+                                AFKTracker[afkIndex].Minutes += 1;
+
+                                if (AFKTracker[afkIndex].Minutes >= Pref_AFK_MinutesBeforeKick.Value)
                                 {
-                                    MelonLogger.Msg("Found " + player.PlayerName + " didn't pick a team yet");
-                                    int afkIndex = AFKTracker.FindIndex(p => p.Player == player);
-                                    // they were AFK for another minute
-                                    if (afkIndex >= 0)
+                                    // kick immediately
+                                    if (Pref_AFK_KickIfServerNotFull.Value)
                                     {
-                                        AFKTracker[afkIndex].Minutes += 1;
-
-                                        if (AFKTracker[afkIndex].Minutes >= Pref_AFK_MinutesBeforeKick.Value)
-                                        {
-                                            // kick immediately
-                                            if (Pref_AFK_KickIfServerNotFull.Value)
-                                            {
-                                                MelonLogger.Msg("Kicking " + AFKTracker[afkIndex].Player.PlayerName + " for being AFK too long");
-                                            }
-                                            // only kick if server is almost full
-                                            else
-                                            {
-                                                MelonLogger.Msg("Checking if server is full before kick");
-
-                                                if (ServerAlmostFull())
-                                                {
-                                                    MelonLogger.Msg("Kicking " + AFKTracker[afkIndex].Player.PlayerName + " for being AFK too long");
-                                                }
-                                            }
-                                        }
+                                        MelonLogger.Msg("Kicking " + AFKTracker[afkIndex].Player.PlayerName + " for being AFK too long");
                                     }
-                                    // they weren't being tracked yet
+                                    // only kick if server is almost full
                                     else
                                     {
-                                        AFKCount afkPlayer = new AFKCount();
-                                        afkPlayer.Player = player;
-                                        afkPlayer.Minutes = 1;
+                                        MelonLogger.Msg("Checking if server is full before kick");
 
-                                        AFKTracker.Add(afkPlayer);
+                                        if (ServerAlmostFull())
+                                        {
+                                            MelonLogger.Msg("Kicking " + AFKTracker[afkIndex].Player.PlayerName + " for being AFK too long");
+                                        }
                                     }
+
+                                    AFKTracker.RemoveAt(afkIndex);
                                 }
                             }
+                            // they weren't being tracked yet
+                            else
+                            {
+                                AFKCount afkPlayer = new AFKCount();
+                                afkPlayer.Player = player;
+                                afkPlayer.Minutes = 1;
+
+                                AFKTracker.Add(afkPlayer);
+                            }
+
                         }
                     }
 
