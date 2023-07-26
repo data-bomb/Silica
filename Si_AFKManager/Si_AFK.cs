@@ -1,5 +1,5 @@
 ﻿/*
-Silica Commander Management Mod
+Silica AFK Manager
 Copyright (C) 2023 by databomb
 
 * Description *
@@ -30,7 +30,7 @@ using System.Timers;
 using UnityEngine;
 using System.Timers;
 
-[assembly: MelonInfo(typeof(AwayFromKeyboard), "AFK Manager", "1.1.6", "databomb")]
+[assembly: MelonInfo(typeof(AwayFromKeyboard), "AFK Manager", "1.1.7", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_AFKManager
@@ -156,8 +156,6 @@ namespace Si_AFKManager
                 return;
             }
 
-
-
             // force kick now
             if (Pref_AFK_KickIfServerNotFull.Value)
             {
@@ -182,7 +180,8 @@ namespace Si_AFKManager
                         if (AFKTracker[afkIndex].Minutes >= Pref_AFK_MinutesBeforeKick.Value)
                         {
                             // kick immediately
-                            MelonLogger.Msg("Kicking " + AFKTracker[afkIndex].Player.PlayerName + " for being AFK too long");
+                            HelperMethods.KickPlayer(AFKTracker[afkIndex].Player);
+                            HelperMethods.ReplyToCommand_Player(AFKTracker[afkIndex].Player, "was kicked for being AFK");
                             AFKTracker.RemoveAt(afkIndex);
                         }
                     }
@@ -206,7 +205,6 @@ namespace Si_AFKManager
             {
                 try
                 {
-
                     // check if timer expired while the game is in-progress
                     if (Il2Cpp.GameMode.CurrentGameMode.GameOngoing == true && oneMinuteCheckTime == true && skippedFirstCheck == true)
                     {
@@ -226,6 +224,12 @@ namespace Si_AFKManager
                                 continue;
                             }
 
+                            Il2Cpp.Player serverPlayer = Il2Cpp.NetworkGameServer.GetServerPlayer();
+                            if (player == serverPlayer)
+                            {
+                                continue;
+                            }
+
                             MelonLogger.Msg("Found " + player.PlayerName + " didn't pick a team yet");
                             int afkIndex = AFKTracker.FindIndex(p => p.Player == player);
                             // they were AFK for another minute
@@ -238,7 +242,8 @@ namespace Si_AFKManager
                                     // kick immediately
                                     if (Pref_AFK_KickIfServerNotFull.Value)
                                     {
-                                        MelonLogger.Msg("Kicking " + AFKTracker[afkIndex].Player.PlayerName + " for being AFK too long");
+                                        HelperMethods.KickPlayer(AFKTracker[afkIndex].Player);
+                                        HelperMethods.ReplyToCommand_Player(AFKTracker[afkIndex].Player, "was kicked for being AFK");
                                     }
                                     // only kick if server is almost full
                                     else
@@ -247,7 +252,8 @@ namespace Si_AFKManager
 
                                         if (ServerAlmostFull())
                                         {
-                                            MelonLogger.Msg("Kicking " + AFKTracker[afkIndex].Player.PlayerName + " for being AFK too long");
+                                            HelperMethods.KickPlayer(AFKTracker[afkIndex].Player);
+                                            HelperMethods.ReplyToCommand_Player(AFKTracker[afkIndex].Player, "was kicked for being AFK");
                                         }
                                     }
 
