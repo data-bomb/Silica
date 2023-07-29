@@ -34,7 +34,7 @@ using AdminExtension;
 using Il2CppSteamworks;
 using static MelonLoader.MelonLogger;
 
-[assembly: MelonInfo(typeof(CommanderManager), "[Si] Commander Management", "1.1.3", "databomb")]
+[assembly: MelonInfo(typeof(CommanderManager), "[Si] Commander Management", "1.1.4", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_CommanderManagement
@@ -44,7 +44,6 @@ namespace Si_CommanderManagement
         static MelonPreferences_Category _modCategory;
         static MelonPreferences_Entry<bool> _BlockRoundStartUntilEnoughApplicants;
 
-        const string ChatPrefix = "[BOT] ";
         const int MaxTeams = 3;
         const int AlienTeam = 0;
         const int CentauriTeam = 1;
@@ -90,7 +89,6 @@ namespace Si_CommanderManagement
             }
             if (_BlockRoundStartUntilEnoughApplicants == null)
             {
-                // default of 7 minutes between announcements
                 _BlockRoundStartUntilEnoughApplicants = _modCategory.CreateEntry<bool>("BlockRoundStartUntilCommandersApplied", true);
             }
 
@@ -300,7 +298,7 @@ namespace Si_CommanderManagement
 
                         if (CommanderPlayer != null && CommanderPlayer.Team.Index == i)
                         {
-                            Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, ChatPrefix + "Promoted " + CommanderPlayer.PlayerName + " to " + CommanderPlayer.Team.TeamName + " commander", false);
+                            Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, HelperMethods.chatPrefix + "Promoted " + HelperMethods.GetTeamColor(CommanderPlayer) + CommanderPlayer.PlayerName + HelperMethods.defaultColor + " to commander for " + HelperMethods.GetTeamColor(CommanderPlayer) + CommanderPlayer.Team.TeamName, false);
                             PromoteToCommander(CommanderPlayer);
                             CommanderManager.previousCommanders.Add(CommanderPlayer);
                         }
@@ -346,7 +344,7 @@ namespace Si_CommanderManagement
                             if (!CommanderManager.commanderApplicants[__1.Team.Index].Contains(__1))
                             {
                                 Il2Cpp.Player serverPlayer = Il2Cpp.NetworkGameServer.GetServerPlayer();
-                                Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, ChatPrefix + __1.PlayerName + " has applied for commander", false);
+                                Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, HelperMethods.chatPrefix + HelperMethods.GetTeamColor(__1) + __1.PlayerName + HelperMethods.defaultColor + " has applied for commander", false);
 
                                 // need to get the player back to Infantry and not stuck in no-clip
                                 SendToInfantry(__1);
@@ -387,7 +385,7 @@ namespace Si_CommanderManagement
                 Il2Cpp.MP_Strategy strategyInstance = GameObject.FindObjectOfType<Il2Cpp.MP_Strategy>();
 
                 DemoteTeamsCommander(strategyInstance, playerTeam);
-                Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, ChatPrefix + thisBan.OffenderName + " was demoted", false);
+                HelperMethods.ReplyToCommand_Player(PlayerToCmdrBan, "was demoted");
             }
 
             // are we already banned?
@@ -405,7 +403,7 @@ namespace Si_CommanderManagement
 
                 System.IO.File.WriteAllText(CommanderManager.banListFile, JsonRaw);
 
-                Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, ChatPrefix + thisBan.OffenderName + " was temporarily banned from being a commander", false);
+                HelperMethods.ReplyToCommand_Player(PlayerToCmdrBan, "was restricted from playing as commander");
             }
         }
 
@@ -590,7 +588,7 @@ namespace Si_CommanderManagement
                         if (!AllTeamsHaveCommanderApplicants() && strategyInstance.Timer < 5f)
                         {
                             // reset timer value and keep counting down
-                            strategyInstance.Timer = 20f;
+                            strategyInstance.Timer = 25f;
                             HelperMethods.ReplyToCommand("Round cannot start because all teams don't have a commander. Chat !commander to apply.");
                         }
                     }
