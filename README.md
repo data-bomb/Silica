@@ -18,7 +18,7 @@
 | SiRAC (Anti-Cheat) | 0.7.6 | Restricted Access - By Request Only |
 | Surrender Command | 1.1.7 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_SurrenderCommand/bin/Si_SurrenderCommand.dll) |
 | Anti-Grief | 1.0.5 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_AutoKickNegativeKills/bin/Si_AutoKickNegativeKills.dll) |
-| Headquarterless Humans Lose | 1.0.6 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_HQlessHumansLose/bin/Si_HQlessHumansLose.dll) |
+| Headquarterless Humans Lose | 1.2.0 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_HQlessHumansLose/bin/Si_HQlessHumansLose.dll) |
 | Basic Team Balance | 1.0.7 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_BasicTeamBalance/bin/Si_BasicTeamBalance.dll) |
 | Basic Banlist | 1.0.1 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_BasicBanlist/bin/Si_BasicBanlist.dll) |
 | Chat Silence | 1.0.0 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_ChatSilence/bin/Si_ChatSilence.dll) |
@@ -35,7 +35,7 @@
 ## Extension Summary
 | Mod Name | Version   | Link |
 |---------:|-----------|------|
-| Admin Extension | 1.1.0 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_AdminExtension/bin/Si_AdminExtension.dll) |
+| Admin Extension | 1.1.4 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_AdminExtension/bin/Si_AdminExtension.dll) |
 
 ## Silica Listen Server Requirements
 - 50Mbps upload bandwidth available (Individual clients can use about ~50kbps download bandwidth and up to ~1,500kbps upload bandwidth)
