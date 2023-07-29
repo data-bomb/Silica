@@ -24,31 +24,188 @@
 
 using HarmonyLib;
 using Il2Cpp;
-using Il2CppSystem.IO;
 using MelonLoader;
 using Si_HQlessHumansLose;
-using UnityEngine;
+using AdminExtension;
+using System.Timers;
+using static MelonLoader.MelonLogger;
+using Il2CppSystem.IO;
 
-[assembly: MelonInfo(typeof(HQlessHumansLose), "[Si] HQless Humans Lose", "1.0.6", "databomb", "https://github.com/data-bomb/Silica_ListenServer")]
+[assembly: MelonInfo(typeof(HQlessHumansLose), "[Si] HQless Humans Lose", "1.2.0", "databomb", "https://github.com/data-bomb/Silica_ListenServer")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_HQlessHumansLose
 {
     public class HQlessHumansLose : MelonMod
     {
-        public static void PrintError(Exception exception, string message = null)
+        static bool lostMessageTimerExpired;
+        static Team losingTeam;
+        static System.Timers.Timer delayLostMessageTimer;
+
+        public static void TeamLostMessage(Team team)
         {
-            if (message != null)
-            {
-                MelonLogger.Msg(message);
-            }
-            string error = exception.Message;
-            error += "\n" + exception.TargetSite;
-            error += "\n" + exception.StackTrace;
-            MelonLogger.Error(error);
+            Player serverPlayer = NetworkGameServer.GetServerPlayer();
+            String rootStructureName = team.TeamName.Contains("Human") ? "Headquarters" : "Nest";
+            serverPlayer.SendChatMessage(HelperMethods.chatPrefix + HelperMethods.GetTeamColor(team) + team.TeamName + HelperMethods.defaultColor + " lost their last " + rootStructureName, false);
         }
 
-        const string ChatPrefix = "[BOT] ";
+        static String GetRootStructurePrefix(Team team)
+        {
+            return team.TeamName.Contains("Human") ? "Headq" : "Nes";
+        }
+
+        static void HandleTimerSendLostMessage(object source, ElapsedEventArgs e)
+        {
+            lostMessageTimerExpired = true;
+        }
+
+        public static void TerminateRound(Team team)
+        {
+            HelperMethods.DestroyAllStructures(team);
+
+            // introduce a delay so clients can see chat message after round ends
+            lostMessageTimerExpired = false;
+            losingTeam = team;
+
+            double interval = 500.0;
+            delayLostMessageTimer = new System.Timers.Timer(interval);
+            delayLostMessageTimer.Elapsed += new ElapsedEventHandler(HandleTimerSendLostMessage);
+            delayLostMessageTimer.AutoReset = false;
+            delayLostMessageTimer.Enabled = true;
+        }
+
+        public static bool HasRootStructureRemaining(Team team, bool onDestroyedEventTrigger = true)
+        {
+            int iRootStructures;
+            if (onDestroyedEventTrigger)
+            {
+                iRootStructures = -1;
+            }
+            else
+            {
+                iRootStructures = 0;
+            }
+
+            String rootStructureMatchText = GetRootStructurePrefix(team);
+
+            for (int i = 0; i < team.Structures.Count; i++)
+            {
+                if (team.Structures[i].ToString().Contains(rootStructureMatchText))
+                {
+                    iRootStructures++;
+                }
+            }
+
+            if (iRootStructures <= 0)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        public static bool HasRootStructureUnderConstruction(Team team)
+        {
+            String rootStructureMatchText = GetRootStructurePrefix(team);
+            
+            int iRootStructuresUnderConstruction = 0;
+            for (int i = 0; i < ConstructionSite.ConstructionSites.Count; i++)
+            {
+                if (ConstructionSite.ConstructionSites[i].Team.Index != team.Index)
+                {
+                    continue;
+                }
+
+                BaseGameObject constructionBase = Il2Cpp.GameFuncs.GetBaseGameObject(Il2Cpp.ConstructionSite.ConstructionSites[i].gameObject);
+                if (constructionBase.ObjectInfo.ObjectType != Il2Cpp.ObjectInfoType.Structure)
+                {
+                    continue;
+                }
+
+                if (ConstructionSite.ConstructionSites[i].ToString().Contains(rootStructureMatchText))
+                {
+                    iRootStructuresUnderConstruction++;
+                }
+            }
+
+            if (iRootStructuresUnderConstruction <= 0)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        // check if last root structure that was under construction met an early demise
+        [HarmonyPatch(typeof(Il2Cpp.ConstructionSite), nameof(Il2Cpp.ConstructionSite.Deinit))]
+        private static class ApplyPatch_ConstructionSiteDeinit
+        {
+            private static void Postfix(Il2Cpp.ConstructionSite __instance, bool __0)
+            {
+                try
+                {
+                    // bool wasCompleted will be false if early demise was met
+                    if (__0 == true)
+                    {
+                        return;
+                    }
+
+                    BaseGameObject constructionBase = GameFuncs.GetBaseGameObject(__instance.gameObject);
+                    if (constructionBase.ObjectInfo.ObjectType != ObjectInfoType.Structure)
+                    {
+                        return;
+                    }
+
+                    Team constructionSiteTeam = __instance.Team;
+                    String rootStructureMatchText = GetRootStructurePrefix(constructionSiteTeam);
+                    if (!__instance.ToString().Contains(rootStructureMatchText))
+                    {
+                        return;
+                    }
+
+                    if (HasRootStructureRemaining(constructionSiteTeam, false))
+                    {
+                        return;
+                    }
+
+                    if (HasRootStructureUnderConstruction(constructionSiteTeam))
+                    {
+                        return;
+                    }
+
+                    // the last Nest or Headquarters construction site was destroyed
+                    TerminateRound(constructionSiteTeam);
+                }
+                catch (Exception error)
+                {
+                    HelperMethods.PrintError(error, "Failed to run ConstructionSite::Deinit");
+                }
+            }
+        }
+
+        [HarmonyPatch(typeof(Il2Cpp.ConstructionSite), nameof(Il2Cpp.ConstructionSite.Update))]
+        private static class ApplyPatch_ConstructionSite_Update
+        {
+            private static void Postfix(Il2Cpp.ConstructionSite __instance)
+            {
+                try
+                {
+                    if (lostMessageTimerExpired)
+                    {
+                        lostMessageTimerExpired = false;
+
+                        if (losingTeam != null)
+                        {
+                            TeamLostMessage(losingTeam);
+                        }
+                    }
+                }
+                catch (Exception error)
+                {
+                    HelperMethods.PrintError(error, "Failed to run ConstructionSite::Update");
+                }
+            }
+        }
 
         [HarmonyPatch(typeof(Il2Cpp.MP_Strategy), nameof(Il2Cpp.MP_Strategy.OnStructureDestroyed))]
         private static class ApplyPatch_OnStructureDestroyed
@@ -57,53 +214,45 @@ namespace Si_HQlessHumansLose
             {
                 try
                 {
-                    if (Il2Cpp.GameMode.CurrentGameMode != null)
+                    if (GameMode.CurrentGameMode == null)
                     {
-                        if (Il2Cpp.GameMode.CurrentGameMode.GameOngoing && (__0 != null))
-                        {
-                            Il2Cpp.Team StructureTeam = __0.Team;
-
-                            if (StructureTeam != null)
-                            {
-                                String sStructureTeam = StructureTeam.TeamName;
-
-                                if (sStructureTeam.Contains("Human"))
-                                {
-                                    // did they just lose a headquarters?
-                                    if (__0.ToString().Contains("Headq"))
-                                    {
-                                        // find if it was the last headquarters
-                                        // start at -1 because destroyed HQ is counted
-                                        int iHeadquartersCount = -1;
-                                        for (int i = 0; i < StructureTeam.Structures.Count; i++)
-                                        {
-                                            if (StructureTeam.Structures[i].ToString().Contains("Headq"))
-                                            {
-                                                iHeadquartersCount++;
-                                            }
-                                        }
-
-                                        if (iHeadquartersCount == 0)
-                                        {
-                                            // destroy all team's structures
-                                            for (int i = 0; i < StructureTeam.Structures.Count; i++)
-                                            {
-                                                StructureTeam.Structures[i].DamageManager.SetHealth01(0.0f);
-                                            }
-
-                                            // the end is nigh!
-                                            Il2Cpp.Player serverPlayer = Il2Cpp.NetworkGameServer.GetServerPlayer();
-                                            Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, 0, ChatPrefix + sStructureTeam + " lost their last HQ and was eliminated", false);
-                                        }
-                                    }
-                                }
-                            }
-                        }
+                        return;
                     }
+
+                    if (!GameMode.CurrentGameMode.GameOngoing || (__0 == null))
+                    {
+                        return;
+                    }
+
+                    Team structureTeam = __0.Team;
+                    if (structureTeam == null)
+                    {
+                        return;
+                    }
+
+                    
+                    String rootStructureMatchText = GetRootStructurePrefix(structureTeam);
+                    if (!__0.ToString().Contains(rootStructureMatchText))
+                    {
+                        return;
+                    }
+
+                    if (HasRootStructureRemaining(structureTeam, true))
+                    {
+                        return;
+                    }
+
+                    if (HasRootStructureUnderConstruction(structureTeam))
+                    {
+                        return;
+                    }
+
+                    // no HQ/nests left or being constructed, so end the round
+                    TerminateRound(structureTeam);
                 }
                 catch (Exception error)
                 {
-                    HQlessHumansLose.PrintError(error, "Failed to run OnStructureDestroyed");
+                    HelperMethods.PrintError(error, "Failed to run MP_Strategy::OnStructureDestroyed");
                 }
             }
         }
