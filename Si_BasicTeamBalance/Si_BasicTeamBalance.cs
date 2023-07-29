@@ -24,35 +24,18 @@
 using HarmonyLib;
 using Il2Cpp;
 using Il2CppSteamworks;
-using Il2CppSystem.IO;
 using MelonLoader;
-using Unity.Burst;
 using Si_BasicTeamBalance;
-using System.Linq.Expressions;
 using UnityEngine;
-using Il2CppSystem.Runtime.CompilerServices;
+using AdminExtension;
 
-[assembly: MelonInfo(typeof(BasicTeamBalance), "[Si] Basic Team Balance", "1.0.7", "databomb")]
+[assembly: MelonInfo(typeof(BasicTeamBalance), "[Si] Basic Team Balance", "1.0.8", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_BasicTeamBalance
 {
     public class BasicTeamBalance : MelonMod
     {
-        const string ChatPrefix = "[BOT] ";
-
-        public static void PrintError(Exception exception, string message = null)
-        {
-            if (message != null)
-            {
-                MelonLogger.Msg(message);
-            }
-            string error = exception.Message;
-            error += "\n" + exception.TargetSite;
-            error += "\n" + exception.StackTrace;
-            MelonLogger.Error(error);
-        }
-
         static MelonPreferences_Category _modCategory;
         static MelonPreferences_Entry<float> _TwoTeamBalanceDivisor;
         static MelonPreferences_Entry<float> _TwoTeamBalanceAddend;
@@ -281,7 +264,7 @@ namespace Si_BasicTeamBalance
                                                 if (LastPlayerChatMessage != JoiningPlayer)
                                                 {
                                                     Il2Cpp.Player serverPlayer = Il2Cpp.NetworkGameServer.GetServerPlayer();
-                                                    Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, ChatPrefix + JoiningPlayer.PlayerName + " was forced to " + ForcedTeam.TeamName + " to fix imbalance", false);
+                                                    Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, HelperMethods.chatPrefix + HelperMethods.GetTeamColor(TargetTeam) + JoiningPlayer.PlayerName + HelperMethods.defaultColor + " was forced to " + HelperMethods.GetTeamColor(ForcedTeam) + ForcedTeam.TeamName + HelperMethods.defaultColor + " to fix imbalance", false);
                                                     LastPlayerChatMessage = JoiningPlayer;
                                                 }
 
@@ -298,7 +281,7 @@ namespace Si_BasicTeamBalance
                                         if (LastPlayerChatMessage != JoiningPlayer)
                                         {
                                             Il2Cpp.Player serverPlayer = Il2Cpp.NetworkGameServer.GetServerPlayer();
-                                            Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, ChatPrefix + JoiningPlayer.PlayerName + "'s switch was denied due to imbalance", false);
+                                            Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, HelperMethods.chatPrefix + HelperMethods.GetTeamColor(JoiningPlayer) + JoiningPlayer.PlayerName + HelperMethods.defaultColor + "'s switch was denied due to imbalance", false);
                                             LastPlayerChatMessage = JoiningPlayer;
                                         }
 
@@ -327,7 +310,7 @@ namespace Si_BasicTeamBalance
                 }
                 catch (Exception error)
                 {
-                    PrintError(error, "Failed to run ProcessNetRPC");
+                    HelperMethods.PrintError(error, "Failed to run MP_Strategy::ProcessNetRPC");
                 }
 
                 return true;
