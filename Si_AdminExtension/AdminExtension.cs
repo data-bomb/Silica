@@ -25,8 +25,9 @@ using Il2Cpp;
 using Il2CppSilica.UI;
 using MelonLoader;
 using SilicaAdminMod;
+using System.Reflection.Metadata.Ecma335;
 
-[assembly: MelonInfo(typeof(SiAdminMod), "Admin Extension", "1.1.3", "databomb")]
+[assembly: MelonInfo(typeof(SiAdminMod), "Admin Extension", "1.1.4", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace AdminExtension
@@ -64,8 +65,8 @@ namespace AdminExtension
 
     public static class HelperMethods
     {
-        const string defaultColor = "<color=#DDE98C>";
-        const string chatPrefix = "<b>" + defaultColor + "[<color=#DFA725>SAM" + defaultColor + "]</b> ";
+        public const string defaultColor = "<color=#DDE98C>";
+        public const string chatPrefix = "<b>" + defaultColor + "[<color=#DFA725>SAM" + defaultColor + "]</b> ";
 
         public delegate void CommandCallback(Il2Cpp.Player callerPlayer, String args);
 
@@ -141,19 +142,8 @@ namespace AdminExtension
             return "<color=#DFA725>";
         }
 
-        public static string GetTeamColor(Il2Cpp.Player player)
+        private static string TeamColorTextFromIndex(int teamIndex)
         {
-            if (player == null)
-            {
-                return "<color=#FFFFFF>";
-            }
-            Il2Cpp.Team? team = player.m_Team;
-            if (team == null)
-            {
-                return "<color=#FFFFFF>";
-            }
-            int teamIndex = team.Index;
-
             switch (teamIndex)
             {
                 // Alien
@@ -168,6 +158,33 @@ namespace AdminExtension
                 default:
                     return "<color=#FFFFFF>";
             }
+        }
+
+        public static string GetTeamColor(Il2Cpp.Team team)
+        {
+            if (team == null)
+            {
+                return "<color=#FFFFFF>";
+            }
+
+            return TeamColorTextFromIndex(team.Index);
+        }
+
+        public static string GetTeamColor(Il2Cpp.Player player)
+        {
+            if (player == null)
+            {
+                return "<color=#FFFFFF>";
+            }
+
+            Il2Cpp.Team? team = player.m_Team;
+            if (team == null)
+            {
+                return "<color=#FFFFFF>";
+            }
+
+            int teamIndex = team.Index;
+            return TeamColorTextFromIndex(teamIndex);
         }
 
         public static Power PowerTextToPower(String powerText)
@@ -280,6 +297,20 @@ namespace AdminExtension
 
             return powers;
         }
+
+        public static void DestroyAllStructures(Il2Cpp.Team team)
+        {
+            if (team == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < team.Structures.Count; i++)
+            {
+                team.Structures[i].DamageManager.SetHealth01(0.0f);
+            }
+        }
+
         public static bool KickPlayer(Il2Cpp.Player playerToKick)
         {
             Il2Cpp.Player serverPlayer = Il2Cpp.NetworkGameServer.GetServerPlayer();
