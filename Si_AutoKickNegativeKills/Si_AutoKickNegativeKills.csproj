@@ -19,6 +19,9 @@
     <Reference Include="Il2CppInterop.Runtime">
       <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Silica\MelonLoader\net6\Il2CppInterop.Runtime.dll</HintPath>
     </Reference>
+    <Reference Include="Si_AdminExtension">
+      <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Silica\MelonLoader\net6\Si_AdminExtension.dll</HintPath>
+    </Reference>
     <Reference Include="Il2Cppmscorlib">
       <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Silica\MelonLoader\Il2CppAssemblies\Il2Cppmscorlib.dll</HintPath>
     </Reference>

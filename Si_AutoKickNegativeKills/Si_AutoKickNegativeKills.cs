@@ -27,36 +27,15 @@ using HarmonyLib;
 using Il2Cpp;
 using MelonLoader;
 using Si_AutoKickNegativeKills;
-using UnityEngine;
+using AdminExtension;
 
-[assembly: MelonInfo(typeof(AutoKickNegativeKills), "[Si] Auto-Kick Negative Kills", "1.0.5", "databomb", "https://github.com/data-bomb/Silica_ListenServer")]
+[assembly: MelonInfo(typeof(AutoKickNegativeKills), "[Si] Auto-Kick Negative Kills", "1.0.6", "databomb", "https://github.com/data-bomb/Silica_ListenServer")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_AutoKickNegativeKills
 {
     public class AutoKickNegativeKills : MelonMod
     {
-        const string ChatPrefix = "[BOT] ";
-
-        public static void PrintError(Exception exception, string message = null)
-        {
-            if (message != null)
-            {
-                MelonLogger.Msg(message);
-            }
-            string error = exception.Message;
-            error += "\n" + exception.TargetSite;
-            error += "\n" + exception.StackTrace;
-            Exception inner = exception.InnerException;
-            if (inner != null)
-            {
-                error += "\n" + inner.Message;
-                error += "\n" + inner.TargetSite;
-                error += "\n" + inner.StackTrace;
-            }
-            MelonLogger.Error(error);
-        }
-
         static MelonPreferences_Category _modCategory;
         static MelonPreferences_Entry<int> _NegativeKillsThreshold;
 
@@ -82,66 +61,83 @@ namespace Si_AutoKickNegativeKills
             {
                 try
                 {
-                    if (__0 != null && __2 != null)
+                    if (__0 == null || __2 == null)
                     {
-                        // Victim
-                        Il2Cpp.Team victimTeam = __0.Team;
+                        return;
+                    }
 
-                        // Attacker
-                        Il2Cpp.BaseGameObject attackerBase = Il2Cpp.GameFuncs.GetBaseGameObject(__2);
-                        if (attackerBase != null && victimTeam != null)
-                        {
-                            Il2Cpp.Team attackerTeam = attackerBase.Team;
+                    // Victim
+                    Team victimTeam = __0.Team;
+                    // Attacker
+                    BaseGameObject attackerBase = GameFuncs.GetBaseGameObject(__2);
 
-                            // don't check unless it was a team kill by a unit
-                            if ((attackerTeam != null) && (victimTeam.Index == attackerTeam.Index))
-                            {
-                                Il2Cpp.ObjectInfo attackerObjectInfo = attackerBase.ObjectInfo;
-                                if (attackerObjectInfo != null)
-                                {
-                                    Il2Cpp.ObjectInfoType attackerType = attackerObjectInfo.ObjectType;
-                                    if ((attackerType != null) && (attackerType == Il2Cpp.ObjectInfoType.Unit))
-                                    {
-                                        Il2Cpp.Player victimPlayer = __0.m_ControlledBy;
-                                        Il2Cpp.NetworkComponent attackerNetComp = attackerBase.NetworkComponent;
+                    if (attackerBase == null || victimTeam == null)
+                    {
+                        return;
+                    }
 
-                                        // was teamkiller a playable character?
-                                        if (attackerNetComp != null)
-                                        {
-                                            Il2Cpp.Player attackerPlayer = attackerNetComp.OwnerPlayer;
-                                            // don't need to worry about fall damage or other self-inflicted damage
-                                            if ((attackerPlayer != null) && (victimPlayer != attackerPlayer))
-                                            {
-                                                // check score of attacker
-                                                short currentKillScore = attackerPlayer.m_Kills;
-                                                MelonLogger.Msg(attackerPlayer.PlayerName + " destroyed a friendly unit with kill score of " + currentKillScore.ToString());
+                    Team attackerTeam = attackerBase.Team;
 
-                                                // check if another player was the victim
-                                                Il2Cpp.Player serverPlayer = Il2Cpp.NetworkGameServer.GetServerPlayer();
-                                                if (victimPlayer != null)
-                                                {
-                                                    MelonLogger.Msg(attackerPlayer.PlayerName + " team killed " + victimPlayer.PlayerName);
-                                                    Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, 0, ChatPrefix + attackerPlayer.PlayerName + " team killed " + victimPlayer.PlayerName, false);
-                                                }
+                    // don't check unless it was a team kill by a unit
+                    if (attackerTeam == null || (attackerTeam.Index != victimTeam.Index))
+                    {
+                        return;
+                    }
 
-                                                if (currentKillScore < _NegativeKillsThreshold.Value)
-                                                {
-                                                    String sPlayerNameToKick = attackerPlayer.PlayerName;
-                                                    MelonLogger.Msg("Kicked " + sPlayerNameToKick + " (" + attackerPlayer.ToString + ")");
-                                                    Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, 0, ChatPrefix + sPlayerNameToKick + " was kicked for teamkilling.", false);
-                                                    Il2Cpp.NetworkGameServer.KickPlayer(attackerPlayer);
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
+
+                    ObjectInfo attackerObjectInfo = attackerBase.ObjectInfo;
+                    if (attackerObjectInfo == null)
+                    {
+                        return;
+                    }
+
+
+                    ObjectInfoType? attackerType = attackerObjectInfo.ObjectType;
+
+                    if (attackerType == null || attackerType != ObjectInfoType.Unit)
+                    {
+                        return;
+                    }
+
+                    Player victimPlayer = __0.m_ControlledBy;
+                    NetworkComponent attackerNetComp = attackerBase.NetworkComponent;
+
+                    // was teamkiller a playable character?
+                    if (attackerNetComp == null)
+                    {
+                        return;
+                    }
+
+                    Player attackerPlayer = attackerNetComp.OwnerPlayer;
+                    // don't need to worry about fall damage or other self-inflicted damage
+                    if (attackerPlayer == null || (victimPlayer == attackerPlayer))
+                    {
+                        return;
+                    }
+
+                    // check score of attacker
+                    short currentKillScore = attackerPlayer.m_Kills;
+                    MelonLogger.Msg(attackerPlayer.PlayerName + " destroyed a friendly unit with kill score of " + currentKillScore.ToString());
+
+                    // check if another player was the victim
+                    Player serverPlayer = NetworkGameServer.GetServerPlayer();
+                    if (victimPlayer != null)
+                    {
+                        MelonLogger.Msg(attackerPlayer.PlayerName + " team killed " + victimPlayer.PlayerName);
+                        NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, HelperMethods.chatPrefix + HelperMethods.GetTeamColor(attackerPlayer) + attackerPlayer.PlayerName + HelperMethods.defaultColor + " team killed " + HelperMethods.GetTeamColor(victimPlayer) + victimPlayer.PlayerName, false);
+                    }
+
+                    if (currentKillScore < _NegativeKillsThreshold.Value)
+                    {
+                        String sPlayerNameToKick = attackerPlayer.PlayerName;
+                        MelonLogger.Msg("Kicked " + sPlayerNameToKick + " (" + attackerPlayer.ToString + ")");
+                        NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, HelperMethods.chatPrefix + HelperMethods.GetTeamColor(attackerTeam) + sPlayerNameToKick + HelperMethods.defaultColor + " was kicked for teamkilling.", false);
+                        NetworkGameServer.KickPlayer(attackerPlayer);
                     }
                 }
                 catch (Exception error)
                 {
-                    AutoKickNegativeKills.PrintError(error, "Failed to run OnUnitDestroyed");
+                    HelperMethods.PrintError(error, "Failed to run MP_Strategy::OnUnitDestroyed");
                 }
             }
         }
