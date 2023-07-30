@@ -29,7 +29,7 @@ using Si_BasicTeamBalance;
 using UnityEngine;
 using AdminExtension;
 
-[assembly: MelonInfo(typeof(BasicTeamBalance), "[Si] Basic Team Balance", "1.0.8", "databomb")]
+[assembly: MelonInfo(typeof(BasicTeamBalance), "[Si] Basic Team Balance", "1.0.9", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_BasicTeamBalance
@@ -140,16 +140,18 @@ namespace Si_BasicTeamBalance
             for (int i = 0; i < Il2Cpp.Team.Teams.Count; i++)
             {
                 Il2Cpp.Team? thisTeam = Il2Cpp.Team.Teams[i];
+                // skip Alien index on HvH
                 if (versusMode == MP_Strategy.ETeamsVersus.HUMANS_VS_HUMANS && i == 0)
                 {
                     continue;
                 }
+                // skip Centauri index on HvA
                 else if (versusMode == MP_Strategy.ETeamsVersus.HUMANS_VS_ALIENS && i == 1)
                 {
                     continue;
                 }
                 // has the team been eliminated?
-                else if (versusMode == MP_Strategy.ETeamsVersus.HUMANS_VS_HUMANS_VS_ALIENS && thisTeam.BaseStructure == null)
+                else if (versusMode == MP_Strategy.ETeamsVersus.HUMANS_VS_HUMANS_VS_ALIENS && !thisTeam.GetHasAnyMajorStructures())
                 {
                     continue;
                 }
