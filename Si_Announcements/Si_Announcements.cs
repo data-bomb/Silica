@@ -31,7 +31,7 @@ using AdminExtension;
 using System.Timers;
 using Il2CppSystem.Runtime.Remoting.Messaging;
 
-[assembly: MelonInfo(typeof(Announcements), "Server Announcements", "1.0.0", "databomb")]
+[assembly: MelonInfo(typeof(Announcements), "Server Announcements", "1.0.1", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 
@@ -46,6 +46,7 @@ namespace Si_Announcements
         static int announcementCount;
         static string[] announcementsText;
         static bool timerExpired;
+        static bool isLastAnnouncementLastChat;
 
         public override void OnInitializeMelon()
         {
@@ -85,6 +86,7 @@ namespace Si_Announcements
                     announcementsText = announcementFileLine.ToArray();
                 }
 
+                isLastAnnouncementLastChat = false;
                 double interval = _Announcements_SecondsBetweenMessages.Value * 1000.0f;
                 announcementTimer = new System.Timers.Timer(interval);
                 announcementTimer.Elapsed += new ElapsedEventHandler(timerCallbackAnnouncement);
@@ -114,18 +116,47 @@ namespace Si_Announcements
                     if (Il2Cpp.GameMode.CurrentGameMode.GameOngoing == true && timerExpired == true)
                     {
                         timerExpired = false;
-                        announcementCount++;
 
-                        String thisAnnouncement = announcementsText[announcementCount % announcementsText.Length];
-                        MelonLogger.Msg("Announcement: " + thisAnnouncement);
+                        if (isLastAnnouncementLastChat)
+                        {
+                            MelonLogger.Msg("Skipping Announcement - Repeated Message");
+                        }
+                        else
+                        {
+                            announcementCount++;
 
-                        Il2Cpp.Player serverPlayer = Il2Cpp.NetworkGameServer.GetServerPlayer();
-                        Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, thisAnnouncement, false);
+                            String thisAnnouncement = announcementsText[announcementCount % announcementsText.Length];
+                            MelonLogger.Msg("Announcement: " + thisAnnouncement);
+
+                            Il2Cpp.Player serverPlayer = Il2Cpp.NetworkGameServer.GetServerPlayer();
+                            Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, thisAnnouncement, false);
+                        }
                     }
                 }
                 catch (Exception exception)
                 {
                     HelperMethods.PrintError(exception, "Failed in MusicJukeboxHandler::Update");
+                }
+            }
+        }
+
+        [HarmonyPatch(typeof(Il2CppSilica.UI.Chat), nameof(Il2CppSilica.UI.Chat.MessageReceived))]
+        private static class Announcements_Patch_Chat_MessageReceived
+        {
+            public static void Postfix(Il2CppSilica.UI.Chat __instance, Il2Cpp.Player __0, string __1, bool __2)
+            {
+                try
+                {
+                    // each faction has its own chat manager but by looking at alien and only global messages this catches commands only once
+                    if (__instance.ToString().Contains("alien") && __2 == false)
+                    {
+                        String lastAnnouncement = announcementsText[announcementCount % announcementsText.Length];
+                        isLastAnnouncementLastChat = String.Equals(__1, lastAnnouncement);
+                    }
+                }
+                catch (Exception error)
+                {
+                    HelperMethods.PrintError(error, "Failed to run Chat::MessageReceived");
                 }
             }
         }
