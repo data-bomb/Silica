@@ -28,7 +28,7 @@
 | GamePriority | 2.0.1 | [Download](https://github.com/MintLily/GamePriority/releases/download/2.0.1/GamePriority.dll) |
 | End Round | 1.0.0 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_EndRound/bin/Si_EndRound.dll) |
 | Friendly Fire Limits | 1.1.5 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_FriendlyFireLimits/bin/Si_FriendlyFireLimits.dll) |
-| Announcements | 1.0.0 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_Announcements/bin/Si_Announcements.dll) |
+| Announcements | 1.0.1 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_Announcements/bin/Si_Announcements.dll) |
 | Spawn Configs | 0.8.0 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_SpawnConfigs/bin/Si_SpawnConfigs.dll) |
 | Resource Management | 1.0.0 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_Resources/bin/Si_Resources.dll) |
 
