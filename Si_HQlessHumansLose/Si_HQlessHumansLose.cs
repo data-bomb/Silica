@@ -30,8 +30,9 @@ using AdminExtension;
 using System.Timers;
 using static MelonLoader.MelonLogger;
 using Il2CppSystem.IO;
+using UnityEngine;
 
-[assembly: MelonInfo(typeof(HQlessHumansLose), "[Si] HQless Humans Lose", "1.2.0", "databomb", "https://github.com/data-bomb/Silica_ListenServer")]
+[assembly: MelonInfo(typeof(HQlessHumansLose), "[Si] HQless Humans Lose", "1.2.1", "databomb", "https://github.com/data-bomb/Silica_ListenServer")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_HQlessHumansLose
@@ -59,11 +60,64 @@ namespace Si_HQlessHumansLose
             lostMessageTimerExpired = true;
         }
 
-        public static void TerminateRound(Team team)
+        public static bool OneFactionEliminated()
         {
-            HelperMethods.DestroyAllStructures(team);
+            int TeamsWithMajorStructures = 0;
+            for (int i = 0; i < Il2Cpp.Team.Teams.Count; i++)
+            {
+                Il2Cpp.Team? thisTeam = Il2Cpp.Team.Teams[i];
+                int thisTeamMajorStructures = thisTeam.NumMajorStructures;
+                if (thisTeamMajorStructures > 0)
+                {
+                    TeamsWithMajorStructures++;
+                }
+            }
 
-            // introduce a delay so clients can see chat message after round ends
+            if (TeamsWithMajorStructures < 3)
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        public static void EliminateTeam(Team team)
+        {
+            Il2Cpp.MP_Strategy strategyInstance = GameObject.FindObjectOfType<Il2Cpp.MP_Strategy>();
+            Il2Cpp.MP_Strategy.ETeamsVersus versusMode = strategyInstance.TeamsVersus;
+
+            // are there still two remaining factions after this one is eliminated?
+            if (versusMode == MP_Strategy.ETeamsVersus.HUMANS_VS_HUMANS_VS_ALIENS && !OneFactionEliminated())
+            {
+                // destroy structures
+                for (int i = 0; i < team.Structures.Count; i++)
+                {
+                    // but don't destroy bunkers if there's still 2 teams left
+                    if (team.Structures[i].ToString().StartsWith("Bunk"))
+                    {
+                        continue;
+                    }
+
+                    team.Structures[i].DamageManager.SetHealth01(0.0f);
+                }
+
+                // destroy units (otherwise AI will roam around doing odd things)
+                for (int i = 0; i < team.Units.Count; i++)
+                {
+                    team.Units[i].DamageManager.SetHealth01(0.0f);
+                }
+            }
+            else
+            {
+                HelperMethods.DestroyAllStructures(team);
+            }
+
+            PrepareTeamLostMessage(team);
+        }
+
+        // introduce a delay so clients can see chat message after round ends
+        private static void PrepareTeamLostMessage(Team team)
+        {
             lostMessageTimerExpired = false;
             losingTeam = team;
 
@@ -174,7 +228,7 @@ namespace Si_HQlessHumansLose
                     }
 
                     // the last Nest or Headquarters construction site was destroyed
-                    TerminateRound(constructionSiteTeam);
+                    EliminateTeam(constructionSiteTeam);
                 }
                 catch (Exception error)
                 {
@@ -248,7 +302,7 @@ namespace Si_HQlessHumansLose
                     }
 
                     // no HQ/nests left or being constructed, so end the round
-                    TerminateRound(structureTeam);
+                    EliminateTeam(structureTeam);
                 }
                 catch (Exception error)
                 {
