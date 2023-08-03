@@ -28,7 +28,7 @@ using Si_SpawnConfigs;
 using UnityEngine;
 using AdminExtension;
 
-[assembly: MelonInfo(typeof(SpawnConfigs), "Admin Spawn Configs", "0.8.0", "databomb")]
+[assembly: MelonInfo(typeof(SpawnConfigs), "Admin Spawn Configs", "0.8.1", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_SpawnConfigs
@@ -98,22 +98,33 @@ namespace Si_SpawnConfigs
             Vector3 playerPosition = callerPlayer.m_ControlledUnit.WorldPhysicalCenter;
             Quaternion playerRotation = callerPlayer.m_ControlledUnit.GetFacingRotation();
 
-            if (SpawnAtLocation(args.Split(' ')[1], playerPosition, playerRotation))
+            GameObject spawnedObject = SpawnAtLocation(args.Split(' ')[1], playerPosition, playerRotation);
+            if (spawnedObject != null)
             {
                 HelperMethods.AlertAdminAction(callerPlayer, "spawned " + args.Split(' ')[1]);
             }
             else
             {
                 HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Failed to spawn");
+                return;
+            }
+
+            // check if team is correct
+            if (spawnedObject.GetBaseGameObject().m_Team != callerPlayer.m_Team)
+            {
+                BaseGameObject baseObject = spawnedObject.GetBaseGameObject();
+                baseObject.Team = callerPlayer.Team;
+                baseObject.m_Team = callerPlayer.m_Team;
+                baseObject.UpdateToCurrentTeam();
             }
         }
 
-        public static bool SpawnAtLocation(String name, Vector3 position, Quaternion rotation)
+        public static GameObject SpawnAtLocation(String name, Vector3 position, Quaternion rotation)
         {
             int prefabIndex = GameDatabase.GetSpawnablePrefabIndex(name);
             if (prefabIndex <= -1)
             {
-                return false;
+                return null;
             }
 
             GameObject prefabObject = GameDatabase.GetSpawnablePrefab(prefabIndex);
@@ -121,7 +132,7 @@ namespace Si_SpawnConfigs
 
             if (spawnedObject == null)
             {
-                return false;
+                return null;
             }
 
             lastSpawnedObject = spawnedObject;
@@ -145,7 +156,7 @@ namespace Si_SpawnConfigs
                 spawnedObject.transform.rotation = rotation;
             }
 
-            return true;
+            return spawnedObject;
         }
 
         // for changing a bunker to an outpost or spawning a vehicle nearby
