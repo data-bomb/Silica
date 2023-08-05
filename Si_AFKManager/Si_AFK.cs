@@ -28,9 +28,8 @@ using Si_AFKManager;
 using AdminExtension;
 using System.Timers;
 using UnityEngine;
-using System.Timers;
 
-[assembly: MelonInfo(typeof(AwayFromKeyboard), "AFK Manager", "1.1.7", "databomb")]
+[assembly: MelonInfo(typeof(AwayFromKeyboard), "AFK Manager", "1.1.8", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_AFKManager
@@ -244,6 +243,7 @@ namespace Si_AFKManager
                                     {
                                         HelperMethods.KickPlayer(AFKTracker[afkIndex].Player);
                                         HelperMethods.ReplyToCommand_Player(AFKTracker[afkIndex].Player, "was kicked for being AFK");
+                                        AFKTracker.RemoveAt(afkIndex);
                                     }
                                     // only kick if server is almost full
                                     else
@@ -254,10 +254,9 @@ namespace Si_AFKManager
                                         {
                                             HelperMethods.KickPlayer(AFKTracker[afkIndex].Player);
                                             HelperMethods.ReplyToCommand_Player(AFKTracker[afkIndex].Player, "was kicked for being AFK");
+                                            AFKTracker.RemoveAt(afkIndex);
                                         }
                                     }
-
-                                    AFKTracker.RemoveAt(afkIndex);
                                 }
                             }
                             // they weren't being tracked yet
@@ -269,7 +268,6 @@ namespace Si_AFKManager
 
                                 AFKTracker.Add(afkPlayer);
                             }
-
                         }
                     }
 
