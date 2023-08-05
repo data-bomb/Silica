@@ -29,7 +29,7 @@ using AdminExtension;
 using System.Timers;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(AwayFromKeyboard), "AFK Manager", "1.1.8", "databomb")]
+[assembly: MelonInfo(typeof(AwayFromKeyboard), "AFK Manager", "1.1.9", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_AFKManager
@@ -158,6 +158,8 @@ namespace Si_AFKManager
             // force kick now
             if (Pref_AFK_KickIfServerNotFull.Value)
             {
+                int playersKicked = 0;
+
                 foreach (Il2Cpp.Player player in Il2Cpp.Player.Players)
                 {
                     if (player == null)
@@ -179,11 +181,18 @@ namespace Si_AFKManager
                         if (AFKTracker[afkIndex].Minutes >= Pref_AFK_MinutesBeforeKick.Value)
                         {
                             // kick immediately
+
                             HelperMethods.KickPlayer(AFKTracker[afkIndex].Player);
+                            playersKicked++;
                             HelperMethods.ReplyToCommand_Player(AFKTracker[afkIndex].Player, "was kicked for being AFK");
                             AFKTracker.RemoveAt(afkIndex);
                         }
                     }
+                }
+
+                if(playersKicked <= 0)
+                {
+                    HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": no players were AFK for too long");
                 }
             }
             else
