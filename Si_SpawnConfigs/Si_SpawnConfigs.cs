@@ -27,8 +27,10 @@ using MelonLoader;
 using Si_SpawnConfigs;
 using UnityEngine;
 using AdminExtension;
+using MelonLoader.Utils;
+using System.Text.Json;
 
-[assembly: MelonInfo(typeof(SpawnConfigs), "Admin Spawn Configs", "0.8.1", "databomb")]
+[assembly: MelonInfo(typeof(SpawnConfigs), "Admin Spawn Configs", "0.8.2", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_SpawnConfigs
@@ -37,6 +39,85 @@ namespace Si_SpawnConfigs
     {
         static bool AdminModAvailable = false;
         static GameObject? lastSpawnedObject;
+
+        public class SpawnSetup
+        {
+            public String Map
+            {
+                get;
+                set;
+            }
+
+            public String VersusMode
+            {
+                get;
+                set;
+            }
+
+            public List<SpawnEntry> SpawnEntries
+            {
+                get;
+                set;
+            }
+        }
+
+        public class SpawnEntry
+        {
+            public String Classname
+            {
+                get;
+                set;
+            }
+
+            public float Position_X
+            {
+                get;
+                set;
+            }
+            public float Position_Y
+            {
+                get;
+                set;
+            }
+            public float Position_Z
+            {
+                get;
+                set;
+            }
+
+            public float Rotation_X
+            { 
+                get; 
+                set;
+            }
+            public float Rotation_Y
+            {
+                get;
+                set;
+            }
+            public float Rotation_Z
+            {
+                get;
+                set;
+            }
+            public float Rotation_W
+            {
+                get;
+                set;
+            }
+
+            public int TeamIndex
+            {
+                get;
+                set;
+            }
+
+            public bool IsStructure
+            {
+                get;
+                set;
+            }
+        }
 
         public override void OnLateInitializeMelon()
         {
@@ -49,6 +130,9 @@ namespace Si_SpawnConfigs
 
                 HelperMethods.CommandCallback undoSpawnCallback = Command_UndoSpawn;
                 HelperMethods.RegisterAdminCommand("!undospawn", undoSpawnCallback, Power.Cheat);
+
+                HelperMethods.CommandCallback saveCallback = Command_SaveSetup;
+                HelperMethods.RegisterAdminCommand("!savesetup", saveCallback, Power.Cheat);
             }
             else
             {
@@ -97,13 +181,10 @@ namespace Si_SpawnConfigs
 
             Vector3 playerPosition = callerPlayer.m_ControlledUnit.WorldPhysicalCenter;
             Quaternion playerRotation = callerPlayer.m_ControlledUnit.GetFacingRotation();
+            String spawnName = args.Split(' ')[1];
 
-            GameObject spawnedObject = SpawnAtLocation(args.Split(' ')[1], playerPosition, playerRotation);
-            if (spawnedObject != null)
-            {
-                HelperMethods.AlertAdminAction(callerPlayer, "spawned " + args.Split(' ')[1]);
-            }
-            else
+            GameObject spawnedObject = SpawnAtLocation(spawnName, playerPosition, playerRotation);
+            if (spawnedObject == null)
             {
                 HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Failed to spawn");
                 return;
@@ -117,9 +198,11 @@ namespace Si_SpawnConfigs
                 baseObject.m_Team = callerPlayer.m_Team;
                 baseObject.UpdateToCurrentTeam();
             }
+
+            HelperMethods.AlertAdminAction(callerPlayer, "spawned " + spawnName);
         }
 
-        public static GameObject SpawnAtLocation(String name, Vector3 position, Quaternion rotation)
+        public static GameObject? SpawnAtLocation(String name, Vector3 position, Quaternion rotation)
         {
             int prefabIndex = GameDatabase.GetSpawnablePrefabIndex(name);
             if (prefabIndex <= -1)
@@ -157,6 +240,144 @@ namespace Si_SpawnConfigs
             }
 
             return spawnedObject;
+        }
+        public void Command_SaveSetup(Il2Cpp.Player callerPlayer, String args)
+        {
+            String commandName = args.Split(' ')[0];
+
+            // validate argument count
+            int argumentCount = args.Split(' ').Count() - 1;
+            if (argumentCount > 1)
+            {
+                HelperMethods.ReplyToCommand(commandName + ": Too many arguments");
+                return;
+            }
+            else if (argumentCount < 1)
+            {
+                HelperMethods.ReplyToCommand(commandName + ": Too few arguments");
+                return;
+            }
+
+            String configFile = args.Split(' ')[1];
+
+            try
+            {
+                // check if UserData\SpawnConfigs\ directory exists
+                String spawnConfigDir = GetSpawnConfigsDirectory();
+                if (!System.IO.Directory.Exists(spawnConfigDir))
+                {
+                    MelonLogger.Msg("Creating SpawnConfigs directory at: " + spawnConfigDir);
+                    System.IO.Directory.CreateDirectory(spawnConfigDir);
+                }
+
+                // check if file extension is valid
+                if (configFile.Contains(".") && !configFile.EndsWith("json"))
+                {
+                    HelperMethods.ReplyToCommand(commandName + ": Invalid save name (not .json)");
+                    return;
+                }
+                
+                // add .json if it's not already there
+                if (!configFile.Contains("."))
+                {
+                    configFile += ".json";
+                }
+
+                // final check on filename
+                if (configFile.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
+                {
+                    HelperMethods.ReplyToCommand(commandName + ": Cannot use input as filename");
+                    return;
+                }
+
+                // don't overwrite an existing file
+                String configFileFullPath = System.IO.Path.Combine(spawnConfigDir, configFile);
+                if (System.IO.File.Exists(configFileFullPath))
+                {
+                    HelperMethods.ReplyToCommand(commandName + ": configuration already exists");
+                    return;
+                }
+
+                // is there anything to save right now?
+                if (!GameMode.CurrentGameMode.GameOngoing)
+                {
+                    HelperMethods.ReplyToCommand(commandName + ": Nothing to save with current game state");
+                    return;
+                }
+
+                // set global config options
+                SpawnSetup spawnSetup = new SpawnSetup();
+                spawnSetup.Map = NetworkGameServer.GetServerMapName();
+                MP_Strategy strategyInstance = GameObject.FindObjectOfType<Il2Cpp.MP_Strategy>();
+                spawnSetup.VersusMode = strategyInstance.TeamsVersus.ToString();
+
+                // create a list of all structures and units
+                spawnSetup.SpawnEntries = new List<SpawnEntry>();
+                foreach (Team team in Team.Teams)
+                {
+                    if (team == null)
+                    {
+                        continue;
+                    }
+
+                    foreach (Structure structure in team.Structures)
+                    {
+                        SpawnEntry thisSpawnEntry = new SpawnEntry();
+
+                        thisSpawnEntry.Classname = structure.ToString().Split('(')[0];
+                        thisSpawnEntry.Position_X = structure.gameObject.GetBaseGameObject().WorldPhysicalCenter.x;
+                        thisSpawnEntry.Position_Y = structure.gameObject.GetBaseGameObject().WorldPhysicalCenter.y;
+                        thisSpawnEntry.Position_Z = structure.gameObject.GetBaseGameObject().WorldPhysicalCenter.z;
+                        thisSpawnEntry.Rotation_X = structure.transform.rotation.x;
+                        thisSpawnEntry.Rotation_Y = structure.transform.rotation.y;
+                        thisSpawnEntry.Rotation_Z = structure.transform.rotation.z;
+                        thisSpawnEntry.Rotation_W = structure.transform.rotation.w;
+                        thisSpawnEntry.TeamIndex = structure.Team.Index;
+                        thisSpawnEntry.IsStructure = true;
+
+                        spawnSetup.SpawnEntries.Add(thisSpawnEntry);
+                    }
+
+                    foreach (Unit unit in team.Units)
+                    {
+                        SpawnEntry thisSpawnEntry = new SpawnEntry();
+
+                        thisSpawnEntry.Classname = unit.ToString().Split('(')[0];
+                        thisSpawnEntry.Position_X = unit.gameObject.GetBaseGameObject().WorldPhysicalCenter.x;
+                        thisSpawnEntry.Position_Y = unit.gameObject.GetBaseGameObject().WorldPhysicalCenter.y;
+                        thisSpawnEntry.Position_Z = unit.gameObject.GetBaseGameObject().WorldPhysicalCenter.z;
+                        thisSpawnEntry.Rotation_X = unit.GetFacingRotation().x;
+                        thisSpawnEntry.Rotation_Y = unit.GetFacingRotation().y;
+                        thisSpawnEntry.Rotation_Z = unit.GetFacingRotation().z;
+                        thisSpawnEntry.Rotation_W = unit.GetFacingRotation().w;
+                        thisSpawnEntry.TeamIndex = unit.Team.Index;
+                        thisSpawnEntry.IsStructure = false;
+
+                        spawnSetup.SpawnEntries.Add(thisSpawnEntry);
+                    }
+                }
+
+                // save to file
+                String JsonRaw = JsonSerializer.Serialize(
+                    spawnSetup, 
+                    new JsonSerializerOptions
+                    {
+                        WriteIndented = true
+                    });
+
+                File.WriteAllText(configFileFullPath, JsonRaw);
+
+                HelperMethods.ReplyToCommand(commandName + ": Saved config to file");
+            }
+            catch (Exception error)
+            {
+                HelperMethods.PrintError(error, "Command_SaveSetup failed");
+            }
+        }
+
+        static string GetSpawnConfigsDirectory()
+        {
+            return System.IO.Path.Combine(MelonEnvironment.UserDataDirectory, @"SpawnConfigs\");
         }
 
         // for changing a bunker to an outpost or spawning a vehicle nearby
