@@ -29,8 +29,9 @@ using UnityEngine;
 using AdminExtension;
 using MelonLoader.Utils;
 using System.Text.Json;
+using Il2CppSilica.UI;
 
-[assembly: MelonInfo(typeof(SpawnConfigs), "Admin Spawn Configs", "0.8.2", "databomb")]
+[assembly: MelonInfo(typeof(SpawnConfigs), "Admin Spawn Configs", "0.8.3", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_SpawnConfigs
@@ -133,6 +134,9 @@ namespace Si_SpawnConfigs
 
                 HelperMethods.CommandCallback saveCallback = Command_SaveSetup;
                 HelperMethods.RegisterAdminCommand("!savesetup", saveCallback, Power.Cheat);
+
+                HelperMethods.CommandCallback loadCallback = Command_LoadSetup;
+                HelperMethods.RegisterAdminCommand("!loadsetup", loadCallback, Power.Cheat);
             }
             else
             {
@@ -183,7 +187,7 @@ namespace Si_SpawnConfigs
             Quaternion playerRotation = callerPlayer.m_ControlledUnit.GetFacingRotation();
             String spawnName = args.Split(' ')[1];
 
-            GameObject spawnedObject = SpawnAtLocation(spawnName, playerPosition, playerRotation);
+            GameObject? spawnedObject = SpawnAtLocation(spawnName, playerPosition, playerRotation);
             if (spawnedObject == null)
             {
                 HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Failed to spawn");
@@ -191,9 +195,9 @@ namespace Si_SpawnConfigs
             }
 
             // check if team is correct
-            if (spawnedObject.GetBaseGameObject().m_Team != callerPlayer.m_Team)
+            BaseGameObject baseObject = spawnedObject.GetBaseGameObject();
+            if (baseObject.m_Team != callerPlayer.m_Team)
             {
-                BaseGameObject baseObject = spawnedObject.GetBaseGameObject();
                 baseObject.Team = callerPlayer.Team;
                 baseObject.m_Team = callerPlayer.m_Team;
                 baseObject.UpdateToCurrentTeam();
@@ -291,8 +295,8 @@ namespace Si_SpawnConfigs
                 }
 
                 // don't overwrite an existing file
-                String configFileFullPath = System.IO.Path.Combine(spawnConfigDir, configFile);
-                if (System.IO.File.Exists(configFileFullPath))
+                String configFileFullPath = Path.Combine(spawnConfigDir, configFile);
+                if (File.Exists(configFileFullPath))
                 {
                     HelperMethods.ReplyToCommand(commandName + ": configuration already exists");
                     return;
@@ -375,9 +379,114 @@ namespace Si_SpawnConfigs
             }
         }
 
+        public void Command_LoadSetup(Il2Cpp.Player callerPlayer, String args)
+        {
+            String commandName = args.Split(' ')[0];
+
+            // validate argument count
+            int argumentCount = args.Split(' ').Count() - 1;
+            if (argumentCount > 1)
+            {
+                HelperMethods.ReplyToCommand(commandName + ": Too many arguments");
+                return;
+            }
+            else if (argumentCount < 1)
+            {
+                HelperMethods.ReplyToCommand(commandName + ": Too few arguments");
+                return;
+            }
+
+            String configFile = args.Split(' ')[1];
+
+            try
+            {
+                String spawnConfigDir = GetSpawnConfigsDirectory();
+
+                // check if file extension is valid
+                if (configFile.Contains(".") && !configFile.EndsWith("json"))
+                {
+                    HelperMethods.ReplyToCommand(commandName + ": Invalid save name (not .json)");
+                    return;
+                }
+
+                // add .json if it's not already there
+                if (!configFile.Contains("."))
+                {
+                    configFile += ".json";
+                }
+
+                // final check on filename
+                if (configFile.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
+                {
+                    HelperMethods.ReplyToCommand(commandName + ": Cannot use input as filename");
+                    return;
+                }
+
+                // do we have anything to load here?
+                String configFileFullPath = System.IO.Path.Combine(spawnConfigDir, configFile);
+                if (!File.Exists(configFileFullPath))
+                {
+                    HelperMethods.ReplyToCommand(commandName + ": configuration not found");
+                    return;
+                }
+
+                // check global config options
+                String JsonRaw = File.ReadAllText(configFileFullPath);
+                SpawnSetup? spawnSetup = JsonSerializer.Deserialize<SpawnSetup>(JsonRaw);
+                if (spawnSetup == null) 
+                {
+                    HelperMethods.ReplyToCommand(commandName + ": json error in configuration file");
+                    return;
+                }
+
+                if (spawnSetup.Map != NetworkGameServer.GetServerMapName())
+                {
+                    HelperMethods.ReplyToCommand(commandName + ": incompatible map specified");
+                    return;
+                }
+
+                MP_Strategy strategyInstance = GameObject.FindObjectOfType<Il2Cpp.MP_Strategy>();
+                if (spawnSetup.VersusMode != strategyInstance.TeamsVersus.ToString())
+                {
+                    HelperMethods.ReplyToCommand(commandName + ": incompatible mode specified");
+                    return;
+                }
+
+                // load all structures and units
+                foreach (SpawnEntry spawnEntry in spawnSetup.SpawnEntries)
+                {
+                    MelonLogger.Msg(spawnEntry.Classname);
+
+                    Vector3 position = new Vector3(spawnEntry.Position_X, spawnEntry.Position_Y, spawnEntry.Position_Z);
+                    Quaternion rotation = new Quaternion(spawnEntry.Rotation_X, spawnEntry.Rotation_Y, spawnEntry.Rotation_Z, spawnEntry.Rotation_W);
+                    GameObject? spawnedObject = SpawnAtLocation(spawnEntry.Classname, position, rotation);
+                    if (spawnedObject == null)
+                    {
+                        HelperMethods.ReplyToCommand(commandName + ": bad name in config file");
+                        return;
+                    }
+
+                    // check if team is correct
+                    BaseGameObject baseObject = spawnedObject.GetBaseGameObject();
+                    if (baseObject.m_Team.Index != spawnEntry.TeamIndex)
+                    {
+                        baseObject.Team = Team.Teams[spawnEntry.TeamIndex];
+                        baseObject.m_Team = Team.Teams[spawnEntry.TeamIndex];
+                        baseObject.UpdateToCurrentTeam();
+                    }
+                }
+
+                HelperMethods.ReplyToCommand(commandName + ": Loaded config from file");
+            }
+            catch (Exception error)
+            {
+                HelperMethods.PrintError(error, "Command_LoadSetup failed");
+            }
+        }
+
         static string GetSpawnConfigsDirectory()
         {
-            return System.IO.Path.Combine(MelonEnvironment.UserDataDirectory, @"SpawnConfigs\");
+            return Path.Combine(MelonEnvironment.UserDataDirectory, @"SpawnConfigs\");
         }
 
         // for changing a bunker to an outpost or spawning a vehicle nearby
@@ -413,5 +522,33 @@ namespace Si_SpawnConfigs
         - Parameter 0 'forTeam': null
         - Parameter 1 'probabilityScale': 1
         */
+
+        /*
+         * 
+         *  for setting a config on round restart:
+         static bool Prefix(Il2Cpp.MP_Strategy __instance)
+{
+    try {
+       StringBuilder sb = new StringBuilder();
+       sb.AppendLine("--------------------");
+       sb.AppendLine("void Il2Cpp.MP_Strategy::SpawnBaseStructures()");
+       sb.Append("- __instance: ").AppendLine(__instance.ToString());
+       UnityExplorer.ExplorerCore.Log(sb.ToString());
+    }
+    catch (System.Exception ex) {
+        UnityExplorer.ExplorerCore.LogWarning($"Exception in patch of void Il2Cpp.MP_Strategy::SpawnBaseStructures():\n{ex}");
+    }
+
+UnityExplorer.ExplorerCore.Log(__instance.TeamsVersus.ToString());
+if (__instance.TeamsVersus != Il2Cpp.MP_Strategy.ETeamsVersus.NONE)
+{
+UnityExplorer.ExplorerCore.Log("block");
+return false;
+}
+
+return true;
+}
+
+         */
     }
 }
