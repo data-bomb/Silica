@@ -31,7 +31,7 @@ using MelonLoader.Utils;
 using System.Text.Json;
 using Il2CppSilica.UI;
 
-[assembly: MelonInfo(typeof(SpawnConfigs), "Admin Spawn Configs", "0.8.3", "databomb")]
+[assembly: MelonInfo(typeof(SpawnConfigs), "Admin Spawn Configs", "0.8.4", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_SpawnConfigs
@@ -70,40 +70,15 @@ namespace Si_SpawnConfigs
                 set;
             }
 
-            public float Position_X
-            {
-                get;
-                set;
-            }
-            public float Position_Y
-            {
-                get;
-                set;
-            }
-            public float Position_Z
+            public float[] Position
             {
                 get;
                 set;
             }
 
-            public float Rotation_X
+            public float[] Rotation
             { 
                 get; 
-                set;
-            }
-            public float Rotation_Y
-            {
-                get;
-                set;
-            }
-            public float Rotation_Z
-            {
-                get;
-                set;
-            }
-            public float Rotation_W
-            {
-                get;
                 set;
             }
 
@@ -114,6 +89,12 @@ namespace Si_SpawnConfigs
             }
 
             public bool IsStructure
+            {
+                get;
+                set;
+            }
+
+            public float? Health
             {
                 get;
                 set;
@@ -329,15 +310,33 @@ namespace Si_SpawnConfigs
                         SpawnEntry thisSpawnEntry = new SpawnEntry();
 
                         thisSpawnEntry.Classname = structure.ToString().Split('(')[0];
-                        thisSpawnEntry.Position_X = structure.gameObject.GetBaseGameObject().WorldPhysicalCenter.x;
-                        thisSpawnEntry.Position_Y = structure.gameObject.GetBaseGameObject().WorldPhysicalCenter.y;
-                        thisSpawnEntry.Position_Z = structure.gameObject.GetBaseGameObject().WorldPhysicalCenter.z;
-                        thisSpawnEntry.Rotation_X = structure.transform.rotation.x;
-                        thisSpawnEntry.Rotation_Y = structure.transform.rotation.y;
-                        thisSpawnEntry.Rotation_Z = structure.transform.rotation.z;
-                        thisSpawnEntry.Rotation_W = structure.transform.rotation.w;
+
+                        BaseGameObject structureBaseObject = structure.gameObject.GetBaseGameObject();
+                        float[] position = new float[]
+                        {
+                                structureBaseObject.WorldPhysicalCenter.x,
+                                structureBaseObject.WorldPhysicalCenter.y,
+                                structureBaseObject.WorldPhysicalCenter.z
+                        };
+                        thisSpawnEntry.Position = position;
+
+                        float[] rotation = new float[]
+                        {
+                            structure.transform.rotation.x,
+                            structure.transform.rotation.y,
+                            structure.transform.rotation.x,
+                            structure.transform.rotation.w
+                        };
+                        thisSpawnEntry.Rotation = rotation;
+
                         thisSpawnEntry.TeamIndex = structure.Team.Index;
                         thisSpawnEntry.IsStructure = true;
+
+                        // only record health if damaged
+                        if (structure.DamageManager.Health01 < 0.99f)
+                        {
+                            thisSpawnEntry.Health = structure.DamageManager.Health;
+                        }
 
                         spawnSetup.SpawnEntries.Add(thisSpawnEntry);
                     }
@@ -347,15 +346,34 @@ namespace Si_SpawnConfigs
                         SpawnEntry thisSpawnEntry = new SpawnEntry();
 
                         thisSpawnEntry.Classname = unit.ToString().Split('(')[0];
-                        thisSpawnEntry.Position_X = unit.gameObject.GetBaseGameObject().WorldPhysicalCenter.x;
-                        thisSpawnEntry.Position_Y = unit.gameObject.GetBaseGameObject().WorldPhysicalCenter.y;
-                        thisSpawnEntry.Position_Z = unit.gameObject.GetBaseGameObject().WorldPhysicalCenter.z;
-                        thisSpawnEntry.Rotation_X = unit.GetFacingRotation().x;
-                        thisSpawnEntry.Rotation_Y = unit.GetFacingRotation().y;
-                        thisSpawnEntry.Rotation_Z = unit.GetFacingRotation().z;
-                        thisSpawnEntry.Rotation_W = unit.GetFacingRotation().w;
+
+                        BaseGameObject unitBaseObject = unit.gameObject.GetBaseGameObject();
+                        float[] position = new float[]
+                        {
+                                unitBaseObject.WorldPhysicalCenter.x,
+                                unitBaseObject.WorldPhysicalCenter.y,
+                                unitBaseObject.WorldPhysicalCenter.z
+                        };
+                        thisSpawnEntry.Position = position;
+
+                        Quaternion facingRotation = unit.GetFacingRotation();
+                        float[] rotation = new float[]
+                        {
+                            facingRotation.x,
+                            facingRotation.y,
+                            facingRotation.x,
+                            facingRotation.w
+                        };
+                        thisSpawnEntry.Rotation = rotation;
+
                         thisSpawnEntry.TeamIndex = unit.Team.Index;
                         thisSpawnEntry.IsStructure = false;
+
+                        // only record health if damaged
+                        if (unit.DamageManager.Health01 < 0.99f)
+                        {
+                            thisSpawnEntry.Health = unit.DamageManager.Health;
+                        }
 
                         spawnSetup.SpawnEntries.Add(thisSpawnEntry);
                     }
@@ -457,8 +475,8 @@ namespace Si_SpawnConfigs
                 {
                     MelonLogger.Msg(spawnEntry.Classname);
 
-                    Vector3 position = new Vector3(spawnEntry.Position_X, spawnEntry.Position_Y, spawnEntry.Position_Z);
-                    Quaternion rotation = new Quaternion(spawnEntry.Rotation_X, spawnEntry.Rotation_Y, spawnEntry.Rotation_Z, spawnEntry.Rotation_W);
+                    Vector3 position = new Vector3(spawnEntry.Position[0], spawnEntry.Position[1], spawnEntry.Position[2]);
+                    Quaternion rotation = new Quaternion(spawnEntry.Rotation[0], spawnEntry.Rotation[1], spawnEntry.Rotation[2], spawnEntry.Rotation[3]);
                     GameObject? spawnedObject = SpawnAtLocation(spawnEntry.Classname, position, rotation);
                     if (spawnedObject == null)
                     {
