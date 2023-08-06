@@ -31,7 +31,7 @@ using MelonLoader.Utils;
 using System.Text.Json;
 using Il2CppSilica.UI;
 
-[assembly: MelonInfo(typeof(SpawnConfigs), "Admin Spawn Configs", "0.8.4", "databomb")]
+[assembly: MelonInfo(typeof(SpawnConfigs), "Admin Spawn Configs", "0.8.5", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_SpawnConfigs
@@ -89,6 +89,12 @@ namespace Si_SpawnConfigs
             }
 
             public bool IsStructure
+            {
+                get;
+                set;
+            }
+
+            public int? TechTier
             {
                 get;
                 set;
@@ -338,6 +344,12 @@ namespace Si_SpawnConfigs
                             thisSpawnEntry.Health = structure.DamageManager.Health;
                         }
 
+                        // if there's a non-default tech tier
+                        if (structure.StructureTechnologyTier > 0)
+                        {
+                            thisSpawnEntry.TechTier = structure.StructureTechnologyTier;
+                        }
+
                         spawnSetup.SpawnEntries.Add(thisSpawnEntry);
                     }
 
@@ -491,6 +503,21 @@ namespace Si_SpawnConfigs
                         baseObject.Team = Team.Teams[spawnEntry.TeamIndex];
                         baseObject.m_Team = Team.Teams[spawnEntry.TeamIndex];
                         baseObject.UpdateToCurrentTeam();
+                    }
+
+                    if (spawnEntry.Health != null)
+                    {
+                        baseObject.DamageManager.SetHealth((float)spawnEntry.Health);
+                    }
+
+                    if (spawnEntry.IsStructure && spawnEntry.TechTier != null)
+                    {
+                        uint netID = spawnedObject.GetNetworkComponent().NetID;
+                        Structure thisStructure = Structure.GetStructureByNetID(netID);
+                        if (thisStructure != null) 
+                        {
+                            thisStructure.StructureTechnologyTier = (int)spawnEntry.TechTier;
+                        }
                     }
                 }
 
