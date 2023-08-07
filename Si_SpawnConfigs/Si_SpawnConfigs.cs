@@ -21,7 +21,6 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using HarmonyLib;
 using Il2Cpp;
 using MelonLoader;
 using Si_SpawnConfigs;
@@ -29,9 +28,8 @@ using UnityEngine;
 using AdminExtension;
 using MelonLoader.Utils;
 using System.Text.Json;
-using Il2CppSilica.UI;
 
-[assembly: MelonInfo(typeof(SpawnConfigs), "Admin Spawn Configs", "0.8.5", "databomb")]
+[assembly: MelonInfo(typeof(SpawnConfigs), "Admin Spawn Configs", "0.8.6", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_SpawnConfigs
@@ -43,13 +41,13 @@ namespace Si_SpawnConfigs
 
         public class SpawnSetup
         {
-            public String Map
+            public String? Map
             {
                 get;
                 set;
             }
 
-            public String VersusMode
+            public String? VersusMode
             {
                 get;
                 set;
@@ -105,6 +103,12 @@ namespace Si_SpawnConfigs
                 get;
                 set;
             }
+
+            public uint? NetID
+            {
+                get;
+                set;
+            }
         }
 
         public override void OnLateInitializeMelon()
@@ -120,10 +124,13 @@ namespace Si_SpawnConfigs
                 HelperMethods.RegisterAdminCommand("!undospawn", undoSpawnCallback, Power.Cheat);
 
                 HelperMethods.CommandCallback saveCallback = Command_SaveSetup;
-                HelperMethods.RegisterAdminCommand("!savesetup", saveCallback, Power.Cheat);
+                HelperMethods.RegisterAdminCommand("!saveconfig", saveCallback, Power.Cheat);
 
                 HelperMethods.CommandCallback loadCallback = Command_LoadSetup;
-                HelperMethods.RegisterAdminCommand("!loadsetup", loadCallback, Power.Cheat);
+                HelperMethods.RegisterAdminCommand("!loadconfig", loadCallback, Power.Cheat);
+
+                HelperMethods.CommandCallback addCallback = Command_AddSetup;
+                HelperMethods.RegisterAdminCommand("!addconfig", addCallback, Power.Cheat);
             }
             else
             {
@@ -134,7 +141,7 @@ namespace Si_SpawnConfigs
         public void Command_UndoSpawn(Il2Cpp.Player callerPlayer, String args)
         {
             // validate argument count
-            int argumentCount = args.Split(' ').Count() - 1;
+            int argumentCount = args.Split(' ').Length - 1;
             if (argumentCount > 0)
             {
                 HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Too many arguments");
@@ -158,7 +165,7 @@ namespace Si_SpawnConfigs
         public void Command_Spawn(Il2Cpp.Player callerPlayer, String args)
         {
             // validate argument count
-            int argumentCount = args.Split(' ').Count() - 1;
+            int argumentCount = args.Split(' ').Length - 1;
             if (argumentCount > 1)
             {
                 HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Too many arguments");
@@ -174,26 +181,18 @@ namespace Si_SpawnConfigs
             Quaternion playerRotation = callerPlayer.m_ControlledUnit.GetFacingRotation();
             String spawnName = args.Split(' ')[1];
 
-            GameObject? spawnedObject = SpawnAtLocation(spawnName, playerPosition, playerRotation);
+            int teamIndex = callerPlayer.m_Team.Index;
+            GameObject? spawnedObject = SpawnAtLocation(spawnName, playerPosition, playerRotation, teamIndex);
             if (spawnedObject == null)
             {
                 HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Failed to spawn");
                 return;
             }
 
-            // check if team is correct
-            BaseGameObject baseObject = spawnedObject.GetBaseGameObject();
-            if (baseObject.m_Team != callerPlayer.m_Team)
-            {
-                baseObject.Team = callerPlayer.Team;
-                baseObject.m_Team = callerPlayer.m_Team;
-                baseObject.UpdateToCurrentTeam();
-            }
-
             HelperMethods.AlertAdminAction(callerPlayer, "spawned " + spawnName);
         }
 
-        public static GameObject? SpawnAtLocation(String name, Vector3 position, Quaternion rotation)
+        public static GameObject? SpawnAtLocation(String name, Vector3 position, Quaternion rotation, int teamIndex = -1)
         {
             int prefabIndex = GameDatabase.GetSpawnablePrefabIndex(name);
             if (prefabIndex <= -1)
@@ -210,8 +209,6 @@ namespace Si_SpawnConfigs
             }
 
             lastSpawnedObject = spawnedObject;
-
-            //MelonLogger.Msg("pos[x]:" + playerPosition.x.ToString() + " pos[y]:" + playerPosition.y.ToString() + " pos[z]:" + playerPosition.z.ToString());
 
             Unit testUnit = spawnedObject.GetComponent<Unit>();
             // unit
@@ -230,6 +227,18 @@ namespace Si_SpawnConfigs
                 spawnedObject.transform.rotation = rotation;
             }
 
+            if (teamIndex > -1)
+            {
+                // set team information
+                BaseGameObject baseObject = spawnedObject.GetBaseGameObject();
+                if (baseObject.m_Team.Index != teamIndex)
+                {
+                    baseObject.Team = Team.Teams[teamIndex];
+                    baseObject.m_Team = Team.Teams[teamIndex];
+                    baseObject.UpdateToCurrentTeam();
+                }
+            }
+
             return spawnedObject;
         }
         public void Command_SaveSetup(Il2Cpp.Player callerPlayer, String args)
@@ -237,7 +246,7 @@ namespace Si_SpawnConfigs
             String commandName = args.Split(' ')[0];
 
             // validate argument count
-            int argumentCount = args.Split(' ').Count() - 1;
+            int argumentCount = args.Split(' ').Length - 1;
             if (argumentCount > 1)
             {
                 HelperMethods.ReplyToCommand(commandName + ": Too many arguments");
@@ -262,14 +271,14 @@ namespace Si_SpawnConfigs
                 }
 
                 // check if file extension is valid
-                if (configFile.Contains(".") && !configFile.EndsWith("json"))
+                if (configFile.Contains('.') && !configFile.EndsWith("json"))
                 {
                     HelperMethods.ReplyToCommand(commandName + ": Invalid save name (not .json)");
                     return;
                 }
                 
                 // add .json if it's not already there
-                if (!configFile.Contains("."))
+                if (!configFile.Contains('.'))
                 {
                     configFile += ".json";
                 }
@@ -296,100 +305,7 @@ namespace Si_SpawnConfigs
                     return;
                 }
 
-                // set global config options
-                SpawnSetup spawnSetup = new SpawnSetup();
-                spawnSetup.Map = NetworkGameServer.GetServerMapName();
-                MP_Strategy strategyInstance = GameObject.FindObjectOfType<Il2Cpp.MP_Strategy>();
-                spawnSetup.VersusMode = strategyInstance.TeamsVersus.ToString();
-
-                // create a list of all structures and units
-                spawnSetup.SpawnEntries = new List<SpawnEntry>();
-                foreach (Team team in Team.Teams)
-                {
-                    if (team == null)
-                    {
-                        continue;
-                    }
-
-                    foreach (Structure structure in team.Structures)
-                    {
-                        SpawnEntry thisSpawnEntry = new SpawnEntry();
-
-                        thisSpawnEntry.Classname = structure.ToString().Split('(')[0];
-
-                        BaseGameObject structureBaseObject = structure.gameObject.GetBaseGameObject();
-                        float[] position = new float[]
-                        {
-                                structureBaseObject.WorldPhysicalCenter.x,
-                                structureBaseObject.WorldPhysicalCenter.y,
-                                structureBaseObject.WorldPhysicalCenter.z
-                        };
-                        thisSpawnEntry.Position = position;
-
-                        float[] rotation = new float[]
-                        {
-                            structure.transform.rotation.x,
-                            structure.transform.rotation.y,
-                            structure.transform.rotation.x,
-                            structure.transform.rotation.w
-                        };
-                        thisSpawnEntry.Rotation = rotation;
-
-                        thisSpawnEntry.TeamIndex = structure.Team.Index;
-                        thisSpawnEntry.IsStructure = true;
-
-                        // only record health if damaged
-                        if (structure.DamageManager.Health01 < 0.99f)
-                        {
-                            thisSpawnEntry.Health = structure.DamageManager.Health;
-                        }
-
-                        // if there's a non-default tech tier
-                        if (structure.StructureTechnologyTier > 0)
-                        {
-                            thisSpawnEntry.TechTier = structure.StructureTechnologyTier;
-                        }
-
-                        spawnSetup.SpawnEntries.Add(thisSpawnEntry);
-                    }
-
-                    foreach (Unit unit in team.Units)
-                    {
-                        SpawnEntry thisSpawnEntry = new SpawnEntry();
-
-                        thisSpawnEntry.Classname = unit.ToString().Split('(')[0];
-
-                        BaseGameObject unitBaseObject = unit.gameObject.GetBaseGameObject();
-                        float[] position = new float[]
-                        {
-                                unitBaseObject.WorldPhysicalCenter.x,
-                                unitBaseObject.WorldPhysicalCenter.y,
-                                unitBaseObject.WorldPhysicalCenter.z
-                        };
-                        thisSpawnEntry.Position = position;
-
-                        Quaternion facingRotation = unit.GetFacingRotation();
-                        float[] rotation = new float[]
-                        {
-                            facingRotation.x,
-                            facingRotation.y,
-                            facingRotation.x,
-                            facingRotation.w
-                        };
-                        thisSpawnEntry.Rotation = rotation;
-
-                        thisSpawnEntry.TeamIndex = unit.Team.Index;
-                        thisSpawnEntry.IsStructure = false;
-
-                        // only record health if damaged
-                        if (unit.DamageManager.Health01 < 0.99f)
-                        {
-                            thisSpawnEntry.Health = unit.DamageManager.Health;
-                        }
-
-                        spawnSetup.SpawnEntries.Add(thisSpawnEntry);
-                    }
-                }
+                SpawnSetup spawnSetup = GenerateSpawnSetup();
 
                 // save to file
                 String JsonRaw = JsonSerializer.Serialize(
@@ -409,12 +325,12 @@ namespace Si_SpawnConfigs
             }
         }
 
-        public void Command_LoadSetup(Il2Cpp.Player callerPlayer, String args)
+        public void Command_AddSetup(Il2Cpp.Player callerPlayer, String args)
         {
             String commandName = args.Split(' ')[0];
 
             // validate argument count
-            int argumentCount = args.Split(' ').Count() - 1;
+            int argumentCount = args.Split(' ').Length - 1;
             if (argumentCount > 1)
             {
                 HelperMethods.ReplyToCommand(commandName + ": Too many arguments");
@@ -433,14 +349,14 @@ namespace Si_SpawnConfigs
                 String spawnConfigDir = GetSpawnConfigsDirectory();
 
                 // check if file extension is valid
-                if (configFile.Contains(".") && !configFile.EndsWith("json"))
+                if (configFile.Contains('.') && !configFile.EndsWith("json"))
                 {
                     HelperMethods.ReplyToCommand(commandName + ": Invalid save name (not .json)");
                     return;
                 }
 
                 // add .json if it's not already there
-                if (!configFile.Contains("."))
+                if (!configFile.Contains('.'))
                 {
                     configFile += ".json";
                 }
@@ -469,57 +385,116 @@ namespace Si_SpawnConfigs
                     return;
                 }
 
-                if (spawnSetup.Map != NetworkGameServer.GetServerMapName())
+                if (spawnSetup.Map != null && spawnSetup.Map != NetworkGameServer.GetServerMapName())
                 {
                     HelperMethods.ReplyToCommand(commandName + ": incompatible map specified");
                     return;
                 }
 
                 MP_Strategy strategyInstance = GameObject.FindObjectOfType<Il2Cpp.MP_Strategy>();
-                if (spawnSetup.VersusMode != strategyInstance.TeamsVersus.ToString())
+                if (spawnSetup.VersusMode != null && spawnSetup.VersusMode != strategyInstance.TeamsVersus.ToString())
                 {
                     HelperMethods.ReplyToCommand(commandName + ": incompatible mode specified");
                     return;
                 }
 
-                // load all structures and units
-                foreach (SpawnEntry spawnEntry in spawnSetup.SpawnEntries)
+                if (!ExecuteBatchSpawn(spawnSetup))
                 {
-                    MelonLogger.Msg(spawnEntry.Classname);
-
-                    Vector3 position = new Vector3(spawnEntry.Position[0], spawnEntry.Position[1], spawnEntry.Position[2]);
-                    Quaternion rotation = new Quaternion(spawnEntry.Rotation[0], spawnEntry.Rotation[1], spawnEntry.Rotation[2], spawnEntry.Rotation[3]);
-                    GameObject? spawnedObject = SpawnAtLocation(spawnEntry.Classname, position, rotation);
-                    if (spawnedObject == null)
-                    {
-                        HelperMethods.ReplyToCommand(commandName + ": bad name in config file");
-                        return;
-                    }
-
-                    // check if team is correct
-                    BaseGameObject baseObject = spawnedObject.GetBaseGameObject();
-                    if (baseObject.m_Team.Index != spawnEntry.TeamIndex)
-                    {
-                        baseObject.Team = Team.Teams[spawnEntry.TeamIndex];
-                        baseObject.m_Team = Team.Teams[spawnEntry.TeamIndex];
-                        baseObject.UpdateToCurrentTeam();
-                    }
-
-                    if (spawnEntry.Health != null)
-                    {
-                        baseObject.DamageManager.SetHealth((float)spawnEntry.Health);
-                    }
-
-                    if (spawnEntry.IsStructure && spawnEntry.TechTier != null)
-                    {
-                        uint netID = spawnedObject.GetNetworkComponent().NetID;
-                        Structure thisStructure = Structure.GetStructureByNetID(netID);
-                        if (thisStructure != null) 
-                        {
-                            thisStructure.StructureTechnologyTier = (int)spawnEntry.TechTier;
-                        }
-                    }
+                    HelperMethods.ReplyToCommand(commandName + ": bad name in config file");
+                    return;
                 }
+
+                HelperMethods.ReplyToCommand(commandName + ": Added config from file");
+            }
+            catch (Exception error)
+            {
+                HelperMethods.PrintError(error, "Command_AddSetup failed");
+            }
+        }
+
+        public void Command_LoadSetup(Il2Cpp.Player callerPlayer, String args)
+        {
+            String commandName = args.Split(' ')[0];
+
+            // validate argument count
+            int argumentCount = args.Split(' ').Length - 1;
+            if (argumentCount > 1)
+            {
+                HelperMethods.ReplyToCommand(commandName + ": Too many arguments");
+                return;
+            }
+            else if (argumentCount < 1)
+            {
+                HelperMethods.ReplyToCommand(commandName + ": Too few arguments");
+                return;
+            }
+
+            String configFile = args.Split(' ')[1];
+
+            try
+            {
+                String spawnConfigDir = GetSpawnConfigsDirectory();
+
+                // check if file extension is valid
+                if (configFile.Contains('.') && !configFile.EndsWith("json"))
+                {
+                    HelperMethods.ReplyToCommand(commandName + ": Invalid save name (not .json)");
+                    return;
+                }
+
+                // add .json if it's not already there
+                if (!configFile.Contains('.'))
+                {
+                    configFile += ".json";
+                }
+
+                // final check on filename
+                if (configFile.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
+                {
+                    HelperMethods.ReplyToCommand(commandName + ": Cannot use input as filename");
+                    return;
+                }
+
+                // do we have anything to load here?
+                String configFileFullPath = System.IO.Path.Combine(spawnConfigDir, configFile);
+                if (!File.Exists(configFileFullPath))
+                {
+                    HelperMethods.ReplyToCommand(commandName + ": configuration not found");
+                    return;
+                }
+
+                // check global config options
+                String JsonRaw = File.ReadAllText(configFileFullPath);
+                SpawnSetup? spawnSetup = JsonSerializer.Deserialize<SpawnSetup>(JsonRaw);
+                if (spawnSetup == null)
+                {
+                    HelperMethods.ReplyToCommand(commandName + ": json error in configuration file");
+                    return;
+                }
+
+                if (spawnSetup.Map != null && spawnSetup.Map != NetworkGameServer.GetServerMapName())
+                {
+                    HelperMethods.ReplyToCommand(commandName + ": incompatible map specified");
+                    return;
+                }
+
+                MP_Strategy strategyInstance = GameObject.FindObjectOfType<Il2Cpp.MP_Strategy>();
+                if (spawnSetup.VersusMode != null && spawnSetup.VersusMode != strategyInstance.TeamsVersus.ToString())
+                {
+                    HelperMethods.ReplyToCommand(commandName + ": incompatible mode specified");
+                    return;
+                }
+
+                SpawnSetup originalSpawnSetup = GenerateSpawnSetup(true);
+
+                if (!ExecuteBatchSpawn(spawnSetup))
+                {
+                    HelperMethods.ReplyToCommand(commandName + ": bad name in config file");
+                    return;
+                }
+
+                // remove the originals
+                ExecuteBatchRemoval(originalSpawnSetup);
 
                 HelperMethods.ReplyToCommand(commandName + ": Loaded config from file");
             }
@@ -532,6 +507,173 @@ namespace Si_SpawnConfigs
         static string GetSpawnConfigsDirectory()
         {
             return Path.Combine(MelonEnvironment.UserDataDirectory, @"SpawnConfigs\");
+        }
+        public static void ExecuteBatchRemoval(SpawnSetup removeSetup)
+        {
+            foreach (SpawnEntry spawnEntry in removeSetup.SpawnEntries)
+            {
+                MelonLogger.Msg("Removing " + spawnEntry.Classname);
+
+                if (spawnEntry.NetID == null)
+                {
+                    continue;
+                }
+
+                if (spawnEntry.IsStructure)
+                {
+                    Structure thisStructure = Structure.GetStructureByNetID((uint)spawnEntry.NetID);
+                    thisStructure.DamageManager.SetHealth01(0.0f);
+                }
+                else
+                {
+                    Unit thisUnit = Unit.GetUnitByNetID((uint)spawnEntry.NetID);
+                    thisUnit.DamageManager.SetHealth01(0.0f);
+                }
+            }
+        }
+
+        public static bool ExecuteBatchSpawn(SpawnSetup spawnSetup)
+        {
+            // load all structures and units
+            foreach (SpawnEntry spawnEntry in spawnSetup.SpawnEntries)
+            {
+                MelonLogger.Msg("Adding " + spawnEntry.Classname);
+
+                Vector3 position = new(spawnEntry.Position[0], spawnEntry.Position[1], spawnEntry.Position[2]);
+                Quaternion rotation = new(spawnEntry.Rotation[0], spawnEntry.Rotation[1], spawnEntry.Rotation[2], spawnEntry.Rotation[3]);
+                GameObject? spawnedObject = SpawnAtLocation(spawnEntry.Classname, position, rotation, spawnEntry.TeamIndex);
+                if (spawnedObject == null)
+                {
+                    return false;
+                }
+
+                if (spawnEntry.Health != null)
+                {
+                    BaseGameObject baseObject = spawnedObject.GetBaseGameObject();
+                    baseObject.DamageManager.SetHealth((float)spawnEntry.Health);
+                }
+
+                if (spawnEntry.IsStructure && spawnEntry.TechTier != null)
+                {
+                    uint netID = spawnedObject.GetNetworkComponent().NetID;
+                    Structure thisStructure = Structure.GetStructureByNetID(netID);
+                    if (thisStructure != null)
+                    {
+                        thisStructure.StructureTechnologyTier = (int)spawnEntry.TechTier;
+                        thisStructure.RPC_SynchTechnologyTier();
+                    }
+                }
+            }
+
+            return true;
+        }
+
+        public static SpawnSetup GenerateSpawnSetup(bool includeNetIDs = false)
+        {
+            // set global config options
+            SpawnSetup spawnSetup = new();
+            spawnSetup.Map = NetworkGameServer.GetServerMapName();
+            MP_Strategy strategyInstance = GameObject.FindObjectOfType<Il2Cpp.MP_Strategy>();
+            spawnSetup.VersusMode = strategyInstance.TeamsVersus.ToString();
+
+            // create a list of all structures and units
+            spawnSetup.SpawnEntries = new List<SpawnEntry>();
+            foreach (Team team in Team.Teams)
+            {
+                if (team == null)
+                {
+                    continue;
+                }
+
+                foreach (Structure structure in team.Structures)
+                {
+                    SpawnEntry thisSpawnEntry = new();
+
+                    BaseGameObject structureBaseObject = structure.gameObject.GetBaseGameObject();
+                    float[] position = new float[]
+                    {
+                                structureBaseObject.WorldPhysicalCenter.x,
+                                structureBaseObject.WorldPhysicalCenter.y,
+                                structureBaseObject.WorldPhysicalCenter.z
+                    };
+                    thisSpawnEntry.Position = position;
+
+                    float[] rotation = new float[]
+                    {
+                            structure.transform.rotation.x,
+                            structure.transform.rotation.y,
+                            structure.transform.rotation.x,
+                            structure.transform.rotation.w
+                    };
+                    thisSpawnEntry.Rotation = rotation;
+
+                    thisSpawnEntry.TeamIndex = structure.Team.Index;
+                    thisSpawnEntry.Classname = structure.ToString().Split('(')[0];
+                    thisSpawnEntry.IsStructure = true;
+
+                    // only record health if damaged
+                    if (structure.DamageManager.Health01 < 0.99f)
+                    {
+                        thisSpawnEntry.Health = structure.DamageManager.Health;
+                    }
+
+                    // if there's a non-default tech tier
+                    if (structure.StructureTechnologyTier > 0)
+                    {
+                        thisSpawnEntry.TechTier = structure.StructureTechnologyTier;
+                    }
+
+                    if (includeNetIDs)
+                    {
+                        thisSpawnEntry.NetID = structure.NetworkComponent.NetID;
+                    }
+
+                    spawnSetup.SpawnEntries.Add(thisSpawnEntry);
+                }
+
+                foreach (Unit unit in team.Units)
+                {
+                    SpawnEntry thisSpawnEntry = new();
+
+                    BaseGameObject unitBaseObject = unit.gameObject.GetBaseGameObject();
+                    float[] position = new float[]
+                    {
+                            unitBaseObject.WorldPhysicalCenter.x,
+                            unitBaseObject.WorldPhysicalCenter.y,
+                            unitBaseObject.WorldPhysicalCenter.z
+                    };
+                    thisSpawnEntry.Position = position;
+
+                    Quaternion facingRotation = unit.GetFacingRotation();
+                    float[] rotation = new float[]
+                    {
+                            facingRotation.x,
+                            facingRotation.y,
+                            facingRotation.x,
+                            facingRotation.w
+                    };
+                    thisSpawnEntry.Rotation = rotation;
+
+                    thisSpawnEntry.TeamIndex = unit.Team.Index;
+                    thisSpawnEntry.Classname = unit.ToString().Split('(')[0];
+                    thisSpawnEntry.IsStructure = false;
+
+                    // only record health if damaged
+                    if (unit.DamageManager.Health01 < 0.99f)
+                    {
+                        thisSpawnEntry.Health = unit.DamageManager.Health;
+                    }
+
+                    if (includeNetIDs)
+                    {
+                        thisSpawnEntry.NetID = unit.NetworkComponent.NetID;
+                    }
+
+                    spawnSetup.SpawnEntries.Add(thisSpawnEntry);
+                }
+            }
+
+            return spawnSetup;
         }
 
         // for changing a bunker to an outpost or spawning a vehicle nearby
