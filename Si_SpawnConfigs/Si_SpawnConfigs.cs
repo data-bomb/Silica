@@ -29,7 +29,7 @@ using AdminExtension;
 using MelonLoader.Utils;
 using System.Text.Json;
 
-[assembly: MelonInfo(typeof(SpawnConfigs), "Admin Spawn Configs", "0.8.6", "databomb")]
+[assembly: MelonInfo(typeof(SpawnConfigs), "Admin Spawn Configs", "0.8.7", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_SpawnConfigs
@@ -530,6 +530,11 @@ namespace Si_SpawnConfigs
                     thisUnit.DamageManager.SetHealth01(0.0f);
                 }
             }
+
+            foreach (ConstructionSite constructionSite in ConstructionSite.ConstructionSites)
+            {
+                constructionSite.DamageManager.SetHealth01(0.0f);
+            }
         }
 
         public static bool ExecuteBatchSpawn(SpawnSetup spawnSetup)
@@ -587,14 +592,20 @@ namespace Si_SpawnConfigs
 
                 foreach (Structure structure in team.Structures)
                 {
+                    // skip bunkers for now. TODO: address how to safely add bunkers
+                    if (structure.ToString().StartsWith("Bunk"))
+                    {
+                        continue;
+                    }
+
                     SpawnEntry thisSpawnEntry = new();
 
                     BaseGameObject structureBaseObject = structure.gameObject.GetBaseGameObject();
                     float[] position = new float[]
                     {
-                                structureBaseObject.WorldPhysicalCenter.x,
-                                structureBaseObject.WorldPhysicalCenter.y,
-                                structureBaseObject.WorldPhysicalCenter.z
+                            structure.transform.position.x,
+                            structure.transform.position.y,
+                            structure.transform.position.z
                     };
                     thisSpawnEntry.Position = position;
 
@@ -602,7 +613,7 @@ namespace Si_SpawnConfigs
                     {
                             structure.transform.rotation.x,
                             structure.transform.rotation.y,
-                            structure.transform.rotation.x,
+                            structure.transform.rotation.z,
                             structure.transform.rotation.w
                     };
                     thisSpawnEntry.Rotation = rotation;
@@ -635,22 +646,21 @@ namespace Si_SpawnConfigs
                 {
                     SpawnEntry thisSpawnEntry = new();
 
-                    BaseGameObject unitBaseObject = unit.gameObject.GetBaseGameObject();
                     float[] position = new float[]
                     {
-                            unitBaseObject.WorldPhysicalCenter.x,
-                            unitBaseObject.WorldPhysicalCenter.y,
-                            unitBaseObject.WorldPhysicalCenter.z
+                        unit.transform.position.x,
+                        unit.transform.position.y,
+                        unit.transform.position.z
                     };
                     thisSpawnEntry.Position = position;
 
                     Quaternion facingRotation = unit.GetFacingRotation();
                     float[] rotation = new float[]
                     {
-                            facingRotation.x,
-                            facingRotation.y,
-                            facingRotation.x,
-                            facingRotation.w
+                        facingRotation.x,
+                        facingRotation.y,
+                        facingRotation.z,
+                        facingRotation.w
                     };
                     thisSpawnEntry.Rotation = rotation;
 
