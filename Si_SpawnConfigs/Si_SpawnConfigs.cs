@@ -28,8 +28,9 @@ using UnityEngine;
 using AdminExtension;
 using MelonLoader.Utils;
 using System.Text.Json;
+using static Si_SpawnConfigs.SpawnConfigs;
 
-[assembly: MelonInfo(typeof(SpawnConfigs), "Admin Spawn Configs", "0.8.7", "databomb")]
+[assembly: MelonInfo(typeof(SpawnConfigs), "Admin Spawn Configs", "0.8.8", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_SpawnConfigs
@@ -53,14 +54,41 @@ namespace Si_SpawnConfigs
                 set;
             }
 
-            public List<SpawnEntry> SpawnEntries
+            public List<TeamSpawn>? Teams
+            {
+                get;
+                set;
+            }
+
+            public List<StructureSpawn>? Structures
+            {
+                get;
+                set;
+            }
+
+            public List<UnitSpawn>? Units
             {
                 get;
                 set;
             }
         }
 
-        public class SpawnEntry
+        public class TeamSpawn
+        {
+            public int TeamIndex
+            {
+                get;
+                set;
+            }
+
+            public int Resources
+            {
+                get;
+                set;
+            }
+        }
+
+        public class ObjectSpawn
         {
             public String Classname
             {
@@ -75,18 +103,21 @@ namespace Si_SpawnConfigs
             }
 
             public float[] Rotation
-            { 
-                get; 
-                set;
-            }
-
-            public int TeamIndex
             {
                 get;
                 set;
             }
 
-            public bool IsStructure
+            public uint? NetID
+            {
+                get;
+                set;
+            }
+        }
+
+        public class StructureSpawn : ObjectSpawn
+        {
+            public int TeamIndex
             {
                 get;
                 set;
@@ -104,7 +135,28 @@ namespace Si_SpawnConfigs
                 set;
             }
 
-            public uint? NetID
+            public int? Resources
+            {
+                get;
+                set;
+            }
+        }
+
+        public class UnitSpawn : ObjectSpawn
+        {
+            public int TeamIndex
+            {
+                get;
+                set;
+            }
+
+            public float? Health
+            {
+                get;
+                set;
+            }
+
+            public int? Resources
             {
                 get;
                 set;
@@ -487,14 +539,31 @@ namespace Si_SpawnConfigs
 
                 SpawnSetup originalSpawnSetup = GenerateSpawnSetup(true);
 
-                if (!ExecuteBatchSpawn(spawnSetup))
+                // remove all construction sites (units + structures)
+                RemoveConstructionSites();
+
+                // load structures so there is still an HQ/Nest
+                if (!LoadStructures(spawnSetup))
                 {
-                    HelperMethods.ReplyToCommand(commandName + ": bad name in config file");
+                    HelperMethods.ReplyToCommand(commandName + ": invalid structure in config file");
                     return;
                 }
 
-                // remove the originals
-                ExecuteBatchRemoval(originalSpawnSetup);
+                // remove original structures (incl HQ+Nest)
+                RemoveStructures(originalSpawnSetup);
+
+                // remove original units to avoid likely collisions if reloaded
+                RemoveUnits(originalSpawnSetup);
+
+                // load new units
+                if (!LoadUnits(spawnSetup))
+                {
+                    HelperMethods.ReplyToCommand(commandName + ": invalid unit in config file");
+                    return;
+                }
+
+                // set anything team-specific
+                LoadTeams(spawnSetup);
 
                 HelperMethods.ReplyToCommand(commandName + ": Loaded config from file");
             }
@@ -508,67 +577,182 @@ namespace Si_SpawnConfigs
         {
             return Path.Combine(MelonEnvironment.UserDataDirectory, @"SpawnConfigs\");
         }
-        public static void ExecuteBatchRemoval(SpawnSetup removeSetup)
-        {
-            foreach (SpawnEntry spawnEntry in removeSetup.SpawnEntries)
-            {
-                MelonLogger.Msg("Removing " + spawnEntry.Classname);
 
-                if (spawnEntry.NetID == null)
+        public static void RemoveConstructionSites()
+        {
+            MelonLogger.Msg("Removing all construciton sites");
+            ConstructionSite.ClearAllConstructionSites();
+            /*foreach (ConstructionSite constructionSite in ConstructionSite.ConstructionSites)
+            {
+                if (constructionSite == null)
                 {
                     continue;
                 }
 
-                if (spawnEntry.IsStructure)
+                MelonLogger.Msg("Removing construction " + constructionSite.ToString());
+
+                //constructionSite.gameObject.GetDamageManager().SetHealth01(0.0f);
+                constructionSite.DamageManager.SetHealth01(0.0f);
+            }*/
+        }
+
+        public static void RemoveStructures(SpawnSetup removeSetup)
+        {
+            if (removeSetup.Structures != null)
+            {
+                foreach (StructureSpawn spawnEntry in removeSetup.Structures)
                 {
+                    if (spawnEntry.NetID == null)
+                    {
+                        continue;
+                    }
+
+                    MelonLogger.Msg("Removing structure " + spawnEntry.Classname);
+
                     Structure thisStructure = Structure.GetStructureByNetID((uint)spawnEntry.NetID);
                     thisStructure.DamageManager.SetHealth01(0.0f);
                 }
-                else
+            }
+        }
+
+        public static void RemoveUnits(SpawnSetup removeSetup)
+        {
+            if (removeSetup.Units != null)
+            {
+                foreach (UnitSpawn spawnEntry in removeSetup.Units)
                 {
+                    if (spawnEntry.NetID == null)
+                    {
+                        continue;
+                    }
+
+                    MelonLogger.Msg("Removing unit " + spawnEntry.Classname);
+
                     Unit thisUnit = Unit.GetUnitByNetID((uint)spawnEntry.NetID);
                     thisUnit.DamageManager.SetHealth01(0.0f);
                 }
             }
+        }
 
-            foreach (ConstructionSite constructionSite in ConstructionSite.ConstructionSites)
+        public static void ExecuteBatchRemoval(SpawnSetup removeSetup)
+        {
+            // remove all pending construction first (units being built are ConstructionSites) to avoid de-referencing null
+            RemoveConstructionSites();
+
+            RemoveStructures(removeSetup);
+
+            RemoveUnits(removeSetup);
+        }
+
+        public static bool LoadUnits(SpawnSetup addSetup)
+        {
+            // load all units
+            if (addSetup.Units != null)
             {
-                constructionSite.DamageManager.SetHealth01(0.0f);
+                foreach (UnitSpawn spawnEntry in addSetup.Units)
+                {
+                    MelonLogger.Msg("Adding unit " + spawnEntry.Classname);
+
+                    Vector3 position = new(spawnEntry.Position[0], spawnEntry.Position[1], spawnEntry.Position[2]);
+                    Quaternion rotation = new(spawnEntry.Rotation[0], spawnEntry.Rotation[1], spawnEntry.Rotation[2], spawnEntry.Rotation[3]);
+                    GameObject? spawnedObject = SpawnAtLocation(spawnEntry.Classname, position, rotation, spawnEntry.TeamIndex);
+                    if (spawnedObject == null)
+                    {
+                        return false;
+                    }
+
+                    BaseGameObject baseObject = spawnedObject.GetBaseGameObject();
+                    if (spawnEntry.Health != null)
+                    {
+                        baseObject.DamageManager.SetHealth((float)spawnEntry.Health);
+                    }
+
+                    if (baseObject.IsResourceHolder && spawnEntry.Resources != null)
+                    {
+                        // assign biotics (Resources[1]) to alien team and balterium (Resources[0]) to human teams
+                        Resource resource = spawnEntry.TeamIndex == 0 ? Resource.Resources[1] : Resource.Resources[0];
+                        baseObject.StoreResource(resource, (int)spawnEntry.Resources);
+                    }
+                }
+            }
+
+            return true;
+        }
+
+        public static bool LoadStructures(SpawnSetup addSetup)
+        {
+            // load all structures
+            if (addSetup.Structures != null)
+            {
+                foreach (StructureSpawn spawnEntry in addSetup.Structures)
+                {
+                    MelonLogger.Msg("Adding structure " + spawnEntry.Classname);
+
+                    Vector3 position = new(spawnEntry.Position[0], spawnEntry.Position[1], spawnEntry.Position[2]);
+                    Quaternion rotation = new(spawnEntry.Rotation[0], spawnEntry.Rotation[1], spawnEntry.Rotation[2], spawnEntry.Rotation[3]);
+                    GameObject? spawnedObject = SpawnAtLocation(spawnEntry.Classname, position, rotation, spawnEntry.TeamIndex);
+                    if (spawnedObject == null)
+                    {
+                        return false;
+                    }
+
+                    BaseGameObject baseObject = spawnedObject.GetBaseGameObject();
+                    if (spawnEntry.Health != null)
+                    {
+                        baseObject.DamageManager.SetHealth((float)spawnEntry.Health);
+                    }
+
+                    if (spawnEntry.TechTier != null)
+                    {
+                        uint netID = spawnedObject.GetNetworkComponent().NetID;
+                        Structure thisStructure = Structure.GetStructureByNetID(netID);
+                        if (thisStructure != null)
+                        {
+                            thisStructure.StructureTechnologyTier = (int)spawnEntry.TechTier;
+                            thisStructure.RPC_SynchTechnologyTier();
+                        }
+                    }
+
+                    if (baseObject.IsResourceHolder && spawnEntry.Resources != null)
+                    {
+                        // assign biotics (Resources[1]) to alien team and balterium (Resources[0]) to human teams
+                        Resource resource = spawnEntry.TeamIndex == 0 ? Resource.Resources[1] : Resource.Resources[0];
+                        baseObject.StoreResource(resource, (int)spawnEntry.Resources);
+                    }
+                }
+            }
+
+            return true;
+        }
+        
+        public static void LoadTeams(SpawnSetup addSetup)
+        {
+            // team-specific info
+            if (addSetup.Teams != null)
+            {
+                foreach (TeamSpawn spawnEntry in addSetup.Teams)
+                {
+                    Team.Teams[spawnEntry.TeamIndex].StartingResources = spawnEntry.Resources;
+                    Team.Teams[spawnEntry.TeamIndex].m_StartingResources = spawnEntry.Resources;
+                }
             }
         }
 
         public static bool ExecuteBatchSpawn(SpawnSetup spawnSetup)
         {
-            // load all structures and units
-            foreach (SpawnEntry spawnEntry in spawnSetup.SpawnEntries)
+            bool loadStatus = LoadStructures(spawnSetup);
+            if (!loadStatus)
             {
-                MelonLogger.Msg("Adding " + spawnEntry.Classname);
-
-                Vector3 position = new(spawnEntry.Position[0], spawnEntry.Position[1], spawnEntry.Position[2]);
-                Quaternion rotation = new(spawnEntry.Rotation[0], spawnEntry.Rotation[1], spawnEntry.Rotation[2], spawnEntry.Rotation[3]);
-                GameObject? spawnedObject = SpawnAtLocation(spawnEntry.Classname, position, rotation, spawnEntry.TeamIndex);
-                if (spawnedObject == null)
-                {
-                    return false;
-                }
-
-                if (spawnEntry.Health != null)
-                {
-                    BaseGameObject baseObject = spawnedObject.GetBaseGameObject();
-                    baseObject.DamageManager.SetHealth((float)spawnEntry.Health);
-                }
-
-                if (spawnEntry.IsStructure && spawnEntry.TechTier != null)
-                {
-                    uint netID = spawnedObject.GetNetworkComponent().NetID;
-                    Structure thisStructure = Structure.GetStructureByNetID(netID);
-                    if (thisStructure != null)
-                    {
-                        thisStructure.StructureTechnologyTier = (int)spawnEntry.TechTier;
-                        thisStructure.RPC_SynchTechnologyTier();
-                    }
-                }
+                return false;
             }
+
+            loadStatus = LoadUnits(spawnSetup);
+            if (!loadStatus)
+            {
+                return false;
+            }
+
+            LoadTeams(spawnSetup);
 
             return true;
         }
@@ -582,13 +766,21 @@ namespace Si_SpawnConfigs
             spawnSetup.VersusMode = strategyInstance.TeamsVersus.ToString();
 
             // create a list of all structures and units
-            spawnSetup.SpawnEntries = new List<SpawnEntry>();
+            spawnSetup.Structures = new List<StructureSpawn>();
+            spawnSetup.Units = new List<UnitSpawn>();
+            spawnSetup.Teams = new List<TeamSpawn>();
+
             foreach (Team team in Team.Teams)
             {
                 if (team == null)
                 {
                     continue;
                 }
+
+                TeamSpawn thisTeamSpawn = new();
+                thisTeamSpawn.Resources = team.m_StartingResources;
+                thisTeamSpawn.TeamIndex = team.Index;
+                spawnSetup.Teams.Add(thisTeamSpawn);
 
                 foreach (Structure structure in team.Structures)
                 {
@@ -598,7 +790,7 @@ namespace Si_SpawnConfigs
                         continue;
                     }
 
-                    SpawnEntry thisSpawnEntry = new();
+                    StructureSpawn thisSpawnEntry = new();
 
                     BaseGameObject structureBaseObject = structure.gameObject.GetBaseGameObject();
                     float[] position = new float[]
@@ -620,7 +812,6 @@ namespace Si_SpawnConfigs
 
                     thisSpawnEntry.TeamIndex = structure.Team.Index;
                     thisSpawnEntry.Classname = structure.ToString().Split('(')[0];
-                    thisSpawnEntry.IsStructure = true;
 
                     // only record health if damaged
                     if (structure.DamageManager.Health01 < 0.99f)
@@ -634,17 +825,22 @@ namespace Si_SpawnConfigs
                         thisSpawnEntry.TechTier = structure.StructureTechnologyTier;
                     }
 
+                    if (structure.IsResourceHolder)
+                    {
+                        thisSpawnEntry.Resources = structure.GetStoredResources();
+                    }
+
                     if (includeNetIDs)
                     {
                         thisSpawnEntry.NetID = structure.NetworkComponent.NetID;
                     }
 
-                    spawnSetup.SpawnEntries.Add(thisSpawnEntry);
+                    spawnSetup.Structures.Add(thisSpawnEntry);
                 }
 
                 foreach (Unit unit in team.Units)
                 {
-                    SpawnEntry thisSpawnEntry = new();
+                    UnitSpawn thisSpawnEntry = new();
 
                     float[] position = new float[]
                     {
@@ -666,7 +862,6 @@ namespace Si_SpawnConfigs
 
                     thisSpawnEntry.TeamIndex = unit.Team.Index;
                     thisSpawnEntry.Classname = unit.ToString().Split('(')[0];
-                    thisSpawnEntry.IsStructure = false;
 
                     // only record health if damaged
                     if (unit.DamageManager.Health01 < 0.99f)
@@ -674,17 +869,24 @@ namespace Si_SpawnConfigs
                         thisSpawnEntry.Health = unit.DamageManager.Health;
                     }
 
+                    if (unit.IsResourceHolder)
+                    {
+                        thisSpawnEntry.Resources = unit.GetResourceCapacity();
+                    }
+
                     if (includeNetIDs)
                     {
                         thisSpawnEntry.NetID = unit.NetworkComponent.NetID;
                     }
 
-                    spawnSetup.SpawnEntries.Add(thisSpawnEntry);
+                    spawnSetup.Units.Add(thisSpawnEntry);
                 }
             }
 
             return spawnSetup;
         }
+
+        // balterium and biotics ResourceArea s will need to be destroyed and respawned into the game with ResourceArea.DistributeResources
 
         // for changing a bunker to an outpost or spawning a vehicle nearby
 
