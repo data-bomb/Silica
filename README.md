@@ -31,6 +31,7 @@
 | Announcements | 1.0.1 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_Announcements/bin/Si_Announcements.dll) |
 | Spawn Configs | 0.8.8 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_SpawnConfigs/bin/Si_SpawnConfigs.dll) |
 | Resource Management | 1.0.0 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_Resources/bin/Si_Resources.dll) |
+| Tech Glitch | 0.9.0 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_TechGlitch/bin/Si_TechGlitch.dll) |
 
 ## Extension Summary
 | Mod Name | Version   | Link |
