@@ -5,7 +5,7 @@ using Si_Resources;
 using UnityEngine;
 using AdminExtension;
 
-[assembly: MelonInfo(typeof(ResourceConfig), "Resource Configuration", "1.0.0", "databomb")]
+[assembly: MelonInfo(typeof(ResourceConfig), "Resource Configuration", "1.0.1", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_Resources
@@ -24,11 +24,11 @@ namespace Si_Resources
             }
             if (Pref_Resources_Humans_StartingAmount == null)
             {
-                Pref_Resources_Humans_StartingAmount = _modCategory.CreateEntry<int>("Resources_Humans_StartingAmount", 7000);
+                Pref_Resources_Humans_StartingAmount = _modCategory.CreateEntry<int>("Resources_Humans_StartingAmount", 11000);
             }
             if (Pref_Resources_Aliens_StartingAmount == null)
             {
-                Pref_Resources_Aliens_StartingAmount = _modCategory.CreateEntry<int>("Resources_Aliens_StartingAmount", 10500);
+                Pref_Resources_Aliens_StartingAmount = _modCategory.CreateEntry<int>("Resources_Aliens_StartingAmount", 11000);
             }
         }
 
