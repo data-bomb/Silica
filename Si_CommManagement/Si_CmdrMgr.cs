@@ -34,7 +34,7 @@ using AdminExtension;
 using Il2CppSteamworks;
 using static MelonLoader.MelonLogger;
 
-[assembly: MelonInfo(typeof(CommanderManager), "[Si] Commander Management", "1.1.4", "databomb")]
+[assembly: MelonInfo(typeof(CommanderManager), "[Si] Commander Management", "1.1.6", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_CommanderManagement
@@ -78,6 +78,8 @@ namespace Si_CommanderManagement
         static bool bOnGameInitFired;
         static bool AdminModAvailable = false;
 
+        static Player[] teamswapCommanderChecks;
+        static Player[] promotedCommanders;
         static List<BanEntry> MasterBanList;
         static String banListFile = System.IO.Path.Combine(MelonEnvironment.UserDataDirectory, "commander_bans.json");
 
@@ -130,6 +132,10 @@ namespace Si_CommanderManagement
                 CommanderManager.commanderApplicants[SolTeam] = new List<Player>();
 
                 CommanderManager.previousCommanders = new List<Player>();
+
+                CommanderManager.teamswapCommanderChecks = new Player[MaxTeams];
+                CommanderManager.promotedCommanders = new Player[MaxTeams];
+
 
                 bOnGameInitFired = false;
             }
@@ -299,6 +305,7 @@ namespace Si_CommanderManagement
                         if (CommanderPlayer != null && CommanderPlayer.Team.Index == i)
                         {
                             Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, HelperMethods.chatPrefix + "Promoted " + HelperMethods.GetTeamColor(CommanderPlayer) + CommanderPlayer.PlayerName + HelperMethods.defaultColor + " to commander for " + HelperMethods.GetTeamColor(CommanderPlayer) + CommanderPlayer.Team.TeamName, false);
+                            CommanderManager.promotedCommanders[CommanderPlayer.Team.Index] = CommanderPlayer;
                             PromoteToCommander(CommanderPlayer);
                             CommanderManager.previousCommanders.Add(CommanderPlayer);
                         }
@@ -318,9 +325,14 @@ namespace Si_CommanderManagement
             {
                 try
                 {
-                    if (__instance != null && __0 != null && __1 != null)
+                    if (__instance == null || __0 == null)
                     {
+                        return true;
 
+                    }
+
+                    if (__1 != null)
+                    {
                         // check if player is allowed to be commander
                         long JoiningPlayerSteamId = long.Parse(__1.ToString().Split('_')[1]);
                         CommanderManager.BanEntry? banEntry = CommanderManager.MasterBanList.Find(i => i.OffenderSteamId == JoiningPlayerSteamId);
@@ -338,13 +350,12 @@ namespace Si_CommanderManagement
                         }
 
                         // check if they're trying to join before the 30 second countdown expires and the game begins
-                        if (Il2Cpp.GameMode.CurrentGameMode.Started && !Il2Cpp.GameMode.CurrentGameMode.GameBegun)
+                        if (GameMode.CurrentGameMode.Started && !GameMode.CurrentGameMode.GameBegun)
                         {
                             // check if player is already an applicant
                             if (!CommanderManager.commanderApplicants[__1.Team.Index].Contains(__1))
                             {
-                                Il2Cpp.Player serverPlayer = Il2Cpp.NetworkGameServer.GetServerPlayer();
-                                Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, HelperMethods.chatPrefix + HelperMethods.GetTeamColor(__1) + __1.PlayerName + HelperMethods.defaultColor + " has applied for commander", false);
+                                HelperMethods.ReplyToCommand_Player(__1, "has applied for commander");
 
                                 // need to get the player back to Infantry and not stuck in no-clip
                                 SendToInfantry(__1);
@@ -356,6 +367,55 @@ namespace Si_CommanderManagement
 
                             __1 = null;
                             return false;
+                        }
+
+                        // when the game is in full swing
+                        if (GameMode.CurrentGameMode.Started && GameMode.CurrentGameMode.GameBegun)
+                        {
+
+
+                            // determine if promoted commander was previously commanding another team
+                            int commanderSwappedTeamIndex = -1;
+                            for (int i = 0; i < MaxTeams; i++)
+                            {
+                                if (i == __0.Index)
+                                {
+                                    continue;
+                                }
+
+                                if (teamswapCommanderChecks[i] == __1)
+                                {
+                                    commanderSwappedTeamIndex = i;
+                                    break;
+                                }
+                            }
+
+                            // announce a commander swapped to command another team
+                            if (commanderSwappedTeamIndex != -1)
+                            {
+                                Team departingTeam = Team.Teams[commanderSwappedTeamIndex];
+                                HelperMethods.ReplyToCommand_Player(__1, "has left command of " + HelperMethods.GetTeamColor(departingTeam) + departingTeam.TeamName + HelperMethods.defaultColor + " and taken command of " + HelperMethods.GetTeamColor(__0) + __0.TeamName);
+                                teamswapCommanderChecks[commanderSwappedTeamIndex] = null;
+                            }
+                            else
+                            {
+                                // announce a new commander, if needed
+                                if (teamswapCommanderChecks[__0.Index] != __1 && promotedCommanders[__0.Index] != __1)
+                                {
+                                    promotedCommanders[__0.Index] = __1;
+                                    HelperMethods.ReplyToCommand_Player(__1, "has taken command of " + HelperMethods.GetTeamColor(__0) + __0.TeamName);
+                                }
+                            }
+                        }
+                    }
+                    // player is null
+                    else
+                    {
+                        // check if there is a current commander
+                        Player? teamCommander = __instance.GetCommanderForTeam(__0);
+                        if (teamCommander != null)
+                        {
+                            teamswapCommanderChecks[__0.Index] = teamCommander;
                         }
                     }
                 }
@@ -589,9 +649,89 @@ namespace Si_CommanderManagement
                         {
                             // reset timer value and keep counting down
                             strategyInstance.Timer = 25f;
+                            // TODO: Fix repeating message 
                             HelperMethods.ReplyToCommand("Round cannot start because all teams don't have a commander. Chat !commander to apply.");
                         }
                     }
+                }
+            }
+        }
+
+        [HarmonyPatch(typeof(Il2Cpp.GameMode), nameof(Il2Cpp.GameMode.OnPlayerLeftBase))]
+        private static class CommanderManager_Patch_GameMode_OnPlayerLeftBase
+        {
+            public static void Prefix(Il2Cpp.GameMode __instance, Il2Cpp.Player __0)
+            {
+                try
+                {
+                    if (__0 != null && __0.Team != null)
+                    {
+                        if (GameMode.CurrentGameMode.Started && !GameMode.CurrentGameMode.GameBegun)
+                        {
+                            bool hasApplied = commanderApplicants[__0.m_Team.Index].Any(k => k == __0);
+                            if (hasApplied)
+                            {
+                                commanderApplicants[__0.Team.Index].Remove(__0);
+                                HelperMethods.ReplyToCommand_Player(__0, "was removed from consideration due to disconnect");
+                            }
+                        }
+
+                        if (GameMode.CurrentGameMode.Started && GameMode.CurrentGameMode.GameBegun)
+                        {
+                            if (__0.IsCommander)
+                            {
+                                HelperMethods.ReplyToCommand_Player(__0, "left commander position vacant by disconnecting");
+                            }
+                        }
+                    }
+                }
+                catch (Exception error)
+                {
+                    HelperMethods.PrintError(error, "Failed to run GameMode::OnPlayerLeftBase");
+                }
+            }
+        }
+
+        [HarmonyPatch(typeof(Il2Cpp.Game), nameof(Il2Cpp.Game.SpawnPrefab))]
+        private static class CommanderManager_Patch_Game_SpawnPrefab
+        {
+            public static void Postfix(UnityEngine.GameObject __result, UnityEngine.GameObject __0, Il2Cpp.Player __1, Il2Cpp.Team __2, UnityEngine.Vector3 __3, UnityEngine.Quaternion __4, bool __5, bool __6)
+            {
+                try
+                {
+                    MelonLogger.Msg("Hit SpawnPrefab");
+
+                    if (__1 != null)
+                    {
+                        if (GameMode.CurrentGameMode.Started && GameMode.CurrentGameMode.GameBegun)
+                        {
+                            
+                            // determine if player was a commander from any team
+                            int commanderSwappedTeamIndex = -1;
+                            for (int i = 0; i < MaxTeams; i++)
+                            {
+                                if (teamswapCommanderChecks[i] == __1)
+                                {
+                                    commanderSwappedTeamIndex = i;
+                                    break;
+                                }
+                            }
+
+                            MelonLogger.Msg("Swapped value " + commanderSwappedTeamIndex.ToString());
+                            
+                            // announce if player swapped from commander to infantry
+                            if (commanderSwappedTeamIndex != -1)
+                            {
+                                Team departingTeam = Team.Teams[commanderSwappedTeamIndex];
+                                teamswapCommanderChecks[commanderSwappedTeamIndex] = null;
+                                HelperMethods.ReplyToCommand_Player(__1, "left commander position vacant for " + HelperMethods.GetTeamColor(departingTeam) + departingTeam.TeamName + HelperMethods.defaultColor + " by switching to infantry");
+                            }
+                        }
+                    }
+                }
+                catch (Exception error)
+                {
+                    HelperMethods.PrintError(error, "Failed to run Game::SpawnPrefab");
                 }
             }
         }
