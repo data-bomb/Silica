@@ -34,7 +34,7 @@ using AdminExtension;
 using Il2CppSteamworks;
 using static MelonLoader.MelonLogger;
 
-[assembly: MelonInfo(typeof(CommanderManager), "[Si] Commander Management", "1.1.6", "databomb")]
+[assembly: MelonInfo(typeof(CommanderManager), "[Si] Commander Management", "1.1.7", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_CommanderManagement
@@ -692,25 +692,22 @@ namespace Si_CommanderManagement
             }
         }
 
-        [HarmonyPatch(typeof(Il2Cpp.Game), nameof(Il2Cpp.Game.SpawnPrefab))]
-        private static class CommanderManager_Patch_Game_SpawnPrefab
+        [HarmonyPatch(typeof(Il2Cpp.GameMode), nameof(Il2Cpp.GameMode.SpawnUnitForPlayer), new Type[] { typeof(Player), typeof(GameObject), typeof(Vector3), typeof(Quaternion) })]
+        private static class CommanderManager_Patch_GameMode_SpawnUnitForPlayer
         {
-            public static void Postfix(UnityEngine.GameObject __result, UnityEngine.GameObject __0, Il2Cpp.Player __1, Il2Cpp.Team __2, UnityEngine.Vector3 __3, UnityEngine.Quaternion __4, bool __5, bool __6)
+            public static void Postfix(Il2Cpp.GameMode __instance, Il2Cpp.Unit __result, Il2Cpp.Player __0, UnityEngine.GameObject __1, UnityEngine.Vector3 __2, UnityEngine.Quaternion __3)
             {
                 try
                 {
-                    MelonLogger.Msg("Hit SpawnPrefab");
-
-                    if (__1 != null)
+                    if (__0 != null)
                     {
                         if (GameMode.CurrentGameMode.Started && GameMode.CurrentGameMode.GameBegun)
                         {
-                            
                             // determine if player was a commander from any team
                             int commanderSwappedTeamIndex = -1;
                             for (int i = 0; i < MaxTeams; i++)
                             {
-                                if (teamswapCommanderChecks[i] == __1)
+                                if (teamswapCommanderChecks[i] == __0)
                                 {
                                     commanderSwappedTeamIndex = i;
                                     break;
@@ -724,14 +721,14 @@ namespace Si_CommanderManagement
                             {
                                 Team departingTeam = Team.Teams[commanderSwappedTeamIndex];
                                 teamswapCommanderChecks[commanderSwappedTeamIndex] = null;
-                                HelperMethods.ReplyToCommand_Player(__1, "left commander position vacant for " + HelperMethods.GetTeamColor(departingTeam) + departingTeam.TeamName + HelperMethods.defaultColor + " by switching to infantry");
+                                HelperMethods.ReplyToCommand_Player(__0, "left commander position vacant for " + HelperMethods.GetTeamColor(departingTeam) + departingTeam.TeamName + HelperMethods.defaultColor + " by switching to infantry");
                             }
                         }
                     }
                 }
                 catch (Exception error)
                 {
-                    HelperMethods.PrintError(error, "Failed to run Game::SpawnPrefab");
+                    HelperMethods.PrintError(error, "Failed to run GameMode::SpawnUnitForPlayer");
                 }
             }
         }
