@@ -34,7 +34,7 @@ using AdminExtension;
 using Il2CppSteamworks;
 using static MelonLoader.MelonLogger;
 
-[assembly: MelonInfo(typeof(CommanderManager), "[Si] Commander Management", "1.1.7", "databomb")]
+[assembly: MelonInfo(typeof(CommanderManager), "[Si] Commander Management", "1.1.8", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_CommanderManagement
@@ -232,6 +232,9 @@ namespace Si_CommanderManagement
                                 CommanderManager.commanderApplicants[i].Clear();
 
                                 NumCommandersPastRound++;
+
+                                // clear previous commander tracking status, if any
+                                teamswapCommanderChecks[i] = null;
                             }
                         }
 
