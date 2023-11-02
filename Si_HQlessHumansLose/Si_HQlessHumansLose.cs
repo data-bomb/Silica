@@ -31,8 +31,9 @@ using System.Timers;
 using static MelonLoader.MelonLogger;
 using Il2CppSystem.IO;
 using UnityEngine;
+using Il2CppSilica.UI;
 
-[assembly: MelonInfo(typeof(HQlessHumansLose), "[Si] HQless Humans Lose", "1.2.1", "databomb", "https://github.com/data-bomb/Silica_ListenServer")]
+[assembly: MelonInfo(typeof(HQlessHumansLose), "[Si] HQless Humans Lose", "1.2.2", "databomb", "https://github.com/data-bomb/Silica_ListenServer")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_HQlessHumansLose
@@ -112,11 +113,11 @@ namespace Si_HQlessHumansLose
                 HelperMethods.DestroyAllStructures(team);
             }
 
-            PrepareTeamLostMessage(team);
+            DelayTeamLostMessage(team);
         }
 
         // introduce a delay so clients can see chat message after round ends
-        private static void PrepareTeamLostMessage(Team team)
+        private static void DelayTeamLostMessage(Team team)
         {
             lostMessageTimerExpired = false;
             losingTeam = team;
@@ -301,8 +302,19 @@ namespace Si_HQlessHumansLose
                         return;
                     }
 
-                    // no HQ/nests left or being constructed, so end the round
-                    EliminateTeam(structureTeam);
+                    // no HQ/nests left or being constructed
+                    // end the round if it's humans
+                    // Alien team index = 0
+                    if (structureTeam.Index != 0)
+                    {
+                        EliminateTeam(structureTeam);
+                    }
+                    // otherwise, send a chat right away
+                    else
+                    {
+                        TeamLostMessage(structureTeam);
+                    }
+                    
                 }
                 catch (Exception error)
                 {
