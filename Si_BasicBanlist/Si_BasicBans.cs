@@ -28,7 +28,7 @@ using Newtonsoft.Json;
 using Si_BasicBanlist;
 using AdminExtension;
 
-[assembly: MelonInfo(typeof(BasicBanlist), "[Si] Basic Banlist", "1.2.0", "databomb")]
+[assembly: MelonInfo(typeof(BasicBanlist), "[Si] Basic Banlist", "1.2.1", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_BasicBanlist
@@ -42,7 +42,7 @@ namespace Si_BasicBanlist
                 get;
                 set;
             }
-            public String OffenderName
+            public String? OffenderName
             {
                 get;
                 set;
@@ -52,7 +52,7 @@ namespace Si_BasicBanlist
                 get;
                 set;
             }
-            public String Comments
+            public String? Comments
             {
                 get;
                 set;
@@ -60,7 +60,7 @@ namespace Si_BasicBanlist
         }
 
         static List<BanEntry>? MasterBanList;
-        static String banListFile = System.IO.Path.Combine(MelonEnvironment.UserDataDirectory, "banned_users.json");
+        static readonly String banListFile = System.IO.Path.Combine(MelonEnvironment.UserDataDirectory, "banned_users.json");
         static bool AdminModAvailable = false;
 
         public static void UpdateBanFile()
@@ -77,7 +77,8 @@ namespace Si_BasicBanlist
                 if (System.IO.File.Exists(banListFile))
                 {
                     // Open the stream and read it back.
-                    using (System.IO.StreamReader banFileStream = System.IO.File.OpenText(banListFile))
+                    System.IO.StreamReader banFileStream = System.IO.File.OpenText(banListFile);
+                    using (banFileStream)
                     {
                         String JsonRaw = banFileStream.ReadToEnd();
                         MasterBanList = JsonConvert.DeserializeObject<List<BanEntry>>(JsonRaw);
@@ -122,7 +123,7 @@ namespace Si_BasicBanlist
             }
         }
 
-        public void Command_Ban(Il2Cpp.Player callerPlayer, String args)
+        public static void Command_Ban(Il2Cpp.Player callerPlayer, String args)
         {
             // validate banlist is available
             if (MasterBanList == null)
@@ -132,7 +133,7 @@ namespace Si_BasicBanlist
             }
 
             // validate argument count
-            int argumentCount = args.Split(' ').Count() - 1;
+            int argumentCount = args.Split(' ').Length - 1;
             if (argumentCount > 1)
             {
                 HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Too many arguments");
@@ -179,7 +180,7 @@ namespace Si_BasicBanlist
             }
         }
 
-        public void Command_Unban(Il2Cpp.Player callerPlayer, String args)
+        public static void Command_Unban(Il2Cpp.Player callerPlayer, String args)
         {
             // validate banlist is available
             if (MasterBanList == null)
@@ -189,24 +190,20 @@ namespace Si_BasicBanlist
             }
 
             // validate argument count
-            int argumentCount = args.Split(' ').Count() - 1;
-            if (argumentCount > 1)
-            {
-                HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Too many arguments");
-                return;
-            }
-            else if (argumentCount < 1)
+            int argumentCount = args.Split(' ').Length - 1;
+            if (argumentCount < 1)
             {
                 HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Too few arguments");
                 return;
             }
-            
-            // accept target of either steamid64 or name
-            String sTarget = args.Split(' ')[1];
-            long steamid;
-            bool isNumber = long.TryParse(sTarget, out steamid);
-            BanEntry? matchingBan;
 
+            // grab everything after !unban for the target string
+            String sTarget = args.Split(' ', 2)[1];
+
+            // accept target of either steamid64 or name
+            bool isNumber = long.TryParse(sTarget, out long steamid);
+
+            BanEntry? matchingBan;
             // assume it's a steamid64
             if (isNumber)
             {
@@ -235,11 +232,13 @@ namespace Si_BasicBanlist
 
             public static BanEntry GenerateBanEntry(Il2Cpp.Player player, Il2Cpp.Player admin)
         {
-            BanEntry thisBan = new BanEntry();
-            thisBan.OffenderSteamId = long.Parse(player.ToString().Split('_')[1]);
-            thisBan.OffenderName = player.PlayerName;
-            thisBan.UnixBanTime = (int)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
-            thisBan.Comments = "banned by " + admin.PlayerName;
+            BanEntry thisBan = new()
+            {
+                OffenderSteamId = long.Parse(player.ToString().Split('_')[1]),
+                OffenderName = player.PlayerName,
+                UnixBanTime = (int)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds,
+                Comments = "banned by " + admin.PlayerName
+            };
             return thisBan;
         }
 
