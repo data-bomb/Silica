@@ -23,16 +23,12 @@
 
 using HarmonyLib;
 using Il2Cpp;
-using Il2CppSteamworks;
-using Il2CppInterop.Runtime.Runtime;
 using MelonLoader;
 using MelonLoader.Utils;
 using Si_Logging;
 using UnityEngine;
-using System.Xml;
-using System.Timers;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "0.8.9", "databomb")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "0.9.1", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_Logging
@@ -40,6 +36,9 @@ namespace Si_Logging
     // https://developer.valvesoftware.com/wiki/HL_Log_Standard
     public class HL_Logging : MelonMod
     {
+        static MelonPreferences_Category? _modCategory;
+        static MelonPreferences_Entry<bool>? Pref_Log_Damage;
+
         public static void PrintLogLine(string LogMessage, bool suppressConsoleOutput = false)
         {
             if (LogMessage != null)
@@ -115,6 +114,9 @@ namespace Si_Logging
         {
             try
             {
+                _modCategory ??= MelonPreferences.CreateCategory("Silica");
+                Pref_Log_Damage ??= _modCategory.CreateEntry<bool>("Logging_LogDamage", false);
+
                 if (!System.IO.Directory.Exists(GetLogFileDirectory()))
                 {
                     MelonLogger.Msg("Creating log file directory at: " + GetLogFileDirectory());
@@ -343,6 +345,7 @@ namespace Si_Logging
             {
                 try
                 {
+                    // Player player = GetPlayerFromSteamID(__0);
                     // TODO: grab old name and current team
                     string LogLine = "\"...<><" + __0.ToString() + "><>\" changed name to \"" + __2 + "\"";
                     PrintLogLine(LogLine);
@@ -360,45 +363,67 @@ namespace Si_Logging
         {
             public static void Postfix(Il2Cpp.DamageManager __instance, UnityEngine.Collider __0, float __1, Il2Cpp.EDamageType __2, UnityEngine.GameObject __3, UnityEngine.Vector3 __4)
             {
-                // was it a human-controlled instigator?
-                if (__3 != null)
+                // should we log the damage?
+                if (Pref_Log_Damage != null && !Pref_Log_Damage.Value)
                 {
-                    Il2Cpp.BaseGameObject attackerBase = Il2Cpp.GameFuncs.GetBaseGameObject(__3);
-                    if (attackerBase != null)
-                    {
-                        Il2Cpp.NetworkComponent attackerNetComp = attackerBase.NetworkComponent;
-                        if (attackerNetComp != null)
-                        {
-                            Il2Cpp.Player attackerPlayer = attackerNetComp.OwnerPlayer;
-
-                            if (attackerPlayer != null)
-                            {
-                                // find if victim was human-controlled or a structure
-                                Il2Cpp.BaseGameObject victimBase = __instance.Owner;
-                                if (victimBase != null)
-                                {
-                                    Il2Cpp.NetworkComponent victimNetComp = victimBase.NetworkComponent;
-                                    if (victimNetComp != null)
-                                    {
-                                        Il2Cpp.Player victimPlayer = victimNetComp.OwnerPlayer;
-                                        if (victimPlayer != null)
-                                        {
-                                            // was daamge greater than 1?
-                                            int damage = (int)Math.Ceiling(__1);
-                                            if (damage > 1)
-                                            {
-                                                int attackerUserID = Math.Abs(attackerPlayer.GetInstanceID());
-                                                int victimUserID = Math.Abs(victimPlayer.GetInstanceID());
-                                                string LogLine = "\"" + attackerPlayer.PlayerName + "<" + attackerUserID + "><" + attackerPlayer.ToString().Split('_')[1] + "><" + attackerPlayer.m_Team.TeamName + ">\" attacked \"" + victimPlayer.PlayerName + "<" + victimUserID + "><" + victimPlayer.ToString().Split('_')[1] + "><" + victimPlayer.m_Team.TeamName + ">\" with \"" + __3.ToString().Split('(')[0] + "\"" + " (damage \"" + damage.ToString() + "\")";
-                                                PrintLogLine(LogLine, true);
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    return;
                 }
+
+                // was it a non-human-controlled instigator?
+                if (__3 == null)
+                {
+                    return;
+                }
+
+                BaseGameObject attackerBase = GameFuncs.GetBaseGameObject(__3);
+                if (attackerBase == null)
+                {
+                    return;
+                }
+
+                NetworkComponent attackerNetComp = attackerBase.NetworkComponent;
+                if (attackerNetComp == null)
+                {
+                    return;
+                }
+
+                Player attackerPlayer = attackerNetComp.OwnerPlayer;
+                if (attackerPlayer == null)
+                {
+                    return;
+                }
+
+                // was it a non-human-controlled victim?
+                BaseGameObject victimBase = __instance.Owner;
+                if (victimBase == null)
+                {
+                    return;
+                }
+
+                NetworkComponent victimNetComp = victimBase.NetworkComponent;
+                if (victimNetComp == null)
+                {
+                    return;
+                }
+
+                Player victimPlayer = victimNetComp.OwnerPlayer;
+                if (victimPlayer == null)
+                {
+                    return;
+                }
+
+                // was damage less than (or equal to) 1?
+                int damage = (int)Math.Ceiling(__1);
+                if (damage <= 1)
+                {
+                    return;
+                }
+
+
+                    int attackerUserID = Math.Abs(attackerPlayer.GetInstanceID());
+                    int victimUserID = Math.Abs(victimPlayer.GetInstanceID());
+                    string LogLine = "\"" + attackerPlayer.PlayerName + "<" + attackerUserID + "><" + attackerPlayer.ToString().Split('_')[1] + "><" + attackerPlayer.m_Team.TeamName + ">\" attacked \"" + victimPlayer.PlayerName + "<" + victimUserID + "><" + victimPlayer.ToString().Split('_')[1] + "><" + victimPlayer.m_Team.TeamName + ">\" with \"" + __3.ToString().Split('(')[0] + "\"" + " (damage \"" + damage.ToString() + "\")";
+                    PrintLogLine(LogLine, true);
             }
         }
 
