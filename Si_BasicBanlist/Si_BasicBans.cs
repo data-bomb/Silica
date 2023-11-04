@@ -22,15 +22,13 @@
 */
 
 using HarmonyLib;
-using Il2Cpp;
-using Il2CppSystem.IO;
 using MelonLoader;
 using MelonLoader.Utils;
 using Newtonsoft.Json;
 using Si_BasicBanlist;
 using AdminExtension;
 
-[assembly: MelonInfo(typeof(BasicBanlist), "[Si] Basic Banlist", "1.1.0", "databomb")]
+[assembly: MelonInfo(typeof(BasicBanlist), "[Si] Basic Banlist", "1.2.0", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_BasicBanlist
@@ -61,29 +59,36 @@ namespace Si_BasicBanlist
             }
         }
 
-        static List<BanEntry> MasterBanList;
+        static List<BanEntry>? MasterBanList;
         static String banListFile = System.IO.Path.Combine(MelonEnvironment.UserDataDirectory, "banned_users.json");
         static bool AdminModAvailable = false;
 
         public static void UpdateBanFile()
         {
             // convert back to json string
-            String JsonRaw = JsonConvert.SerializeObject(BasicBanlist.MasterBanList, Formatting.Indented);
-            System.IO.File.WriteAllText(BasicBanlist.banListFile, JsonRaw);
+            String JsonRaw = JsonConvert.SerializeObject(MasterBanList, Formatting.Indented);
+            System.IO.File.WriteAllText(banListFile, JsonRaw);
         }
 
         public override void OnInitializeMelon()
         {
             try
             {
-                if (System.IO.File.Exists(BasicBanlist.banListFile))
+                if (System.IO.File.Exists(banListFile))
                 {
                     // Open the stream and read it back.
-                    using (System.IO.StreamReader banFileStream = System.IO.File.OpenText(BasicBanlist.banListFile))
+                    using (System.IO.StreamReader banFileStream = System.IO.File.OpenText(banListFile))
                     {
                         String JsonRaw = banFileStream.ReadToEnd();
                         MasterBanList = JsonConvert.DeserializeObject<List<BanEntry>>(JsonRaw);
-                        MelonLogger.Msg("Loaded Silica banlist with " + MasterBanList.Count + " entries.");
+                        if (MasterBanList == null)
+                        {
+                            MelonLogger.Msg("Unable to process banned_users.json file. Check syntax.");
+                        }
+                        else
+                        {
+                            MelonLogger.Msg("Loaded Silica banlist with " + MasterBanList.Count + " entries.");
+                        }
                     }
                 }
                 else
@@ -107,6 +112,9 @@ namespace Si_BasicBanlist
                 HelperMethods.CommandCallback banCallback = Command_Ban;
                 HelperMethods.RegisterAdminCommand("!ban", banCallback, Power.Ban);
                 HelperMethods.RegisterAdminCommand("!kickban", banCallback, Power.Ban);
+
+                HelperMethods.CommandCallback unbanCallback = Command_Unban;
+                HelperMethods.RegisterAdminCommand("!unban", unbanCallback, Power.Unban);
             }
             else
             {
@@ -116,6 +124,13 @@ namespace Si_BasicBanlist
 
         public void Command_Ban(Il2Cpp.Player callerPlayer, String args)
         {
+            // validate banlist is available
+            if (MasterBanList == null)
+            {
+                MelonLogger.Msg("Ban list unavailable. Check json syntax.");
+                return;
+            }
+
             // validate argument count
             int argumentCount = args.Split(' ').Count() - 1;
             if (argumentCount > 1)
@@ -144,14 +159,14 @@ namespace Si_BasicBanlist
                 BanEntry thisBan = GenerateBanEntry(playerToBan, callerPlayer);
 
                 // are we already banned?
-                if (BasicBanlist.MasterBanList.Find(i => i.OffenderSteamId == thisBan.OffenderSteamId) != null)
+                if (MasterBanList.Find(i => i.OffenderSteamId == thisBan.OffenderSteamId) != null)
                 {
                     MelonLogger.Msg("Player name (" + thisBan.OffenderName + ") SteamID (" + thisBan.OffenderSteamId.ToString() + ") already on banlist.");
                 }
                 else
                 {
                     MelonLogger.Msg("Added player name (" + thisBan.OffenderName + ") SteamID (" + thisBan.OffenderSteamId.ToString() + ") to the banlist.");
-                    BasicBanlist.MasterBanList.Add(thisBan);
+                    MasterBanList.Add(thisBan);
                     UpdateBanFile();
                 }
 
@@ -164,7 +179,61 @@ namespace Si_BasicBanlist
             }
         }
 
-        public static BanEntry GenerateBanEntry(Il2Cpp.Player player, Il2Cpp.Player admin)
+        public void Command_Unban(Il2Cpp.Player callerPlayer, String args)
+        {
+            // validate banlist is available
+            if (MasterBanList == null)
+            {
+                MelonLogger.Msg("Ban list unavailable. Check json syntax.");
+                return;
+            }
+
+            // validate argument count
+            int argumentCount = args.Split(' ').Count() - 1;
+            if (argumentCount > 1)
+            {
+                HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Too many arguments");
+                return;
+            }
+            else if (argumentCount < 1)
+            {
+                HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Too few arguments");
+                return;
+            }
+            
+            // accept target of either steamid64 or name
+            String sTarget = args.Split(' ')[1];
+            long steamid;
+            bool isNumber = long.TryParse(sTarget, out steamid);
+            BanEntry? matchingBan;
+
+            // assume it's a steamid64
+            if (isNumber)
+            {
+                matchingBan = MasterBanList.Find(i => i.OffenderSteamId == steamid);
+            }
+            // assume it's a name
+            else
+            {
+                matchingBan = MasterBanList.Find(i => i.OffenderName == sTarget);
+            }
+
+            // did we find someone we could unban?
+            if (matchingBan == null)
+            {
+                String targetType = isNumber ? "steamid" : "name";
+                HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Unable to find " + targetType + " on banlist");
+                return;
+            }
+
+            MelonLogger.Msg("Removed player name (" + matchingBan.OffenderName + ") SteamID (" + matchingBan.OffenderSteamId.ToString() + ") from the banlist.");
+            MasterBanList.Remove(matchingBan);
+            UpdateBanFile();
+
+            HelperMethods.AlertAdminAction(callerPlayer, "unbanned " + matchingBan.OffenderName);
+        }
+
+            public static BanEntry GenerateBanEntry(Il2Cpp.Player player, Il2Cpp.Player admin)
         {
             BanEntry thisBan = new BanEntry();
             thisBan.OffenderSteamId = long.Parse(player.ToString().Split('_')[1]);
@@ -181,17 +250,22 @@ namespace Si_BasicBanlist
             {
                 try
                 {
+                    if (MasterBanList == null)
+                    {
+                        return true;
+                    }
+
                     BanEntry thisBan = GenerateBanEntry(__0, Il2Cpp.NetworkGameServer.GetServerPlayer());
 
                     // are we already banned?
-                    if (BasicBanlist.MasterBanList.Find(i => i.OffenderSteamId == thisBan.OffenderSteamId) != null)
+                    if (MasterBanList.Find(i => i.OffenderSteamId == thisBan.OffenderSteamId) != null)
                     {
                         MelonLogger.Msg("Player name (" + thisBan.OffenderName + ") SteamID (" + thisBan.OffenderSteamId.ToString() + ") already on banlist.");
                     }
                     else
                     {
                         MelonLogger.Msg("Added player name (" + thisBan.OffenderName + ") SteamID (" + thisBan.OffenderSteamId.ToString() + ") to the banlist.");
-                        BasicBanlist.MasterBanList.Add(thisBan);
+                        MasterBanList.Add(thisBan);
                         UpdateBanFile();
                     }
                 }
@@ -211,11 +285,16 @@ namespace Si_BasicBanlist
             {
                 try
                 {
+                    if (MasterBanList == null)
+                    {
+                        return;
+                    }
+
                     if (__0 != null)
                     {
                         // check if player was previously banned
                         long JoiningPlayerSteamId = long.Parse(__0.ToString().Split('_')[1]);
-                        if (BasicBanlist.MasterBanList.Find(i => i.OffenderSteamId == JoiningPlayerSteamId) != null)
+                        if (MasterBanList.Find(i => i.OffenderSteamId == JoiningPlayerSteamId) != null)
                         {
                             MelonLogger.Msg("Kicking " + __0.ToString() + " for matching an entry in the banlist.");
                             Il2Cpp.NetworkGameServer.KickPlayer(__0);
