@@ -33,16 +33,17 @@ using UnityEngine;
 using AdminExtension;
 using Il2CppSteamworks;
 using static MelonLoader.MelonLogger;
+using System.Reflection.Metadata.Ecma335;
 
-[assembly: MelonInfo(typeof(CommanderManager), "[Si] Commander Management", "1.1.8", "databomb")]
+[assembly: MelonInfo(typeof(CommanderManager), "[Si] Commander Management", "1.1.9", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_CommanderManagement
 {
     public class CommanderManager : MelonMod
     {
-        static MelonPreferences_Category _modCategory;
-        static MelonPreferences_Entry<bool> _BlockRoundStartUntilEnoughApplicants;
+        static MelonPreferences_Category? _modCategory;
+        static MelonPreferences_Entry<bool>? _BlockRoundStartUntilEnoughApplicants;
 
         const int MaxTeams = 3;
         const int AlienTeam = 0;
@@ -73,33 +74,28 @@ namespace Si_CommanderManagement
             }
         }
 
-        static List<Player>[] commanderApplicants;
-        static List<Player> previousCommanders;
+        static List<Player>[]? commanderApplicants;
+        static List<Player>? previousCommanders;
         static bool bOnGameInitFired;
         static bool AdminModAvailable = false;
 
-        static Player[] teamswapCommanderChecks;
-        static Player[] promotedCommanders;
-        static List<BanEntry> MasterBanList;
-        static String banListFile = System.IO.Path.Combine(MelonEnvironment.UserDataDirectory, "commander_bans.json");
+        static Player[]? teamswapCommanderChecks;
+        static Player[]? promotedCommanders;
+        static List<BanEntry>? MasterBanList;
+        static readonly String banListFile = System.IO.Path.Combine(MelonEnvironment.UserDataDirectory, "commander_bans.json");
 
         public override void OnInitializeMelon()
         {
-            if (_modCategory == null)
-            {
-                _modCategory = MelonPreferences.CreateCategory("Silica");
-            }
-            if (_BlockRoundStartUntilEnoughApplicants == null)
-            {
-                _BlockRoundStartUntilEnoughApplicants = _modCategory.CreateEntry<bool>("BlockRoundStartUntilCommandersApplied", true);
-            }
+            _modCategory ??= MelonPreferences.CreateCategory("Silica");
+            _BlockRoundStartUntilEnoughApplicants ??= _modCategory.CreateEntry<bool>("BlockRoundStartUntilCommandersApplied", true);
 
             try
             {
                 if (System.IO.File.Exists(CommanderManager.banListFile))
                 {
                     // Open the stream and read it back.
-                    using (System.IO.StreamReader banFileStream = System.IO.File.OpenText(CommanderManager.banListFile))
+                    System.IO.StreamReader banFileStream = System.IO.File.OpenText(CommanderManager.banListFile);
+                    using (banFileStream)
                     {
                         String JsonRaw = banFileStream.ReadToEnd();
                         if (JsonRaw == null)
@@ -187,19 +183,26 @@ namespace Si_CommanderManagement
             {
                 try
                 {
-                    if (__0 != null)
+                    if (__0 == null)
                     {
-                        // check if player is allowed to be commander
-                        long JoiningPlayerSteamId = long.Parse(__0.ToString().Split('_')[1]);
-                        CommanderManager.BanEntry? banEntry = CommanderManager.MasterBanList.Find(i => i.OffenderSteamId == JoiningPlayerSteamId);
-                        if (banEntry != null)
-                        {
-                            MelonLogger.Msg("Preventing " + banEntry.OffenderName + " from selecting commander.");
+                        return true;
+                    }
 
-                            __0 = null;
-                            __result = null;
-                            return false;
-                        }
+                    if (MasterBanList == null)
+                    {
+                        return true;
+                    }
+
+                    // check if player is allowed to be commander
+                    long joiningPlayerSteamId = long.Parse(__0.ToString().Split('_')[1]);
+                    BanEntry? banEntry = MasterBanList.Find(i => i.OffenderSteamId == joiningPlayerSteamId);
+                    if (banEntry != null)
+                    {
+                        MelonLogger.Msg("Preventing " + banEntry.OffenderName + " from selecting commander.");
+
+                        __0 = null;
+                        __result = null;
+                        return false;
                     }
                 }
                 catch (Exception error)
@@ -218,6 +221,11 @@ namespace Si_CommanderManagement
             {
                 try
                 {
+                    if (commanderApplicants == null || teamswapCommanderChecks == null || previousCommanders == null)
+                    {
+                        return;
+                    }
+
                     // prevent from running twice in one round switch cycle
                     if (!bOnGameInitFired)
                     {
@@ -226,10 +234,10 @@ namespace Si_CommanderManagement
                         int NumCommandersPastRound = 0;
                         for (int i = 0; i < MaxTeams; i++)
                         {
-                            if (CommanderManager.commanderApplicants[i].Count > 0)
+                            if (commanderApplicants[i].Count > 0)
                             {
                                 MelonLogger.Msg("Clearing applicants from team index " + i.ToString());
-                                CommanderManager.commanderApplicants[i].Clear();
+                                commanderApplicants[i].Clear();
 
                                 NumCommandersPastRound++;
 
@@ -240,7 +248,7 @@ namespace Si_CommanderManagement
 
 
                         // we want to remove the oldest commanders from the list
-                        int NumCommandersToRemove = CommanderManager.previousCommanders.Count - NumCommandersPastRound;
+                        int NumCommandersToRemove = previousCommanders.Count - NumCommandersPastRound;
                         if (NumCommandersToRemove < 0)
                         {
                             MelonLogger.Warning("Logic error. NumCommandersToRemove is " + NumCommandersToRemove.ToString());
@@ -273,15 +281,20 @@ namespace Si_CommanderManagement
                 {
                     bOnGameInitFired = false;
 
+                    if (commanderApplicants == null || previousCommanders == null || promotedCommanders == null)
+                    {
+                        return;
+                    }
+
                     Il2Cpp.Player serverPlayer = Il2Cpp.NetworkGameServer.GetServerPlayer();
                     // *** TODO: need to account for if a player leaves the game within the 30 second window
-                    System.Random randomIndex = new System.Random();
+                    System.Random randomIndex = new();
                     Il2Cpp.Player? RemovePlayer = null;
 
 
                     for (int i = 0; i < MaxTeams; i++)
                     {
-                        if (CommanderManager.commanderApplicants[i].Count == 0)
+                        if (commanderApplicants[i].Count == 0)
                         {
                             continue;
                         }
@@ -289,28 +302,28 @@ namespace Si_CommanderManagement
                         // remove previous commanders from applicant list
                         for (int j = 0; j < CommanderManager.previousCommanders.Count; j++)
                         {
-                            RemovePlayer = CommanderManager.commanderApplicants[i].Find(k => k == CommanderManager.previousCommanders[j]);
+                            RemovePlayer = commanderApplicants[i].Find(k => k == CommanderManager.previousCommanders[j]);
                             if (RemovePlayer != null)
                             {
                                 MelonLogger.Msg("Removing applicant from 2 rounds ago from random selection: " + RemovePlayer.PlayerName);
-                                CommanderManager.commanderApplicants[i].Remove(RemovePlayer);
+                                commanderApplicants[i].Remove(RemovePlayer);
                             }
                         }
 
-                        if (CommanderManager.commanderApplicants[i].Count == 0)
+                        if (commanderApplicants[i].Count == 0)
                         {
                             continue;
                         }
 
-                        int iCommanderIndex = randomIndex.Next(0, CommanderManager.commanderApplicants[i].Count - 1);
-                        Il2Cpp.Player CommanderPlayer = CommanderManager.commanderApplicants[i][iCommanderIndex];
+                        int iCommanderIndex = randomIndex.Next(0, commanderApplicants[i].Count - 1);
+                        Il2Cpp.Player CommanderPlayer = commanderApplicants[i][iCommanderIndex];
 
                         if (CommanderPlayer != null && CommanderPlayer.Team.Index == i)
                         {
                             Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, HelperMethods.chatPrefix + "Promoted " + HelperMethods.GetTeamColor(CommanderPlayer) + CommanderPlayer.PlayerName + HelperMethods.defaultColor + " to commander for " + HelperMethods.GetTeamColor(CommanderPlayer) + CommanderPlayer.Team.TeamName, false);
-                            CommanderManager.promotedCommanders[CommanderPlayer.Team.Index] = CommanderPlayer;
+                            promotedCommanders[CommanderPlayer.Team.Index] = CommanderPlayer;
                             PromoteToCommander(CommanderPlayer);
-                            CommanderManager.previousCommanders.Add(CommanderPlayer);
+                            previousCommanders.Add(CommanderPlayer);
                         }
                     }
                 }
@@ -328,7 +341,7 @@ namespace Si_CommanderManagement
             {
                 try
                 {
-                    if (__instance == null || __0 == null)
+                    if (__instance == null || __0 == null || MasterBanList == null || commanderApplicants == null || teamswapCommanderChecks == null || promotedCommanders == null)
                     {
                         return true;
 
@@ -338,7 +351,7 @@ namespace Si_CommanderManagement
                     {
                         // check if player is allowed to be commander
                         long JoiningPlayerSteamId = long.Parse(__1.ToString().Split('_')[1]);
-                        CommanderManager.BanEntry? banEntry = CommanderManager.MasterBanList.Find(i => i.OffenderSteamId == JoiningPlayerSteamId);
+                        BanEntry? banEntry = MasterBanList.Find(i => i.OffenderSteamId == JoiningPlayerSteamId);
                         if (banEntry != null)
                         {
                             MelonLogger.Msg("Preventing " + banEntry.OffenderName + " from playing as commander.");
@@ -356,7 +369,7 @@ namespace Si_CommanderManagement
                         if (GameMode.CurrentGameMode.Started && !GameMode.CurrentGameMode.GameBegun)
                         {
                             // check if player is already an applicant
-                            if (!CommanderManager.commanderApplicants[__1.Team.Index].Contains(__1))
+                            if (!commanderApplicants[__1.Team.Index].Contains(__1))
                             {
                                 HelperMethods.ReplyToCommand_Player(__1, "has applied for commander");
 
@@ -365,7 +378,7 @@ namespace Si_CommanderManagement
                                 // respawn
                                 GameMode.CurrentGameMode.SpawnUnitForPlayer(__1, __0);
 
-                                CommanderManager.commanderApplicants[__1.Team.Index].Add(__1);
+                                commanderApplicants[__1.Team.Index].Add(__1);
                             }
 
                             __1 = null;
@@ -433,13 +446,20 @@ namespace Si_CommanderManagement
 
         public static void AddCommanderBan(Il2Cpp.Player PlayerToCmdrBan)
         {
+            if (MasterBanList == null)
+            {
+                return;
+            }
+
             // gather information to log in the banlist
             Il2Cpp.Player serverPlayer = Il2Cpp.NetworkGameServer.GetServerPlayer();
-            CommanderManager.BanEntry thisBan = new BanEntry();
-            thisBan.OffenderSteamId = long.Parse(PlayerToCmdrBan.ToString().Split('_')[1]);
-            thisBan.OffenderName = PlayerToCmdrBan.PlayerName;
-            thisBan.UnixBanTime = (int)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
-            thisBan.Comments = "banned from playing commander by " + serverPlayer.PlayerName;
+            CommanderManager.BanEntry thisBan = new()
+            {
+                OffenderSteamId = long.Parse(PlayerToCmdrBan.ToString().Split('_')[1]),
+                OffenderName = PlayerToCmdrBan.PlayerName,
+                UnixBanTime = (int)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds,
+                Comments = "banned from playing commander by " + serverPlayer.PlayerName
+            };
 
             // are we currently a commander?
             if (PlayerToCmdrBan.IsCommander)
@@ -452,19 +472,19 @@ namespace Si_CommanderManagement
             }
 
             // are we already banned?
-            if (CommanderManager.MasterBanList.Find(i => i.OffenderSteamId == thisBan.OffenderSteamId) != null)
+            if (MasterBanList.Find(i => i.OffenderSteamId == thisBan.OffenderSteamId) != null)
             {
                 MelonLogger.Warning("Player name (" + thisBan.OffenderName + ") SteamID (" + thisBan.OffenderSteamId.ToString() + ") already on commander banlist.");
             }
             else
             {
                 MelonLogger.Msg("Added player name (" + thisBan.OffenderName + ") SteamID (" + thisBan.OffenderSteamId.ToString() + ") to the commander banlist.");
-                CommanderManager.MasterBanList.Add(thisBan);
+                MasterBanList.Add(thisBan);
 
                 // convert back to json string
-                String JsonRaw = JsonConvert.SerializeObject(CommanderManager.MasterBanList, Newtonsoft.Json.Formatting.Indented);
+                String JsonRaw = JsonConvert.SerializeObject(MasterBanList, Newtonsoft.Json.Formatting.Indented);
 
-                System.IO.File.WriteAllText(CommanderManager.banListFile, JsonRaw);
+                System.IO.File.WriteAllText(banListFile, JsonRaw);
 
                 HelperMethods.ReplyToCommand_Player(PlayerToCmdrBan, "was restricted from playing as commander");
             }
@@ -508,10 +528,10 @@ namespace Si_CommanderManagement
             GameMode.CurrentGameMode.SpawnUnitForPlayer(DemotedCommander, TargetTeam);
         }
 
-        public void Command_CommanderDemote(Il2Cpp.Player callerPlayer, String args)
+        public static void Command_CommanderDemote(Il2Cpp.Player callerPlayer, String args)
         {
             // count number of arguments
-            int argumentCount = args.Split(' ').Count() - 1;
+            int argumentCount = args.Split(' ').Length - 1;
             if (argumentCount > 1)
             {
                 HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Too many arguments");
@@ -601,10 +621,15 @@ namespace Si_CommanderManagement
             }
         }
 
-        public void Command_CommanderBan(Il2Cpp.Player callerPlayer, String args)
+        public static void Command_CommanderBan(Il2Cpp.Player callerPlayer, String args)
         {
+            if (MasterBanList == null)
+            {
+                return;
+            }    
+
             // count number of arguments
-            int argumentCount = args.Split(' ').Count() - 1;
+            int argumentCount = args.Split(' ').Length - 1;
             if (argumentCount > 1)
             {
                 HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Too many arguments");
@@ -641,7 +666,7 @@ namespace Si_CommanderManagement
         {
             static void Postfix(Il2Cpp.GameMode __instance, Il2Cpp.GameByteStreamWriter __result, byte __0)
             {
-                if (_BlockRoundStartUntilEnoughApplicants.Value)
+                if (_BlockRoundStartUntilEnoughApplicants != null && _BlockRoundStartUntilEnoughApplicants.Value)
                 {
                     MP_Strategy strategyInstance = GameObject.FindObjectOfType<Il2Cpp.MP_Strategy>();
 
@@ -667,24 +692,26 @@ namespace Si_CommanderManagement
             {
                 try
                 {
-                    if (__0 != null && __0.Team != null)
+                    if (commanderApplicants == null || __0 == null || __0.Team == null)
                     {
-                        if (GameMode.CurrentGameMode.Started && !GameMode.CurrentGameMode.GameBegun)
-                        {
-                            bool hasApplied = commanderApplicants[__0.m_Team.Index].Any(k => k == __0);
-                            if (hasApplied)
-                            {
-                                commanderApplicants[__0.Team.Index].Remove(__0);
-                                HelperMethods.ReplyToCommand_Player(__0, "was removed from consideration due to disconnect");
-                            }
-                        }
+                        return;
+                    }
 
-                        if (GameMode.CurrentGameMode.Started && GameMode.CurrentGameMode.GameBegun)
+                    if (GameMode.CurrentGameMode.Started && !GameMode.CurrentGameMode.GameBegun)
+                    {
+                        bool hasApplied = commanderApplicants[__0.m_Team.Index].Any(k => k == __0);
+                        if (hasApplied)
                         {
-                            if (__0.IsCommander)
-                            {
-                                HelperMethods.ReplyToCommand_Player(__0, "left commander position vacant by disconnecting");
-                            }
+                            commanderApplicants[__0.Team.Index].Remove(__0);
+                            HelperMethods.ReplyToCommand_Player(__0, "was removed from consideration due to disconnect");
+                        }
+                    }
+
+                    if (GameMode.CurrentGameMode.Started && GameMode.CurrentGameMode.GameBegun)
+                    {
+                        if (__0.IsCommander)
+                        {
+                            HelperMethods.ReplyToCommand_Player(__0, "left commander position vacant by disconnecting");
                         }
                     }
                 }
@@ -702,30 +729,32 @@ namespace Si_CommanderManagement
             {
                 try
                 {
-                    if (__0 != null)
+                    if (teamswapCommanderChecks == null || __0 == null)
                     {
-                        if (GameMode.CurrentGameMode.Started && GameMode.CurrentGameMode.GameBegun)
-                        {
-                            // determine if player was a commander from any team
-                            int commanderSwappedTeamIndex = -1;
-                            for (int i = 0; i < MaxTeams; i++)
-                            {
-                                if (teamswapCommanderChecks[i] == __0)
-                                {
-                                    commanderSwappedTeamIndex = i;
-                                    break;
-                                }
-                            }
+                        return;
+                    }
 
-                            MelonLogger.Msg("Swapped value " + commanderSwappedTeamIndex.ToString());
-                            
-                            // announce if player swapped from commander to infantry
-                            if (commanderSwappedTeamIndex != -1)
+                    if (GameMode.CurrentGameMode.Started && GameMode.CurrentGameMode.GameBegun)
+                    {
+                        // determine if player was a commander from any team
+                        int commanderSwappedTeamIndex = -1;
+                        for (int i = 0; i < MaxTeams; i++)
+                        {
+                            if (teamswapCommanderChecks[i] == __0)
                             {
-                                Team departingTeam = Team.Teams[commanderSwappedTeamIndex];
-                                teamswapCommanderChecks[commanderSwappedTeamIndex] = null;
-                                HelperMethods.ReplyToCommand_Player(__0, "left commander position vacant for " + HelperMethods.GetTeamColor(departingTeam) + departingTeam.TeamName + HelperMethods.defaultColor + " by switching to infantry");
+                                commanderSwappedTeamIndex = i;
+                                break;
                             }
+                        }
+
+                        MelonLogger.Msg("Swapped value " + commanderSwappedTeamIndex.ToString());
+                            
+                        // announce if player swapped from commander to infantry
+                        if (commanderSwappedTeamIndex != -1)
+                        {
+                            Team departingTeam = Team.Teams[commanderSwappedTeamIndex];
+                            teamswapCommanderChecks[commanderSwappedTeamIndex] = null;
+                            HelperMethods.ReplyToCommand_Player(__0, "left commander position vacant for " + HelperMethods.GetTeamColor(departingTeam) + departingTeam.TeamName + HelperMethods.defaultColor + " by switching to infantry");
                         }
                     }
                 }
@@ -743,6 +772,11 @@ namespace Si_CommanderManagement
             {
                 try
                 {
+                    if (commanderApplicants == null)
+                    {
+                        return;
+                    }
+
                     // each faction has its own chat manager but by looking at alien and only global messages this catches commands only once
                     if (__instance.ToString().Contains("alien") && __2 == false)
                     {
@@ -788,6 +822,11 @@ namespace Si_CommanderManagement
 
         public static bool AllTeamsHaveCommanderApplicants()
         {
+            if (commanderApplicants == null)
+            {
+                return true;
+            }
+
             for (int i = 0; i < Team.Teams.Count; i++)
             {
                 if (Team.Teams[i] == null)
