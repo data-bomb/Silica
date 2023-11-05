@@ -35,7 +35,7 @@ using Il2CppSteamworks;
 using static MelonLoader.MelonLogger;
 using System.Reflection.Metadata.Ecma335;
 
-[assembly: MelonInfo(typeof(CommanderManager), "[Si] Commander Management", "1.1.9", "databomb")]
+[assembly: MelonInfo(typeof(CommanderManager), "[Si] Commander Management", "1.2.0", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_CommanderManagement
@@ -83,6 +83,13 @@ namespace Si_CommanderManagement
         static Player[]? promotedCommanders;
         static List<BanEntry>? MasterBanList;
         static readonly String banListFile = System.IO.Path.Combine(MelonEnvironment.UserDataDirectory, "commander_bans.json");
+
+        public static void UpdateCommanderBanFile()
+        {
+            // convert back to json string
+            String JsonRaw = JsonConvert.SerializeObject(MasterBanList, Newtonsoft.Json.Formatting.Indented);
+            System.IO.File.WriteAllText(banListFile, JsonRaw);
+        }
 
         public override void OnInitializeMelon()
         {
@@ -150,6 +157,11 @@ namespace Si_CommanderManagement
                 HelperMethods.CommandCallback commanderBanCallback = Command_CommanderBan;
                 HelperMethods.RegisterAdminCommand("!cmdrban", commanderBanCallback, Power.Commander);
                 HelperMethods.RegisterAdminCommand("!commanderban", commanderBanCallback, Power.Commander);
+                HelperMethods.RegisterAdminCommand("!cban", commanderBanCallback, Power.Commander);
+
+                HelperMethods.CommandCallback commanderUnbanCallback = Command_CommanderUnban;
+                HelperMethods.RegisterAdminCommand("!removecommanderban", commanderUnbanCallback, Power.Commander);
+                HelperMethods.RegisterAdminCommand("!uncban", commanderUnbanCallback, Power.Commander);
 
                 HelperMethods.CommandCallback commanderDemoteCallback = Command_CommanderDemote;
                 HelperMethods.RegisterAdminCommand("!demote", commanderDemoteCallback, Power.Commander);
@@ -444,7 +456,29 @@ namespace Si_CommanderManagement
             }
         }
 
-        public static void AddCommanderBan(Il2Cpp.Player PlayerToCmdrBan)
+        public static bool RemoveCommanderBan(Player playerToCmdrUnban)
+        {
+            if (MasterBanList == null)
+            {
+                return false;
+            }
+
+            BanEntry? matchingCmdrBan;
+            matchingCmdrBan = MasterBanList.Find(i => i.OffenderSteamId == (long)playerToCmdrUnban.PlayerID.m_SteamID);
+
+            if (matchingCmdrBan == null)
+            {
+                return false;
+            }
+
+            MelonLogger.Msg("Removed player name (" + matchingCmdrBan.OffenderName + ") SteamID (" + matchingCmdrBan.OffenderSteamId.ToString() + ") from the commander banlist.");
+            MasterBanList.Remove(matchingCmdrBan);
+            UpdateCommanderBanFile();
+
+            return true;
+        }
+
+        public static void AddCommanderBan(Player playerToCmdrBan)
         {
             if (MasterBanList == null)
             {
@@ -453,22 +487,22 @@ namespace Si_CommanderManagement
 
             // gather information to log in the banlist
             Il2Cpp.Player serverPlayer = Il2Cpp.NetworkGameServer.GetServerPlayer();
-            CommanderManager.BanEntry thisBan = new()
+            BanEntry thisBan = new()
             {
-                OffenderSteamId = long.Parse(PlayerToCmdrBan.ToString().Split('_')[1]),
-                OffenderName = PlayerToCmdrBan.PlayerName,
+                OffenderSteamId = long.Parse(playerToCmdrBan.ToString().Split('_')[1]),
+                OffenderName = playerToCmdrBan.PlayerName,
                 UnixBanTime = (int)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds,
                 Comments = "banned from playing commander by " + serverPlayer.PlayerName
             };
 
             // are we currently a commander?
-            if (PlayerToCmdrBan.IsCommander)
+            if (playerToCmdrBan.IsCommander)
             {
-                Il2Cpp.Team playerTeam = PlayerToCmdrBan.Team;
+                Il2Cpp.Team playerTeam = playerToCmdrBan.Team;
                 Il2Cpp.MP_Strategy strategyInstance = GameObject.FindObjectOfType<Il2Cpp.MP_Strategy>();
 
                 DemoteTeamsCommander(strategyInstance, playerTeam);
-                HelperMethods.ReplyToCommand_Player(PlayerToCmdrBan, "was demoted");
+                HelperMethods.ReplyToCommand_Player(playerToCmdrBan, "was demoted");
             }
 
             // are we already banned?
@@ -480,13 +514,7 @@ namespace Si_CommanderManagement
             {
                 MelonLogger.Msg("Added player name (" + thisBan.OffenderName + ") SteamID (" + thisBan.OffenderSteamId.ToString() + ") to the commander banlist.");
                 MasterBanList.Add(thisBan);
-
-                // convert back to json string
-                String JsonRaw = JsonConvert.SerializeObject(MasterBanList, Newtonsoft.Json.Formatting.Indented);
-
-                System.IO.File.WriteAllText(banListFile, JsonRaw);
-
-                HelperMethods.ReplyToCommand_Player(PlayerToCmdrBan, "was restricted from playing as commander");
+                UpdateCommanderBanFile();
             }
         }
 
@@ -621,7 +649,54 @@ namespace Si_CommanderManagement
             }
         }
 
-        public static void Command_CommanderBan(Il2Cpp.Player callerPlayer, String args)
+        public static void Command_CommanderUnban(Player callerPlayer, String args)
+        {
+            if (MasterBanList == null)
+            {
+                return;
+            }
+
+            // count number of arguments
+            int argumentCount = args.Split(' ').Length - 1;
+            if (argumentCount > 1)
+            {
+                HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Too many arguments");
+                return;
+            }
+            else if (argumentCount < 1)
+            {
+                HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Too few arguments");
+                return;
+            }
+
+            String sTarget = args.Split(' ')[1];
+            Il2Cpp.Player? playerToUnCmdrBan = HelperMethods.FindTargetPlayer(sTarget);
+
+            if (playerToUnCmdrBan == null)
+            {
+                HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Ambiguous or invalid target");
+                return;
+            }
+
+            if (callerPlayer.CanAdminTarget(playerToUnCmdrBan))
+            {
+                bool removed = RemoveCommanderBan(playerToUnCmdrBan);
+                if (removed)
+                {
+                    HelperMethods.AlertAdminAction(callerPlayer, "permitted " + HelperMethods.GetTeamColor(playerToUnCmdrBan) + playerToUnCmdrBan.PlayerName + HelperMethods.defaultColor + " to play as commander");
+                }
+                else
+                {
+                    HelperMethods.ReplyToCommand_Player(playerToUnCmdrBan, "not commander banned");
+                }
+            }
+            else
+            {
+                HelperMethods.ReplyToCommand_Player(playerToUnCmdrBan, "is immune due to level");
+            }
+        }
+
+        public static void Command_CommanderBan(Player callerPlayer, String args)
         {
             if (MasterBanList == null)
             {
@@ -642,22 +717,22 @@ namespace Si_CommanderManagement
             }
 
             String sTarget = args.Split(' ')[1];
-            Il2Cpp.Player? PlayerToCmdrBan = HelperMethods.FindTargetPlayer(sTarget);
+            Il2Cpp.Player? playerToCmdrBan = HelperMethods.FindTargetPlayer(sTarget);
 
-            if (PlayerToCmdrBan == null)
+            if (playerToCmdrBan == null)
             {
                 HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Ambiguous or invalid target");
                 return;
             }
 
-            if (callerPlayer.CanAdminTarget(PlayerToCmdrBan))
+            if (callerPlayer.CanAdminTarget(playerToCmdrBan))
             {
-                AddCommanderBan(PlayerToCmdrBan);
-                HelperMethods.AlertAdminActivity(callerPlayer, PlayerToCmdrBan, "commander banned");
+                AddCommanderBan(playerToCmdrBan);
+                HelperMethods.AlertAdminAction(callerPlayer, "restricted " + playerToCmdrBan.PlayerName + " to play as infantry only");
             }
             else
             {
-                HelperMethods.ReplyToCommand_Player(PlayerToCmdrBan, "is immune due to level");
+                HelperMethods.ReplyToCommand_Player(playerToCmdrBan, "is immune due to level");
             }
         }
 
