@@ -12,7 +12,7 @@
 ## Mod Summary
 | Mod Name | Version   | Link |
 |---------:|-----------|------|
-| Admin Mod | 1.1.2 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_AdminMod/bin/Si_AdminMod.dll) |
+| Admin Mod | 1.1.6 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_AdminMod/bin/Si_AdminMod.dll) |
 | Auto Teams Mode Select | 1.1.0 | [Download](https://raw.githubusercontent.com/data-bomb/Silica_ListenServer/main/Si_AutoTeamsSelect/bin/Si_AutoTeamsSelect.dll) |
 | Mapcycle | 1.0.1 | Not Ready - Game Bug(s) |
 | SiRAC (Anti-Cheat) | 0.7.6 | Restricted Access - By Request Only |
