@@ -28,7 +28,7 @@ using Newtonsoft.Json;
 using AdminExtension;
 using MelonLoader.Utils;
 
-[assembly: MelonInfo(typeof(SiAdminMod), "Admin Mod", "1.1.3", "databomb")]
+[assembly: MelonInfo(typeof(SiAdminMod), "Admin Mod", "1.1.4", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace SilicaAdminMod
@@ -203,8 +203,8 @@ namespace SilicaAdminMod
                     // each faction has its own chat manager but by looking at alien and only global messages this catches commands only once
                     if (__instance.ToString().Contains("alien") && __2 == Pref_Admin_AcceptTeamChatCommands.Value)
                     {
-                        // check if this even has a '!' as the first character
-                        if (__1[0] != '!' || __1[0] != '/')
+                        // check if this even has a '!' or '/' as the command prefix
+                        if (__1[0] != '!' && __1[0] != '/')
                         {
                             return;
                         }
