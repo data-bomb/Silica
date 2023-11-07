@@ -27,8 +27,9 @@ using SilicaAdminMod;
 using Newtonsoft.Json;
 using AdminExtension;
 using MelonLoader.Utils;
+using static SilicaAdminMod.SiAdminMod;
 
-[assembly: MelonInfo(typeof(SiAdminMod), "Admin Mod", "1.1.4", "databomb")]
+[assembly: MelonInfo(typeof(SiAdminMod), "Admin Mod", "1.1.5", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace SilicaAdminMod
@@ -200,33 +201,51 @@ namespace SilicaAdminMod
             {
                 try
                 {
-                    // each faction has its own chat manager but by looking at alien and only global messages this catches commands only once
-                    if (__instance.ToString().Contains("alien") && __2 == Pref_Admin_AcceptTeamChatCommands.Value)
+                    // check if this even has a '!' or '/' as the command prefix
+                    if (__1[0] != '!' && __1[0] != '/')
                     {
-                        // check if this even has a '!' or '/' as the command prefix
-                        if (__1[0] != '!' && __1[0] != '/')
-                        {
-                            return;
-                        }
-
-                        // check if the first portion matches an admin command
-                        String thisCommandText = __1.Split(' ')[0];
-                        AdminCommand? checkCommand = AdminCommands.Find(i => i.AdminCommandText == thisCommandText);
-                        if (checkCommand != null)
-                        {
-                            // do they have the matching power?
-                            Power callerPowers = __0.GetAdminPowers();
-
-                            if (!PowerInPowers(checkCommand.AdminPower, callerPowers))
-                            {
-                                HelperMethods.ReplyToCommand_Player(__0, "cannot use " + thisCommandText);
-                                return;
-                            }
-
-                            // run the callback
-                            checkCommand.AdminCallback(__0, __1);
-                        }
+                        return;
                     }
+
+                    // ignore team chat if preference is set
+                    if (__2 && !Pref_Admin_AcceptTeamChatCommands.Value)
+                    {
+                        return;
+                    }
+
+                    // each faction has its own chat manager but by looking at alien and only global messages this catches commands only once
+                    if (!__instance.ToString().Contains("alien"))
+                    {
+                        return;
+                    }
+
+                    // check if the first portion matches an admin command
+                    String thisCommandText = __1.Split(' ')[0];
+                    AdminCommand? checkCommand = AdminCommands.Find(i => i.AdminCommandText == thisCommandText);
+
+                    if (checkCommand == null)
+                    {
+                        return;
+                    }
+
+                    // are they an admin?
+                    if (!__0.IsAdmin())
+                    {
+                        HelperMethods.ReplyToCommand_Player(__0, "is not an admin");
+                        return;
+                    }
+
+                    // do they have the matching power?
+                    Power callerPowers = __0.GetAdminPowers();
+
+                    if (!PowerInPowers(checkCommand.AdminPower, callerPowers))
+                    {
+                        HelperMethods.ReplyToCommand_Player(__0, "unauthorized command");
+                        return;
+                    }
+
+                    // run the callback
+                    checkCommand.AdminCallback(__0, __1);
                 }
                 catch (Exception error)
                 {
