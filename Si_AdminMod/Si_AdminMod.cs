@@ -29,14 +29,14 @@ using AdminExtension;
 using MelonLoader.Utils;
 using static SilicaAdminMod.SiAdminMod;
 
-[assembly: MelonInfo(typeof(SiAdminMod), "Admin Mod", "1.1.5", "databomb")]
+[assembly: MelonInfo(typeof(SiAdminMod), "Admin Mod", "1.1.6", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace SilicaAdminMod
 {
     public class SiAdminMod : MelonMod
     {
-        static String adminFile = System.IO.Path.Combine(MelonEnvironment.UserDataDirectory, "admins.json");
+        static readonly String adminFile = System.IO.Path.Combine(MelonEnvironment.UserDataDirectory, "admins.json");
 
         static MelonPreferences_Category? _modCategory;
         static MelonPreferences_Entry<bool>? Pref_Admin_AcceptTeamChatCommands;
@@ -107,7 +107,8 @@ namespace SilicaAdminMod
                 if (System.IO.File.Exists(adminFile))
                 {
                     // Open the stream and read it back.
-                    using (System.IO.StreamReader adminFileStream = System.IO.File.OpenText(adminFile))
+                    System.IO.StreamReader adminFileStream = System.IO.File.OpenText(adminFile);
+                    using (adminFileStream)
                     {
                         String JsonRaw = adminFileStream.ReadToEnd();
                         if (JsonRaw == null)
@@ -153,17 +154,21 @@ namespace SilicaAdminMod
 
         public static void RegisterAdminCommand(String adminCommand, HelperMethods.CommandCallback adminCallback, Power adminPower)
         {
-            AdminCommand thisCommand = new AdminCommand();
-            thisCommand.AdminCommandText = adminCommand;
-            thisCommand.AdminCallback = adminCallback;
-            thisCommand.AdminPower = adminPower;
+            AdminCommand thisCommand = new()
+            {
+                AdminCommandText = adminCommand,
+                AdminCallback = adminCallback,
+                AdminPower = adminPower
+            };
             AdminCommands.Add(thisCommand);
         }
 
         public static bool AddAdmin(Il2Cpp.Player player, String powerText, byte level)
         {
-            Admin admin = new Admin();
-            admin.SteamId = long.Parse(player.ToString().Split('_')[1]);
+            Admin admin = new()
+            {
+                SteamId = long.Parse(player.ToString().Split('_')[1])
+            };
 
             // check if we have a match before adding more details
             if (AdminList.Find(i => i.SteamId == admin.SteamId) == null)
@@ -208,7 +213,7 @@ namespace SilicaAdminMod
                     }
 
                     // ignore team chat if preference is set
-                    if (__2 && !Pref_Admin_AcceptTeamChatCommands.Value)
+                    if (__2 && Pref_Admin_AcceptTeamChatCommands != null && !Pref_Admin_AcceptTeamChatCommands.Value)
                     {
                         return;
                     }
@@ -277,7 +282,7 @@ namespace SilicaAdminMod
                         }
 
                         // validate argument count
-                        int argumentCount = __0.Split(' ').Count() - 1;
+                        int argumentCount = __0.Split(' ').Length - 1;
                         if (argumentCount > 3)
                         {
                             HelperMethods.ReplyToCommand(__0.Split(' ')[0] + ": Too many arguments");
