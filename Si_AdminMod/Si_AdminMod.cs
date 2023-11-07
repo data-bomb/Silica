@@ -28,7 +28,7 @@ using Newtonsoft.Json;
 using AdminExtension;
 using MelonLoader.Utils;
 
-[assembly: MelonInfo(typeof(SiAdminMod), "Admin Mod", "1.1.2", "databomb")]
+[assembly: MelonInfo(typeof(SiAdminMod), "Admin Mod", "1.1.3", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace SilicaAdminMod
@@ -36,6 +36,9 @@ namespace SilicaAdminMod
     public class SiAdminMod : MelonMod
     {
         static String adminFile = System.IO.Path.Combine(MelonEnvironment.UserDataDirectory, "admins.json");
+
+        static MelonPreferences_Category? _modCategory;
+        static MelonPreferences_Entry<bool>? Pref_Admin_AcceptTeamChatCommands;
 
         public class AdminCommand
         {
@@ -130,6 +133,9 @@ namespace SilicaAdminMod
                     MelonLogger.Warning("Did not find admins.json file. No admin entries loaded.");
                     AdminList = new List<Admin>();
                 }
+
+                _modCategory ??= MelonPreferences.CreateCategory("Silica");
+                Pref_Admin_AcceptTeamChatCommands ??= _modCategory.CreateEntry<bool>("Admin_AllowTeamChatCommands", false);
             }
             catch (Exception error)
             {
@@ -195,8 +201,14 @@ namespace SilicaAdminMod
                 try
                 {
                     // each faction has its own chat manager but by looking at alien and only global messages this catches commands only once
-                    if (__instance.ToString().Contains("alien") && __2 == false)
+                    if (__instance.ToString().Contains("alien") && __2 == Pref_Admin_AcceptTeamChatCommands.Value)
                     {
+                        // check if this even has a '!' as the first character
+                        if (__1[0] != '!' || __1[0] != '/')
+                        {
+                            return;
+                        }
+
                         // check if the first portion matches an admin command
                         String thisCommandText = __1.Split(' ')[0];
                         AdminCommand? checkCommand = AdminCommands.Find(i => i.AdminCommandText == thisCommandText);
