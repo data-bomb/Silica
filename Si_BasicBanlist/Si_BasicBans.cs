@@ -28,7 +28,7 @@ using Newtonsoft.Json;
 using Si_BasicBanlist;
 using AdminExtension;
 
-[assembly: MelonInfo(typeof(BasicBanlist), "[Si] Basic Banlist", "1.2.1", "databomb")]
+[assembly: MelonInfo(typeof(BasicBanlist), "[Si] Basic Banlist", "1.2.2", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_BasicBanlist
@@ -63,6 +63,9 @@ namespace Si_BasicBanlist
         static readonly String banListFile = System.IO.Path.Combine(MelonEnvironment.UserDataDirectory, "banned_users.json");
         static bool AdminModAvailable = false;
 
+        static MelonPreferences_Category _modCategory;
+        static MelonPreferences_Entry<bool> Pref_Ban_KickButton_PermaBan;
+
         public static void UpdateBanFile()
         {
             // convert back to json string
@@ -74,6 +77,9 @@ namespace Si_BasicBanlist
         {
             try
             {
+                _modCategory ??= MelonPreferences.CreateCategory("Silica");
+                Pref_Ban_KickButton_PermaBan ??= _modCategory.CreateEntry<bool>("Ban_HostKickButton_Permabans", false);
+
                 if (System.IO.File.Exists(banListFile))
                 {
                     // Open the stream and read it back.
@@ -245,13 +251,20 @@ namespace Si_BasicBanlist
         [HarmonyPatch(typeof(Il2Cpp.NetworkGameServer), nameof(Il2Cpp.NetworkGameServer.KickPlayer))]
         private static class ApplyPatchKickPlayer
         {
-            public static bool Prefix(Il2Cpp.Player __0, bool __1)
+            public static void Prefix(Il2Cpp.Player __0, bool __1)
             {
                 try
                 {
                     if (MasterBanList == null)
                     {
-                        return true;
+                        return;
+                    }
+
+                    // if we just intended to kick, we can skip the rest
+                    if (!Pref_Ban_KickButton_PermaBan.Value)
+                    {
+                        MelonLogger.Msg("Kicked player name (" + __0.PlayerName + ") SteamID (" + __0.ToString() + ")");
+                        return;
                     }
 
                     BanEntry thisBan = GenerateBanEntry(__0, Il2Cpp.NetworkGameServer.GetServerPlayer());
@@ -273,7 +286,7 @@ namespace Si_BasicBanlist
                     HelperMethods.PrintError(error, "Failed to run NetworkGameServer::KickPlayer");
                 }
 
-                return true;
+                return;
             }
         }
 
