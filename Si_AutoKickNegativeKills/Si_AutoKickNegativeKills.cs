@@ -29,7 +29,7 @@ using MelonLoader;
 using Si_AutoKickNegativeKills;
 using AdminExtension;
 
-[assembly: MelonInfo(typeof(AutoKickNegativeKills), "[Si] Auto-Kick Negative Kills", "1.0.6", "databomb", "https://github.com/data-bomb/Silica_ListenServer")]
+[assembly: MelonInfo(typeof(AutoKickNegativeKills), "[Si] Auto-Kick Negative Kills", "1.0.7", "databomb", "https://github.com/data-bomb/Silica_ListenServer")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_AutoKickNegativeKills
@@ -38,20 +38,15 @@ namespace Si_AutoKickNegativeKills
     {
         static MelonPreferences_Category _modCategory;
         static MelonPreferences_Entry<int> _NegativeKillsThreshold;
+        static MelonPreferences_Entry<bool> _NegativeKills_Penalty_Ban;
 
         private const string ModCategory = "Silica";
-        private const string ModEntryString = "AutoKickNegativeKillsThreshold";
 
         public override void OnInitializeMelon()
         {
-            if (_modCategory == null)
-            {
-                _modCategory = MelonPreferences.CreateCategory(ModCategory);
-            }
-            if (_NegativeKillsThreshold == null)
-            {
-                _NegativeKillsThreshold = _modCategory.CreateEntry<int>(ModEntryString, -80);
-            }
+            _modCategory ??= MelonPreferences.CreateCategory(ModCategory);
+            _NegativeKillsThreshold ??= _modCategory.CreateEntry<int>("Grief_NegativeKills_Threshold", -120);
+            _NegativeKills_Penalty_Ban ??= _modCategory.CreateEntry<bool>("Grief_NegativeKills_Penalty_Ban", true);
         }
 
         [HarmonyPatch(typeof(Il2Cpp.MP_Strategy), nameof(Il2Cpp.MP_Strategy.OnUnitDestroyed))]
@@ -127,13 +122,25 @@ namespace Si_AutoKickNegativeKills
                         NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, HelperMethods.chatPrefix + HelperMethods.GetTeamColor(attackerPlayer) + attackerPlayer.PlayerName + HelperMethods.defaultColor + " team killed " + HelperMethods.GetTeamColor(victimPlayer) + victimPlayer.PlayerName, false);
                     }
 
-                    if (currentKillScore < _NegativeKillsThreshold.Value)
+                    if (currentKillScore >= _NegativeKillsThreshold.Value)
                     {
-                        String sPlayerNameToKick = attackerPlayer.PlayerName;
-                        MelonLogger.Msg("Kicked " + sPlayerNameToKick + " (" + attackerPlayer.ToString + ")");
-                        NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, HelperMethods.chatPrefix + HelperMethods.GetTeamColor(attackerTeam) + sPlayerNameToKick + HelperMethods.defaultColor + " was kicked for teamkilling.", false);
+                        return;
+                    }
+
+                    String sPlayerNameToKick = attackerPlayer.PlayerName;
+
+                    if (_NegativeKills_Penalty_Ban.Value)
+                    {
+                        MelonLogger.Msg("Banned " + sPlayerNameToKick + " (" + attackerPlayer.ToString + ") for griefing (negative kills)");
+                        HelperMethods.ReplyToCommand_Player(attackerPlayer, "was banned for griefing (negative kills)");
                         NetworkGameServer.KickPlayer(attackerPlayer);
                     }
+                    else
+                    {
+                        MelonLogger.Msg("Kicked " + sPlayerNameToKick + " (" + attackerPlayer.ToString + ") for griefing (negative kills)");
+                        HelperMethods.ReplyToCommand_Player(attackerPlayer, "was kicked for griefing (negative kills)");
+                        HelperMethods.KickPlayer(attackerPlayer);
+                    }                        
                 }
                 catch (Exception error)
                 {
