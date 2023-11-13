@@ -28,7 +28,7 @@ using MelonLoader.Utils;
 using Si_Logging;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "0.9.1", "databomb")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "0.9.2", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_Logging
@@ -38,6 +38,7 @@ namespace Si_Logging
     {
         static MelonPreferences_Category? _modCategory;
         static MelonPreferences_Entry<bool>? Pref_Log_Damage;
+        static MelonPreferences_Entry<bool>? Pref_Log_Kills_Include_AI_vs_Player;
 
         public static void PrintLogLine(string LogMessage, bool suppressConsoleOutput = false)
         {
@@ -116,6 +117,7 @@ namespace Si_Logging
             {
                 _modCategory ??= MelonPreferences.CreateCategory("Silica");
                 Pref_Log_Damage ??= _modCategory.CreateEntry<bool>("Logging_LogDamage", false);
+                Pref_Log_Kills_Include_AI_vs_Player ??= _modCategory.CreateEntry<bool>("Logging_LogKills_IncludeAIvsPlayer", true);
 
                 if (!System.IO.Directory.Exists(GetLogFileDirectory()))
                 {
@@ -247,42 +249,71 @@ namespace Si_Logging
             {
                 try
                 {
-                    if (__0 != null && __2 != null)
+                    if (__0 == null || __2 == null)
                     {
-                        // Victim
-                        Il2Cpp.Player victimPlayer = __0.m_ControlledBy;
+                        return;
+                    }
 
-                        // Attacker
-                        Il2Cpp.BaseGameObject attackerBase = Il2Cpp.GameFuncs.GetBaseGameObject(__2);
-                        if (victimPlayer != null && attackerBase != null)
+                    if (Pref_Log_Kills_Include_AI_vs_Player == null)
+                    {
+                        return;
+                    }
+
+                    // Attacker
+                    BaseGameObject attackerBase = Il2Cpp.GameFuncs.GetBaseGameObject(__2);
+                    if (attackerBase == null)
+                    {
+                        return;
+                    }
+                    NetworkComponent attackerNetComp = attackerBase.NetworkComponent;
+                    Player attackerPlayer = attackerNetComp.OwnerPlayer;
+
+                    // Victim
+                    Player victimPlayer = __0.m_ControlledBy;
+
+                    bool isVictimHuman = (victimPlayer != null);
+                    bool isAttackerHuman = (attackerPlayer != null);
+                    
+                    if (isVictimHuman)
+                    {
+                        int victimUserID = Math.Abs(victimPlayer.GetInstanceID());
+
+                        if (attackerNetComp == null)
                         {
-                            Il2Cpp.NetworkComponent attackerNetComp = attackerBase.NetworkComponent;
-                            // was teamkiller a playable character?
-                            if (attackerNetComp != null)
+                            return;
+                        }
+
+                        // Attacker and Victim are both humans
+                        if (isAttackerHuman)
+                        {
+                            bool isSuicide = (attackerPlayer == victimPlayer);
+                            if (isSuicide)
                             {
-                                Il2Cpp.Player attackerPlayer = attackerNetComp.OwnerPlayer;
 
-                                if (attackerPlayer != null)
-                                {
-                                    int victimUserID = Math.Abs(victimPlayer.GetInstanceID());
-
-                                    // suicide?
-                                    if (attackerPlayer == victimPlayer)
-                                    {
-                                        
-                                        string LogLine = "\"" + victimPlayer.PlayerName + "<" + victimUserID + "><" + victimPlayer.ToString().Split('_')[1] + "><" + victimPlayer.m_Team.TeamName + ">\" committed suicide with \"" + __2.ToString().Split('(')[0] + "\"";
-                                        PrintLogLine(LogLine);
-                                    }
-                                    // human-controlled player killed another human-controlled player
-                                    else
-                                    {
-                                        int attackerUserID = Math.Abs(attackerPlayer.GetInstanceID());
-                                        string LogLine = "\"" + attackerPlayer.PlayerName + "<" + attackerUserID + "><" + attackerPlayer.ToString().Split('_')[1] + "><" + attackerPlayer.m_Team.TeamName + ">\" killed \"" + victimPlayer.PlayerName + "<" + victimUserID + "><" + victimPlayer.ToString().Split('_')[1] + "><" + victimPlayer.m_Team.TeamName + ">\" with \"" + __2.ToString().Split('(')[0] + "\"";
-                                        PrintLogLine(LogLine);
-                                    }
-                                }
+                                string LogLine = "\"" + victimPlayer.PlayerName + "<" + victimUserID + "><" + victimPlayer.ToString().Split('_')[1] + "><" + victimPlayer.m_Team.TeamName + ">\" committed suicide with \"" + __2.ToString().Split('(')[0] + "\" (dmgtype \"" + __1.ToString() + "\")";
+                                PrintLogLine(LogLine);
+                            }
+                            // human-controlled player killed another human-controlled player
+                            else
+                            {
+                                int attackerUserID = Math.Abs(attackerPlayer.GetInstanceID());
+                                string LogLine = "\"" + attackerPlayer.PlayerName + "<" + attackerUserID + "><" + attackerPlayer.ToString().Split('_')[1] + "><" + attackerPlayer.m_Team.TeamName + ">\" killed \"" + victimPlayer.PlayerName + "<" + victimUserID + "><" + victimPlayer.ToString().Split('_')[1] + "><" + victimPlayer.m_Team.TeamName + ">\" with \"" + __2.ToString().Split('(')[0] + "\" (dmgtype \"" + __1.ToString() + "\")";
+                                PrintLogLine(LogLine);
                             }
                         }
+                        else if (Pref_Log_Kills_Include_AI_vs_Player.Value)
+                        // Attacker is an AI, Victim is a human
+                        {
+                            string LogLine = "\"" + __2.ToString().Split('(')[0] + "<><><" + attackerBase.m_Team.TeamName + ">\" killed \"" + victimPlayer.PlayerName + "<" + victimUserID + "><" + victimPlayer.ToString().Split('_')[1] + "><" + victimPlayer.m_Team.TeamName + ">\" with \"" + __2.ToString().Split('(')[0] + "\" (dmgtype \"" + __1.ToString() + "\")";
+                            PrintLogLine(LogLine);
+                        }
+                    }
+                    else if (isAttackerHuman && Pref_Log_Kills_Include_AI_vs_Player.Value)
+                    // Attacker is a human, Victim is an AI
+                    {
+                        int attackerUserID = Math.Abs(attackerPlayer.GetInstanceID());
+                        string LogLine = "\"" + attackerPlayer.PlayerName + "<" + attackerUserID + "><" + attackerPlayer.ToString().Split('_')[1] + "><" + attackerPlayer.m_Team.TeamName + ">\" killed \"" + __0.ToString().Split('(')[0] + "<><><" + __0.m_Team.TeamName + ">\" with \"" + __2.ToString().Split('(')[0] + "\" (dmgtype \"" + __1.ToString() + "\")";
+                        PrintLogLine(LogLine);
                     }
                 }
                 catch (Exception error)
