@@ -28,7 +28,7 @@ using MelonLoader.Utils;
 using Si_Logging;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "0.9.2", "databomb")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "0.9.3", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_Logging
@@ -111,6 +111,11 @@ namespace Si_Logging
             MelonLogger.Error(exception.TargetSite);
         }
 
+        public static string GetPlayerID(Player player)
+        {
+            return player.ToString().Split('_')[1];
+        }
+
         public override void OnInitializeMelon()
         {
             try
@@ -169,7 +174,7 @@ namespace Si_Logging
                     {
                         // TODO: Find current name
                         int userID = Math.Abs(__0.GetInstanceID());
-                        string LogLine = "\"" + __0.PlayerName + "<" + userID + "><" + __0.ToString().Split('_')[1] + "><>\" entered the game";
+                        string LogLine = "\"" + __0.PlayerName + "<" + userID + "><" + GetPlayerID(__0) + "><>\" entered the game";
                         PrintLogLine(LogLine);
                     }
                 }
@@ -201,7 +206,7 @@ namespace Si_Logging
                             teamName = __0.m_Team.TeamName;
                         }
 
-                        string LogLine = "\"" + __0.PlayerName + "<" + userID + "><" + __0.ToString().Split('_')[1] + "><" + teamName + ">\" disconnected";
+                        string LogLine = "\"" + __0.PlayerName + "<" + userID + "><" + GetPlayerID(__0) + "><" + teamName + ">\" disconnected";
                         PrintLogLine(LogLine);
                     }
                 }
@@ -230,7 +235,7 @@ namespace Si_Logging
                     {
                         teamName = __0.m_Team.TeamName;
                     }
-                    string LogLine = "Kick: \"" + __0.PlayerName + "<" + userID + "><" + __0.ToString().Split('_')[1] + "><" + teamName + "\" was kicked by \"Console\" (message \"\")";
+                    string LogLine = "Kick: \"" + __0.PlayerName + "<" + userID + "><" + GetPlayerID(__0) + "><" + teamName + "\" was kicked by \"Console\" (message \"\")";
                     PrintLogLine(LogLine);
                 }
                 catch (Exception error)
@@ -290,21 +295,21 @@ namespace Si_Logging
                             if (isSuicide)
                             {
 
-                                string LogLine = "\"" + victimPlayer.PlayerName + "<" + victimUserID + "><" + victimPlayer.ToString().Split('_')[1] + "><" + victimPlayer.m_Team.TeamName + ">\" committed suicide with \"" + __2.ToString().Split('(')[0] + "\" (dmgtype \"" + __1.ToString() + "\")";
+                                string LogLine = "\"" + victimPlayer.PlayerName + "<" + victimUserID + "><" + GetPlayerID(victimPlayer) + "><" + victimPlayer.m_Team.TeamName + ">\" committed suicide with \"" + __2.ToString().Split('(')[0] + "\" (dmgtype \"" + __1.ToString() + "\")";
                                 PrintLogLine(LogLine);
                             }
                             // human-controlled player killed another human-controlled player
                             else
                             {
                                 int attackerUserID = Math.Abs(attackerPlayer.GetInstanceID());
-                                string LogLine = "\"" + attackerPlayer.PlayerName + "<" + attackerUserID + "><" + attackerPlayer.ToString().Split('_')[1] + "><" + attackerPlayer.m_Team.TeamName + ">\" killed \"" + victimPlayer.PlayerName + "<" + victimUserID + "><" + victimPlayer.ToString().Split('_')[1] + "><" + victimPlayer.m_Team.TeamName + ">\" with \"" + __2.ToString().Split('(')[0] + "\" (dmgtype \"" + __1.ToString() + "\")";
+                                string LogLine = "\"" + attackerPlayer.PlayerName + "<" + attackerUserID + "><" + GetPlayerID(attackerPlayer) + "><" + attackerPlayer.m_Team.TeamName + ">\" killed \"" + victimPlayer.PlayerName + "<" + victimUserID + "><" + GetPlayerID(victimPlayer) + "><" + victimPlayer.m_Team.TeamName + ">\" with \"" + __2.ToString().Split('(')[0] + "\" (dmgtype \"" + __1.ToString() + "\") (victim \"" + __0.ToString().Split('(')[0] + "\")";
                                 PrintLogLine(LogLine);
                             }
                         }
                         else if (Pref_Log_Kills_Include_AI_vs_Player.Value)
                         // Attacker is an AI, Victim is a human
                         {
-                            string LogLine = "\"" + __2.ToString().Split('(')[0] + "<><><" + attackerBase.m_Team.TeamName + ">\" killed \"" + victimPlayer.PlayerName + "<" + victimUserID + "><" + victimPlayer.ToString().Split('_')[1] + "><" + victimPlayer.m_Team.TeamName + ">\" with \"" + __2.ToString().Split('(')[0] + "\" (dmgtype \"" + __1.ToString() + "\")";
+                            string LogLine = "\"" + __2.ToString().Split('(')[0] + "<><><" + attackerBase.m_Team.TeamName + ">\" killed \"" + victimPlayer.PlayerName + "<" + victimUserID + "><" + GetPlayerID(victimPlayer) + "><" + victimPlayer.m_Team.TeamName + ">\" with \"" + __2.ToString().Split('(')[0] + "\" (dmgtype \"" + __1.ToString() + "\") (victim \"" + __0.ToString().Split('(')[0] + "\")";
                             PrintLogLine(LogLine);
                         }
                     }
@@ -312,7 +317,7 @@ namespace Si_Logging
                     // Attacker is a human, Victim is an AI
                     {
                         int attackerUserID = Math.Abs(attackerPlayer.GetInstanceID());
-                        string LogLine = "\"" + attackerPlayer.PlayerName + "<" + attackerUserID + "><" + attackerPlayer.ToString().Split('_')[1] + "><" + attackerPlayer.m_Team.TeamName + ">\" killed \"" + __0.ToString().Split('(')[0] + "<><><" + __0.m_Team.TeamName + ">\" with \"" + __2.ToString().Split('(')[0] + "\" (dmgtype \"" + __1.ToString() + "\")";
+                        string LogLine = "\"" + attackerPlayer.PlayerName + "<" + attackerUserID + "><" + GetPlayerID(attackerPlayer) + "><" + attackerPlayer.m_Team.TeamName + ">\" killed \"" + __0.ToString().Split('(')[0] + "<><><" + __0.m_Team.TeamName + ">\" with \"" + __2.ToString().Split('(')[0] + "\" (dmgtype \"" + __1.ToString() + "\") (victim \"" + __0.ToString().Split('(')[0] + "\")";
                         PrintLogLine(LogLine);
                     }
                 }
@@ -355,7 +360,7 @@ namespace Si_Logging
                     if (__0 != null)
                     {
                         int userID = Math.Abs(__0.GetInstanceID());
-                        string LogLine = "\"" + __0.PlayerName + "<" + userID + "><" + __0.ToString().Split('_')[1] + "><" + theOldTeamName + ">\" joined team \"" + theNewTeamName + "\"";
+                        string LogLine = "\"" + __0.PlayerName + "<" + userID + "><" + GetPlayerID(__0) + "><" + theOldTeamName + ">\" joined team \"" + theNewTeamName + "\"";
                         PrintLogLine(LogLine);
                     }
                 }
@@ -450,11 +455,10 @@ namespace Si_Logging
                     return;
                 }
 
-
-                    int attackerUserID = Math.Abs(attackerPlayer.GetInstanceID());
-                    int victimUserID = Math.Abs(victimPlayer.GetInstanceID());
-                    string LogLine = "\"" + attackerPlayer.PlayerName + "<" + attackerUserID + "><" + attackerPlayer.ToString().Split('_')[1] + "><" + attackerPlayer.m_Team.TeamName + ">\" attacked \"" + victimPlayer.PlayerName + "<" + victimUserID + "><" + victimPlayer.ToString().Split('_')[1] + "><" + victimPlayer.m_Team.TeamName + ">\" with \"" + __3.ToString().Split('(')[0] + "\"" + " (damage \"" + damage.ToString() + "\")";
-                    PrintLogLine(LogLine, true);
+                int attackerUserID = Math.Abs(attackerPlayer.GetInstanceID());
+                int victimUserID = Math.Abs(victimPlayer.GetInstanceID());
+                string LogLine = "\"" + attackerPlayer.PlayerName + "<" + attackerUserID + "><" + GetPlayerID(attackerPlayer) + "><" + attackerPlayer.m_Team.TeamName + ">\" attacked \"" + victimPlayer.PlayerName + "<" + victimUserID + "><" + GetPlayerID(victimPlayer) + "><" + victimPlayer.m_Team.TeamName + ">\" with \"" + __3.ToString().Split('(')[0] + "\"" + " (damage \"" + damage.ToString() + "\")";
+                PrintLogLine(LogLine, true);
             }
         }
 
@@ -519,7 +523,7 @@ namespace Si_Logging
                                         structTeam = __0.m_Team.TeamName;
                                     }
   
-                                    string LogLine = "\"" + attackerPlayer.PlayerName + "<" + userID + "><" + attackerPlayer.ToString().Split('_')[1] + "><" + attackerPlayerTeam + ">\" triggered \"structure_kill\" (structure \"" + structName + "\") (struct_team \"" + structTeam + "\")";
+                                    string LogLine = "\"" + attackerPlayer.PlayerName + "<" + userID + "><" + GetPlayerID(attackerPlayer) + "><" + attackerPlayerTeam + ">\" triggered \"structure_kill\" (structure \"" + structName + "\") (struct_team \"" + structTeam + "\")";
                                     PrintLogLine(LogLine);
                                 }
 
@@ -595,7 +599,7 @@ namespace Si_Logging
                                     playerTeam = thisPlayer.m_Team.TeamName;
                                 }
 
-                                string PlayerLogLine = "Player \"" + thisPlayer.PlayerName + "<" + userID + "><" + thisPlayer.ToString().Split('_')[1] + "><" + playerTeam + ">\" scored \"" + thisPlayer.m_Score + "\" (kills \"" + thisPlayer.m_Kills + "\") (deaths \"" + thisPlayer.m_Deaths + "\")";
+                                string PlayerLogLine = "Player \"" + thisPlayer.PlayerName + "<" + userID + "><" + GetPlayerID(thisPlayer) + "><" + playerTeam + ">\" scored \"" + thisPlayer.m_Score + "\" (kills \"" + thisPlayer.m_Kills + "\") (deaths \"" + thisPlayer.m_Deaths + "\")";
                                 PrintLogLine(PlayerLogLine);
                             }
                         }
@@ -687,13 +691,13 @@ namespace Si_Logging
                         // __2 true = team-only message
                         if (__2 == false)
                         {
-                            string LogLine = "\"" + __0.PlayerName + "<" + userID + "><" + __0.ToString().Split('_')[1] + "><" + teamName + ">\" say \"" + __1 + "\"";
+                            string LogLine = "\"" + __0.PlayerName + "<" + userID + "><" + GetPlayerID(__0) + "><" + teamName + ">\" say \"" + __1 + "\"";
                             PrintLogLine(LogLine);
                             
                         }
                         else
                         {
-                            string LogLine = "\"" + __0.PlayerName + "<" + userID + "><" + __0.ToString().Split('_')[1] + "><" + teamName + ">\" say_team \"" + __1 + "\"";
+                            string LogLine = "\"" + __0.PlayerName + "<" + userID + "><" + GetPlayerID(__0) + "><" + teamName + ">\" say_team \"" + __1 + "\"";
                             PrintLogLine(LogLine);
                         }
                     }
