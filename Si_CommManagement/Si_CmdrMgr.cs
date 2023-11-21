@@ -35,7 +35,7 @@ using Il2CppSteamworks;
 using static MelonLoader.MelonLogger;
 using System.Reflection.Metadata.Ecma335;
 
-[assembly: MelonInfo(typeof(CommanderManager), "[Si] Commander Management", "1.2.0", "databomb")]
+[assembly: MelonInfo(typeof(CommanderManager), "[Si] Commander Management", "1.2.1", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_CommanderManagement
@@ -298,11 +298,9 @@ namespace Si_CommanderManagement
                         return;
                     }
 
-                    Il2Cpp.Player serverPlayer = Il2Cpp.NetworkGameServer.GetServerPlayer();
                     // *** TODO: need to account for if a player leaves the game within the 30 second window
                     System.Random randomIndex = new();
                     Il2Cpp.Player? RemovePlayer = null;
-
 
                     for (int i = 0; i < MaxTeams; i++)
                     {
@@ -332,7 +330,7 @@ namespace Si_CommanderManagement
 
                         if (CommanderPlayer != null && CommanderPlayer.Team.Index == i)
                         {
-                            Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, HelperMethods.chatPrefix + "Promoted " + HelperMethods.GetTeamColor(CommanderPlayer) + CommanderPlayer.PlayerName + HelperMethods.defaultColor + " to commander for " + HelperMethods.GetTeamColor(CommanderPlayer) + CommanderPlayer.Team.TeamName, false);
+                            HelperMethods.ReplyToCommand("Promoted " + HelperMethods.GetTeamColor(CommanderPlayer) + CommanderPlayer.PlayerName + HelperMethods.defaultColor + " to commander for " + HelperMethods.GetTeamColor(CommanderPlayer) + CommanderPlayer.Team.TeamName);
                             promotedCommanders[CommanderPlayer.Team.Index] = CommanderPlayer;
                             PromoteToCommander(CommanderPlayer);
                             previousCommanders.Add(CommanderPlayer);
