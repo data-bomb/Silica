@@ -3,8 +3,8 @@
  Copyright (C) 2023 by databomb
  
  * Description *
- For Silica listen servers, allows hosts to modify the default spawn units
- at the various technology tier levels.
+ For Silica servers, allows hosts to modify the default spawn units at
+ the various technology tier levels.
 
  * License *
  This program is free software: you can redistribute it and/or modify
@@ -29,7 +29,7 @@ using AdminExtension;
 using UnityEngine;
 using Il2CppSystem.IO;
 
-[assembly: MelonInfo(typeof(DefaultUnits), "[Si] Default Spawn Units", "0.9.1", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(DefaultUnits), "[Si] Default Spawn Units", "0.9.2", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_DefaultUnits
@@ -60,8 +60,8 @@ namespace Si_DefaultUnits
 
             _Human_Unit_Tier_0 ??= _modCategory.CreateEntry<string>("DefaultSpawn_Human_TechTier_0", "Soldier_Scout");
             _Human_Unit_Tier_I ??= _modCategory.CreateEntry<string>("DefaultSpawn_Human_TechTier_I", "Soldier_Rifleman");
-            _Human_Unit_Tier_II ??= _modCategory.CreateEntry<string>("DefaultSpawn_Human_TechTier_II", "Soldier_Marksman");
-            _Human_Unit_Tier_III ??= _modCategory.CreateEntry<string>("DefaultSpawn_Human_TechTier_III", "Soldier_Marksman");
+            _Human_Unit_Tier_II ??= _modCategory.CreateEntry<string>("DefaultSpawn_Human_TechTier_II", "Soldier_Rifleman");
+            _Human_Unit_Tier_III ??= _modCategory.CreateEntry<string>("DefaultSpawn_Human_TechTier_III", "Soldier_Rifleman");
             _Human_Unit_Tier_IV ??= _modCategory.CreateEntry<string>("DefaultSpawn_Human_TechTier_IV", "Soldier_Commando");
 
             _Alien_Unit_Tier_0 ??= _modCategory.CreateEntry<string>("DefaultSpawn_Alien_TechTier_0", "Crab");
@@ -98,7 +98,7 @@ namespace Si_DefaultUnits
 
                     StrategyTeamSetup teamSetup = __instance.GetStrategyTeamSetup(playerTeam);
 
-                    // remove the extended player spawn list
+                    // remove the extended player spawn list since this has higher priority over PlayerSpawn
                     if (teamSetup.PlayerSpawnExt != null)
                     {
                         teamSetup.PlayerSpawnExt = null;
@@ -131,8 +131,9 @@ namespace Si_DefaultUnits
         }
 
         // reset tech tiers back to 0
-        [HarmonyPatch(typeof(Il2Cpp.MusicJukeboxHandler), nameof(Il2Cpp.MusicJukeboxHandler.OnGameStarted))]
-        private static class ApplyPatch_MusicJukeboxHandler_OnGameStarted
+        // note: players join and spawn *before* OnGameStarted fires, so it's important to reset back to 0 as soon as the game ends
+        [HarmonyPatch(typeof(Il2Cpp.MusicJukeboxHandler), nameof(Il2Cpp.MusicJukeboxHandler.OnGameEnded))]
+        private static class ApplyPatch_MusicJukeboxHandler_OnGameEnded
         {
             public static void Postfix(Il2Cpp.MusicJukeboxHandler __instance, Il2Cpp.GameMode __0)
             {
@@ -150,7 +151,7 @@ namespace Si_DefaultUnits
                 }
                 catch (Exception error)
                 {
-                    HelperMethods.PrintError(error, "Failed to run MusicJukeboxHandler::OnGameStarted");
+                    HelperMethods.PrintError(error, "Failed to run MusicJukeboxHandler::OnGameEnded");
                 }
             }
         }
