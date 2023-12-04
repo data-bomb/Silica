@@ -3,9 +3,9 @@
  Copyright (C) 2023 by databomb
  
  * Description *
- For Silica listen servers, establishes a random selection for commander
- at the start of each round and provides for admin commands to !demote a
- team's commander as well as !cmdrban a player from being commander in the
+ For Silica servers, establishes a random selection for commander at the 
+ start of each round and provides for admin commands to !demote a team's
+ commander as well as !cmdrban a player from being commander in the
  future.
 
  * License *
@@ -35,7 +35,7 @@ using Il2CppSteamworks;
 using static MelonLoader.MelonLogger;
 using System.Reflection.Metadata.Ecma335;
 
-[assembly: MelonInfo(typeof(CommanderManager), "[Si] Commander Management", "1.2.1", "databomb")]
+[assembly: MelonInfo(typeof(CommanderManager), "[Si] Commander Management", "1.2.2", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_CommanderManagement
@@ -819,8 +819,6 @@ namespace Si_CommanderManagement
                                 break;
                             }
                         }
-
-                        MelonLogger.Msg("Swapped value " + commanderSwappedTeamIndex.ToString());
                             
                         // announce if player swapped from commander to infantry
                         if (commanderSwappedTeamIndex != -1)
