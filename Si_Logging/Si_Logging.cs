@@ -30,7 +30,7 @@ using UnityEngine;
 using AdminExtension;
 using static Il2Cpp.Interop;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "0.9.4", "databomb")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "0.9.5", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_Logging
@@ -673,7 +673,7 @@ namespace Si_Logging
                             }
                         }
 
-                        string RoundWinLogLine = "World triggered \"Round_Win\"";
+                        string RoundWinLogLine = "World triggered \"Round_Win\" (gametype \"" + versusMode.ToString() + "\")";
                         PrintLogLine(RoundWinLogLine);
                     }
                 }
@@ -722,7 +722,10 @@ namespace Si_Logging
             {
                 try
                 {
-                    string RoundWinLogLine = "World triggered \"Round_Start\"";
+                    MP_Strategy strategyInstance = GameObject.FindObjectOfType<Il2Cpp.MP_Strategy>();
+                    MP_Strategy.ETeamsVersus versusMode = strategyInstance.TeamsVersus;
+
+                    string RoundWinLogLine = "World triggered \"Round_Start\" (gametype \"" + versusMode.ToString() + "\")";
                     PrintLogLine(RoundWinLogLine);
 
                     firedRoundEndOnce = false;
