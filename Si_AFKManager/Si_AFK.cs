@@ -29,7 +29,7 @@ using AdminExtension;
 using System.Timers;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(AwayFromKeyboard), "AFK Manager", "1.2.0", "databomb")]
+[assembly: MelonInfo(typeof(AwayFromKeyboard), "AFK Manager", "1.2.1", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_AFKManager
@@ -250,7 +250,6 @@ namespace Si_AFKManager
                                 continue;
                             }
 
-                            MelonLogger.Msg("Found " + player.PlayerName + " didn't pick a team yet");
                             int afkIndex = AFKTracker.FindIndex(p => p.Player == player);
                             // they were AFK for another minute
                             if (afkIndex >= 0)
@@ -267,8 +266,6 @@ namespace Si_AFKManager
                                     // only kick if server is almost full
                                     else
                                     {
-                                        MelonLogger.Msg("Checking if server is full before kick");
-
                                         if (ServerAlmostFull())
                                         {
                                             playerIndexesToKick.Add(afkIndex);
