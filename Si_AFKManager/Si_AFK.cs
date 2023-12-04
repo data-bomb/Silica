@@ -29,7 +29,7 @@ using AdminExtension;
 using System.Timers;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(AwayFromKeyboard), "AFK Manager", "1.1.9", "databomb")]
+[assembly: MelonInfo(typeof(AwayFromKeyboard), "AFK Manager", "1.2.0", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_AFKManager
@@ -48,24 +48,15 @@ namespace Si_AFKManager
         static bool oneMinuteCheckTime;
         static bool skippedFirstCheck;
 
-        static MelonPreferences_Category _modCategory;
-        static MelonPreferences_Entry<bool> Pref_AFK_KickIfServerNotFull;
-        static MelonPreferences_Entry<int> Pref_AFK_MinutesBeforeKick;
+        static MelonPreferences_Category? _modCategory;
+        static MelonPreferences_Entry<bool>? Pref_AFK_KickIfServerNotFull;
+        static MelonPreferences_Entry<int>? Pref_AFK_MinutesBeforeKick;
 
         public override void OnInitializeMelon()
         {
-            if (_modCategory == null)
-            {
-                _modCategory = MelonPreferences.CreateCategory("Silica");
-            }
-            if (Pref_AFK_KickIfServerNotFull == null)
-            {
-                Pref_AFK_KickIfServerNotFull = _modCategory.CreateEntry<bool>("AFK_KickIfServerNotFull", false);
-            }
-            if (Pref_AFK_MinutesBeforeKick == null)
-            {
-                Pref_AFK_MinutesBeforeKick = _modCategory.CreateEntry<int>("AFK_MinutesBeforeKick", 7);
-            }
+            _modCategory ??= MelonPreferences.CreateCategory("Silica");
+            Pref_AFK_KickIfServerNotFull ??= _modCategory.CreateEntry<bool>("AFK_KickIfServerNotFull", false);
+            Pref_AFK_MinutesBeforeKick ??= _modCategory.CreateEntry<int>("AFK_MinutesBeforeKick", 7);
         }
 
         public override void OnLateInitializeMelon()
@@ -88,7 +79,7 @@ namespace Si_AFKManager
 
             double interval = 60000.0f;
             afkTimer = new System.Timers.Timer(interval);
-            afkTimer.Elapsed += new ElapsedEventHandler(timerCallbackOneMinute);
+            afkTimer.Elapsed += new ElapsedEventHandler(TimerCallbackOneMinute);
             afkTimer.AutoReset = true;
             afkTimer.Enabled = true;
         }
@@ -103,10 +94,10 @@ namespace Si_AFKManager
             return false;
         }
 
-        public void Command_Kick(Il2Cpp.Player callerPlayer, String args)
+        public static void Command_Kick(Il2Cpp.Player callerPlayer, String args)
         {
             // validate argument count
-            int argumentCount = args.Split(' ').Count() - 1;
+            int argumentCount = args.Split(' ').Length - 1;
             if (argumentCount > 1)
             {
                 HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Too many arguments");
@@ -145,20 +136,27 @@ namespace Si_AFKManager
             }
         }
 
-        public void Command_AFK(Il2Cpp.Player callerPlayer, String args)
+        public static void Command_AFK(Il2Cpp.Player callerPlayer, String args)
         {
             // validate argument count
-            int argumentCount = args.Split(' ').Count() - 1;
+            int argumentCount = args.Split(' ').Length - 1;
             if (argumentCount > 0)
             {
                 HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Too many arguments");
                 return;
             }
 
+            if (Pref_AFK_KickIfServerNotFull == null || Pref_AFK_MinutesBeforeKick == null)
+            {
+                return;
+            }
+
             // force kick now
             if (Pref_AFK_KickIfServerNotFull.Value)
             {
-                int playersKicked = 0;
+                // track if any players need to be removed from the AFKTracker list after we've finished iterating
+                // we can't kick inside the foreach Players iterator because it modifies the list
+                List<int>? playerIndexesToKick = new();
 
                 foreach (Il2Cpp.Player player in Il2Cpp.Player.Players)
                 {
@@ -181,18 +179,23 @@ namespace Si_AFKManager
                         if (AFKTracker[afkIndex].Minutes >= Pref_AFK_MinutesBeforeKick.Value)
                         {
                             // kick immediately
-
-                            HelperMethods.KickPlayer(AFKTracker[afkIndex].Player);
-                            playersKicked++;
-                            HelperMethods.ReplyToCommand_Player(AFKTracker[afkIndex].Player, "was kicked for being AFK");
-                            AFKTracker.RemoveAt(afkIndex);
+                            playerIndexesToKick.Add(afkIndex);
                         }
                     }
                 }
 
-                if(playersKicked <= 0)
+                if(playerIndexesToKick.Count <= 0)
                 {
                     HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": no players were AFK for too long");
+                }
+                else
+                {
+                    foreach (int indexToKick in playerIndexesToKick)
+                    {
+                        HelperMethods.KickPlayer(AFKTracker[indexToKick].Player);
+                        HelperMethods.ReplyToCommand_Player(AFKTracker[indexToKick].Player, "was kicked for being AFK");
+                        AFKTracker.RemoveAt(indexToKick);
+                    }
                 }
             }
             else
@@ -201,7 +204,7 @@ namespace Si_AFKManager
             }
         }
 
-        private static void timerCallbackOneMinute(object source, ElapsedEventArgs e)
+        private static void TimerCallbackOneMinute(object source, ElapsedEventArgs e)
         {
             oneMinuteCheckTime = true;
         }
@@ -213,13 +216,22 @@ namespace Si_AFKManager
             {
                 try
                 {
+                    if (Pref_AFK_MinutesBeforeKick == null || Pref_AFK_KickIfServerNotFull == null)
+                    {
+                        return;
+                    }
+
                     // check if timer expired while the game is in-progress
                     if (Il2Cpp.GameMode.CurrentGameMode.GameOngoing == true && oneMinuteCheckTime == true && skippedFirstCheck == true)
                     {
                         //MelonLogger.Msg("AFK Timer fired");
 
                         oneMinuteCheckTime = false;
-                        
+
+                        // track if any players need to be removed from the AFKTracker list after we've finished iterating
+                        // we can't kick inside the foreach Players iterator because it modifies the list
+                        List<int>? playerIndexesToKick = new();
+
                         foreach (Il2Cpp.Player player in Il2Cpp.Player.Players)
                         {
                             if (player == null)
@@ -250,9 +262,7 @@ namespace Si_AFKManager
                                     // kick immediately
                                     if (Pref_AFK_KickIfServerNotFull.Value)
                                     {
-                                        HelperMethods.KickPlayer(AFKTracker[afkIndex].Player);
-                                        HelperMethods.ReplyToCommand_Player(AFKTracker[afkIndex].Player, "was kicked for being AFK");
-                                        AFKTracker.RemoveAt(afkIndex);
+                                        playerIndexesToKick.Add(afkIndex);
                                     }
                                     // only kick if server is almost full
                                     else
@@ -261,9 +271,7 @@ namespace Si_AFKManager
 
                                         if (ServerAlmostFull())
                                         {
-                                            HelperMethods.KickPlayer(AFKTracker[afkIndex].Player);
-                                            HelperMethods.ReplyToCommand_Player(AFKTracker[afkIndex].Player, "was kicked for being AFK");
-                                            AFKTracker.RemoveAt(afkIndex);
+                                            playerIndexesToKick.Add(afkIndex);
                                         }
                                     }
                                 }
@@ -271,12 +279,21 @@ namespace Si_AFKManager
                             // they weren't being tracked yet
                             else
                             {
-                                AFKCount afkPlayer = new AFKCount();
-                                afkPlayer.Player = player;
-                                afkPlayer.Minutes = 1;
+                                AFKCount afkPlayer = new()
+                                {
+                                    Player = player,
+                                    Minutes = 1
+                                };
 
                                 AFKTracker.Add(afkPlayer);
                             }
+                        }
+
+                        foreach (int indexToKick in playerIndexesToKick)
+                        {
+                            HelperMethods.KickPlayer(AFKTracker[indexToKick].Player);
+                            HelperMethods.ReplyToCommand_Player(AFKTracker[indexToKick].Player, "was kicked for being AFK");
+                            AFKTracker.RemoveAt(indexToKick);
                         }
                     }
 
