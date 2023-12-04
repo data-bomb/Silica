@@ -27,8 +27,10 @@ using MelonLoader;
 using MelonLoader.Utils;
 using Si_Logging;
 using UnityEngine;
+using AdminExtension;
+using static Il2Cpp.Interop;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "0.9.3", "databomb")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "0.9.4", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_Logging
@@ -36,6 +38,9 @@ namespace Si_Logging
     // https://developer.valvesoftware.com/wiki/HL_Log_Standard
     public class HL_Logging : MelonMod
     {
+        const int MaxTeams = 3;
+        static Player[]? lastCommander;
+
         static MelonPreferences_Category? _modCategory;
         static MelonPreferences_Entry<bool>? Pref_Log_Damage;
         static MelonPreferences_Entry<bool>? Pref_Log_Kills_Include_AI_vs_Player;
@@ -133,6 +138,12 @@ namespace Si_Logging
                 if (!System.IO.File.Exists(CurrentLogFile))
                 {
                     AddFirstLogLine();
+                }
+
+                lastCommander = new Player[MaxTeams];
+                for (int i = 0; i < MaxTeams; i++)
+                {
+                    lastCommander[i] = null;
                 }
             }
             catch (Exception error)
@@ -371,7 +382,65 @@ namespace Si_Logging
             }
         }
 
-        // TODO: 055. Role Selection
+        // 055. Role Selection - Commander Change
+        [HarmonyPatch(typeof(Il2Cpp.MP_Strategy), nameof(Il2Cpp.MP_Strategy.SetCommander))]
+        private static class ApplyPatch_MP_Strategy_SetCommander
+        {
+            public static void Postfix(Il2Cpp.MP_Strategy __instance, Il2Cpp.Team __0, Il2Cpp.Player __1)
+            {
+                try
+                {
+                    if (__0 == null || lastCommander == null)
+                    {
+                        return;
+                    }
+
+                    if (__1 != null)
+                    {
+                        // is it the same as what we already captured?
+                        if (__1 == lastCommander[__0.Index])
+                        {
+                            return;
+                        }
+
+                        // a change occurred and this player was promoted
+                        int commanderUserID = Math.Abs(__1.GetInstanceID());
+                        string LogLine = "\"" + __1.PlayerName + "<" + commanderUserID + "><" + GetPlayerID(__1) + "><" + __0.TeamName + ">\" changed role to \"Commander\"";
+                        PrintLogLine(LogLine);
+
+                        // check if another player was demoted
+                        if (lastCommander[__0.Index] != null)
+                        {
+                            // this player is no longer commander
+                            int prevCommanderUserID = Math.Abs(lastCommander[__0.Index].GetInstanceID());
+                            LogLine = "\"" + lastCommander[__0.Index].PlayerName + "<" + prevCommanderUserID + "><" + GetPlayerID(lastCommander[__0.Index]) + "><" + __0.TeamName + ">\" changed role to \"Infantry\"";
+                            PrintLogLine(LogLine);
+                        }
+
+                        lastCommander[__0.Index] = __1;
+                    }
+                    else
+                    {
+                        // is it the same as what we already captured?
+                        if (lastCommander[__0.Index] == null)
+                        {
+                            return;
+                        }
+
+                        // a change occurred and this player is no longer commander
+                        int prevCommanderUserID = Math.Abs(lastCommander[__0.Index].GetInstanceID());
+                        string LogLine = "\"" + lastCommander[__0.Index].PlayerName + "<" + prevCommanderUserID + "><" + GetPlayerID(lastCommander[__0.Index]) + "><" + __0.TeamName + ">\" changed role to \"Infantry\"";
+                        PrintLogLine(LogLine);
+
+                        lastCommander[__0.Index] = null;
+                    }
+                }
+                catch (Exception error)
+                {
+                    HelperMethods.PrintError(error, "Failed to run MP_Strategy::SetCommander");
+                }
+            }
+        }
 
         // 056. Change Name
         [HarmonyPatch(typeof(Il2Cpp.NetworkLayer), nameof(Il2Cpp.NetworkLayer.SendPlayerChangeName))]
