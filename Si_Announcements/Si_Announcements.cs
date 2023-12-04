@@ -26,12 +26,10 @@ using Il2Cpp;
 using MelonLoader;
 using MelonLoader.Utils;
 using Si_Announcements;
-using UnityEngine;
 using AdminExtension;
 using System.Timers;
-using Il2CppSystem.Runtime.Remoting.Messaging;
 
-[assembly: MelonInfo(typeof(Announcements), "Server Announcements", "1.0.1", "databomb")]
+[assembly: MelonInfo(typeof(Announcements), "Server Announcements", "1.0.2", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 
@@ -39,26 +37,22 @@ namespace Si_Announcements
 {
     public class Announcements : MelonMod
     {
-        static MelonPreferences_Category _modCategory;
-        static MelonPreferences_Entry<int> _Announcements_SecondsBetweenMessages;
+        static MelonPreferences_Category? _modCategory;
+        static MelonPreferences_Entry<int>? _Announcements_SecondsBetweenMessages;
+        static MelonPreferences_Entry<bool>? _Announcements_ShowIfLastChatWasAnnouncement;
 
         static System.Timers.Timer announcementTimer;
         static int announcementCount;
         static string[] announcementsText;
+        static string? lastChatMessage;
         static bool timerExpired;
-        static bool isLastAnnouncementLastChat;
 
         public override void OnInitializeMelon()
         {
-            if (_modCategory == null)
-            {
-                _modCategory = MelonPreferences.CreateCategory("Silica");
-            }
-            if (_Announcements_SecondsBetweenMessages == null)
-            {
-                // default of 7 minutes between announcements
-                _Announcements_SecondsBetweenMessages = _modCategory.CreateEntry<int>("Announcements_SecondsBetweenMessages", 420);
-            }
+            _modCategory ??= MelonPreferences.CreateCategory("Silica");
+            // default of 7 minutes between announcements
+            _Announcements_SecondsBetweenMessages ??= _modCategory.CreateEntry<int>("Announcements_SecondsBetweenMessages", 420);
+            _Announcements_ShowIfLastChatWasAnnouncement ??= _modCategory.CreateEntry<bool>("Announcements_ShowAnnouncementWhenLastChatWasAnnouncement", true);
 
             String announcementsFile = MelonEnvironment.UserDataDirectory + "\\announcements.txt";
 
@@ -67,17 +61,15 @@ namespace Si_Announcements
                 if (!File.Exists(announcementsFile))
                 {
                     // Create simple announcements.txt file
-                    using (FileStream fs = File.Create(announcementsFile))
-                    {
-                        fs.Close();
-                        System.IO.File.WriteAllText(announcementsFile, "Join discord at..\n");
-                    }
+                    using FileStream fs = File.Create(announcementsFile);
+                    fs.Close();
+                    System.IO.File.WriteAllText(announcementsFile, "Join discord at..\n");
                 }
 
                 // Open the stream and read it back
                 using (StreamReader announcementsFileStream = File.OpenText(announcementsFile))
                 {
-                    List<string> announcementFileLine = new List<string>();
+                    List<string> announcementFileLine = new();
                     string announcement = "";
                     while ((announcement = announcementsFileStream.ReadLine()) != null)
                     {
@@ -86,10 +78,9 @@ namespace Si_Announcements
                     announcementsText = announcementFileLine.ToArray();
                 }
 
-                isLastAnnouncementLastChat = false;
                 double interval = _Announcements_SecondsBetweenMessages.Value * 1000.0f;
                 announcementTimer = new System.Timers.Timer(interval);
-                announcementTimer.Elapsed += new ElapsedEventHandler(timerCallbackAnnouncement);
+                announcementTimer.Elapsed += new ElapsedEventHandler(TimerCallbackAnnouncement);
                 announcementTimer.AutoReset = true;
                 announcementTimer.Enabled = true;
 
@@ -100,7 +91,7 @@ namespace Si_Announcements
             }
         }
 
-        private static void timerCallbackAnnouncement(object source, ElapsedEventArgs e)
+        private static void TimerCallbackAnnouncement(object source, ElapsedEventArgs e)
         {
             timerExpired = true;
         }
@@ -113,24 +104,29 @@ namespace Si_Announcements
                 try
                 {
                     // check if timer expired while the game is in-progress
-                    if (Il2Cpp.GameMode.CurrentGameMode.GameOngoing == true && timerExpired == true)
+                    if (GameMode.CurrentGameMode.GameOngoing == true && timerExpired == true)
                     {
                         timerExpired = false;
 
-                        if (isLastAnnouncementLastChat)
+                        if (_Announcements_ShowIfLastChatWasAnnouncement != null && !_Announcements_ShowIfLastChatWasAnnouncement.Value && lastChatMessage != null)
                         {
-                            MelonLogger.Msg("Skipping Announcement - Repeated Message");
+                            // check if the last chat message was an announcement
+                            bool lastMessageWasAnnouncement = announcementsText.Any(m => m == lastChatMessage);
+                            if (lastMessageWasAnnouncement)
+                            {
+                                MelonLogger.Msg("Skipping Announcement - Repeated Message");
+                                return;
+                            }
                         }
-                        else
-                        {
-                            announcementCount++;
+                        
+                        announcementCount++;
 
-                            String thisAnnouncement = announcementsText[announcementCount % announcementsText.Length];
-                            MelonLogger.Msg("Announcement: " + thisAnnouncement);
+                        String thisAnnouncement = announcementsText[announcementCount % announcementsText.Length];
+                        MelonLogger.Msg("Announcement: " + thisAnnouncement);
 
-                            Il2Cpp.Player serverPlayer = Il2Cpp.NetworkGameServer.GetServerPlayer();
-                            Il2Cpp.NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, thisAnnouncement, false);
-                        }
+                        Player serverPlayer = Il2Cpp.NetworkGameServer.GetServerPlayer();
+                        NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, thisAnnouncement, false);
+                        
                     }
                 }
                 catch (Exception exception)
@@ -147,11 +143,15 @@ namespace Si_Announcements
             {
                 try
                 {
+                    if (_Announcements_ShowIfLastChatWasAnnouncement != null && _Announcements_ShowIfLastChatWasAnnouncement.Value)
+                    {
+                        return;
+                    }
+
                     // each faction has its own chat manager but by looking at alien and only global messages this catches commands only once
                     if (__instance.ToString().Contains("alien") && __2 == false)
                     {
-                        String lastAnnouncement = announcementsText[announcementCount % announcementsText.Length];
-                        isLastAnnouncementLastChat = String.Equals(__1, lastAnnouncement);
+                        lastChatMessage = __1;
                     }
                 }
                 catch (Exception error)
