@@ -29,7 +29,7 @@ using AdminExtension;
 using UnityEngine;
 using Il2CppSystem.IO;
 
-[assembly: MelonInfo(typeof(DefaultUnits), "[Si] Default Spawn Units", "0.9.2", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(DefaultUnits), "[Si] Default Spawn Units", "0.9.3", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_DefaultUnits
@@ -132,8 +132,8 @@ namespace Si_DefaultUnits
 
         // reset tech tiers back to 0
         // note: players join and spawn *before* OnGameStarted fires, so it's important to reset back to 0 as soon as the game ends
-        [HarmonyPatch(typeof(Il2Cpp.MusicJukeboxHandler), nameof(Il2Cpp.MusicJukeboxHandler.OnGameEnded))]
-        private static class ApplyPatch_MusicJukeboxHandler_OnGameEnded
+        [HarmonyPatch(typeof(Il2Cpp.MusicJukeboxHandler), nameof(Il2Cpp.MusicJukeboxHandler.OnGameStarted))]
+        private static class ApplyPatch_MusicJukeboxHandler_OnGameStarted
         {
             public static void Postfix(Il2Cpp.MusicJukeboxHandler __instance, Il2Cpp.GameMode __0)
             {
@@ -146,12 +146,13 @@ namespace Si_DefaultUnits
 
                     for (int i = 0; i < MaxTeams; i++)
                     {
+                        Team.Teams[i].CurrentTechnologyTier = 0;
                         teamTechTiers[i] = 0;
                     }
                 }
                 catch (Exception error)
                 {
-                    HelperMethods.PrintError(error, "Failed to run MusicJukeboxHandler::OnGameEnded");
+                    HelperMethods.PrintError(error, "Failed to run MusicJukeboxHandler::OnGameStarted");
                 }
             }
         }
