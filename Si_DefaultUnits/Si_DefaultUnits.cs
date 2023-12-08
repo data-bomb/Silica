@@ -29,7 +29,7 @@ using AdminExtension;
 using UnityEngine;
 using Il2CppSystem.IO;
 
-[assembly: MelonInfo(typeof(DefaultUnits), "[Si] Default Spawn Units", "0.9.3", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(DefaultUnits), "[Si] Default Spawn Units", "0.9.4", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_DefaultUnits
@@ -53,6 +53,7 @@ namespace Si_DefaultUnits
 
         const int MaxTeams = 3;
         static int[]? teamTechTiers;
+        static bool[]? teamFirstSpawn;
 
         public override void OnInitializeMelon()
         {
@@ -71,6 +72,7 @@ namespace Si_DefaultUnits
             _Alien_Unit_Tier_IV ??= _modCategory.CreateEntry<string>("DefaultSpawn_Alien_TechTier_IV", "Wasp");
 
             teamTechTiers = new int[MaxTeams];
+            teamFirstSpawn = new bool[MaxTeams];
         }
 
         // patch as close to where it's used
@@ -81,16 +83,23 @@ namespace Si_DefaultUnits
             {
                 try
                 {
-                    if (teamTechTiers == null)
+                    if (teamTechTiers == null || teamFirstSpawn == null)
                     {
                         return;
                     }
 
-                    // was there a change in tech tier?
                     Team playerTeam = __0.m_Team;
-                    if (!TechTierUpdated(playerTeam))
+
+                    // was there a change in tech tier or is it the first spawn of the round for this team?
+                    if (!TechTierUpdated(playerTeam) && !teamFirstSpawn[playerTeam.Index])
                     {
                         return;
+                    }
+
+                    if (teamFirstSpawn[playerTeam.Index])
+                    {
+                        MelonLogger.Msg("First player spawn of the round for Team: " + playerTeam.TeamName);
+                        teamFirstSpawn[playerTeam.Index] = false;
                     }
 
                     // update the tech tier
@@ -104,24 +113,15 @@ namespace Si_DefaultUnits
                         teamSetup.PlayerSpawnExt = null;
                     }
 
-                    // parse config
-                    string desiredSpawn = GetDesiredSpawnConfig(playerTeam);
-                    if (desiredSpawn.Length == 0)
+                    // determine what the new spawn object will be
+                    ObjectInfo? updatedPlayerSpawnObjInfo = GetPlayerSpawnObjInfo(playerTeam);
+                    if (updatedPlayerSpawnObjInfo == null)
                     {
-                        MelonLogger.Warning("Could not find valid spawn string for team " + playerTeam.TeamName + " and tech tier " + playerTeam.CurrentTechnologyTier.ToString());
-                        return;
-                    }
-
-                    ObjectInfo? updateObject = GetSpawnObject(desiredSpawn);
-                    if (updateObject == null)
-                    {
-                        MelonLogger.Warning("Could not generate default spawn objectinfo for team " + playerTeam.TeamName + " and tech tier " + playerTeam.CurrentTechnologyTier.ToString());
                         return;
                     }
 
                     // update the default unit for the team
-                    teamSetup.PlayerSpawn = updateObject;
-                    MelonLogger.Msg("Updating default spawn unit for " + playerTeam.TeamName + " to " + desiredSpawn);
+                    teamSetup.PlayerSpawn = updatedPlayerSpawnObjInfo;
                 }
                 catch (Exception error)
                 {
@@ -139,15 +139,24 @@ namespace Si_DefaultUnits
             {
                 try
                 {
-                    if (teamTechTiers == null)
+                    if (teamTechTiers == null || teamFirstSpawn == null)
                     {
                         return;
                     }
 
                     for (int i = 0; i < MaxTeams; i++)
                     {
-                        Team.Teams[i].CurrentTechnologyTier = 0;
+                        if (Team.Teams[i] != null)
+                        {
+                            if (Team.Teams[i].CurrentTechnologyTier != 0)
+                            {
+                                MelonLogger.Warning("Manually resetting tech tier level to 0 for team: " + Team.Teams[i].TeamName);
+                                Team.Teams[i].CurrentTechnologyTier = 0;
+                            }
+                        }
+                        
                         teamTechTiers[i] = 0;
+                        teamFirstSpawn[i] = true;
                     }
                 }
                 catch (Exception error)
@@ -165,6 +174,27 @@ namespace Si_DefaultUnits
             }
 
             return team.CurrentTechnologyTier != teamTechTiers[team.Index];
+        }
+
+        static ObjectInfo? GetPlayerSpawnObjInfo(Team team)
+        {
+            string desiredSpawn = GetDesiredSpawnConfig(team);
+            if (desiredSpawn.Length == 0)
+            {
+                MelonLogger.Warning("Could not find valid spawn string for team " + team.TeamName + " and tech tier " + team.CurrentTechnologyTier.ToString());
+                return null;
+            }
+
+            ObjectInfo? updateObject = GetSpawnObject(desiredSpawn);
+            if (updateObject == null)
+            {
+                MelonLogger.Warning("Could not generate default spawn objectinfo for team " + team.TeamName + " and tech tier " + team.CurrentTechnologyTier.ToString());
+                return null;
+            }
+
+            MelonLogger.Msg("Found new default spawn object for " + team.TeamName + ": " + desiredSpawn);
+
+            return updateObject;
         }
 
         static string GetDesiredSpawnConfig(Team team)
