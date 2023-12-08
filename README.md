@@ -23,7 +23,7 @@
 | Basic Banlist | 1.2.2 | [Download](https://raw.githubusercontent.com/data-bomb/Silica/main/Si_BasicBanlist/bin/Si_BasicBanlist.dll) |
 | Chat Silence | 1.0.0 | [Download](https://raw.githubusercontent.com/data-bomb/Silica/main/Si_ChatSilence/bin/Si_ChatSilence.dll) |
 | Commander Management | 1.2.3 | [Download](https://raw.githubusercontent.com/data-bomb/Silica/main/Si_CommManagement/bin/Si_CommManagement.dll) |
-| Default Spawn Units | 0.9.3 | [Download](https://raw.githubusercontent.com/data-bomb/Silica/main/Si_DefaultUnits/bin/Si_DefaultUnits.dll) |
+| Default Spawn Units | 0.9.4 | [Download](https://raw.githubusercontent.com/data-bomb/Silica/main/Si_DefaultUnits/bin/Si_DefaultUnits.dll) |
 | AFK Manager | 1.2.1 | [Download](https://raw.githubusercontent.com/data-bomb/Silica/main/Si_AFKManager/bin/Si_AFKManager.dll) |
 | Logging | 0.9.5 | [Download](https://raw.githubusercontent.com/data-bomb/Silica/main/Si_Logging/bin/Si_Logging.dll) |
 | GamePriority | 2.0.1 | [Download](https://github.com/MintLily/GamePriority/releases/download/2.0.1/GamePriority.dll) |
