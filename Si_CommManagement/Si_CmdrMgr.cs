@@ -35,7 +35,7 @@ using Il2CppSteamworks;
 using static MelonLoader.MelonLogger;
 using System.Reflection.Metadata.Ecma335;
 
-[assembly: MelonInfo(typeof(CommanderManager), "[Si] Commander Management", "1.2.2", "databomb")]
+[assembly: MelonInfo(typeof(CommanderManager), "[Si] Commander Management", "1.2.3", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_CommanderManagement
@@ -524,11 +524,12 @@ namespace Si_CommanderManagement
             strategyInstance.GetCommanderForTeam(CommanderPlayer.m_Team);
             Il2Cpp.StrategyTeamSetup strategyTeamInstance = strategyInstance.GetStrategyTeamSetup(CommanderPlayer.m_Team);
             strategyInstance.SetCommander(strategyTeamInstance.Team, CommanderPlayer);
-            strategyInstance.RPC_SynchCommander(strategyTeamInstance.Team);
+            //strategyInstance.RPC_SynchCommander(strategyTeamInstance.Team);
 
             // replicate to client to get them to re-select commander
+            /*
             Il2Cpp.GameByteStreamWriter theTeamStream;
-            theTeamStream = Il2Cpp.GameMode.CurrentGameMode.CreateRPCPacket(1);
+            theTeamStream = Il2Cpp.GameMode.CurrentGameMode.CreateRPCPacket((byte)MP_Strategy.ERPCs.REQUEST_ROLE);
             if (theTeamStream == null)
             {
                 MelonLogger.Warning("Could not create GameByteStreamWriter for PromoteToCommander");
@@ -537,9 +538,10 @@ namespace Si_CommanderManagement
 
             theTeamStream.WriteUInt64(CommanderPlayer.PlayerID.m_SteamID);
             theTeamStream.WriteByte((byte)CommanderPlayer.PlayerChannel);
+            theTeamStream.WriteByte((byte)MP_Strategy.ETeamRole.COMMANDER);
             theTeamStream.WriteTeam(CommanderPlayer.Team);
             Il2Cpp.GameMode.CurrentGameMode.SendRPCPacket(theTeamStream);
-
+            */
             // TODO: Investigate what more to do so commanders don't need to switch back to commander using 'T'
         }
 
