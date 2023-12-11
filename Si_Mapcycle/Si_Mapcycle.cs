@@ -29,13 +29,14 @@ using UnityEngine;
 using System.Timers;
 using MelonLoader.Utils;
 
-[assembly: MelonInfo(typeof(MapCycleMod), "[Si] Mapcycle", "1.0.1", "databomb", "https://github.com/data-bomb/Silica_ListenServer")]
+[assembly: MelonInfo(typeof(MapCycleMod), "[Si] Mapcycle", "1.0.2", "databomb", "https://github.com/data-bomb/Silica_ListenServer")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_Mapcycle
 {
     public class MapCycleMod : MelonMod
     {
+        static String mapName = "";
         static GameMode gameModeInstance;
         static bool bEndRound;
         static bool bTimerExpired;
@@ -81,7 +82,43 @@ namespace Si_Mapcycle
             }
         }
 
-        private static void HandleTimerChangeLevel(object source, ElapsedEventArgs e)
+        public override void OnSceneWasLoaded(int buildIndex, string sceneName)
+        {
+            mapName = sceneName;
+        }
+        public const string defaultColor = "<color=#DDE98C>";
+        public const string chatPrefix = "<b>" + defaultColor + "[<color=#DFA725>SAM" + defaultColor + "]</b> ";
+
+        //TODO change to use the admin helper methods instead
+        [HarmonyPatch(typeof(Il2CppSilica.UI.Chat), nameof(Il2CppSilica.UI.Chat.MessageReceived))]
+        private static class ApplyChatReceiveCurrentMatchInfo
+        {
+            public static void Postfix(Il2CppSilica.UI.Chat __instance, Il2Cpp.Player __0, string __1, bool __2)
+            {
+                try
+                {
+                    if (__instance.ToString().Contains("alien") && __2 == false)
+                    {
+
+                        bool isCurrMapCommand = String.Equals(__1, "!currentmap", StringComparison.OrdinalIgnoreCase);
+                        if (isCurrMapCommand)
+                        {
+                            Il2Cpp.Player serverPlayer = Il2Cpp.NetworkGameServer.GetServerPlayer();
+                            serverPlayer.SendChatMessage(chatPrefix + defaultColor + " Current map is " + String.Concat(mapName), false);
+
+                        }
+                    }
+                }
+                catch (Exception exception)
+                {
+                    string error = exception.Message;
+                    error += "\n" + exception.TargetSite;
+                    error += "\n" + exception.StackTrace;
+                    MelonLogger.Error(error);
+                }
+            }
+        }
+    private static void HandleTimerChangeLevel(object source, ElapsedEventArgs e)
         {
             MapCycleMod.bTimerExpired = true;
         }
