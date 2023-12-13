@@ -59,6 +59,8 @@ Kind suggestion to ensure that the server name reflects that there are mods so p
 
 ## [Mod Descriptions](https://github.com/data-bomb/Silica/wiki/Mod-Descriptions)
 
+## <a href="https://discord.gg/QzpK5Kh3">Modding Discord</a>
+
 ## How to Show Love
 <a href="https://www.buymeacoffee.com/databomb" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-orange.png" alt="Buy Me A Coffee" height="41" width="174"></a>
 
