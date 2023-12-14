@@ -3,9 +3,9 @@
  Copyright (C) 2023 by databomb
  
  * Description *
- For Silica listen servers, automatically detects when humans have 
- lost their last Headquarters and ends the game; similar to how the
- Alien team loses when their last Nest falls.
+ For Silica servers, automatically detects when humans have lost their 
+ last Headquarters and ends the game; similar to how the Alien team 
+ loses when their last Nest falls.
 
  * License *
  This program is free software: you can redistribute it and/or modify
@@ -28,12 +28,9 @@ using MelonLoader;
 using Si_HQlessHumansLose;
 using AdminExtension;
 using System.Timers;
-using static MelonLoader.MelonLogger;
-using Il2CppSystem.IO;
 using UnityEngine;
-using Il2CppSilica.UI;
 
-[assembly: MelonInfo(typeof(HQlessHumansLose), "[Si] HQless Humans Lose", "1.2.2", "databomb", "https://github.com/data-bomb/Silica_ListenServer")]
+[assembly: MelonInfo(typeof(HQlessHumansLose), "[Si] HQless Humans Lose", "1.2.3", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_HQlessHumansLose
@@ -41,19 +38,32 @@ namespace Si_HQlessHumansLose
     public class HQlessHumansLose : MelonMod
     {
         static bool lostMessageTimerExpired;
-        static Team losingTeam;
+        static Team? losingTeam;
+        static Player? destroyerOfWorlds;
         static System.Timers.Timer delayLostMessageTimer;
 
         public static void TeamLostMessage(Team team)
         {
             Player serverPlayer = NetworkGameServer.GetServerPlayer();
-            String rootStructureName = team.TeamName.Contains("Human") ? "Headquarters" : "Nest";
+            String rootStructureName = GetRootStructureFullName(team);
             serverPlayer.SendChatMessage(HelperMethods.chatPrefix + HelperMethods.GetTeamColor(team) + team.TeamName + HelperMethods.defaultColor + " lost their last " + rootStructureName, false);
+        }
+
+        public static void TeamLostByPlayerMessage(Team team, Player player)
+        {
+            Player serverPlayer = NetworkGameServer.GetServerPlayer();
+            String rootStructureName = GetRootStructureFullName(team);
+            serverPlayer.SendChatMessage(HelperMethods.chatPrefix + HelperMethods.GetTeamColor(player) + player.PlayerName + HelperMethods.defaultColor + " destroyed " + HelperMethods.GetTeamColor(team) + team.TeamName + "'s last " + rootStructureName, false);
         }
 
         static String GetRootStructurePrefix(Team team)
         {
             return team.TeamName.Contains("Human") ? "Headq" : "Nes";
+        }
+
+        static String GetRootStructureFullName(Team team)
+        {
+            return team.TeamName.Contains("Human") ? "Headquarters" : "Nest";
         }
 
         static void HandleTimerSendLostMessage(object source, ElapsedEventArgs e)
@@ -251,7 +261,14 @@ namespace Si_HQlessHumansLose
 
                         if (losingTeam != null)
                         {
-                            TeamLostMessage(losingTeam);
+                            if (destroyerOfWorlds == null)
+                            {
+                                TeamLostMessage(losingTeam);
+                            }
+                            else
+                            {
+                                TeamLostByPlayerMessage(losingTeam, destroyerOfWorlds);
+                            }
                         }
                     }
                 }
@@ -284,7 +301,6 @@ namespace Si_HQlessHumansLose
                     {
                         return;
                     }
-
                     
                     String rootStructureMatchText = GetRootStructurePrefix(structureTeam);
                     if (!__0.ToString().Contains(rootStructureMatchText))
@@ -302,6 +318,21 @@ namespace Si_HQlessHumansLose
                         return;
                     }
 
+                    // was a human-controlled player responsible for the destruction?
+                    destroyerOfWorlds = null;
+                    if (__2 != null)
+                    {
+                        BaseGameObject attackerBase = GameFuncs.GetBaseGameObject(__2);
+                        if (attackerBase != null)
+                        {
+                            NetworkComponent attackerNetComp = attackerBase.NetworkComponent;
+                            if (attackerNetComp != null && attackerNetComp.OwnerPlayer != null)
+                            {
+                                destroyerOfWorlds = attackerNetComp.OwnerPlayer;
+                            }
+                        }
+                    }
+
                     // no HQ/nests left or being constructed
                     // end the round if it's humans
                     // Alien team index = 0
@@ -312,7 +343,14 @@ namespace Si_HQlessHumansLose
                     // otherwise, send a chat right away
                     else
                     {
-                        TeamLostMessage(structureTeam);
+                        if (destroyerOfWorlds == null)
+                        {
+                            TeamLostMessage(structureTeam);
+                        }
+                        else
+                        {
+                            TeamLostByPlayerMessage(structureTeam, destroyerOfWorlds);
+                        }
                     }
                     
                 }
