@@ -32,7 +32,7 @@ using UnityEngine;
 using AdminExtension;
 using System.Timers;
 
-[assembly: MelonInfo(typeof(BasicTeamBalance), "[Si] Basic Team Balance", "1.1.0", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(BasicTeamBalance), "[Si] Basic Team Balance", "1.1.1", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_BasicTeamBalance
@@ -257,8 +257,8 @@ namespace Si_BasicTeamBalance
                         return false;
                     }
 
-                    // these would normally get processed at this point but check if early team switching is being stopped
-                    if (_PreventEarlyTeamSwitches.Value && GameMode.CurrentGameMode.GameOngoing && preventTeamSwitches)
+                    // these would normally get processed at this point but check if early team switching is being stopped and the player already has a team
+                    if (_PreventEarlyTeamSwitches.Value && GameMode.CurrentGameMode.GameOngoing && preventTeamSwitches && JoiningPlayer.Team != null)
                     {
                         // avoid chat spam
                         if (LastPlayerChatMessage != JoiningPlayer)
