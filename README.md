@@ -18,8 +18,8 @@
 | SiRAC (Anti-Cheat) | 0.7.6 | Restricted Access - By Request Only |
 | Surrender Command | 1.1.8 | [Download](https://raw.githubusercontent.com/data-bomb/Silica/main/Si_SurrenderCommand/bin/Si_SurrenderCommand.dll) |
 | Anti-Grief | 1.1.0 | [Download](https://raw.githubusercontent.com/data-bomb/Silica/main/Si_AntiGrief/bin/Si_AntiGrief.dll) |
-| Headquarterless Humans Lose | 1.2.2 | [Download](https://raw.githubusercontent.com/data-bomb/Silica/main/Si_HQlessHumansLose/bin/Si_HQlessHumansLose.dll) |
-| Basic Team Balance | 1.0.9 | [Download](https://raw.githubusercontent.com/data-bomb/Silica/main/Si_BasicTeamBalance/bin/Si_BasicTeamBalance.dll) |
+| Headquarterless Humans Lose | 1.2.3 | [Download](https://raw.githubusercontent.com/data-bomb/Silica/main/Si_HQlessHumansLose/bin/Si_HQlessHumansLose.dll) |
+| Basic Team Balance | 1.1.0 | [Download](https://raw.githubusercontent.com/data-bomb/Silica/main/Si_BasicTeamBalance/bin/Si_BasicTeamBalance.dll) |
 | Basic Banlist | 1.2.2 | [Download](https://raw.githubusercontent.com/data-bomb/Silica/main/Si_BasicBanlist/bin/Si_BasicBanlist.dll) |
 | Chat Silence | 1.0.0 | [Download](https://raw.githubusercontent.com/data-bomb/Silica/main/Si_ChatSilence/bin/Si_ChatSilence.dll) |
 | Commander Management | 1.2.3 | [Download](https://raw.githubusercontent.com/data-bomb/Silica/main/Si_CommManagement/bin/Si_CommManagement.dll) |
