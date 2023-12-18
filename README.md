@@ -19,7 +19,7 @@
 | Surrender Command | 1.1.8 | [Download](https://raw.githubusercontent.com/data-bomb/Silica/main/Si_SurrenderCommand/bin/Si_SurrenderCommand.dll) |
 | Anti-Grief | 1.1.0 | [Download](https://raw.githubusercontent.com/data-bomb/Silica/main/Si_AntiGrief/bin/Si_AntiGrief.dll) |
 | Headquarterless Humans Lose | 1.2.3 | [Download](https://raw.githubusercontent.com/data-bomb/Silica/main/Si_HQlessHumansLose/bin/Si_HQlessHumansLose.dll) |
-| Basic Team Balance | 1.1.0 | [Download](https://raw.githubusercontent.com/data-bomb/Silica/main/Si_BasicTeamBalance/bin/Si_BasicTeamBalance.dll) |
+| Basic Team Balance | 1.1.1 | [Download](https://raw.githubusercontent.com/data-bomb/Silica/main/Si_BasicTeamBalance/bin/Si_BasicTeamBalance.dll) |
 | Basic Banlist | 1.2.2 | [Download](https://raw.githubusercontent.com/data-bomb/Silica/main/Si_BasicBanlist/bin/Si_BasicBanlist.dll) |
 | Chat Silence | 1.0.0 | [Download](https://raw.githubusercontent.com/data-bomb/Silica/main/Si_ChatSilence/bin/Si_ChatSilence.dll) |
 | Commander Management | 1.2.3 | [Download](https://raw.githubusercontent.com/data-bomb/Silica/main/Si_CommManagement/bin/Si_CommManagement.dll) |
@@ -33,6 +33,7 @@
 | Spawn Configs | 0.8.8 | [Download](https://raw.githubusercontent.com/data-bomb/Silica/main/Si_SpawnConfigs/bin/Si_SpawnConfigs.dll) |
 | Resource Management | 1.0.1 | [Download](https://raw.githubusercontent.com/data-bomb/Silica/main/Si_Resources/bin/Si_Resources.dll) |
 | Tech Glitch | 0.9.0 | [Download](https://raw.githubusercontent.com/data-bomb/Silica/main/Si_TechGlitch/bin/Si_TechGlitch.dll) |
+| Eject Command | 0.9.7 | [Download](https://raw.githubusercontent.com/data-bomb/Silica/main/Si_Eject/bin/Si_Eject.dll) |
 
 ## Extension Summary
 | Mod Name | Version   | Link |
