@@ -29,7 +29,7 @@ using AdminExtension;
 using UnityEngine;
 using Il2CppSystem.IO;
 
-[assembly: MelonInfo(typeof(DefaultUnits), "[Si] Default Spawn Units", "0.9.4", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(DefaultUnits), "[Si] Default Spawn Units", "0.9.5", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_DefaultUnits
@@ -106,6 +106,11 @@ namespace Si_DefaultUnits
                     teamTechTiers[playerTeam.Index] = playerTeam.CurrentTechnologyTier;
 
                     StrategyTeamSetup teamSetup = __instance.GetStrategyTeamSetup(playerTeam);
+                    if (teamSetup == null)
+                    {
+                        MelonLogger.Warning("Could not find StrategyTeamSetup for Team: " + playerTeam.TeamName);
+                        return;
+                    }
 
                     // remove the extended player spawn list since this has higher priority over PlayerSpawn
                     if (teamSetup.PlayerSpawnExt != null)
