@@ -29,7 +29,7 @@ using MelonLoader;
 using Si_AntiGrief;
 using AdminExtension;
 
-[assembly: MelonInfo(typeof(AntiGrief), "[Si] Anti-Grief", "1.1.1", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(AntiGrief), "[Si] Anti-Grief", "1.1.2", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_AntiGrief
@@ -49,10 +49,10 @@ namespace Si_AntiGrief
             _NegativeKills_Penalty_Ban ??= _modCategory.CreateEntry<bool>("Grief_NegativeKills_Penalty_Ban", true);
         }
 
-        [HarmonyPatch(typeof(Il2Cpp.StrategyMode), nameof(Il2Cpp.StrategyMode.OnUnitDestroyed))]
+        [HarmonyPatch(typeof(StrategyMode), nameof(StrategyMode.OnUnitDestroyed))]
         private static class ApplyPatch_StrategyMode_OnUnitDestroyed
         {
-            public static void Postfix(Il2Cpp.StrategyMode __instance, Il2Cpp.Unit __0, Il2Cpp.EDamageType __1, UnityEngine.GameObject __2)
+            public static void Postfix(StrategyMode __instance, Unit __0, EDamageType __1, UnityEngine.GameObject __2)
             {
                 try
                 {
@@ -93,7 +93,7 @@ namespace Si_AntiGrief
                         return;
                     }
 
-                    Player victimPlayer = __0.m_ControlledBy;
+                    Player victimPlayer = __0.ControlledBy;
                     NetworkComponent attackerNetComp = attackerBase.NetworkComponent;
 
                     // was teamkiller a playable character?
@@ -110,7 +110,7 @@ namespace Si_AntiGrief
                     }
 
                     // check score of attacker
-                    short currentKillScore = attackerPlayer.m_Kills;
+                    short currentKillScore = attackerPlayer.Kills;
                     MelonLogger.Msg(attackerPlayer.PlayerName + " destroyed a friendly unit with kill score of " + currentKillScore.ToString());
 
                     // check if another player was the victim
@@ -118,7 +118,7 @@ namespace Si_AntiGrief
                     if (victimPlayer != null)
                     {
                         MelonLogger.Msg(attackerPlayer.PlayerName + " team killed " + victimPlayer.PlayerName);
-                        NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, HelperMethods.chatPrefix + HelperMethods.GetTeamColor(attackerPlayer) + attackerPlayer.PlayerName + HelperMethods.defaultColor + " team killed " + HelperMethods.GetTeamColor(victimPlayer) + victimPlayer.PlayerName, false);
+                        HelperMethods.ReplyToCommand_Player(attackerPlayer, "team killed " + HelperMethods.GetTeamColor(victimPlayer) + victimPlayer.PlayerName);
                     }
 
                     if (currentKillScore >= _NegativeKillsThreshold.Value)
@@ -149,10 +149,10 @@ namespace Si_AntiGrief
             }
         }
 
-        [HarmonyPatch(typeof(Il2Cpp.MP_Strategy), nameof(Il2Cpp.MP_Strategy.OnStructureDestroyed))]
+        [HarmonyPatch(typeof(MP_Strategy), nameof(MP_Strategy.OnStructureDestroyed))]
         private static class ApplyPatch_OnStructureDestroyed
         {
-            public static void Postfix(Il2Cpp.MP_Strategy __instance, Il2Cpp.Structure __0, Il2Cpp.EDamageType __1, UnityEngine.GameObject __2)
+            public static void Postfix(MP_Strategy __instance, Structure __0, EDamageType __1, UnityEngine.GameObject __2)
             {
                 try
                 {
@@ -197,7 +197,7 @@ namespace Si_AntiGrief
 
                     Player serverPlayer = NetworkGameServer.GetServerPlayer();
                     MelonLogger.Msg(attackerPlayer.PlayerName + " team killed a structure " + structName);
-                    NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, HelperMethods.chatPrefix + HelperMethods.GetTeamColor(attackerPlayer) + attackerPlayer.PlayerName + HelperMethods.defaultColor + " killed a friendly structure (" + HelperMethods.GetTeamColor(attackerPlayer) + structName + HelperMethods.defaultColor + ")", false);
+                    HelperMethods.ReplyToCommand_Player(attackerPlayer, "killed a friendly structure (" + HelperMethods.GetTeamColor(attackerPlayer) + structName + HelperMethods.defaultColor + ")");
                 }
                 catch (Exception error)
                 {
