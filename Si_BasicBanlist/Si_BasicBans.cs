@@ -28,7 +28,7 @@ using Newtonsoft.Json;
 using Si_BasicBanlist;
 using AdminExtension;
 
-[assembly: MelonInfo(typeof(BasicBanlist), "[Si] Basic Banlist", "1.2.2", "databomb")]
+[assembly: MelonInfo(typeof(BasicBanlist), "[Si] Basic Banlist", "1.2.3", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_BasicBanlist
@@ -251,7 +251,7 @@ namespace Si_BasicBanlist
         [HarmonyPatch(typeof(Il2Cpp.NetworkGameServer), nameof(Il2Cpp.NetworkGameServer.KickPlayer))]
         private static class ApplyPatchKickPlayer
         {
-            public static void Prefix(Il2Cpp.Player __0, bool __1)
+            public static void Prefix(Il2Cpp.Player __0)
             {
                 try
                 {
@@ -273,13 +273,12 @@ namespace Si_BasicBanlist
                     if (MasterBanList.Find(i => i.OffenderSteamId == thisBan.OffenderSteamId) != null)
                     {
                         MelonLogger.Msg("Player name (" + thisBan.OffenderName + ") SteamID (" + thisBan.OffenderSteamId.ToString() + ") already on banlist.");
+                        return;
                     }
-                    else
-                    {
-                        MelonLogger.Msg("Added player name (" + thisBan.OffenderName + ") SteamID (" + thisBan.OffenderSteamId.ToString() + ") to the banlist.");
-                        MasterBanList.Add(thisBan);
-                        UpdateBanFile();
-                    }
+                    
+                    MelonLogger.Msg("Added player name (" + thisBan.OffenderName + ") SteamID (" + thisBan.OffenderSteamId.ToString() + ") to the banlist.");
+                    MasterBanList.Add(thisBan);
+                    UpdateBanFile();
                 }
                 catch (Exception error)
                 {
