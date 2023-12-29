@@ -30,7 +30,7 @@ using UnityEngine;
 using AdminExtension;
 using static Il2Cpp.Interop;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "0.9.6", "databomb")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "0.9.7", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_Logging
@@ -232,7 +232,7 @@ namespace Si_Logging
         [HarmonyPatch(typeof(Il2Cpp.NetworkGameServer), nameof(Il2Cpp.NetworkGameServer.KickPlayer))]
         private static class ApplyPatchKickPlayer
         {
-            public static void Postfix(Il2Cpp.Player __0, bool __1)
+            public static void Postfix(Il2Cpp.Player __0)
             {
                 try
                 {
