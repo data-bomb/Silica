@@ -29,7 +29,7 @@ using MelonLoader;
 using Si_AntiGrief;
 using AdminExtension;
 
-[assembly: MelonInfo(typeof(AntiGrief), "[Si] Anti-Grief", "1.1.0", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(AntiGrief), "[Si] Anti-Grief", "1.1.1", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_AntiGrief
@@ -49,10 +49,10 @@ namespace Si_AntiGrief
             _NegativeKills_Penalty_Ban ??= _modCategory.CreateEntry<bool>("Grief_NegativeKills_Penalty_Ban", true);
         }
 
-        [HarmonyPatch(typeof(Il2Cpp.MP_Strategy), nameof(Il2Cpp.MP_Strategy.OnUnitDestroyed))]
-        private static class ApplyPatch_OnUnitDestroyed
+        [HarmonyPatch(typeof(Il2Cpp.StrategyMode), nameof(Il2Cpp.StrategyMode.OnUnitDestroyed))]
+        private static class ApplyPatch_StrategyMode_OnUnitDestroyed
         {
-            public static void Postfix(Il2Cpp.MP_Strategy __instance, Il2Cpp.Unit __0, Il2Cpp.EDamageType __1, UnityEngine.GameObject __2)
+            public static void Postfix(Il2Cpp.StrategyMode __instance, Il2Cpp.Unit __0, Il2Cpp.EDamageType __1, UnityEngine.GameObject __2)
             {
                 try
                 {
@@ -144,7 +144,7 @@ namespace Si_AntiGrief
                 }
                 catch (Exception error)
                 {
-                    HelperMethods.PrintError(error, "Failed to run MP_Strategy::OnUnitDestroyed");
+                    HelperMethods.PrintError(error, "Failed to run StrategyMode::OnUnitDestroyed");
                 }
             }
         }
