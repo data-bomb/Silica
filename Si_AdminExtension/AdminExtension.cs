@@ -22,12 +22,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 using Il2Cpp;
-using Il2CppSilica.UI;
 using MelonLoader;
 using SilicaAdminMod;
-using System.Reflection.Metadata.Ecma335;
 
-[assembly: MelonInfo(typeof(SiAdminMod), "Admin Extension", "1.1.4", "databomb")]
+[assembly: MelonInfo(typeof(SiAdminMod), "Admin Extension", "1.1.5", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace AdminExtension
@@ -68,7 +66,7 @@ namespace AdminExtension
         public const string defaultColor = "<color=#DDE98C>";
         public const string chatPrefix = "<b>" + defaultColor + "[<color=#DFA725>SAM" + defaultColor + "]</b> ";
 
-        public delegate void CommandCallback(Il2Cpp.Player callerPlayer, String args);
+        public delegate void CommandCallback(Player callerPlayer, String args);
 
         public static void RegisterAdminCommand(String adminCommand, CommandCallback adminCallback, Power adminPower)
         {
@@ -77,25 +75,25 @@ namespace AdminExtension
 
         public static void ReplyToCommand(params string[] messages)
         {
-            Il2Cpp.Player serverPlayer = Il2Cpp.NetworkGameServer.GetServerPlayer();
+            Player serverPlayer = NetworkGameServer.GetServerPlayer();
             serverPlayer.SendChatMessage(chatPrefix + String.Concat(messages), false);
         }
 
-        public static void ReplyToCommand_Player(Il2Cpp.Player player, params string[] messages)
+        public static void ReplyToCommand_Player(Player player, params string[] messages)
         {
-            Il2Cpp.Player serverPlayer = Il2Cpp.NetworkGameServer.GetServerPlayer();
+            Player serverPlayer = NetworkGameServer.GetServerPlayer();
             serverPlayer.SendChatMessage(chatPrefix + GetTeamColor(player) + player.PlayerName + defaultColor + " " + String.Concat(messages), false);
         }
 
-        public static void AlertAdminActivity(Il2Cpp.Player adminPlayer, Il2Cpp.Player targetPlayer, string action)
+        public static void AlertAdminActivity(Player adminPlayer, Player targetPlayer, string action)
         {
-            Il2Cpp.Player serverPlayer = Il2Cpp.NetworkGameServer.GetServerPlayer();
+            Player serverPlayer = NetworkGameServer.GetServerPlayer();
             serverPlayer.SendChatMessage(chatPrefix + GetAdminColor() + adminPlayer.PlayerName + defaultColor + " " + action + " " + GetTeamColor(targetPlayer) + targetPlayer.PlayerName, false);
         }
 
-        public static void AlertAdminAction(Il2Cpp.Player adminPlayer, string action)
+        public static void AlertAdminAction(Player adminPlayer, string action)
         {
-            Il2Cpp.Player serverPlayer = Il2Cpp.NetworkGameServer.GetServerPlayer();
+            Player serverPlayer = NetworkGameServer.GetServerPlayer();
             serverPlayer.SendChatMessage(chatPrefix + GetAdminColor() + adminPlayer.PlayerName + defaultColor + " " + action, false);
         }
 
@@ -111,13 +109,13 @@ namespace AdminExtension
             MelonLogger.Error(error);
         }
 
-        public static Il2Cpp.Player? FindTargetPlayer(String sTarget)
+        public static Player? FindTargetPlayer(String sTarget)
         {
-            Il2Cpp.Player? targetPlayer = null;
+            Player? targetPlayer = null;
             int iTargetCount = 0;
 
             // loop through all players
-            Il2CppSystem.Collections.Generic.List<Il2Cpp.Player> players = Il2Cpp.Player.Players;
+            Il2CppSystem.Collections.Generic.List<Player> players = Player.Players;
             int iPlayerCount = players.Count;
 
             for (int i = 0; i < iPlayerCount; i++)
@@ -144,23 +142,19 @@ namespace AdminExtension
 
         private static string TeamColorTextFromIndex(int teamIndex)
         {
-            switch (teamIndex)
+            return teamIndex switch
             {
                 // Alien
-                case 0:
-                    return "<color=#70FF70>";
+                0 => "<color=#70FF70>",
                 // Centauri
-                case 1:
-                    return "<color=#FF7070>";
+                1 => "<color=#FF7070>",
                 // Sol
-                case 2:
-                    return "<color=#7070FF>";
-                default:
-                    return "<color=#FFFFFF>";
-            }
+                2 => "<color=#7070FF>",
+                _ => "<color=#FFFFFF>",
+            };
         }
 
-        public static string GetTeamColor(Il2Cpp.Team team)
+        public static string GetTeamColor(Team team)
         {
             if (team == null)
             {
@@ -170,14 +164,14 @@ namespace AdminExtension
             return TeamColorTextFromIndex(team.Index);
         }
 
-        public static string GetTeamColor(Il2Cpp.Player player)
+        public static string GetTeamColor(Player player)
         {
             if (player == null)
             {
                 return "<color=#FFFFFF>";
             }
 
-            Il2Cpp.Team? team = player.m_Team;
+            Team? team = player.m_Team;
             if (team == null)
             {
                 return "<color=#FFFFFF>";
@@ -192,113 +186,113 @@ namespace AdminExtension
             Power powers = Power.None;
             if (powerText.Contains('a'))
             {
-                powers = powers | Power.Slot;
+                powers |= Power.Slot;
             }
             if (powerText.Contains('b'))
             {
-                powers = powers | Power.Vote;
+                powers |= Power.Vote;
             }
             if (powerText.Contains('c'))
             {
-                powers = powers | Power.Kick;
+                powers |= Power.Kick;
             }
             if (powerText.Contains('d'))
             {
-                powers = powers | Power.Ban;
+                powers |= Power.Ban;
             }
             if (powerText.Contains('e'))
             {
-                powers = powers | Power.Unban;
+                powers |= Power.Unban;
             }
             if (powerText.Contains('f'))
             {
-                powers = powers | Power.Slay;
+                powers |= Power.Slay;
             }
             if (powerText.Contains('g'))
             {
-                powers = powers | Power.Map;
+                powers |= Power.Map;
             }
             if (powerText.Contains('h'))
             {
-                powers = powers | Power.Cheat;
+                powers |= Power.Cheat;
             }
             if (powerText.Contains('i'))
             {
-                powers = powers | Power.Commander;
+                powers |= Power.Commander;
             }
             if (powerText.Contains('j'))
             {
-                powers = powers | Power.Skip;
+                powers |= Power.Skip;
             }
             if (powerText.Contains('k'))
             {
-                powers = powers | Power.End;
+                powers |= Power.End;
             }
             if (powerText.Contains('l'))
             {
-                powers = powers | Power.Eject;
+                powers |= Power.Eject;
             }
             if (powerText.Contains('m'))
             {
-                powers = powers | Power.Mute;
+                powers |= Power.Mute;
             }
             if (powerText.Contains('n'))
             {
-                powers = powers | Power.MuteForever;
+                powers |= Power.MuteForever;
             }
             if (powerText.Contains('o'))
             {
-                powers = powers | Power.Generic;
+                powers |= Power.Generic;
             }
             if (powerText.Contains('p'))
             {
-                powers = powers | Power.Teams;
+                powers |= Power.Teams;
             }
             if (powerText.Contains('q'))
             {
-                powers = powers | Power.Custom1;
+                powers |= Power.Custom1;
             }
             if (powerText.Contains('r'))
             {
-                powers = powers | Power.Custom2;
+                powers |= Power.Custom2;
             }
             if (powerText.Contains('s'))
             {
-                powers = powers | Power.Custom3;
+                powers |= Power.Custom3;
             }
             if (powerText.Contains('t'))
             {
-                powers = powers | Power.Custom4;
+                powers |= Power.Custom4;
             }
             if (powerText.Contains('u'))
             {
-                powers = powers | Power.Reserved1;
+                powers |= Power.Reserved1;
             }
             if (powerText.Contains('v'))
             {
-                powers = powers | Power.Reserved2;
+                powers |= Power.Reserved2;
             }
             if (powerText.Contains('w'))
             {
-                powers = powers | Power.Reserved3;
+                powers |= Power.Reserved3;
             }
             if (powerText.Contains('x'))
             {
-                powers = powers | Power.Reserved4;
+                powers |= Power.Reserved4;
             }
             if (powerText.Contains('y'))
             {
-                powers = powers | Power.Rcon;
+                powers |= Power.Rcon;
             }
             if (powerText.Contains('z'))
             {
-                powers = powers | Power.Root;
+                powers |= Power.Root;
             }
 
             return powers;
         }
 
-        public static void DestroyAllStructures(Il2Cpp.Team team)
+        public static void DestroyAllStructures(Team team)
         {
             if (team == null)
             {
@@ -311,9 +305,9 @@ namespace AdminExtension
             }
         }
 
-        public static bool KickPlayer(Il2Cpp.Player playerToKick)
+        public static bool KickPlayer(Player playerToKick)
         {
-            Il2Cpp.Player serverPlayer = Il2Cpp.NetworkGameServer.GetServerPlayer();
+            Player serverPlayer = NetworkGameServer.GetServerPlayer();
 
             if (playerToKick == serverPlayer)
             {
@@ -324,8 +318,8 @@ namespace AdminExtension
             int playerChannel = playerToKick.PlayerChannel;
             Il2CppSteamworks.CSteamID playerSteam = playerToKick.PlayerID;
 
-            Il2Cpp.NetworkLayer.SendPlayerConnectResponse(ENetworkPlayerConnectType.Kicked, playerSteam, playerChannel, serverSteam);
-            Il2Cpp.Player.RemovePlayer(playerSteam, playerChannel);
+            NetworkLayer.SendPlayerConnectResponse(ENetworkPlayerConnectType.Kicked, playerSteam, playerChannel, serverSteam);
+            Player.RemovePlayer(playerSteam, playerChannel);
             NetworkLayer.SendPlayerConnect(ENetworkPlayerConnectType.Disconnected, playerSteam, playerChannel);
 
             return true;
@@ -334,27 +328,27 @@ namespace AdminExtension
 
     public static class PlayerExtension
     {
-        public static bool CanAdminExecute(this Il2Cpp.Player player, Power power, Il2Cpp.Player? targetPlayer = null)
+        public static bool CanAdminExecute(this Player player, Power power, Player? targetPlayer = null)
         {
             return SiAdminMod.PlayerAdmin.CanAdminExecute(player, power, targetPlayer);
         }
 
-        public static bool CanAdminTarget(this Il2Cpp.Player player, Il2Cpp.Player targetPlayer)
+        public static bool CanAdminTarget(this Player player, Player targetPlayer)
         {
             return SiAdminMod.PlayerAdmin.CanAdminTarget(player, targetPlayer);
         }
 
-        public static Power GetAdminPowers(this Il2Cpp.Player player)
+        public static Power GetAdminPowers(this Player player)
         {
             return SiAdminMod.PlayerAdmin.GetAdminPowers(player);
         }
 
-        public static byte GetAdminLevel(this Il2Cpp.Player player)
+        public static byte GetAdminLevel(this Player player)
         {
             return SiAdminMod.PlayerAdmin.GetAdminLevel(player);
         }
 
-        public static bool IsAdmin(this Il2Cpp.Player player)
+        public static bool IsAdmin(this Player player)
         {
             return SiAdminMod.PlayerAdmin.IsAdmin(player);
         }
