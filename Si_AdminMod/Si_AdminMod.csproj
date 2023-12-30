@@ -1,8 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
+    <TargetFrameworks>net6.0;netstandard2.1</TargetFrameworks>
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
@@ -27,7 +26,7 @@
       <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Silica\MelonLoader\net6\MelonLoader.dll</HintPath>
     </Reference>
     <Reference Include="Si_AdminExtension">
-      <HintPath>..\Si_AdminExtension\bin\Debug\net6.0\Si_AdminExtension.dll</HintPath>
+      <HintPath>Si_AdminExtension.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine">
       <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Silica\MelonLoader\Il2CppAssemblies\UnityEngine.dll</HintPath>

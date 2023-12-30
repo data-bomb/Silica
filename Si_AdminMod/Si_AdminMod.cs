@@ -28,6 +28,9 @@ using Newtonsoft.Json;
 using AdminExtension;
 using MelonLoader.Utils;
 using static SilicaAdminMod.SiAdminMod;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 [assembly: MelonInfo(typeof(SiAdminMod), "Admin Mod", "1.1.6", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
@@ -154,21 +157,18 @@ namespace SilicaAdminMod
 
         public static void RegisterAdminCommand(String adminCommand, HelperMethods.CommandCallback adminCallback, Power adminPower)
         {
-            AdminCommand thisCommand = new()
-            {
-                AdminCommandText = adminCommand,
-                AdminCallback = adminCallback,
-                AdminPower = adminPower
-            };
+            AdminCommand thisCommand = new AdminCommand();
+            thisCommand.AdminCommandText = adminCommand;
+            thisCommand.AdminCallback = adminCallback;
+            thisCommand.AdminPower = adminPower;
+
             AdminCommands.Add(thisCommand);
         }
 
         public static bool AddAdmin(Il2Cpp.Player player, String powerText, byte level)
         {
-            Admin admin = new()
-            {
-                SteamId = long.Parse(player.ToString().Split('_')[1])
-            };
+            Admin admin = new Admin();
+            admin.SteamId = long.Parse(player.ToString().Split('_')[1]);
 
             // check if we have a match before adding more details
             if (AdminList.Find(i => i.SteamId == admin.SteamId) == null)
