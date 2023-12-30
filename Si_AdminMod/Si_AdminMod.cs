@@ -21,18 +21,21 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#if NET6_0
+using Il2Cpp;
+#endif
+
 using HarmonyLib;
 using MelonLoader;
 using SilicaAdminMod;
 using Newtonsoft.Json;
 using AdminExtension;
 using MelonLoader.Utils;
-using static SilicaAdminMod.SiAdminMod;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
-[assembly: MelonInfo(typeof(SiAdminMod), "Admin Mod", "1.1.6", "databomb")]
+[assembly: MelonInfo(typeof(SiAdminMod), "Admin Mod", "1.1.8", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace SilicaAdminMod
@@ -165,7 +168,7 @@ namespace SilicaAdminMod
             AdminCommands.Add(thisCommand);
         }
 
-        public static bool AddAdmin(Il2Cpp.Player player, String powerText, byte level)
+        public static bool AddAdmin(Player player, String powerText, byte level)
         {
             Admin admin = new Admin();
             admin.SteamId = long.Parse(player.ToString().Split('_')[1]);
@@ -199,10 +202,17 @@ namespace SilicaAdminMod
             return false;
         }
 
+#if NET6_0
         [HarmonyPatch(typeof(Il2CppSilica.UI.Chat), nameof(Il2CppSilica.UI.Chat.MessageReceived))]
         private static class Patch_MessageReceived_AdminCommands
         {
             public static void Postfix(Il2CppSilica.UI.Chat __instance, Il2Cpp.Player __0, string __1, bool __2)
+#else
+        [HarmonyPatch(typeof(Silica.UI.Chat), "MessageReceived")]
+        private static class Patch_MessageReceived_AdminCommands
+        {
+            public static void Postfix(Silica.UI.Chat __instance, Player __0, string __1, bool __2)
+#endif
             {
                 try
                 {
@@ -262,10 +272,10 @@ namespace SilicaAdminMod
         }
 
         // SendChatMessage will only fire for the local user, the host
-        [HarmonyPatch(typeof(Il2Cpp.Player), nameof(Il2Cpp.Player.SendChatMessage))]
+        [HarmonyPatch(typeof(Player), nameof(Player.SendChatMessage))]
         private static class Patch_SendChatMessage_AdminCommands
         {
-            public static bool Prefix(Il2Cpp.Player __instance, bool __result, string __0, bool __1)
+            public static bool Prefix(Player __instance, bool __result, string __0, bool __1)
             {
                 try
                 {
@@ -273,7 +283,7 @@ namespace SilicaAdminMod
                     if (isAddAdminCommand)
                     {
                         // only the host is authorized to add admins for now
-                        Il2Cpp.Player serverPlayer = Il2Cpp.NetworkGameServer.GetServerPlayer();
+                        Player serverPlayer = NetworkGameServer.GetServerPlayer();
 
                         if (__instance != serverPlayer)
                         {
@@ -296,7 +306,7 @@ namespace SilicaAdminMod
 
                         // validate argument contents
                         String targetText = __0.Split(' ')[1];
-                        Il2Cpp.Player? player = HelperMethods.FindTargetPlayer(targetText);
+                        Player? player = HelperMethods.FindTargetPlayer(targetText);
                         if (player == null)
                         {
                             HelperMethods.ReplyToCommand(__0.Split(' ')[0] + ": Ambiguous or invalid target");
@@ -340,7 +350,7 @@ namespace SilicaAdminMod
                     if (isRemoveAdminCommand)
                     {
                         // only the host is authorized to add admins for now
-                        Il2Cpp.Player serverPlayer = Il2Cpp.NetworkGameServer.GetServerPlayer();
+                        Player serverPlayer = NetworkGameServer.GetServerPlayer();
 
                         if (__instance != serverPlayer)
                         {
@@ -362,10 +372,10 @@ namespace SilicaAdminMod
             }
         }
 
-        // Extension methods for Il2Cpp.Player class
-        public class PlayerAdmin : Il2Cpp.Player
+        // Extension methods for Player class
+        public class PlayerAdmin : Player
         {
-            public static bool CanAdminExecute(Il2Cpp.Player callerPlayer, Power power, Il2Cpp.Player? targetPlayer = null)
+            public static bool CanAdminExecute(Player callerPlayer, Power power, Player? targetPlayer = null)
             {
                 Admin? callerMatch = AdminList.Find(i => i.SteamId == long.Parse(callerPlayer.ToString().Split('_')[1]));
                 Power callerPowers = Power.None;
@@ -401,7 +411,7 @@ namespace SilicaAdminMod
                 return false;
             }
 
-            public static bool CanAdminTarget(Il2Cpp.Player callerPlayer, Il2Cpp.Player targetPlayer)
+            public static bool CanAdminTarget(Player callerPlayer, Player targetPlayer)
             {
                 Admin? callerMatch = AdminList.Find(i => i.SteamId == long.Parse(callerPlayer.ToString().Split('_')[1]));
                 byte callerLevel = 0;
@@ -425,7 +435,7 @@ namespace SilicaAdminMod
                 return false;
             }
 
-            public static Power GetAdminPowers(Il2Cpp.Player callerPlayer)
+            public static Power GetAdminPowers(Player callerPlayer)
             {
                 Admin? match = AdminList.Find(i => i.SteamId == long.Parse(callerPlayer.ToString().Split('_')[1]));
                 if (match != null)
@@ -436,7 +446,7 @@ namespace SilicaAdminMod
                 return Power.None;
             }
 
-            public static byte GetAdminLevel(Il2Cpp.Player callerPlayer)
+            public static byte GetAdminLevel(Player callerPlayer)
             {
                 Admin? match = AdminList.Find(i => i.SteamId == long.Parse(callerPlayer.ToString().Split('_')[1]));
                 if (match != null)
@@ -447,7 +457,7 @@ namespace SilicaAdminMod
                 return 0;
             }
 
-            public static bool IsAdmin(Il2Cpp.Player callerPlayer)
+            public static bool IsAdmin(Player callerPlayer)
             {
                 Admin? match = AdminList.Find(i => i.SteamId == long.Parse(callerPlayer.ToString().Split('_')[1]));
                 if (match != null)
