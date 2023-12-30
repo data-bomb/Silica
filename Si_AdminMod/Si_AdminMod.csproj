@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFrameworks>net6.0;netstandard2.1</TargetFrameworks>
@@ -16,6 +16,9 @@
     <Reference Include="Assembly-CSharp">
       <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Silica\MelonLoader\Il2CppAssemblies\Assembly-CSharp.dll</HintPath>
     </Reference>
+	<Reference Include="Assembly-CSharp-firstpass">
+      <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Silica\MelonLoader\Il2CppAssemblies\Assembly-CSharp-firstpass.dll</HintPath>
+	</Reference>
     <Reference Include="Il2CppInterop.Runtime">
       <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Silica\MelonLoader\net6\Il2CppInterop.Runtime.dll</HintPath>
     </Reference>
@@ -24,9 +27,6 @@
     </Reference>
     <Reference Include="MelonLoader">
       <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Silica\MelonLoader\net6\MelonLoader.dll</HintPath>
-    </Reference>
-    <Reference Include="Si_AdminExtension">
-      <HintPath>Si_AdminExtension.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine">
       <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Silica\MelonLoader\Il2CppAssemblies\UnityEngine.dll</HintPath>
@@ -49,14 +49,11 @@
     <Reference Include="Assembly-CSharp">
       <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Silica Dedicated Server\Silica_Data\Managed\Assembly-CSharp.dll</HintPath>
     </Reference>
-    <Reference Include="Il2Cppmscorlib">
-      <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Silica Dedicated Server\Silica_Data\Managed\mscorlib.dll</HintPath>
-    </Reference>
+	<Reference Include="Assembly-CSharp-firstpass">
+	  <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Silica Dedicated Server\Silica_Data\Managed\Assembly-CSharp-firstpass.dll</HintPath>
+	</Reference>
     <Reference Include="MelonLoader">
       <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Silica Dedicated Server\MelonLoader\net35\MelonLoader.dll</HintPath>
-    </Reference>
-    <Reference Include="Si_AdminExtension">
-      <HintPath>21\Si_AdminExtension.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine">
       <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Silica Dedicated Server\Silica_Data\Managed\UnityEngine.dll</HintPath>
