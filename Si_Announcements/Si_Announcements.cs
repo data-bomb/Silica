@@ -21,17 +21,24 @@
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using HarmonyLib;
+#if NET6_0
 using Il2Cpp;
+#endif
+
+using HarmonyLib;
 using MelonLoader;
 using MelonLoader.Utils;
 using Si_Announcements;
-using AdminExtension;
 using System.Timers;
+using System;
+using System.IO;
+using System.Collections.Generic;
+using SilicaAdminMod;
+using System.Linq;
 
-[assembly: MelonInfo(typeof(Announcements), "Server Announcements", "1.0.2", "databomb")]
+[assembly: MelonInfo(typeof(Announcements), "Server Announcements", "1.1.0", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
-
+[assembly: MelonOptionalDependencies("Admin Mod")]
 
 namespace Si_Announcements
 {
@@ -69,7 +76,7 @@ namespace Si_Announcements
                 // Open the stream and read it back
                 using (StreamReader announcementsFileStream = File.OpenText(announcementsFile))
                 {
-                    List<string> announcementFileLine = new();
+                    List<string> announcementFileLine = new List<string>();
                     string announcement = "";
                     while ((announcement = announcementsFileStream.ReadLine()) != null)
                     {
@@ -96,10 +103,14 @@ namespace Si_Announcements
             timerExpired = true;
         }
 
-        [HarmonyPatch(typeof(Il2Cpp.MusicJukeboxHandler), nameof(Il2Cpp.MusicJukeboxHandler.Update))]
+        #if NET6_0
+        [HarmonyPatch(typeof(MusicJukeboxHandler), nameof(MusicJukeboxHandler.Update))]
+        #else
+        [HarmonyPatch(typeof(MusicJukeboxHandler), "Update")]
+        #endif
         private static class ApplyPatch_MusicJukeboxHandlerUpdate
         {
-            private static void Postfix(Il2Cpp.MusicJukeboxHandler __instance)
+            private static void Postfix(MusicJukeboxHandler __instance)
             {
                 try
                 {
@@ -124,9 +135,8 @@ namespace Si_Announcements
                         String thisAnnouncement = announcementsText[announcementCount % announcementsText.Length];
                         MelonLogger.Msg("Announcement: " + thisAnnouncement);
 
-                        Player serverPlayer = Il2Cpp.NetworkGameServer.GetServerPlayer();
+                        Player serverPlayer = NetworkGameServer.GetServerPlayer();
                         NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, thisAnnouncement, false);
-                        
                     }
                 }
                 catch (Exception exception)
@@ -136,10 +146,18 @@ namespace Si_Announcements
             }
         }
 
+        #if NET6_0
         [HarmonyPatch(typeof(Il2CppSilica.UI.Chat), nameof(Il2CppSilica.UI.Chat.MessageReceived))]
+        #else
+        [HarmonyPatch(typeof(Silica.UI.Chat), "MessageReceived")]
+        #endif
         private static class Announcements_Patch_Chat_MessageReceived
         {
-            public static void Postfix(Il2CppSilica.UI.Chat __instance, Il2Cpp.Player __0, string __1, bool __2)
+            #if NET6_0
+            public static void Postfix(Il2CppSilica.UI.Chat __instance, Player __0, string __1, bool __2)
+            #else
+            public static void Postfix(Silica.UI.Chat __instance, Player __0, string __1, bool __2)
+            #endif
             {
                 try
                 {
