@@ -48,9 +48,9 @@
     <Reference Include="Assembly-CSharp">
       <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Silica Dedicated Server\Silica_Data\Managed\Assembly-CSharp.dll</HintPath>
     </Reference>
-	<Reference Include="Assembly-CSharp-firstpass">
-	  <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Silica Dedicated Server\Silica_Data\Managed\Assembly-CSharp-firstpass.dll</HintPath>
-	</Reference>
+    <Reference Include="Assembly-CSharp-firstpass">
+      <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Silica Dedicated Server\Silica_Data\Managed\Assembly-CSharp-firstpass.dll</HintPath>
+    </Reference>
     <Reference Include="MelonLoader">
       <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Silica Dedicated Server\MelonLoader\net35\MelonLoader.dll</HintPath>
     </Reference>
