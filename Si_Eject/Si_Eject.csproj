@@ -36,9 +36,9 @@
     <Reference Include="UnityEngine.PhysicsModule">
       <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Silica\MelonLoader\Il2CppAssemblies\UnityEngine.PhysicsModule.dll</HintPath>
     </Reference>
-	<Reference Include="Si_AdminMod">
-	  <HintPath>..\Si_AdminMod\bin\Release\net6.0\Si_AdminMod.dll</HintPath>
-	</Reference>
+    <Reference Include="Si_AdminMod">
+      <HintPath>..\Si_AdminMod\bin\Release\net6.0\Si_AdminMod.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.1'">
