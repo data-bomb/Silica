@@ -22,35 +22,41 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using HarmonyLib;
+#if NET6_0
 using Il2Cpp;
+#else
+using System.Reflection;
+#endif
+
+using HarmonyLib;
 using MelonLoader;
 using Si_TechGlitch;
-using AdminExtension;
+using SilicaAdminMod;
+using System;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(TechGlitch), "Tech Glitch Command", "0.9.0", "databomb")]
+[assembly: MelonInfo(typeof(TechGlitch), "Tech Glitch Command", "1.0.0", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 namespace Si_TechGlitch
 {
     public class TechGlitch : MelonMod
     {
-        public static bool IsCommander(Il2Cpp.Player thePlayer)
+        public static bool IsCommander(Player thePlayer)
         {
             if (thePlayer == null)
             {
                 return false;
             }
 
-            Il2Cpp.Team theTeam = thePlayer.m_Team;
+            Team theTeam = thePlayer.Team;
             if (theTeam == null)
             {
                 return false;
             }
 
-            Il2Cpp.MP_Strategy strategyInstance = GameObject.FindObjectOfType<Il2Cpp.MP_Strategy>();
-            Il2Cpp.Player teamCommander = strategyInstance.GetCommanderForTeam(theTeam);
+            MP_Strategy strategyInstance = GameObject.FindObjectOfType<MP_Strategy>();
+            Player teamCommander = strategyInstance.GetCommanderForTeam(theTeam);
 
             if (teamCommander == thePlayer)
             {
@@ -60,55 +66,76 @@ namespace Si_TechGlitch
             return false;
         }
 
+        #if NET6_0
         [HarmonyPatch(typeof(Il2CppSilica.UI.Chat), nameof(Il2CppSilica.UI.Chat.MessageReceived))]
+        #else
+        [HarmonyPatch(typeof(Silica.UI.Chat), "MessageReceived")]
+        #endif
         private static class TechGlitch_Chat_MessageReceived
         {
-            public static void Postfix(Il2CppSilica.UI.Chat __instance, Il2Cpp.Player __0, string __1, bool __2)
+            #if NET6_0
+            public static void Postfix(Il2CppSilica.UI.Chat __instance, Player __0, string __1, bool __2)
+            #else
+            public static void Postfix(Silica.UI.Chat __instance, Player __0, string __1, bool __2)
+            #endif
             {
                 try
                 {
                     // each faction has its own chat manager but by looking at alien and only global messages this catches commands only once
-                    if (__instance.ToString().Contains("alien") && __2 == false)
+                    if (!__instance.ToString().Contains("alien") || __2)
                     {
-                        bool isTechGlitchCommand = String.Equals(__1, "!techglitch", StringComparison.OrdinalIgnoreCase);
-                        if (isTechGlitchCommand)
+                        return;
+                    }
+                    
+                    bool isTechGlitchCommand = String.Equals(__1, "!techglitch", StringComparison.OrdinalIgnoreCase);
+                    if (!isTechGlitchCommand)
+                    {
+                        return;
+                    }
+
+                    // check if we are actually a commander
+                    bool isCommander = IsCommander(__0);
+
+                    if (!isCommander)
+                    {
+                        // notify player on invalid usage
+                        HelperMethods.ReplyToCommand_Player(__0, ": only commanders can use !techglitch");
+                        return;
+                    }
+
+                    // is there a game currently started?
+                    if (!GameMode.CurrentGameMode.GameOngoing)
+                    {
+                        return;
+                    }
+
+                    HelperMethods.ReplyToCommand(__0.Team.TeamName + " is at tech level " + __0.Team.CurrentTechnologyTier.ToString());
+
+                    // look for ResearchFacility and QuantumCortex
+                    String techStructureName = __0.Team.TeamName.Contains("Human") ? "ResearchF" : "QuantumC";
+                    int techStructures = 0;
+
+                    for (int i = 0; i < __0.Team.Structures.Count; i++)
+                    {
+                        if (__0.Team.Structures[i].ToString().StartsWith(techStructureName))
                         {
-                            // check if we are actually a commander
-                            bool isCommander = IsCommander(__0);
+                            techStructures++;
 
-                            if (isCommander)
-                            {
-                                // is there a game currently started?
-                                if (Il2Cpp.GameMode.CurrentGameMode.GameOngoing)
-                                {
-                                    HelperMethods.ReplyToCommand(__0.Team.TeamName + " is at tech level " + __0.Team.CurrentTechnologyTier.ToString());
+                            #if NET6_0
+                            __0.Team.Structures[i].RPC_SynchTechnologyTier();
+                            #else
+                            Type structureType = typeof(Structure);
+                            MethodInfo synchTechMethod = structureType.GetMethod("RPC_SynchTechnologyTier");
 
-                                    // look for ResearchFacility and QuantumCortex
-                                    String techStructureName = __0.Team.TeamName.Contains("Human") ? "ResearchF" : "QuantumC";
-                                    int techStructures = 0;
-
-                                    for (int i = 0; i < __0.Team.Structures.Count; i++)
-                                    {
-                                        if (__0.Team.Structures[i].ToString().StartsWith(techStructureName))
-                                        {
-                                            techStructures++;
-                                            __0.Team.Structures[i].RPC_SynchTechnologyTier();
-                                        }
-                                    }
-
-                                    // notify all players
-                                    HelperMethods.ReplyToCommand_Player(__0, "forced sync on " + techStructures.ToString() + " tech structure" + (techStructures > 1 ? "s" : ""));
-
-                                    __0.Team.UpdateTechnologyTier();
-                                }
-                            }
-                            else
-                            {
-                                // notify player on invalid usage
-                                HelperMethods.ReplyToCommand_Player(__0, ": only commanders can use !techglitch");
-                            }
+                            synchTechMethod.Invoke(structureType, null);
+                            #endif
                         }
                     }
+
+                    // notify all players
+                    HelperMethods.ReplyToCommand_Player(__0, "forced sync on " + techStructures.ToString() + " tech structure" + (techStructures > 1 ? "s" : ""));
+
+                    __0.Team.UpdateTechnologyTier();
                 }
                 catch (Exception error)
                 {
