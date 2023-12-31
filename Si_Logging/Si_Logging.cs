@@ -21,17 +21,24 @@
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using HarmonyLib;
+#if NET6_0
 using Il2Cpp;
+using Il2CppSteamworks;
+#else
+using Steamworks;
+#endif
+
+using HarmonyLib;
 using MelonLoader;
 using MelonLoader.Utils;
 using Si_Logging;
 using UnityEngine;
-using AdminExtension;
-using static Il2Cpp.Interop;
+using System;
+using SilicaAdminMod;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "0.9.8", "databomb")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "0.9.9", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
+[assembly: MelonOptionalDependencies("Admin Mod")]
 
 namespace Si_Logging
 {
@@ -153,10 +160,14 @@ namespace Si_Logging
         }
 
         // 050. Connection
-        [HarmonyPatch(typeof(Il2Cpp.NetworkGameServer), nameof(Il2Cpp.NetworkGameServer.OnP2PSessionRequest))]
+        #if NET6_0
+        [HarmonyPatch(typeof(NetworkGameServer), nameof(NetworkGameServer.OnP2PSessionRequest))]
+        #else
+        [HarmonyPatch(typeof(NetworkGameServer), "OnP2PSessionRequest")]
+        #endif
         private static class ApplyPatchOnP2PSessionRequest
         {
-            public static void Postfix(Il2Cpp.NetworkGameServer __instance, Il2CppSteamworks.P2PSessionRequest_t __0)
+            public static void Postfix(NetworkGameServer __instance, P2PSessionRequest_t __0)
             {
                 try
                 {
@@ -174,10 +185,10 @@ namespace Si_Logging
         // TODO: 050b. Validation
 
         // 051. Enter Game
-        [HarmonyPatch(typeof(Il2Cpp.GameMode), nameof(Il2Cpp.GameMode.OnPlayerJoinedBase))]
+        [HarmonyPatch(typeof(GameMode), nameof(GameMode.OnPlayerJoinedBase))]
         private static class ApplyPatchOnPlayerJoinedBase
         {
-            public static void Postfix(Il2Cpp.GameMode __instance, Il2Cpp.Player __0)
+            public static void Postfix(GameMode __instance, Player __0)
             {
                 try
                 {
@@ -197,10 +208,10 @@ namespace Si_Logging
         }
 
         // 052. Disconnection
-        [HarmonyPatch(typeof(Il2Cpp.GameMode), nameof(Il2Cpp.GameMode.OnPlayerLeftBase))]
+        [HarmonyPatch(typeof(GameMode), nameof(GameMode.OnPlayerLeftBase))]
         private static class ApplyPatchOnPlayerLeftBase
         {
-            public static void Prefix(Il2Cpp.GameMode __instance, Il2Cpp.Player __0)
+            public static void Prefix(GameMode __instance, Player __0)
             {
                 try
                 {
@@ -208,13 +219,13 @@ namespace Si_Logging
                     {
                         int userID = Math.Abs(__0.GetInstanceID());
                         string teamName;
-                        if (__0.m_Team == null)
+                        if (__0.Team == null)
                         {
                             teamName = "";
                         }
                         else
                         {
-                            teamName = __0.m_Team.TeamName;
+                            teamName = __0.Team.TeamName;
                         }
 
                         string LogLine = "\"" + __0.PlayerName + "<" + userID + "><" + GetPlayerID(__0) + "><" + teamName + ">\" disconnected";
@@ -229,22 +240,22 @@ namespace Si_Logging
         }
 
         // 052b. Kick
-        [HarmonyPatch(typeof(Il2Cpp.NetworkGameServer), nameof(Il2Cpp.NetworkGameServer.KickPlayer))]
+        [HarmonyPatch(typeof(NetworkGameServer), nameof(NetworkGameServer.KickPlayer))]
         private static class ApplyPatchKickPlayer
         {
-            public static void Postfix(Il2Cpp.Player __0)
+            public static void Postfix(Player __0)
             {
                 try
                 {
                     int userID = Math.Abs(__0.GetInstanceID());
                     string teamName;
-                    if ( __0.m_Team == null)
+                    if ( __0.Team == null)
                     {
                         teamName = "";
                     }
                     else
                     {
-                        teamName = __0.m_Team.TeamName;
+                        teamName = __0.Team.TeamName;
                     }
                     string LogLine = "Kick: \"" + __0.PlayerName + "<" + userID + "><" + GetPlayerID(__0) + "><" + teamName + "\" was kicked by \"Console\" (message \"\")";
                     PrintLogLine(LogLine);
@@ -258,10 +269,10 @@ namespace Si_Logging
 
         // 053. Suicides
         // 057. Kills
-        [HarmonyPatch(typeof(Il2Cpp.StrategyMode), nameof(Il2Cpp.StrategyMode.OnUnitDestroyed))]
+        [HarmonyPatch(typeof(StrategyMode), nameof(StrategyMode.OnUnitDestroyed))]
         private static class ApplyPatch_StrategyMode_OnUnitDestroyed
         {
-            public static void Postfix(Il2Cpp.StrategyMode __instance, Il2Cpp.Unit __0, Il2Cpp.EDamageType __1, UnityEngine.GameObject __2)
+            public static void Postfix(StrategyMode __instance, Unit __0, EDamageType __1, UnityEngine.GameObject __2)
             {
                 try
                 {
@@ -276,7 +287,7 @@ namespace Si_Logging
                     }
 
                     // Attacker
-                    BaseGameObject attackerBase = Il2Cpp.GameFuncs.GetBaseGameObject(__2);
+                    BaseGameObject attackerBase = GameFuncs.GetBaseGameObject(__2);
                     if (attackerBase == null)
                     {
                         return;
@@ -285,7 +296,7 @@ namespace Si_Logging
                     Player attackerPlayer = attackerNetComp.OwnerPlayer;
 
                     // Victim
-                    Player victimPlayer = __0.m_ControlledBy;
+                    Player victimPlayer = __0.ControlledBy;
 
                     bool isVictimHuman = (victimPlayer != null);
                     bool isAttackerHuman = (attackerPlayer != null);
@@ -306,21 +317,21 @@ namespace Si_Logging
                             if (isSuicide)
                             {
 
-                                string LogLine = "\"" + victimPlayer.PlayerName + "<" + victimUserID + "><" + GetPlayerID(victimPlayer) + "><" + victimPlayer.m_Team.TeamName + ">\" committed suicide with \"" + __2.ToString().Split('(')[0] + "\" (dmgtype \"" + __1.ToString() + "\")";
+                                string LogLine = "\"" + victimPlayer.PlayerName + "<" + victimUserID + "><" + GetPlayerID(victimPlayer) + "><" + victimPlayer.Team.TeamName + ">\" committed suicide with \"" + __2.ToString().Split('(')[0] + "\" (dmgtype \"" + __1.ToString() + "\")";
                                 PrintLogLine(LogLine);
                             }
                             // human-controlled player killed another human-controlled player
                             else
                             {
                                 int attackerUserID = Math.Abs(attackerPlayer.GetInstanceID());
-                                string LogLine = "\"" + attackerPlayer.PlayerName + "<" + attackerUserID + "><" + GetPlayerID(attackerPlayer) + "><" + attackerPlayer.m_Team.TeamName + ">\" killed \"" + victimPlayer.PlayerName + "<" + victimUserID + "><" + GetPlayerID(victimPlayer) + "><" + victimPlayer.m_Team.TeamName + ">\" with \"" + __2.ToString().Split('(')[0] + "\" (dmgtype \"" + __1.ToString() + "\") (victim \"" + __0.ToString().Split('(')[0] + "\")";
+                                string LogLine = "\"" + attackerPlayer.PlayerName + "<" + attackerUserID + "><" + GetPlayerID(attackerPlayer) + "><" + attackerPlayer.Team.TeamName + ">\" killed \"" + victimPlayer.PlayerName + "<" + victimUserID + "><" + GetPlayerID(victimPlayer) + "><" + victimPlayer.Team.TeamName + ">\" with \"" + __2.ToString().Split('(')[0] + "\" (dmgtype \"" + __1.ToString() + "\") (victim \"" + __0.ToString().Split('(')[0] + "\")";
                                 PrintLogLine(LogLine);
                             }
                         }
                         else if (Pref_Log_Kills_Include_AI_vs_Player.Value)
                         // Attacker is an AI, Victim is a human
                         {
-                            string LogLine = "\"" + __2.ToString().Split('(')[0] + "<><><" + attackerBase.m_Team.TeamName + ">\" killed \"" + victimPlayer.PlayerName + "<" + victimUserID + "><" + GetPlayerID(victimPlayer) + "><" + victimPlayer.m_Team.TeamName + ">\" with \"" + __2.ToString().Split('(')[0] + "\" (dmgtype \"" + __1.ToString() + "\") (victim \"" + __0.ToString().Split('(')[0] + "\")";
+                            string LogLine = "\"" + __2.ToString().Split('(')[0] + "<><><" + attackerBase.Team.TeamName + ">\" killed \"" + victimPlayer.PlayerName + "<" + victimUserID + "><" + GetPlayerID(victimPlayer) + "><" + victimPlayer.Team.TeamName + ">\" with \"" + __2.ToString().Split('(')[0] + "\" (dmgtype \"" + __1.ToString() + "\") (victim \"" + __0.ToString().Split('(')[0] + "\")";
                             PrintLogLine(LogLine);
                         }
                     }
@@ -328,7 +339,7 @@ namespace Si_Logging
                     // Attacker is a human, Victim is an AI
                     {
                         int attackerUserID = Math.Abs(attackerPlayer.GetInstanceID());
-                        string LogLine = "\"" + attackerPlayer.PlayerName + "<" + attackerUserID + "><" + GetPlayerID(attackerPlayer) + "><" + attackerPlayer.m_Team.TeamName + ">\" killed \"" + __0.ToString().Split('(')[0] + "<><><" + __0.m_Team.TeamName + ">\" with \"" + __2.ToString().Split('(')[0] + "\" (dmgtype \"" + __1.ToString() + "\") (victim \"" + __0.ToString().Split('(')[0] + "\")";
+                        string LogLine = "\"" + attackerPlayer.PlayerName + "<" + attackerUserID + "><" + GetPlayerID(attackerPlayer) + "><" + attackerPlayer.Team.TeamName + ">\" killed \"" + __0.ToString().Split('(')[0] + "<><><" + __0.Team.TeamName + ">\" with \"" + __2.ToString().Split('(')[0] + "\" (dmgtype \"" + __1.ToString() + "\") (victim \"" + __0.ToString().Split('(')[0] + "\")";
                         PrintLogLine(LogLine);
                     }
                 }
@@ -340,10 +351,10 @@ namespace Si_Logging
         }
 
         // 054. Team Selection
-        [HarmonyPatch(typeof(Il2Cpp.MP_Strategy), nameof(Il2Cpp.MP_Strategy.OnPlayerChangedTeam))]
+        [HarmonyPatch(typeof(MP_Strategy), nameof(MP_Strategy.OnPlayerChangedTeam))]
         private static class ApplyPatchOnPlayerChangedTeam
         {
-            public static void Postfix(Il2Cpp.MP_Strategy __instance, Il2Cpp.Player __0, Il2Cpp.Team __1, Il2Cpp.Team __2)
+            public static void Postfix(MP_Strategy __instance, Player __0, Team __1, Team __2)
             {
                 try
                 {
@@ -383,10 +394,14 @@ namespace Si_Logging
         }
 
         // 055. Role Selection - Commander Change
-        [HarmonyPatch(typeof(Il2Cpp.MP_Strategy), nameof(Il2Cpp.MP_Strategy.SetCommander))]
+        #if NET6_0
+        [HarmonyPatch(typeof(MP_Strategy), nameof(MP_Strategy.SetCommander))]
+        #else
+        [HarmonyPatch(typeof(MP_Strategy), "SetCommander")]
+        #endif
         private static class ApplyPatch_MP_Strategy_SetCommander
         {
-            public static void Postfix(Il2Cpp.MP_Strategy __instance, Il2Cpp.Team __0, Il2Cpp.Player __1)
+            public static void Postfix(MP_Strategy __instance, Team __0, Player __1)
             {
                 try
                 {
@@ -443,10 +458,10 @@ namespace Si_Logging
         }
 
         // 056. Change Name
-        [HarmonyPatch(typeof(Il2Cpp.NetworkLayer), nameof(Il2Cpp.NetworkLayer.SendPlayerChangeName))]
+        [HarmonyPatch(typeof(NetworkLayer), nameof(NetworkLayer.SendPlayerChangeName))]
         private static class ApplyPatchSendPlayerChangeName
         {
-            public static void Postfix(Il2CppSteamworks.CSteamID __0, int __1, string __2)
+            public static void Postfix(CSteamID __0, int __1, string __2)
             {
                 try
                 {
@@ -463,10 +478,14 @@ namespace Si_Logging
         }
 
         // 058. Injuring
-        [HarmonyPatch(typeof(Il2Cpp.DamageManager), nameof(Il2Cpp.DamageManager.OnDamageReceived))]
+        #if NET6_0
+        [HarmonyPatch(typeof(DamageManager), nameof(DamageManager.OnDamageReceived))]
+        #else
+        [HarmonyPatch(typeof(DamageManager), "OnDamageReceived")]
+        #endif
         private static class ApplyPatchOnDamageReceived
         {
-            public static void Postfix(Il2Cpp.DamageManager __instance, UnityEngine.Collider __0, float __1, Il2Cpp.EDamageType __2, UnityEngine.GameObject __3, UnityEngine.Vector3 __4)
+            public static void Postfix(DamageManager __instance, UnityEngine.Collider __0, float __1, EDamageType __2, UnityEngine.GameObject __3, UnityEngine.Vector3 __4)
             {
                 // should we log the damage?
                 if (Pref_Log_Damage != null && !Pref_Log_Damage.Value)
@@ -526,7 +545,7 @@ namespace Si_Logging
 
                 int attackerUserID = Math.Abs(attackerPlayer.GetInstanceID());
                 int victimUserID = Math.Abs(victimPlayer.GetInstanceID());
-                string LogLine = "\"" + attackerPlayer.PlayerName + "<" + attackerUserID + "><" + GetPlayerID(attackerPlayer) + "><" + attackerPlayer.m_Team.TeamName + ">\" attacked \"" + victimPlayer.PlayerName + "<" + victimUserID + "><" + GetPlayerID(victimPlayer) + "><" + victimPlayer.m_Team.TeamName + ">\" with \"" + __3.ToString().Split('(')[0] + "\"" + " (damage \"" + damage.ToString() + "\")";
+                string LogLine = "\"" + attackerPlayer.PlayerName + "<" + attackerUserID + "><" + GetPlayerID(attackerPlayer) + "><" + attackerPlayer.Team.TeamName + ">\" attacked \"" + victimPlayer.PlayerName + "<" + victimUserID + "><" + GetPlayerID(victimPlayer) + "><" + victimPlayer.Team.TeamName + ">\" with \"" + __3.ToString().Split('(')[0] + "\"" + " (damage \"" + damage.ToString() + "\")";
                 PrintLogLine(LogLine, true);
             }
         }
@@ -535,25 +554,25 @@ namespace Si_Logging
         // None for now. Re-evaluate with updates
 
         // 060. Player Objectives/Actions - Structure Kill
-        [HarmonyPatch(typeof(Il2Cpp.MP_Strategy), nameof(Il2Cpp.MP_Strategy.OnStructureDestroyed))]
+        [HarmonyPatch(typeof(MP_Strategy), nameof(MP_Strategy.OnStructureDestroyed))]
         private static class ApplyPatchOnStructureDestroyed
         {
-            public static void Postfix(Il2Cpp.MP_Strategy __instance, Il2Cpp.Structure __0, Il2Cpp.EDamageType __1, UnityEngine.GameObject __2)
+            public static void Postfix(MP_Strategy __instance, Structure __0, EDamageType __1, UnityEngine.GameObject __2)
             {
                 try
                 {
                     if (__0 != null && __2 != null)
                     {
                         // Attacker
-                        Il2Cpp.BaseGameObject attackerBase = Il2Cpp.GameFuncs.GetBaseGameObject(__2);
+                        BaseGameObject attackerBase = GameFuncs.GetBaseGameObject(__2);
 
                         if (attackerBase != null)
                         {
-                            Il2Cpp.NetworkComponent attackerNetComp = attackerBase.NetworkComponent;
+                            NetworkComponent attackerNetComp = attackerBase.NetworkComponent;
                             // was teamkiller a playable character?
                             if (attackerNetComp != null)
                             {
-                                Il2Cpp.Player attackerPlayer = attackerNetComp.OwnerPlayer;
+                                Player attackerPlayer = attackerNetComp.OwnerPlayer;
 
                                 if (attackerPlayer != null)
                                 {
@@ -573,23 +592,23 @@ namespace Si_Logging
                                     }
 
                                     string attackerPlayerTeam;
-                                    if (attackerPlayer.m_Team == null)
+                                    if (attackerPlayer.Team == null)
                                     {
                                         attackerPlayerTeam = "";
                                     }
                                     else
                                     {
-                                        attackerPlayerTeam = attackerPlayer.m_Team.TeamName;
+                                        attackerPlayerTeam = attackerPlayer.Team.TeamName;
                                     }
 
                                     string structTeam;
-                                    if (__0.m_Team == null)
+                                    if (__0.Team == null)
                                     {
                                         structTeam = "";
                                     }
                                     else
                                     {
-                                        structTeam = __0.m_Team.TeamName;
+                                        structTeam = __0.Team.TeamName;
                                     }
   
                                     string LogLine = "\"" + attackerPlayer.PlayerName + "<" + userID + "><" + GetPlayerID(attackerPlayer) + "><" + attackerPlayerTeam + ">\" triggered \"structure_kill\" (structure \"" + structName + "\") (struct_team \"" + structTeam + "\")";
@@ -617,10 +636,10 @@ namespace Si_Logging
 
         static bool firedRoundEndOnce;
 
-        [HarmonyPatch(typeof(Il2Cpp.MusicJukeboxHandler), nameof(Il2Cpp.MusicJukeboxHandler.OnGameEnded))]
+        [HarmonyPatch(typeof(MusicJukeboxHandler), nameof(MusicJukeboxHandler.OnGameEnded))]
         private static class ApplyPatchOnGameEnded
         {
-            public static void Postfix(Il2Cpp.MusicJukeboxHandler __instance, Il2Cpp.GameMode __0, Il2Cpp.Team __1)
+            public static void Postfix(MusicJukeboxHandler __instance, GameMode __0, Team __1)
             {
                 try
                 {
@@ -631,12 +650,12 @@ namespace Si_Logging
                         string VictoryLogLine = "Team \"" + __1.TeamName + "\" triggered \"Victory\"";
                         PrintLogLine(VictoryLogLine);
 
-                        Il2Cpp.MP_Strategy strategyInstance = GameObject.FindObjectOfType<Il2Cpp.MP_Strategy>();
-                        Il2Cpp.MP_Strategy.ETeamsVersus versusMode = strategyInstance.TeamsVersus;
+                        MP_Strategy strategyInstance = GameObject.FindObjectOfType<MP_Strategy>();
+                        MP_Strategy.ETeamsVersus versusMode = strategyInstance.TeamsVersus;
 
-                        for (int i = 0; i < Il2Cpp.Team.Teams.Count; i++)
+                        for (int i = 0; i < Team.Teams.Count; i++)
                         {
-                            Il2Cpp.Team? thisTeam = Il2Cpp.Team.Teams[i];
+                            Team? thisTeam = Team.Teams[i];
                             if (versusMode == MP_Strategy.ETeamsVersus.HUMANS_VS_HUMANS && i == 0)
                             {
                                 continue;
@@ -651,24 +670,24 @@ namespace Si_Logging
                             PrintLogLine(TeamLogLine);
                         }
 
-                        for (int i = 0; i < Il2Cpp.Player.Players.Count; i++)
+                        for (int i = 0; i < Player.Players.Count; i++)
                         {
-                            if (Il2Cpp.Player.Players[i] != null)
+                            if (Player.Players[i] != null)
                             {
-                                Il2Cpp.Player thisPlayer = Il2Cpp.Player.Players[i];
+                                Player thisPlayer = Player.Players[i];
                                 int userID = Math.Abs(thisPlayer.GetInstanceID());
 
                                 string playerTeam;
-                                if (thisPlayer.m_Team == null)
+                                if (thisPlayer.Team == null)
                                 {
                                     playerTeam = "";
                                 }
                                 else
                                 {
-                                    playerTeam = thisPlayer.m_Team.TeamName;
+                                    playerTeam = thisPlayer.Team.TeamName;
                                 }
 
-                                string PlayerLogLine = "Player \"" + thisPlayer.PlayerName + "<" + userID + "><" + GetPlayerID(thisPlayer) + "><" + playerTeam + ">\" scored \"" + thisPlayer.m_Score + "\" (kills \"" + thisPlayer.m_Kills + "\") (deaths \"" + thisPlayer.m_Deaths + "\")";
+                                string PlayerLogLine = "Player \"" + thisPlayer.PlayerName + "<" + userID + "><" + GetPlayerID(thisPlayer) + "><" + playerTeam + ">\" scored \"" + thisPlayer.Score + "\" (kills \"" + thisPlayer.Kills + "\") (deaths \"" + thisPlayer.Deaths + "\")";
                                 PrintLogLine(PlayerLogLine);
                             }
                         }
@@ -715,14 +734,14 @@ namespace Si_Logging
         }*/
 
         // 062. World Objectives/Actions - Round_Start
-        [HarmonyPatch(typeof(Il2Cpp.MusicJukeboxHandler), nameof(Il2Cpp.MusicJukeboxHandler.OnGameStarted))]
+        [HarmonyPatch(typeof(MusicJukeboxHandler), nameof(MusicJukeboxHandler.OnGameStarted))]
         private static class ApplyPatchOnGameStarted
         {
-            public static void Postfix(Il2Cpp.MusicJukeboxHandler __instance, Il2Cpp.GameMode __0)
+            public static void Postfix(MusicJukeboxHandler __instance, GameMode __0)
             {
                 try
                 {
-                    MP_Strategy strategyInstance = GameObject.FindObjectOfType<Il2Cpp.MP_Strategy>();
+                    MP_Strategy strategyInstance = GameObject.FindObjectOfType<MP_Strategy>();
                     MP_Strategy.ETeamsVersus versusMode = strategyInstance.TeamsVersus;
 
                     string RoundWinLogLine = "World triggered \"Round_Start\" (gametype \"" + versusMode.ToString() + "\")";
@@ -738,10 +757,18 @@ namespace Si_Logging
         }
 
         // 063. Chat
+        #if NET6_0
         [HarmonyPatch(typeof(Il2CppSilica.UI.Chat), nameof(Il2CppSilica.UI.Chat.MessageReceived))]
+        #else
+        [HarmonyPatch(typeof(Silica.UI.Chat), "MessageReceived")]
+        #endif
         private static class ApplyPatchMessageReceived
         {
-            public static void Postfix(Il2CppSilica.UI.Chat __instance, Il2Cpp.Player __0, string __1, bool __2)
+            #if NET6_0
+            public static void Postfix(Il2CppSilica.UI.Chat __instance, Player __0, string __1, bool __2)
+            #else
+            public static void Postfix(Silica.UI.Chat __instance, Player __0, string __1, bool __2)
+            #endif
             {
                 try
                 {
@@ -751,13 +778,13 @@ namespace Si_Logging
                         int userID = Math.Abs(__0.GetInstanceID());
 
                         string teamName;
-                        if (__0.m_Team == null)
+                        if (__0.Team == null)
                         {
                             teamName = "";
                         }
                         else
                         {
-                            teamName = __0.m_Team.TeamName;
+                            teamName = __0.Team.TeamName;
                         }
 
                         // __2 true = team-only message
