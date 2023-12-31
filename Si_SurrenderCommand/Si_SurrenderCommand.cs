@@ -31,8 +31,9 @@ using SilicaAdminMod;
 using System;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(SurrenderCommand), "Surrender Command", "1.2.0", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(SurrenderCommand), "Surrender Command", "1.2.1", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
+[assembly: MelonOptionalDependencies("Admin Mod")]
 
 namespace Si_SurrenderCommand
 {
