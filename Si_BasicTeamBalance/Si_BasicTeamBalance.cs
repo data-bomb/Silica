@@ -23,17 +23,24 @@
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using HarmonyLib;
+#if NET6_0
 using Il2Cpp;
 using Il2CppSteamworks;
+#else
+using Steamworks;
+#endif
+
+using HarmonyLib;
 using MelonLoader;
 using Si_BasicTeamBalance;
 using UnityEngine;
-using AdminExtension;
 using System.Timers;
+using System;
+using SilicaAdminMod;
 
-[assembly: MelonInfo(typeof(BasicTeamBalance), "[Si] Basic Team Balance", "1.1.1", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(BasicTeamBalance), "Basic Team Balance", "1.2.0", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
+[assembly: MelonOptionalDependencies("Admin Mod")]
 
 namespace Si_BasicTeamBalance
 {
@@ -81,9 +88,9 @@ namespace Si_BasicTeamBalance
         public static bool OneFactionEliminated()
         {
             int TeamsWithMajorStructures = 0;
-            for (int i = 0; i < Il2Cpp.Team.Teams.Count; i++)
+            for (int i = 0; i < Team.Teams.Count; i++)
             {
-                Il2Cpp.Team? thisTeam = Il2Cpp.Team.Teams[i];
+                Team? thisTeam = Team.Teams[i];
                 int thisTeamMajorStructures = thisTeam.NumMajorStructures;
                 if (thisTeamMajorStructures > 0)
                 {
@@ -99,7 +106,7 @@ namespace Si_BasicTeamBalance
             return false;
         }
 
-        public static int GetNumberOfActiveTeams(Il2Cpp.MP_Strategy.ETeamsVersus versusMode)
+        public static int GetNumberOfActiveTeams(MP_Strategy.ETeamsVersus versusMode)
         {
             int NumActiveTeams = 0;
             switch (versusMode)
@@ -128,14 +135,14 @@ namespace Si_BasicTeamBalance
             return NumActiveTeams;
         }
 
-        public static Team? FindLowestPopulationTeam(Il2Cpp.MP_Strategy.ETeamsVersus versusMode)
+        public static Team? FindLowestPopulationTeam(MP_Strategy.ETeamsVersus versusMode)
         {
             int LowestTeamNumPlayers = NetworkGameServer.GetPlayersMax() + 1;
-            Il2Cpp.Team? LowestPopTeam = null;
+            Team? LowestPopTeam = null;
 
-            for (int i = 0; i < Il2Cpp.Team.Teams.Count; i++)
+            for (int i = 0; i < Team.Teams.Count; i++)
             {
-                Il2Cpp.Team? thisTeam = Il2Cpp.Team.Teams[i];
+                Team? thisTeam = Team.Teams[i];
                 // skip Alien index on HvH
                 if (versusMode == MP_Strategy.ETeamsVersus.HUMANS_VS_HUMANS && i == 0)
                 {
@@ -166,17 +173,17 @@ namespace Si_BasicTeamBalance
         // Team Index 0 - Alien
         // Team Index 1 - Human (Centauri)
         // Team Index 2 - Human (Sol)
-        public static bool JoinCausesImbalance(Il2Cpp.Team? TargetTeam)
+        public static bool JoinCausesImbalance(Team? TargetTeam)
         {
             if (TargetTeam == null)
             {
                 return false;
             }
 
-            Il2Cpp.MP_Strategy strategyInstance = GameObject.FindObjectOfType<Il2Cpp.MP_Strategy>();
-            Il2Cpp.MP_Strategy.ETeamsVersus versusMode = strategyInstance.TeamsVersus;
+            MP_Strategy strategyInstance = GameObject.FindObjectOfType<MP_Strategy>();
+            MP_Strategy.ETeamsVersus versusMode = strategyInstance.TeamsVersus;
 
-            Il2Cpp.Team? LowestPopTeam = null;
+            Team? LowestPopTeam = null;
             int NumActiveTeams = GetNumberOfActiveTeams(versusMode);
             LowestPopTeam = FindLowestPopulationTeam(versusMode);
 
@@ -196,7 +203,7 @@ namespace Si_BasicTeamBalance
             }
 
             // determine maximum allowed difference
-            int TotalNumPlayers = Il2Cpp.Player.Players.Count;
+            int TotalNumPlayers = Player.Players.Count;
             int MaxDifferenceAllowed;
             if (NumActiveTeams == 2)
             {
@@ -217,10 +224,10 @@ namespace Si_BasicTeamBalance
             return false;
         }
 
-        [HarmonyPatch(typeof(Il2Cpp.MP_Strategy), nameof(Il2Cpp.MP_Strategy.ProcessNetRPC))]
+        [HarmonyPatch(typeof(MP_Strategy), nameof(MP_Strategy.ProcessNetRPC))]
         private static class ApplyPatch_MPStrategy_JoinTeam
         {
-            public static bool Prefix(Il2Cpp.MP_Strategy __instance, Il2Cpp.GameByteStreamReader __0, byte __1)
+            public static bool Prefix(MP_Strategy __instance, GameByteStreamReader __0, byte __1)
             {
                 try
                 {
@@ -248,7 +255,7 @@ namespace Si_BasicTeamBalance
                         return false;
                     }
 
-                    Team mTeam = JoiningPlayer.m_Team;
+                    Team mTeam = JoiningPlayer.Team;
 
                     // requests to rejoin the same team
                     if (UnityEngine.Object.Equals(mTeam, TargetTeam))
@@ -285,7 +292,7 @@ namespace Si_BasicTeamBalance
                     // if the player hasn't joined a team yet, force them to the team that needs it the most
                     if (JoiningPlayer.Team == null)
                     {
-                        MP_Strategy strategyInstance = GameObject.FindObjectOfType<Il2Cpp.MP_Strategy>();
+                        MP_Strategy strategyInstance = GameObject.FindObjectOfType<MP_Strategy>();
                         MP_Strategy.ETeamsVersus versusMode = strategyInstance.TeamsVersus;
                         Team? ForcedTeam = FindLowestPopulationTeam(versusMode);
                         if (ForcedTeam != null)
@@ -334,10 +341,10 @@ namespace Si_BasicTeamBalance
             }
         }
 
-        [HarmonyPatch(typeof(Il2Cpp.MusicJukeboxHandler), nameof(Il2Cpp.MusicJukeboxHandler.OnGameStarted))]
+        [HarmonyPatch(typeof(MusicJukeboxHandler), nameof(MusicJukeboxHandler.OnGameStarted))]
         private static class ApplyPatch_MusicJukeboxHandler_OnGameStarted
         {
-            public static void Postfix(Il2Cpp.MusicJukeboxHandler __instance, Il2Cpp.GameMode __0)
+            public static void Postfix(MusicJukeboxHandler __instance, GameMode __0)
             {
                 try
                 {
@@ -368,10 +375,10 @@ namespace Si_BasicTeamBalance
         }
 
         // account for if the game ends before the timer expires
-        [HarmonyPatch(typeof(Il2Cpp.MusicJukeboxHandler), nameof(Il2Cpp.MusicJukeboxHandler.OnGameEnded))]
+        [HarmonyPatch(typeof(MusicJukeboxHandler), nameof(MusicJukeboxHandler.OnGameEnded))]
         private static class ApplyPatch_OnGameEnded
         {
-            public static void Postfix(Il2Cpp.MusicJukeboxHandler __instance, Il2Cpp.GameMode __0, Il2Cpp.Team __1)
+            public static void Postfix(MusicJukeboxHandler __instance, GameMode __0, Team __1)
             {
                 try
                 {
