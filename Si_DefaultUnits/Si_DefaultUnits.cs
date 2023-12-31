@@ -21,16 +21,22 @@
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using HarmonyLib;
+#if NET6_0
 using Il2Cpp;
+#else
+using System.Reflection;
+#endif
+
+using HarmonyLib;
 using MelonLoader;
 using Si_DefaultUnits;
-using AdminExtension;
 using UnityEngine;
-using Il2CppSystem.IO;
+using System;
+using SilicaAdminMod;
 
-[assembly: MelonInfo(typeof(DefaultUnits), "[Si] Default Spawn Units", "0.9.5", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(DefaultUnits), "Default Spawn Units", "1.0.0", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
+[assembly: MelonOptionalDependencies("Admin Mod")]
 
 namespace Si_DefaultUnits
 {
@@ -76,10 +82,10 @@ namespace Si_DefaultUnits
         }
 
         // patch as close to where it's used
-        [HarmonyPatch(typeof(Il2Cpp.MP_Strategy), nameof(Il2Cpp.MP_Strategy.GetUnitPrefabForPlayer))]
+        [HarmonyPatch(typeof(MP_Strategy), nameof(MP_Strategy.GetUnitPrefabForPlayer))]
         private static class ApplyPatch_MP_Strategy_GetUnitPrefabForPlayer
         {
-            public static void Prefix(Il2Cpp.MP_Strategy __instance, UnityEngine.GameObject __result, Il2Cpp.Player __0)
+            public static void Prefix(MP_Strategy __instance, UnityEngine.GameObject __result, Player __0)
             {
                 try
                 {
@@ -88,7 +94,7 @@ namespace Si_DefaultUnits
                         return;
                     }
 
-                    Team playerTeam = __0.m_Team;
+                    Team playerTeam = __0.Team;
 
                     // was there a change in tech tier or is it the first spawn of the round for this team?
                     if (!TechTierUpdated(playerTeam) && !teamFirstSpawn[playerTeam.Index])
@@ -137,10 +143,10 @@ namespace Si_DefaultUnits
 
         // reset tech tiers back to 0
         // note: players join and spawn *before* OnGameStarted fires, so it's important to reset back to 0 as soon as the game ends
-        [HarmonyPatch(typeof(Il2Cpp.MusicJukeboxHandler), nameof(Il2Cpp.MusicJukeboxHandler.OnGameStarted))]
+        [HarmonyPatch(typeof(MusicJukeboxHandler), nameof(MusicJukeboxHandler.OnGameStarted))]
         private static class ApplyPatch_MusicJukeboxHandler_OnGameStarted
         {
-            public static void Postfix(Il2Cpp.MusicJukeboxHandler __instance, Il2Cpp.GameMode __0)
+            public static void Postfix(MusicJukeboxHandler __instance, GameMode __0)
             {
                 try
                 {
@@ -156,7 +162,14 @@ namespace Si_DefaultUnits
                             if (Team.Teams[i].CurrentTechnologyTier != 0)
                             {
                                 MelonLogger.Warning("Manually resetting tech tier level to 0 for team: " + Team.Teams[i].TeamName);
+
+                                #if NET6_0
                                 Team.Teams[i].CurrentTechnologyTier = 0;
+                                #else
+                                Type teamType = typeof(Team);
+                                PropertyInfo currentTechTierProperty = teamType.GetProperty("CurrentTechnologyTier");
+                                currentTechTierProperty.SetValue(Team.Teams[i], 0);
+                                #endif
                             }
                         }
                         
