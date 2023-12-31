@@ -21,40 +21,24 @@
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using UnityEngine;
-using MelonLoader;
+#if NET6_0
 using Il2Cpp;
+#endif
+
+using MelonLoader;
 using HarmonyLib;
 using Si_FriendlyFireLimits;
-using static MelonLoader.MelonLogger;
-using System.Diagnostics;
+using System;
+using SilicaAdminMod;
 
-[assembly: MelonInfo(typeof(FriendlyFireLimits), "Friendly Fire Limits", "1.1.5", "databomb")]
+[assembly: MelonInfo(typeof(FriendlyFireLimits), "Friendly Fire Limits", "1.2.0", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
+[assembly: MelonOptionalDependencies("Admin Mod")]
 
 namespace Si_FriendlyFireLimits
 {
     public class FriendlyFireLimits : MelonMod
     {
-        public static void PrintError(Exception exception, string? message = null)
-        {
-            if (message != null)
-            {
-                MelonLogger.Msg(message);
-            }
-            string error = exception.Message;
-            error += "\n" + exception.TargetSite;
-            error += "\n" + exception.StackTrace;
-            Exception? inner = exception.InnerException;
-            if (inner != null)
-            {
-                error += "\n" + inner.Message;
-                error += "\n" + inner.TargetSite;
-                error += "\n" + inner.StackTrace;
-            }
-            MelonLogger.Error(error);
-        }
-
         static MelonPreferences_Category _modCategory;
         static MelonPreferences_Entry<float> _UnitOnUnitNonExplosionDamageMultipler;
         static MelonPreferences_Entry<float> _UnitOnUnitExplosionDamageMultiplier;
@@ -73,11 +57,11 @@ namespace Si_FriendlyFireLimits
             }
             if (_UnitOnUnitNonExplosionDamageMultipler == null)
             {
-                _UnitOnUnitNonExplosionDamageMultipler = _modCategory.CreateEntry<float>("FriendlyFire_UnitAttacked_DamageMultiplier", 0.05f);
+                _UnitOnUnitNonExplosionDamageMultipler = _modCategory.CreateEntry<float>("FriendlyFire_UnitAttacked_DamageMultiplier", 0.75f);
             }
             if (_UnitOnUnitExplosionDamageMultiplier == null)
             {
-                _UnitOnUnitExplosionDamageMultiplier = _modCategory.CreateEntry<float>("FriendlyFire_UnitAttacked_DamageMultiplier_Exp", 0.8f);
+                _UnitOnUnitExplosionDamageMultiplier = _modCategory.CreateEntry<float>("FriendlyFire_UnitAttacked_DamageMultiplier_Exp", 0.85f);
             }
             if (_UnitOnStructureExplosionDamageMultiplier == null)
             {
@@ -85,7 +69,7 @@ namespace Si_FriendlyFireLimits
             }
             if (_UnitOnStructureNonExplosionDamageMultiplier == null)
             {
-                _UnitOnStructureNonExplosionDamageMultiplier = _modCategory.CreateEntry<float>("FriendlyFire_StructureAttacked_DamageMultiplier_NonExp", 0.15f);
+                _UnitOnStructureNonExplosionDamageMultiplier = _modCategory.CreateEntry<float>("FriendlyFire_StructureAttacked_DamageMultiplier_NonExp", 0.0f);
             }
             if (_HarvesterPassthrough == null)
             {
@@ -93,17 +77,21 @@ namespace Si_FriendlyFireLimits
             }
         }
 
-        [HarmonyPatch(typeof(Il2Cpp.GameByteStreamReader), nameof(Il2Cpp.GameByteStreamReader.GetGameByteStreamReader))]
+        [HarmonyPatch(typeof(GameByteStreamReader), nameof(GameByteStreamReader.GetGameByteStreamReader))]
         static class GetGameByteStreamReaderPrePatch
         {
-            public static void Prefix(Il2Cpp.GameByteStreamReader __result, Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppStructArray<byte> __0, int __1, bool __2)
+            #if NET6_0
+            public static void Prefix(GameByteStreamReader __result, Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppStructArray<byte> __0, int __1, bool __2)
+            #else
+            public static void Prefix(GameByteStreamReader __result, byte[] __0, int __1, bool __2)
+            #endif
             {
                 try
                 {
                     // byte[0] = (2) Byte
                     // byte[1] = ENetworkPacketType
-                    Il2Cpp.ENetworkPacketType packetType = (Il2Cpp.ENetworkPacketType)__0[1];
-                    if (packetType == Il2Cpp.ENetworkPacketType.ObjectReceiveDamage)
+                    ENetworkPacketType packetType = (ENetworkPacketType)__0[1];
+                    if (packetType == ENetworkPacketType.ObjectReceiveDamage)
                     {
                         // byte[2] = (8) PackedUInt32
                         // byte[3:4] = NetID
@@ -117,7 +105,7 @@ namespace Si_FriendlyFireLimits
                             victimNetID = __0[3];
                         }
 
-                        Il2Cpp.NetworkComponent victimNetComp = Il2Cpp.NetworkComponent.GetNetObject(victimNetID);
+                        NetworkComponent victimNetComp = NetworkComponent.GetNetObject(victimNetID);
 
                         uint attackerNetID;
                         if (__0[21] >= 241)
@@ -129,7 +117,7 @@ namespace Si_FriendlyFireLimits
                             attackerNetID = __0[21];
                         }
 
-                        Il2Cpp.NetworkComponent attackerNetComp = Il2Cpp.NetworkComponent.GetNetObject(attackerNetID);
+                        NetworkComponent attackerNetComp = NetworkComponent.GetNetObject(attackerNetID);
 
                         // byte[5] = (8) PackedUInt32
                         // byte[6:7] = colliderIndex
@@ -145,40 +133,40 @@ namespace Si_FriendlyFireLimits
 
                         if (victimNetComp != null && attackerNetComp != null && colliderIndex >= 1)
                         {
-                            Il2Cpp.BaseGameObject victimBase = victimNetComp.Owner;
-                            Il2Cpp.BaseGameObject attackerBase = attackerNetComp.Owner;
+                            BaseGameObject victimBase = victimNetComp.Owner;
+                            BaseGameObject attackerBase = attackerNetComp.Owner;
 
                             if (victimBase == null || attackerBase == null)
                             {
                                 return;
                             }
 
-                            Il2Cpp.Team victimTeam = victimBase.Team;
-                            Il2Cpp.Team attackerTeam = attackerBase.Team;
+                            Team victimTeam = victimBase.Team;
+                            Team attackerTeam = attackerBase.Team;
 
                             // if they'rea on the same team but allow fall damage
                             if (victimTeam == attackerTeam && victimBase != attackerBase)
                             {
                                 // Victim Object Type
-                                Il2Cpp.ObjectInfoType victimType = victimBase.ObjectInfo.ObjectType;
+                                ObjectInfoType victimType = victimBase.ObjectInfo.ObjectType;
                                 // Attacker Object Type
-                                Il2Cpp.ObjectInfoType attackerType = attackerBase.ObjectInfo.ObjectType;
+                                ObjectInfoType attackerType = attackerBase.ObjectInfo.ObjectType;
 
-                                Il2Cpp.EDamageType damagetype = (Il2Cpp.EDamageType)__0[13];
+                                EDamageType damagetype = (EDamageType)__0[13];
                                 float damage = BitConverter.ToSingle(__0, 8);
 
                                 // block units attacking friendly units
-                                if (victimType == Il2Cpp.ObjectInfoType.Unit && attackerType == Il2Cpp.ObjectInfoType.Unit)
+                                if (victimType == ObjectInfoType.Unit && attackerType == ObjectInfoType.Unit)
                                 {
                                     // check if we should skip harvester damage
-                                    if (_HarvesterPassthrough.Value && victimBase.ObjectInfo.UnitType == Il2Cpp.UnitType.Harvester)
+                                    if (_HarvesterPassthrough.Value && victimBase.ObjectInfo.UnitType == UnitType.Harvester)
                                     {
                                         return;
                                     }
 
                                     // AoE does more damage (by default)
                                     byte[] modifiedDamage;
-                                    if (damagetype != Il2Cpp.EDamageType.Explosion)
+                                    if (damagetype != EDamageType.Explosion)
                                     {
                                         modifiedDamage = BitConverter.GetBytes(damage * _UnitOnUnitExplosionDamageMultiplier.Value);
                                     }
@@ -196,11 +184,11 @@ namespace Si_FriendlyFireLimits
                                 }
 
                                 // reduce damage of units attacking friendly structures
-                                if (victimType == Il2Cpp.ObjectInfoType.Structure && attackerType == Il2Cpp.ObjectInfoType.Unit)
+                                if (victimType == ObjectInfoType.Structure && attackerType == ObjectInfoType.Unit)
                                 {
                                     // AoE goes through with more damage (by default)
                                     byte[] modifiedDamage;
-                                    if (damagetype == Il2Cpp.EDamageType.Explosion)
+                                    if (damagetype == EDamageType.Explosion)
                                     {
                                         modifiedDamage = BitConverter.GetBytes(damage * _UnitOnStructureExplosionDamageMultiplier.Value);
                                     }
@@ -220,39 +208,39 @@ namespace Si_FriendlyFireLimits
                 }
                 catch (Exception error)
                 {
-                    PrintError(error, "Failed to run GameByteStreamReader::GetGameByteStreamReader");
+                    HelperMethods.PrintError(error, "Failed to run GameByteStreamReader::GetGameByteStreamReader");
                 }
             }
         }
 
         // this applies to the host
-        [HarmonyPatch(typeof(Il2Cpp.DamageManager), nameof(Il2Cpp.DamageManager.ApplyDamage))]
+        [HarmonyPatch(typeof(DamageManager), nameof(DamageManager.ApplyDamage))]
         static class ApplyPatchApplyDamage
         {
-            public static bool Prefix(Il2Cpp.DamageManager __instance, ref float __result, UnityEngine.Collider __0, float __1, Il2Cpp.EDamageType __2, UnityEngine.GameObject __3, UnityEngine.Vector3 __4)
+            public static bool Prefix(DamageManager __instance, ref float __result, UnityEngine.Collider __0, float __1, EDamageType __2, UnityEngine.GameObject __3, UnityEngine.Vector3 __4)
             {
                 try
                 {
                     // Victim Team
-                    Il2Cpp.BaseGameObject victimBase = __instance.Owner;
-                    Il2Cpp.Team victimTeam = __instance.Team;
+                    BaseGameObject victimBase = __instance.Owner;
+                    Team victimTeam = __instance.Team;
                     // Attacker Team
-                    Il2Cpp.BaseGameObject attackerBase = Il2Cpp.GameFuncs.GetBaseGameObject(__3);
-                    Il2Cpp.Team attackerTeam = attackerBase.Team;
+                    BaseGameObject attackerBase = GameFuncs.GetBaseGameObject(__3);
+                    Team attackerTeam = attackerBase.Team;
 
                     // if they'rea on the same team but allow fall damage
                     if (victimTeam == attackerTeam && victimBase != attackerBase)
                     {
                         // Victim Object Type
-                        Il2Cpp.ObjectInfoType victimType = victimBase.ObjectInfo.ObjectType;
+                        ObjectInfoType victimType = victimBase.ObjectInfo.ObjectType;
                         // Attacker Object Type
-                        Il2Cpp.ObjectInfoType attackerType = attackerBase.ObjectInfo.ObjectType;
+                        ObjectInfoType attackerType = attackerBase.ObjectInfo.ObjectType;
 
                         // block units attacking friendly units
-                        if (victimType == Il2Cpp.ObjectInfoType.Unit && attackerType == Il2Cpp.ObjectInfoType.Unit)
+                        if (victimType == ObjectInfoType.Unit && attackerType == ObjectInfoType.Unit)
                         {
                             // but don't block AoE and don't block if victim is a harvester
-                            if (__2 != Il2Cpp.EDamageType.Explosion && victimBase.ObjectInfo.UnitType != Il2Cpp.UnitType.Harvester)
+                            if (__2 != EDamageType.Explosion && victimBase.ObjectInfo.UnitType != UnitType.Harvester)
                             {
                                 __result = __1 * _UnitOnUnitNonExplosionDamageMultipler.Value;
                                 return false;
@@ -260,10 +248,10 @@ namespace Si_FriendlyFireLimits
                         }
 
                         // reduce damage of units attacking friendly structures
-                        if (victimType == Il2Cpp.ObjectInfoType.Structure && attackerType == Il2Cpp.ObjectInfoType.Unit)
+                        if (victimType == ObjectInfoType.Structure && attackerType == ObjectInfoType.Unit)
                         {
                             // AoE goes through with more damage
-                            if (__2 == Il2Cpp.EDamageType.Explosion)
+                            if (__2 == EDamageType.Explosion)
                             {
                                 __result = __1 * _UnitOnStructureExplosionDamageMultiplier.Value;
                             }
@@ -278,7 +266,7 @@ namespace Si_FriendlyFireLimits
                 }
                 catch (Exception error)
                 {
-                    PrintError(error, "Failed to run DamageManager::ApplyDamage");
+                    HelperMethods.PrintError(error, "Failed to run DamageManager::ApplyDamage");
                 }
 
                 return true;
