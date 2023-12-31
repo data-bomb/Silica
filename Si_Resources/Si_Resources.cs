@@ -1,12 +1,39 @@
-﻿using HarmonyLib;
+﻿/*
+Silica Resources Mod
+Copyright (C) 2023 by databomb
+
+* Description *
+Provides a server host the ability to configure different starting 
+resource amounts for humans vs alien teams.
+
+* License *
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+#if NET6_0
 using Il2Cpp;
+#endif
+
+using HarmonyLib;
 using MelonLoader;
 using Si_Resources;
-using UnityEngine;
-using AdminExtension;
+using SilicaAdminMod;
+using System;
 
-[assembly: MelonInfo(typeof(ResourceConfig), "Resource Configuration", "1.0.1", "databomb")]
+[assembly: MelonInfo(typeof(ResourceConfig), "Resource Configuration", "1.0.2", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
+[assembly: MelonOptionalDependencies("Admin Mod")]
 
 namespace Si_Resources
 {
@@ -18,24 +45,15 @@ namespace Si_Resources
 
         public override void OnInitializeMelon()
         {
-            if (_modCategory == null)
-            {
-                _modCategory = MelonPreferences.CreateCategory("Silica");
-            }
-            if (Pref_Resources_Humans_StartingAmount == null)
-            {
-                Pref_Resources_Humans_StartingAmount = _modCategory.CreateEntry<int>("Resources_Humans_StartingAmount", 11000);
-            }
-            if (Pref_Resources_Aliens_StartingAmount == null)
-            {
-                Pref_Resources_Aliens_StartingAmount = _modCategory.CreateEntry<int>("Resources_Aliens_StartingAmount", 11000);
-            }
+            _modCategory ??= MelonPreferences.CreateCategory("Silica");
+            Pref_Resources_Humans_StartingAmount ??= _modCategory.CreateEntry<int>("Resources_Humans_StartingAmount", 11000);
+            Pref_Resources_Aliens_StartingAmount ??= _modCategory.CreateEntry<int>("Resources_Aliens_StartingAmount", 9000);
         }
 
-        [HarmonyPatch(typeof(Il2Cpp.MP_Strategy), nameof(Il2Cpp.MP_Strategy.SetTeamVersusMode))]
+        [HarmonyPatch(typeof(MP_Strategy), nameof(MP_Strategy.SetTeamVersusMode))]
         private static class Resources_Patch_MPStrategy_SetTeamVersusMode
         {
-            public static void Postfix(Il2Cpp.MP_Strategy __instance, Il2Cpp.MP_Strategy.ETeamsVersus __0)
+            public static void Postfix(MP_Strategy __instance, MP_Strategy.ETeamsVersus __0)
             {
                 try
                 {
@@ -44,9 +62,9 @@ namespace Si_Resources
                         case MP_Strategy.ETeamsVersus.HUMANS_VS_HUMANS:
                         {
                             // Sol
-                            Il2Cpp.Team.Teams[2].StartingResources = Pref_Resources_Humans_StartingAmount.Value;
+                            Team.Teams[2].StartingResources = Pref_Resources_Humans_StartingAmount.Value;
                             // Centauri
-                            Il2Cpp.Team.Teams[1].StartingResources = Pref_Resources_Humans_StartingAmount.Value;
+                            Team.Teams[1].StartingResources = Pref_Resources_Humans_StartingAmount.Value;
 
                             MelonLogger.Msg("Set starting resources. Humans: " + Pref_Resources_Humans_StartingAmount.Value.ToString());
                             break;
@@ -54,9 +72,9 @@ namespace Si_Resources
                         case MP_Strategy.ETeamsVersus.HUMANS_VS_ALIENS:
                         {
                             // Alien
-                            Il2Cpp.Team.Teams[0].StartingResources = Pref_Resources_Aliens_StartingAmount.Value;
+                            Team.Teams[0].StartingResources = Pref_Resources_Aliens_StartingAmount.Value;
                             // Sol
-                            Il2Cpp.Team.Teams[2].StartingResources = Pref_Resources_Humans_StartingAmount.Value;
+                            Team.Teams[2].StartingResources = Pref_Resources_Humans_StartingAmount.Value;
 
                             MelonLogger.Msg("Set starting resources. Aliens: " + Pref_Resources_Aliens_StartingAmount.Value.ToString() + " Humans: " + Pref_Resources_Humans_StartingAmount.Value.ToString());
                             break;
@@ -64,11 +82,11 @@ namespace Si_Resources
                         case MP_Strategy.ETeamsVersus.HUMANS_VS_HUMANS_VS_ALIENS:
                         {
                             // Alien
-                            Il2Cpp.Team.Teams[0].StartingResources = Pref_Resources_Aliens_StartingAmount.Value;
+                            Team.Teams[0].StartingResources = Pref_Resources_Aliens_StartingAmount.Value;
                             // Sol
-                            Il2Cpp.Team.Teams[1].StartingResources = Pref_Resources_Humans_StartingAmount.Value;
+                            Team.Teams[1].StartingResources = Pref_Resources_Humans_StartingAmount.Value;
                             // Centauri
-                            Il2Cpp.Team.Teams[2].StartingResources = Pref_Resources_Humans_StartingAmount.Value;
+                            Team.Teams[2].StartingResources = Pref_Resources_Humans_StartingAmount.Value;
 
                             MelonLogger.Msg("Set starting resources. Aliens: " + Pref_Resources_Aliens_StartingAmount.Value.ToString() + " Humans: " + Pref_Resources_Humans_StartingAmount.Value.ToString());
                             break;
