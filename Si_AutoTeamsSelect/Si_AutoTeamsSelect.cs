@@ -22,16 +22,22 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using HarmonyLib;
+#if NET6_0
 using Il2Cpp;
+#endif
+
+using HarmonyLib;
 using MelonLoader;
 using System.Timers;
 using UnityEngine;
 using VersusTeamsAutoSelect;
-using AdminExtension;
+using System.Linq;
+using SilicaAdminMod;
+using System;
 
-[assembly: MelonInfo(typeof(VersusTeamsAutoSelectMod), "[Si] Versus Auto-Select Team", "1.1.0", "databomb", "https://github.com/data-bomb/Silica_ListenServer")]
+[assembly: MelonInfo(typeof(VersusTeamsAutoSelectMod), "Versus Auto-Select Team", "1.1.1", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
+[assembly: MelonOptionalDependencies("Admin Mod")]
 
 namespace VersusTeamsAutoSelect
 {
@@ -47,7 +53,7 @@ namespace VersusTeamsAutoSelect
         private static System.Timers.Timer DelayTimer;
 
         static MelonPreferences_Category _modCategory;
-        static MelonPreferences_Entry<Il2Cpp.MP_Strategy.ETeamsVersus> _versusAutoSelectMode;
+        static MelonPreferences_Entry<MP_Strategy.ETeamsVersus> _versusAutoSelectMode;
 
         private const string ModCategory = "Silica";
         private const string AutoSelectMode = "VersusAutoSelectMode";
@@ -65,7 +71,7 @@ namespace VersusTeamsAutoSelect
             }
             if (_versusAutoSelectMode == null)
             {
-                _versusAutoSelectMode = _modCategory.CreateEntry<Il2Cpp.MP_Strategy.ETeamsVersus>(AutoSelectMode, Il2Cpp.MP_Strategy.ETeamsVersus.HUMANS_VS_ALIENS, "Valid choices are HUMANS_VS_HUMANS, HUMANS_VS_ALIENS, or HUMANS_VS_HUMANS_VS_ALIENS");
+                _versusAutoSelectMode = _modCategory.CreateEntry<MP_Strategy.ETeamsVersus>(AutoSelectMode, MP_Strategy.ETeamsVersus.HUMANS_VS_ALIENS, "Valid choices are HUMANS_VS_HUMANS, HUMANS_VS_ALIENS, or HUMANS_VS_HUMANS_VS_ALIENS");
             }
         }
         public override void OnLateInitializeMelon()
@@ -83,7 +89,7 @@ namespace VersusTeamsAutoSelect
             }
         }
 
-        public void Command_ChangeNextMode(Il2Cpp.Player callerPlayer, String args)
+        public static void Command_ChangeNextMode(Player callerPlayer, String args)
         {
             // validate argument count
             int argumentCount = args.Split(' ').Count() - 1;
@@ -131,10 +137,14 @@ namespace VersusTeamsAutoSelect
             VersusTeamsAutoSelectMod.bTimerExpired = true;
         }
 
-        [HarmonyPatch(typeof(Il2Cpp.GameMode), nameof(Il2Cpp.GameMode.Update))]
+        #if NET6_0
+        [HarmonyPatch(typeof(GameMode), nameof(GameMode.Update))]
+        #else
+        [HarmonyPatch(typeof(GameMode), "Update")]
+        #endif
         private static class ApplyPatch_GameModeUpdate
         {
-            private static void Postfix(Il2Cpp.GameMode __instance)
+            private static void Postfix(GameMode __instance)
             {
                 try
                 {
@@ -174,10 +184,14 @@ namespace VersusTeamsAutoSelect
             }
         }
 
-        [HarmonyPatch(typeof(Il2Cpp.MP_Strategy), nameof(Il2Cpp.MP_Strategy.Restart))]
+        #if NET6_0
+        [HarmonyPatch(typeof(MP_Strategy), nameof(MP_Strategy.Restart))]
+        #else
+        [HarmonyPatch(typeof(MP_Strategy), "Restart")]
+        #endif
         public static class ApplyPatchSelectHumansVersusAliens
         {
-            public static void Postfix(Il2Cpp.MP_Strategy __instance)
+            public static void Postfix(MP_Strategy __instance)
             {
                 try
                 {
