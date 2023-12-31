@@ -22,16 +22,21 @@
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using HarmonyLib;
+#if NET6_0
 using Il2Cpp;
+#endif
+
+using HarmonyLib;
 using MelonLoader;
 using Si_HQlessHumansLose;
-using AdminExtension;
 using System.Timers;
 using UnityEngine;
+using System;
+using SilicaAdminMod;
 
-[assembly: MelonInfo(typeof(HQlessHumansLose), "[Si] HQless Humans Lose", "1.2.3", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HQlessHumansLose), "[Si] HQless Humans Lose", "1.2.4", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
+[assembly: MelonOptionalDependencies("Admin Mod")]
 
 namespace Si_HQlessHumansLose
 {
@@ -74,9 +79,9 @@ namespace Si_HQlessHumansLose
         public static bool OneFactionEliminated()
         {
             int TeamsWithMajorStructures = 0;
-            for (int i = 0; i < Il2Cpp.Team.Teams.Count; i++)
+            for (int i = 0; i < Team.Teams.Count; i++)
             {
-                Il2Cpp.Team? thisTeam = Il2Cpp.Team.Teams[i];
+                Team? thisTeam = Team.Teams[i];
                 int thisTeamMajorStructures = thisTeam.NumMajorStructures;
                 if (thisTeamMajorStructures > 0)
                 {
@@ -94,8 +99,8 @@ namespace Si_HQlessHumansLose
 
         public static void EliminateTeam(Team team)
         {
-            Il2Cpp.MP_Strategy strategyInstance = GameObject.FindObjectOfType<Il2Cpp.MP_Strategy>();
-            Il2Cpp.MP_Strategy.ETeamsVersus versusMode = strategyInstance.TeamsVersus;
+            MP_Strategy strategyInstance = GameObject.FindObjectOfType<MP_Strategy>();
+            MP_Strategy.ETeamsVersus versusMode = strategyInstance.TeamsVersus;
 
             // are there still two remaining factions after this one is eliminated?
             if (versusMode == MP_Strategy.ETeamsVersus.HUMANS_VS_HUMANS_VS_ALIENS && !OneFactionEliminated())
@@ -181,8 +186,8 @@ namespace Si_HQlessHumansLose
                     continue;
                 }
 
-                BaseGameObject constructionBase = Il2Cpp.GameFuncs.GetBaseGameObject(Il2Cpp.ConstructionSite.ConstructionSites[i].gameObject);
-                if (constructionBase.ObjectInfo.ObjectType != Il2Cpp.ObjectInfoType.Structure)
+                BaseGameObject constructionBase = GameFuncs.GetBaseGameObject(ConstructionSite.ConstructionSites[i].gameObject);
+                if (constructionBase.ObjectInfo.ObjectType != ObjectInfoType.Structure)
                 {
                     continue;
                 }
@@ -202,10 +207,10 @@ namespace Si_HQlessHumansLose
         }
 
         // check if last root structure that was under construction met an early demise
-        [HarmonyPatch(typeof(Il2Cpp.ConstructionSite), nameof(Il2Cpp.ConstructionSite.Deinit))]
+        [HarmonyPatch(typeof(ConstructionSite), nameof(ConstructionSite.Deinit))]
         private static class ApplyPatch_ConstructionSiteDeinit
         {
-            private static void Postfix(Il2Cpp.ConstructionSite __instance, bool __0)
+            private static void Postfix(ConstructionSite __instance, bool __0)
             {
                 try
                 {
@@ -248,10 +253,14 @@ namespace Si_HQlessHumansLose
             }
         }
 
-        [HarmonyPatch(typeof(Il2Cpp.ConstructionSite), nameof(Il2Cpp.ConstructionSite.Update))]
+        #if NET6_0
+        [HarmonyPatch(typeof(ConstructionSite), nameof(ConstructionSite.Update))]
+        #else
+        [HarmonyPatch(typeof(ConstructionSite), "Update")]
+        #endif
         private static class ApplyPatch_ConstructionSite_Update
         {
-            private static void Postfix(Il2Cpp.ConstructionSite __instance)
+            private static void Postfix(ConstructionSite __instance)
             {
                 try
                 {
@@ -279,10 +288,10 @@ namespace Si_HQlessHumansLose
             }
         }
 
-        [HarmonyPatch(typeof(Il2Cpp.MP_Strategy), nameof(Il2Cpp.MP_Strategy.OnStructureDestroyed))]
+        [HarmonyPatch(typeof(MP_Strategy), nameof(MP_Strategy.OnStructureDestroyed))]
         private static class ApplyPatch_OnStructureDestroyed
         {
-            private static void Postfix(Il2Cpp.MP_Strategy __instance, Il2Cpp.Structure __0, Il2Cpp.EDamageType __1, UnityEngine.GameObject __2)
+            private static void Postfix(MP_Strategy __instance, Structure __0, EDamageType __1, UnityEngine.GameObject __2)
             {
                 try
                 {
