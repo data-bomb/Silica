@@ -21,16 +21,22 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using HarmonyLib;
+#if NET6_0
 using Il2Cpp;
+#endif
+
+using HarmonyLib;
 using MelonLoader;
 using Si_AFKManager;
-using AdminExtension;
 using System.Timers;
-using UnityEngine;
+using System.Collections.Generic;
+using System.Linq;
+using SilicaAdminMod;
+using System;
 
-[assembly: MelonInfo(typeof(AwayFromKeyboard), "AFK Manager", "1.2.1", "databomb")]
+[assembly: MelonInfo(typeof(AwayFromKeyboard), "AFK Manager", "1.2.2", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
+[assembly: MelonOptionalDependencies("Admin Mod")]
 
 namespace Si_AFKManager
 {
@@ -38,7 +44,7 @@ namespace Si_AFKManager
     {
         public class AFKCount
         {
-            public Il2Cpp.Player Player { get; set; }
+            public Player Player { get; set; }
             public uint Minutes { get; set; }
         }
 
@@ -86,7 +92,7 @@ namespace Si_AFKManager
 
         public static bool ServerAlmostFull()
         {
-            if (Il2Cpp.NetworkGameServer.GetPlayersNum() + 2 >= Il2Cpp.NetworkGameServer.GetPlayersMax())
+            if (NetworkGameServer.GetPlayersNum() + 2 >= NetworkGameServer.GetPlayersMax())
             {
                 return true;
             }
@@ -94,7 +100,7 @@ namespace Si_AFKManager
             return false;
         }
 
-        public static void Command_Kick(Il2Cpp.Player callerPlayer, String args)
+        public static void Command_Kick(Player callerPlayer, String args)
         {
             // validate argument count
             int argumentCount = args.Split(' ').Length - 1;
@@ -111,7 +117,7 @@ namespace Si_AFKManager
 
             // validate argument contents
             String sTarget = args.Split(' ')[1];
-            Il2Cpp.Player? playerToKick = HelperMethods.FindTargetPlayer(sTarget);
+            Player? playerToKick = HelperMethods.FindTargetPlayer(sTarget);
 
             if (playerToKick == null)
             {
@@ -136,7 +142,7 @@ namespace Si_AFKManager
             }
         }
 
-        public static void Command_AFK(Il2Cpp.Player callerPlayer, String args)
+        public static void Command_AFK(Player callerPlayer, String args)
         {
             // validate argument count
             int argumentCount = args.Split(' ').Length - 1;
@@ -156,9 +162,9 @@ namespace Si_AFKManager
             {
                 // track if any players need to be removed from the AFKTracker list after we've finished iterating
                 // we can't kick inside the foreach Players iterator because it modifies the list
-                List<int>? playerIndexesToKick = new();
+                List<int>? playerIndexesToKick = new List<int>();
 
-                foreach (Il2Cpp.Player player in Il2Cpp.Player.Players)
+                foreach (Player player in Player.Players)
                 {
                     if (player == null)
                     {
@@ -209,10 +215,14 @@ namespace Si_AFKManager
             oneMinuteCheckTime = true;
         }
 
-        [HarmonyPatch(typeof(Il2Cpp.MusicJukeboxHandler), nameof(Il2Cpp.MusicJukeboxHandler.Update))]
+        #if NET6_0
+        [HarmonyPatch(typeof(MusicJukeboxHandler), nameof(MusicJukeboxHandler.Update))]
+        #else
+        [HarmonyPatch(typeof(MusicJukeboxHandler), "Update")]
+        #endif
         private static class ApplyPatch_MusicJukeboxHandler_Update
         {
-            private static void Postfix(Il2Cpp.MusicJukeboxHandler __instance)
+            private static void Postfix(MusicJukeboxHandler __instance)
             {
                 try
                 {
@@ -222,7 +232,7 @@ namespace Si_AFKManager
                     }
 
                     // check if timer expired while the game is in-progress
-                    if (Il2Cpp.GameMode.CurrentGameMode.GameOngoing == true && oneMinuteCheckTime == true && skippedFirstCheck == true)
+                    if (GameMode.CurrentGameMode.GameOngoing == true && oneMinuteCheckTime == true && skippedFirstCheck == true)
                     {
                         //MelonLogger.Msg("AFK Timer fired");
 
@@ -230,9 +240,9 @@ namespace Si_AFKManager
 
                         // track if any players need to be removed from the AFKTracker list after we've finished iterating
                         // we can't kick inside the foreach Players iterator because it modifies the list
-                        List<int>? playerIndexesToKick = new();
+                        List<int>? playerIndexesToKick = new List<int>();
 
-                        foreach (Il2Cpp.Player player in Il2Cpp.Player.Players)
+                        foreach (Player player in Player.Players)
                         {
                             if (player == null)
                             {
@@ -244,7 +254,7 @@ namespace Si_AFKManager
                                 continue;
                             }
 
-                            Il2Cpp.Player serverPlayer = Il2Cpp.NetworkGameServer.GetServerPlayer();
+                            Player serverPlayer = NetworkGameServer.GetServerPlayer();
                             if (player == serverPlayer)
                             {
                                 continue;
@@ -276,11 +286,9 @@ namespace Si_AFKManager
                             // they weren't being tracked yet
                             else
                             {
-                                AFKCount afkPlayer = new()
-                                {
-                                    Player = player,
-                                    Minutes = 1
-                                };
+                                AFKCount afkPlayer = new AFKCount();
+                                afkPlayer.Player = player;
+                                afkPlayer.Minutes = 1;
 
                                 AFKTracker.Add(afkPlayer);
                             }
@@ -295,7 +303,7 @@ namespace Si_AFKManager
                     }
 
                     // skip the first timer expiration so we're at least a minute into the round
-                    if (Il2Cpp.GameMode.CurrentGameMode.GameOngoing == true && oneMinuteCheckTime == true && skippedFirstCheck == false)
+                    if (GameMode.CurrentGameMode.GameOngoing == true && oneMinuteCheckTime == true && skippedFirstCheck == false)
                     {
                         oneMinuteCheckTime = false;
                         skippedFirstCheck = true;
@@ -308,10 +316,10 @@ namespace Si_AFKManager
             }
         }
 
-        [HarmonyPatch(typeof(Il2Cpp.MusicJukeboxHandler), nameof(Il2Cpp.MusicJukeboxHandler.OnGameStarted))]
+        [HarmonyPatch(typeof(MusicJukeboxHandler), nameof(MusicJukeboxHandler.OnGameStarted))]
         private static class ApplyPatch_MusicJukeboxHandler_OnGameStarted
         {
-            public static void Postfix(Il2Cpp.MusicJukeboxHandler __instance, Il2Cpp.GameMode __0)
+            public static void Postfix(MusicJukeboxHandler __instance, GameMode __0)
             {
                 try
                 {
@@ -325,10 +333,10 @@ namespace Si_AFKManager
         }
 
         // clear all AFK counters
-        [HarmonyPatch(typeof(Il2Cpp.MusicJukeboxHandler), nameof(Il2Cpp.MusicJukeboxHandler.OnGameEnded))]
+        [HarmonyPatch(typeof(MusicJukeboxHandler), nameof(MusicJukeboxHandler.OnGameEnded))]
         private static class ApplyPatch_MusicJukeboxHandler_OnGameEnded
         {
-            public static void Postfix(Il2Cpp.MusicJukeboxHandler __instance, Il2Cpp.GameMode __0, Il2Cpp.Team __1)
+            public static void Postfix(MusicJukeboxHandler __instance, GameMode __0, Team __1)
             {
                 try
                 {
