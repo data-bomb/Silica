@@ -23,20 +23,26 @@
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using HarmonyLib;
+#if NET6_0
 using Il2Cpp;
+#else
+using System.Reflection;
+#endif
+
+using HarmonyLib;
 using MelonLoader;
 using MelonLoader.Utils;
 using Newtonsoft.Json;
 using Si_CommanderManagement;
 using UnityEngine;
-using AdminExtension;
-using Il2CppSteamworks;
-using static MelonLoader.MelonLogger;
-using System.Reflection.Metadata.Ecma335;
+using System;
+using System.Collections.Generic;
+using SilicaAdminMod;
+using System.Linq;
 
-[assembly: MelonInfo(typeof(CommanderManager), "[Si] Commander Management", "1.2.3", "databomb")]
+[assembly: MelonInfo(typeof(CommanderManager), "Commander Management", "1.3.0", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
+[assembly: MelonOptionalDependencies("Admin Mod")]
 
 namespace Si_CommanderManagement
 {
@@ -172,10 +178,10 @@ namespace Si_CommanderManagement
             }
         }
 
-        public static void SendToInfantry(Il2Cpp.Player FormerCommander)
+        public static void SendToInfantry(Player FormerCommander)
         {
-            Il2Cpp.GameByteStreamWriter theRoleStream;
-            theRoleStream = Il2Cpp.GameMode.CurrentGameMode.CreateRPCPacket(2);
+            GameByteStreamWriter theRoleStream;
+            theRoleStream = GameMode.CurrentGameMode.CreateRPCPacket(2);
             if (theRoleStream == null)
             {
                 return;
@@ -183,15 +189,15 @@ namespace Si_CommanderManagement
 
             theRoleStream.WriteUInt64(FormerCommander.PlayerID.m_SteamID);
             theRoleStream.WriteByte((byte)FormerCommander.PlayerChannel);
-            theRoleStream.WriteByte((byte)Il2Cpp.MP_Strategy.ETeamRole.INFANTRY);
-            Il2Cpp.GameMode.CurrentGameMode.SendRPCPacket(theRoleStream);
+            theRoleStream.WriteByte((byte)MP_Strategy.ETeamRole.INFANTRY);
+            GameMode.CurrentGameMode.SendRPCPacket(theRoleStream);
         }
 
         // may need to re-think this approach on preventing commander promotion
-        [HarmonyPatch(typeof(Il2Cpp.MP_Strategy), nameof(Il2Cpp.MP_Strategy.GetStrategyCommanderTeamSetup))]
+        [HarmonyPatch(typeof(MP_Strategy), nameof(MP_Strategy.GetStrategyCommanderTeamSetup))]
         private static class ApplyPatchCommanderTeamSetup
         {
-            public static bool Prefix(Il2Cpp.MP_Strategy __instance, Il2Cpp.StrategyTeamSetup __result, Il2Cpp.Player __0)
+            public static bool Prefix(MP_Strategy __instance, StrategyTeamSetup __result, Player __0)
             {
                 try
                 {
@@ -226,10 +232,10 @@ namespace Si_CommanderManagement
             }
         }
 
-        [HarmonyPatch(typeof(Il2Cpp.MusicJukeboxHandler), nameof(Il2Cpp.MusicJukeboxHandler.OnGameInit))]
+        [HarmonyPatch(typeof(MusicJukeboxHandler), nameof(MusicJukeboxHandler.OnGameInit))]
         private static class ApplyPatchOnGameInit
         {
-            public static void Postfix(Il2Cpp.MusicJukeboxHandler __instance, Il2Cpp.GameMode __0)
+            public static void Postfix(MusicJukeboxHandler __instance, GameMode __0)
             {
                 try
                 {
@@ -284,10 +290,10 @@ namespace Si_CommanderManagement
             }
         }
 
-        [HarmonyPatch(typeof(Il2Cpp.MusicJukeboxHandler), nameof(Il2Cpp.MusicJukeboxHandler.OnGameStarted))]
+        [HarmonyPatch(typeof(MusicJukeboxHandler), nameof(MusicJukeboxHandler.OnGameStarted))]
         private static class ApplyPatchOnGameStarted
         {
-            public static void Postfix(Il2Cpp.MusicJukeboxHandler __instance, Il2Cpp.GameMode __0)
+            public static void Postfix(MusicJukeboxHandler __instance, GameMode __0)
             {
                 try
                 {
@@ -299,8 +305,8 @@ namespace Si_CommanderManagement
                     }
 
                     // *** TODO: need to account for if a player leaves the game within the 30 second window
-                    System.Random randomIndex = new();
-                    Il2Cpp.Player? RemovePlayer = null;
+                    System.Random randomIndex = new System.Random();
+                    Player? RemovePlayer = null;
 
                     for (int i = 0; i < MaxTeams; i++)
                     {
@@ -326,7 +332,7 @@ namespace Si_CommanderManagement
                         }
 
                         int iCommanderIndex = randomIndex.Next(0, commanderApplicants[i].Count - 1);
-                        Il2Cpp.Player CommanderPlayer = commanderApplicants[i][iCommanderIndex];
+                        Player CommanderPlayer = commanderApplicants[i][iCommanderIndex];
 
                         if (CommanderPlayer != null && CommanderPlayer.Team.Index == i)
                         {
@@ -344,10 +350,14 @@ namespace Si_CommanderManagement
             }
         }
 
-        [HarmonyPatch(typeof(Il2Cpp.MP_Strategy), nameof(Il2Cpp.MP_Strategy.SetCommander))]
+        #if NET6_0
+        [HarmonyPatch(typeof(MP_Strategy), nameof(MP_Strategy.SetCommander))]
+        #else
+        [HarmonyPatch(typeof(MP_Strategy), "SetCommander")]
+        #endif
         private static class ApplyPatchSetCommander
         {
-            public static bool Prefix(Il2Cpp.MP_Strategy __instance, Il2Cpp.Team __0, Il2Cpp.Player __1)
+            public static bool Prefix(MP_Strategy __instance, Team __0, Player __1)
             {
                 try
                 {
@@ -484,8 +494,8 @@ namespace Si_CommanderManagement
             }
 
             // gather information to log in the banlist
-            Il2Cpp.Player serverPlayer = Il2Cpp.NetworkGameServer.GetServerPlayer();
-            BanEntry thisBan = new()
+            Player serverPlayer = NetworkGameServer.GetServerPlayer();
+            BanEntry thisBan = new BanEntry()
             {
                 OffenderSteamId = long.Parse(playerToCmdrBan.ToString().Split('_')[1]),
                 OffenderName = playerToCmdrBan.PlayerName,
@@ -496,8 +506,8 @@ namespace Si_CommanderManagement
             // are we currently a commander?
             if (playerToCmdrBan.IsCommander)
             {
-                Il2Cpp.Team playerTeam = playerToCmdrBan.Team;
-                Il2Cpp.MP_Strategy strategyInstance = GameObject.FindObjectOfType<Il2Cpp.MP_Strategy>();
+                Team playerTeam = playerToCmdrBan.Team;
+                MP_Strategy strategyInstance = GameObject.FindObjectOfType<MP_Strategy>();
 
                 DemoteTeamsCommander(strategyInstance, playerTeam);
                 HelperMethods.ReplyToCommand_Player(playerToCmdrBan, "was demoted");
@@ -516,14 +526,22 @@ namespace Si_CommanderManagement
             }
         }
 
-        public static void PromoteToCommander(Il2Cpp.Player CommanderPlayer)
+        public static void PromoteToCommander(Player CommanderPlayer)
         {
-            Il2Cpp.MP_Strategy strategyInstance = GameObject.FindObjectOfType<Il2Cpp.MP_Strategy>();
+            MP_Strategy strategyInstance = GameObject.FindObjectOfType<MP_Strategy>();
 
             // lock in commanders on the server side
-            strategyInstance.GetCommanderForTeam(CommanderPlayer.m_Team);
-            Il2Cpp.StrategyTeamSetup strategyTeamInstance = strategyInstance.GetStrategyTeamSetup(CommanderPlayer.m_Team);
+            strategyInstance.GetCommanderForTeam(CommanderPlayer.Team);
+            StrategyTeamSetup strategyTeamInstance = strategyInstance.GetStrategyTeamSetup(CommanderPlayer.Team);
+
+            #if NET6_0
             strategyInstance.SetCommander(strategyTeamInstance.Team, CommanderPlayer);
+            #else
+            Type strategyType = typeof(MP_Strategy);
+            MethodInfo setCommanderMethod = strategyType.GetMethod("SetCommander");
+            setCommanderMethod.Invoke(strategyInstance, new object[] { strategyTeamInstance.Team, CommanderPlayer });
+            #endif
+
             //strategyInstance.RPC_SynchCommander(strategyTeamInstance.Team);
 
             // replicate to client to get them to re-select commander
@@ -545,18 +563,29 @@ namespace Si_CommanderManagement
             // TODO: Investigate what more to do so commanders don't need to switch back to commander using 'T'
         }
 
-        public static void DemoteTeamsCommander(Il2Cpp.MP_Strategy strategyInstance, Il2Cpp.Team TargetTeam)
+        public static void DemoteTeamsCommander(MP_Strategy strategyInstance, Team TargetTeam)
         {
-            Il2Cpp.Player DemotedCommander = strategyInstance.GetCommanderForTeam(TargetTeam);
+            Player DemotedCommander = strategyInstance.GetCommanderForTeam(TargetTeam);
+
+            #if NET6_0
             strategyInstance.SetCommander(TargetTeam, null);
             strategyInstance.RPC_SynchCommander(TargetTeam);
+            #else
+            Type strategyType = typeof(MP_Strategy);
+            MethodInfo setCommanderMethod = strategyType.GetMethod("SetCommander");
+            setCommanderMethod.Invoke(strategyInstance, new object[] { TargetTeam, null });
+
+            MethodInfo synchCommanderMethod = strategyType.GetMethod("RPC_SynchCommander");
+            synchCommanderMethod.Invoke(strategyInstance, new object[] { TargetTeam });
+            #endif
+
             // need to get the player back to Infantry and not stuck in no-clip
             SendToInfantry(DemotedCommander);
             // respawn
             GameMode.CurrentGameMode.SpawnUnitForPlayer(DemotedCommander, TargetTeam);
         }
 
-        public static void Command_CommanderDemote(Il2Cpp.Player callerPlayer, String args)
+        public static void Command_CommanderDemote(Player callerPlayer, String args)
         {
             // count number of arguments
             int argumentCount = args.Split(' ').Length - 1;
@@ -567,12 +596,12 @@ namespace Si_CommanderManagement
             }
 
             int targetTeamIndex = -1;
-            Il2Cpp.MP_Strategy strategyInstance = GameObject.FindObjectOfType<Il2Cpp.MP_Strategy>();
+            MP_Strategy strategyInstance = GameObject.FindObjectOfType<MP_Strategy>();
 
             // if no team was specified then try and use current team of the admin
             if (argumentCount == 0)
             {
-                Il2Cpp.Team? callerTeam = callerPlayer.Team;
+                Team? callerTeam = callerPlayer.Team;
                 if (callerTeam != null)
                 {
                     targetTeamIndex = callerPlayer.Team.Index;
@@ -591,7 +620,7 @@ namespace Si_CommanderManagement
                 if (String.Equals(targetTeamText, "Human", StringComparison.OrdinalIgnoreCase))
                 {
                     // check gamemode - if Humans vs Aliens or the other ones
-                    if (strategyInstance.TeamsVersus == Il2Cpp.MP_Strategy.ETeamsVersus.HUMANS_VS_ALIENS)
+                    if (strategyInstance.TeamsVersus == MP_Strategy.ETeamsVersus.HUMANS_VS_ALIENS)
                     {
                         // if it's human vs aliens then human translates to the Human (Sol) team index
                         targetTeamIndex = 2;
@@ -619,11 +648,11 @@ namespace Si_CommanderManagement
                 }
             }
 
-            Il2Cpp.Team targetTeam = Il2Cpp.Team.GetTeamByIndex(targetTeamIndex);
+            Team targetTeam = Team.GetTeamByIndex(targetTeamIndex);
             if (targetTeam != null)
             {
                 // check if they have a commander to demote
-                Il2Cpp.Player? targetPlayer = strategyInstance.GetCommanderForTeam(targetTeam);
+                Player? targetPlayer = strategyInstance.GetCommanderForTeam(targetTeam);
 
                 // team has a commander if targetPlayer isn't null
                 if (targetPlayer != null)
@@ -670,7 +699,7 @@ namespace Si_CommanderManagement
             }
 
             String sTarget = args.Split(' ')[1];
-            Il2Cpp.Player? playerToUnCmdrBan = HelperMethods.FindTargetPlayer(sTarget);
+            Player? playerToUnCmdrBan = HelperMethods.FindTargetPlayer(sTarget);
 
             if (playerToUnCmdrBan == null)
             {
@@ -717,7 +746,7 @@ namespace Si_CommanderManagement
             }
 
             String sTarget = args.Split(' ')[1];
-            Il2Cpp.Player? playerToCmdrBan = HelperMethods.FindTargetPlayer(sTarget);
+            Player? playerToCmdrBan = HelperMethods.FindTargetPlayer(sTarget);
 
             if (playerToCmdrBan == null)
             {
@@ -736,18 +765,19 @@ namespace Si_CommanderManagement
             }
         }
 
-        [HarmonyPatch(typeof(Il2Cpp.GameMode), nameof(Il2Cpp.GameMode.CreateRPCPacket))]
+        [HarmonyPatch(typeof(GameMode), nameof(GameMode.CreateRPCPacket))]
         private static class CommanderManager_Patch_GameMode_GameByteStreamWriter
         {
-            static void Postfix(Il2Cpp.GameMode __instance, Il2Cpp.GameByteStreamWriter __result, byte __0)
+            static void Postfix(GameMode __instance, GameByteStreamWriter __result, byte __0)
             {
                 if (_BlockRoundStartUntilEnoughApplicants != null && _BlockRoundStartUntilEnoughApplicants.Value)
                 {
-                    MP_Strategy strategyInstance = GameObject.FindObjectOfType<Il2Cpp.MP_Strategy>();
+                    MP_Strategy strategyInstance = GameObject.FindObjectOfType<MP_Strategy>();
 
                     // is this the countdown timer for the round to start?
                     if (__0 == (byte)MP_Strategy.ERPCs.TIMER_UPDATE && !strategyInstance.GameOver)
                     {
+#if NET6_0
                         if (!AllTeamsHaveCommanderApplicants() && strategyInstance.Timer < 5f)
                         {
                             // reset timer value and keep counting down
@@ -755,15 +785,29 @@ namespace Si_CommanderManagement
                             // TODO: Fix repeating message 
                             HelperMethods.ReplyToCommand("Round cannot start because all teams don't have a commander. Chat !commander to apply.");
                         }
+
+#else
+                        Type strategyType = typeof(MP_Strategy);
+                        FieldInfo timerField = strategyType.GetField("Timer", BindingFlags.NonPublic | BindingFlags.Instance);
+
+                        float timerValue = (float)timerField.GetValue(strategyInstance);
+                        if (!AllTeamsHaveCommanderApplicants() && timerValue < 5f)
+                        {
+                            // reset timer value and keep counting down
+                            timerField.SetValue(strategyInstance, 25f);
+                            // TODO: Fix repeating message 
+                            HelperMethods.ReplyToCommand("Round cannot start because all teams don't have a commander. Chat !commander to apply.");
+                        }
+#endif
                     }
                 }
             }
         }
 
-        [HarmonyPatch(typeof(Il2Cpp.GameMode), nameof(Il2Cpp.GameMode.OnPlayerLeftBase))]
+        [HarmonyPatch(typeof(GameMode), nameof(GameMode.OnPlayerLeftBase))]
         private static class CommanderManager_Patch_GameMode_OnPlayerLeftBase
         {
-            public static void Prefix(Il2Cpp.GameMode __instance, Il2Cpp.Player __0)
+            public static void Prefix(GameMode __instance, Player __0)
             {
                 try
                 {
@@ -774,7 +818,7 @@ namespace Si_CommanderManagement
 
                     if (GameMode.CurrentGameMode.Started && !GameMode.CurrentGameMode.GameBegun)
                     {
-                        bool hasApplied = commanderApplicants[__0.m_Team.Index].Any(k => k == __0);
+                        bool hasApplied = commanderApplicants[__0.Team.Index].Any(k => k == __0);
                         if (hasApplied)
                         {
                             commanderApplicants[__0.Team.Index].Remove(__0);
@@ -797,10 +841,10 @@ namespace Si_CommanderManagement
             }
         }
 
-        [HarmonyPatch(typeof(Il2Cpp.GameMode), nameof(Il2Cpp.GameMode.SpawnUnitForPlayer), new Type[] { typeof(Player), typeof(GameObject), typeof(Vector3), typeof(Quaternion) })]
+        [HarmonyPatch(typeof(GameMode), nameof(GameMode.SpawnUnitForPlayer), new Type[] { typeof(Player), typeof(GameObject), typeof(Vector3), typeof(Quaternion) })]
         private static class CommanderManager_Patch_GameMode_SpawnUnitForPlayer
         {
-            public static void Postfix(Il2Cpp.GameMode __instance, Il2Cpp.Unit __result, Il2Cpp.Player __0, UnityEngine.GameObject __1, UnityEngine.Vector3 __2, UnityEngine.Quaternion __3)
+            public static void Postfix(GameMode __instance, Unit __result, Player __0, UnityEngine.GameObject __1, UnityEngine.Vector3 __2, UnityEngine.Quaternion __3)
             {
                 try
                 {
@@ -838,10 +882,18 @@ namespace Si_CommanderManagement
             }
         }
 
+#if NET6_0
         [HarmonyPatch(typeof(Il2CppSilica.UI.Chat), nameof(Il2CppSilica.UI.Chat.MessageReceived))]
+#else
+        [HarmonyPatch(typeof(Silica.UI.Chat), "MessageReceived")]
+#endif
         private static class CommanderManager_Patch_Chat_MessageReceived
         {
-            public static void Postfix(Il2CppSilica.UI.Chat __instance, Il2Cpp.Player __0, string __1, bool __2)
+#if NET6_0
+            public static void Postfix(Il2CppSilica.UI.Chat __instance, Player __0, string __1, bool __2)
+#else
+            public static void Postfix(Silica.UI.Chat __instance, Player __0, string __1, bool __2)
+#endif
             {
                 try
                 {
@@ -863,11 +915,11 @@ namespace Si_CommanderManagement
                             }
 
                             // check if they're trying to apply for commander before the 30 second countdown expires and the game begins
-                            if (Il2Cpp.GameMode.CurrentGameMode.Started && !Il2Cpp.GameMode.CurrentGameMode.GameBegun)
+                            if (GameMode.CurrentGameMode.Started && !GameMode.CurrentGameMode.GameBegun)
                             {
 
                                 // check if we are already on the commander applicant list
-                                bool hasApplied = commanderApplicants[__0.m_Team.Index].Any(k => k == __0);
+                                bool hasApplied = commanderApplicants[__0.Team.Index].Any(k => k == __0);
 
                                 if (!hasApplied)
                                 {
