@@ -12,9 +12,9 @@
     <Reference Include="Assembly-CSharp">
       <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Silica\MelonLoader\Il2CppAssemblies\Assembly-CSharp.dll</HintPath>
     </Reference>
-	<Reference Include="Assembly-CSharp-firstpass">
+    <Reference Include="Assembly-CSharp-firstpass">
       <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Silica\MelonLoader\Il2CppAssemblies\Assembly-CSharp-firstpass.dll</HintPath>
-	</Reference>
+    </Reference>
     <Reference Include="Il2CppInterop.Runtime">
       <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Silica\MelonLoader\net6\Il2CppInterop.Runtime.dll</HintPath>
     </Reference>
