@@ -21,15 +21,23 @@
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#if NET6_0
+using Il2Cpp;
+#endif
+
 using HarmonyLib;
 using MelonLoader;
 using MelonLoader.Utils;
 using Newtonsoft.Json;
 using Si_BasicBanlist;
-using AdminExtension;
+using SilicaAdminMod;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
-[assembly: MelonInfo(typeof(BasicBanlist), "[Si] Basic Banlist", "1.2.3", "databomb")]
+[assembly: MelonInfo(typeof(BasicBanlist), "Basic Banlist", "1.3.0", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
+[assembly: MelonOptionalDependencies("Admin Mod")]
 
 namespace Si_BasicBanlist
 {
@@ -129,7 +137,7 @@ namespace Si_BasicBanlist
             }
         }
 
-        public static void Command_Ban(Il2Cpp.Player callerPlayer, String args)
+        public static void Command_Ban(Player callerPlayer, String args)
         {
             // validate banlist is available
             if (MasterBanList == null)
@@ -153,7 +161,7 @@ namespace Si_BasicBanlist
 
             // validate argument contents
             String sTarget = args.Split(' ')[1];
-            Il2Cpp.Player? playerToBan = HelperMethods.FindTargetPlayer(sTarget);
+            Player? playerToBan = HelperMethods.FindTargetPlayer(sTarget);
 
             if (playerToBan == null)
             {
@@ -177,7 +185,7 @@ namespace Si_BasicBanlist
                     UpdateBanFile();
                 }
 
-                Il2Cpp.NetworkGameServer.KickPlayer(playerToBan);
+                NetworkGameServer.KickPlayer(playerToBan);
                 HelperMethods.AlertAdminActivity(callerPlayer, playerToBan, "banned");
             }
             else
@@ -186,7 +194,7 @@ namespace Si_BasicBanlist
             }
         }
 
-        public static void Command_Unban(Il2Cpp.Player callerPlayer, String args)
+        public static void Command_Unban(Player callerPlayer, String args)
         {
             // validate banlist is available
             if (MasterBanList == null)
@@ -236,22 +244,23 @@ namespace Si_BasicBanlist
             HelperMethods.AlertAdminAction(callerPlayer, "unbanned " + matchingBan.OffenderName);
         }
 
-            public static BanEntry GenerateBanEntry(Il2Cpp.Player player, Il2Cpp.Player admin)
+            public static BanEntry GenerateBanEntry(Player player, Player admin)
         {
-            BanEntry thisBan = new()
+            BanEntry thisBan = new BanEntry()
             {
                 OffenderSteamId = long.Parse(player.ToString().Split('_')[1]),
                 OffenderName = player.PlayerName,
                 UnixBanTime = (int)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds,
                 Comments = "banned by " + admin.PlayerName
             };
+
             return thisBan;
         }
 
-        [HarmonyPatch(typeof(Il2Cpp.NetworkGameServer), nameof(Il2Cpp.NetworkGameServer.KickPlayer))]
+        [HarmonyPatch(typeof(NetworkGameServer), nameof(NetworkGameServer.KickPlayer))]
         private static class ApplyPatchKickPlayer
         {
-            public static void Prefix(Il2Cpp.Player __0)
+            public static void Prefix(Player __0)
             {
                 try
                 {
@@ -267,7 +276,7 @@ namespace Si_BasicBanlist
                         return;
                     }
 
-                    BanEntry thisBan = GenerateBanEntry(__0, Il2Cpp.NetworkGameServer.GetServerPlayer());
+                    BanEntry thisBan = GenerateBanEntry(__0, NetworkGameServer.GetServerPlayer());
 
                     // are we already banned?
                     if (MasterBanList.Find(i => i.OffenderSteamId == thisBan.OffenderSteamId) != null)
@@ -289,10 +298,10 @@ namespace Si_BasicBanlist
             }
         }
 
-        [HarmonyPatch(typeof(Il2Cpp.GameMode), nameof(Il2Cpp.GameMode.OnPlayerJoinedBase))]
+        [HarmonyPatch(typeof(GameMode), nameof(GameMode.OnPlayerJoinedBase))]
         private static class ApplyPatchOnPlayerJoinedBase
         {
-            public static void Postfix(Il2Cpp.GameMode __instance, Il2Cpp.Player __0)
+            public static void Postfix(GameMode __instance, Player __0)
             {
                 try
                 {
@@ -308,7 +317,7 @@ namespace Si_BasicBanlist
                         if (MasterBanList.Find(i => i.OffenderSteamId == JoiningPlayerSteamId) != null)
                         {
                             MelonLogger.Msg("Kicking " + __0.ToString() + " for matching an entry in the banlist.");
-                            Il2Cpp.NetworkGameServer.KickPlayer(__0);
+                            NetworkGameServer.KickPlayer(__0);
                         }
                     }
                 }
