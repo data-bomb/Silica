@@ -55,13 +55,13 @@ jobs:
         dotnet-version: 6.0.x
     - name: Restore dependencies
       run: |
-        cd ${{ matrix.inputPath }}
+        cd ${{ matrix.path }}
         dotnet restore
     - name: Build
       run: |
-        cd ${{ matrix.inputPath }}
+        cd ${{ matrix.path }}
         dotnet build --no-restore
     - name: Test
       run: |
-        cd ${{ matrix.inputPath }}
+        cd ${{ matrix.path }}
         dotnet test --no-build --verbosity normal
