@@ -30,7 +30,7 @@ using Si_Eject;
 using System;
 using SilicaAdminMod;
 
-[assembly: MelonInfo(typeof(Eject), "Eject Command", "1.0.0", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(Eject), "Eject Command", "1.0.1", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -43,7 +43,7 @@ namespace Si_Eject
             HelperMethods.CommandCallback ejectCallback = Command_Eject;
             HelperMethods.RegisterAdminCommand("!eject", ejectCallback, Power.Eject);
         }
-        public void Command_Eject(Player callerPlayer, String args)
+        public static void Command_Eject(Player callerPlayer, String args)
         {
             // validate argument count
             int argumentCount = args.Split(' ').Length - 1;
