@@ -6,14 +6,35 @@ name: .NET
 on:
   push:
     branches: [ "main" ]
+    paths: 
+       - '**/Si_*/**'
+       - '!*.md'
   pull_request:
     branches: [ "main" ]
 
 jobs:
-  build:
 
+  generateInputPaths:
     runs-on: ubuntu-latest
-
+    
+    steps:
+      - uses: actions/checkout@v2
+      - name: Generate matrix with all modules of the repo
+        id: set-matrix
+        run: |
+          echo "::set-output name=matrix::$(ls -l | grep '^d' | awk -F ' ' '{print $9}' | grep -Po '\d{3}.*' | jq -R -s -c 'split("\n") | map(select(length > 0))')"
+          
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    
+  build:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        path: ${{ fromJson(needs.generateInputPaths.outputs.matrix) }}
+        
     steps:
     - uses: actions/checkout@v3
     - name: Setup .NET 6
