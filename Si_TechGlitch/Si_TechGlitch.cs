@@ -35,8 +35,9 @@ using SilicaAdminMod;
 using System;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(TechGlitch), "Tech Glitch Command", "1.0.0", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(TechGlitch), "Tech Glitch Command", "1.0.1", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
+[assembly: MelonOptionalDependencies("Admin Mod")]
 
 namespace Si_TechGlitch
 {
