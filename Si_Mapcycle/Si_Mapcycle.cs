@@ -34,7 +34,7 @@ using System.IO;
 using System.Collections.Generic;
 using SilicaAdminMod;
 
-[assembly: MelonInfo(typeof(MapCycleMod), "Mapcycle", "1.2.0", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(MapCycleMod), "Mapcycle", "1.2.1", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -124,7 +124,7 @@ namespace Si_Mapcycle
                     bool isNextMapCommand = String.Equals(__1, "nextmap", StringComparison.OrdinalIgnoreCase);
                     if (isNextMapCommand)
                     {
-                        HelperMethods.ReplyToCommand("Next map is " + sMapCycle[iMapLoadCount % sMapCycle.Length]);
+                        HelperMethods.ReplyToCommand("Next map is " + sMapCycle[(iMapLoadCount+1) % (sMapCycle.Length-1)]);
                         return;
                     }
                 }
@@ -156,7 +156,7 @@ namespace Si_Mapcycle
 
                     MapCycleMod.iMapLoadCount++;
 
-                    String sNextMap = sMapCycle[iMapLoadCount % sMapCycle.Length];
+                    String sNextMap = sMapCycle[iMapLoadCount % (sMapCycle.Length-1)];
 
                     String sCurrentMap = NetworkGameServer.GetServerMap();
                     MelonLogger.Msg("Changing map to " + sNextMap + "...");
@@ -171,11 +171,12 @@ namespace Si_Mapcycle
         {
             public static void Postfix(MusicJukeboxHandler __instance, GameMode __0, Team __1)
             {
+                HelperMethods.ReplyToCommand("Preparing to change map to " + sMapCycle[(iMapLoadCount + 1) % (sMapCycle.Length-1)] + "..." );
                 MapCycleMod.gameModeInstance = __0;
                 MapCycleMod.bEndRound = true;
                 MapCycleMod.bTimerExpired = false;
 
-                double interval = 20000.0;
+                double interval = 12500.0;
                 MapCycleMod.DelayTimer = new System.Timers.Timer(interval);
                 MapCycleMod.DelayTimer.Elapsed += new ElapsedEventHandler(MapCycleMod.HandleTimerChangeLevel);
                 MapCycleMod.DelayTimer.AutoReset = false;
