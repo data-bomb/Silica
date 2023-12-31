@@ -22,40 +22,34 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using HarmonyLib;
+#if NET6_0
 using Il2Cpp;
+#endif
+
+using HarmonyLib;
 using MelonLoader;
 using Si_EndRound;
+using SilicaAdminMod;
+using System;
+using System.Linq;
 using UnityEngine;
-using AdminExtension;
-using System.Reflection.Metadata.Ecma335;
 
-[assembly: MelonInfo(typeof(EndRound), "End Round", "1.0.0", "databomb")]
+[assembly: MelonInfo(typeof(EndRound), "End Round", "1.0.1", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
+[assembly: MelonOptionalDependencies("Admin Mod")]
 
 namespace Si_EndRound
 {
     public class EndRound : MelonMod
     {
-        static bool AdminModAvailable = false;
-
         public override void OnLateInitializeMelon()
         {
-            AdminModAvailable = RegisteredMelons.Any(m => m.Info.Name == "Admin Mod");
-
-            if (AdminModAvailable)
-            {
-                HelperMethods.CommandCallback roundEndCallback = Command_EndRound;
-                HelperMethods.RegisterAdminCommand("!endround", roundEndCallback, Power.End);
-                HelperMethods.RegisterAdminCommand("!endgame", roundEndCallback, Power.End);
-            }
-            else
-            {
-                MelonLogger.Warning("Dependency missing: Admin Mod");
-            }
+            HelperMethods.CommandCallback roundEndCallback = Command_EndRound;
+            HelperMethods.RegisterAdminCommand("!endround", roundEndCallback, Power.End);
+            HelperMethods.RegisterAdminCommand("!endgame", roundEndCallback, Power.End);
         }
 
-        public void Command_EndRound(Il2Cpp.Player callerPlayer, String args)
+        public static void Command_EndRound(Player callerPlayer, String args)
         {
             // validate argument count
             int argumentCount = args.Split(' ').Count() - 1;
@@ -65,7 +59,7 @@ namespace Si_EndRound
                 return;
             }
 
-            if (!Il2Cpp.GameMode.CurrentGameMode.GameOngoing)
+            if (!GameMode.CurrentGameMode.GameOngoing)
             {
                 HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Cannot end round until round starts");
                 return;
@@ -75,14 +69,14 @@ namespace Si_EndRound
             HelperMethods.AlertAdminAction(callerPlayer, "ended the round");
         }
 
-        public void Force_EndRound()
+        public static void Force_EndRound()
         {
             // destroy all structures on all teams
-            for (int i = 0; i < Il2Cpp.Team.Teams.Count; i++)
+            for (int i = 0; i < Team.Teams.Count; i++)
             {
-                for (int j = 0; j < Il2Cpp.Team.Teams[i].Structures.Count; j++)
+                for (int j = 0; j < Team.Teams[i].Structures.Count; j++)
                 {
-                    Il2Cpp.Team.Teams[i].Structures[j].DamageManager.SetHealth01(0.0f);
+                    Team.Teams[i].Structures[j].DamageManager.SetHealth01(0.0f);
                 }
             }
         }
