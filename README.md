@@ -46,21 +46,30 @@
 - Decent CPU
 - Top-of-the-line GPU if you want to host and play
 
-## Server Setup Instructions
+## Listen Server Setup Instructions
 1. Install Silica
 2. Install [.NET 6.0 Runtime x64](https://dotnet.microsoft.com/en-us/download/dotnet/6.0)
 3. Install [MelonLoader using the Manual Installation](https://melonwiki.xyz/#/README?id=manual-installation) method for 64-bit games
-4. Place the [Admin Extension](https://raw.githubusercontent.com/data-bomb/Silica/main/Si_AdminExtension/bin/Si_AdminExtension.dll) in your `Silica\MelonLoader\net6` directory
-5. Place the [Admin Mod](https://raw.githubusercontent.com/data-bomb/Silica/main/Si_AdminMod/bin/Si_AdminMod.dll) in your `Silica\Mods` directory
-6. Place any desired mods in your `Silica\Mods` directory
-7. Launch Silica and then exit the game to populate configuration parameters
-8. Review and modify the configuration parameters in the `Silica\UserData\MelonPreferences.cfg` file
+4. Place `dobby.dll` in your `Silica\` directory
+5. Place the [Admin Extension](https://raw.githubusercontent.com/data-bomb/Silica/main/Si_AdminExtension/bin/Si_AdminExtension.dll) in your `Silica\MelonLoader\net6` directory
+6. Place the [Admin Mod](https://raw.githubusercontent.com/data-bomb/Silica/main/Si_AdminMod/bin/Si_AdminMod.dll) in your `Silica\Mods` directory
+7. Place any desired mods in your `Silica\Mods` directory
+8. Launch Silica and then exit the game to populate configuration parameters
+9. Review and modify the configuration parameters in the `Silica\UserData\MelonPreferences.cfg` file
+
+## Dedicated Server Setup Instructions
+1. Install Silica Dedicated Server Tool
+2. Install alpha-development branch of [MelonLoader using the Manual Installation](https://melonwiki.xyz/#/README?id=manual-installation) method for 64-bit games
+4. Place `dobby.dll` in your `Silica Dedicated Server\` directory
+5. Place the Admin Mod in your `Silica Dedicated Server\Mods` directory
+6. Place any other desired mods in your `Silica Dedicated Server\Mods` directory
+7. Launch Silica Dedicated Server
 
 Kind suggestion to ensure that the server name reflects that there are mods so players can choose between mods and a vanilla game experience
 
 ## [Mod Descriptions](https://github.com/data-bomb/Silica/wiki/Mod-Descriptions)
 
-## <a href="https://discord.gg/QzpK5Kh3">Modding Discord</a>
+## <a href="https://discord.gg/5SHQxFaess">Modding Discord</a>
 
 ## How to Show Love
 <a href="https://www.buymeacoffee.com/databomb" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-orange.png" alt="Buy Me A Coffee" height="41" width="174"></a>
