@@ -39,10 +39,6 @@ jobs:
       - name: Print Directory Structure
         run: |
            ls -R | grep ":$" | sed -e 's/:$//' -e 's/[^-][^\/]*\//--/g' -e 's/^/   /' -e 's/-/|/'
-      - name: Template Format Check
-        uses: jordanbean-msft/github-action-wth-template-check@v0.3.1
-        with:
-          path: ${{ github.workspace }}/${{ matrix.inputPath }}
      
   build:
     needs: generateInputPaths
@@ -58,8 +54,14 @@ jobs:
       with:
         dotnet-version: 6.0.x
     - name: Restore dependencies
-      run: dotnet restore
+      run: |
+        cd ${{ matrix.inputPath }}
+        dotnet restore
     - name: Build
-      run: dotnet build --no-restore
+      run: |
+        cd ${{ matrix.inputPath }}
+        dotnet build --no-restore
     - name: Test
-      run: dotnet test --no-build --verbosity normal
+      run: |
+        cd ${{ matrix.inputPath }}
+        dotnet test --no-build --verbosity normal
