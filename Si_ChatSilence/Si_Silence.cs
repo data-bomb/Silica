@@ -1,14 +1,45 @@
-﻿using HarmonyLib;
+﻿/*
+Silica Chat Silence
+Copyright (C) 2023 by databomb
+
+* Description *
+Provides an admin command to silence a player, which prevents that 
+player from talking in the server.
+
+* License *
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+#if NET6_0
 using Il2Cpp;
+using Il2CppSteamworks;
+#else
+using Steamworks;
+#endif
+
+using HarmonyLib;
 using MelonLoader;
 using Si_ChatSilence;
-using UnityEngine;
-using AdminExtension;
-using Il2CppBehaviorTrees;
-using Il2CppSteamworks;
+using System.Collections.Generic;
+using SilicaAdminMod;
+using System;
+using System.Linq;
 
-[assembly: MelonInfo(typeof(ChatSilence), "Silence Admin Command", "1.0.0", "databomb")]
+
+[assembly: MelonInfo(typeof(ChatSilence), "Silence Admin Command", "1.1.0", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
+[assembly: MelonOptionalDependencies("Admin Mod")]
 
 namespace Si_ChatSilence
 {
@@ -40,7 +71,7 @@ namespace Si_ChatSilence
             }
         }
 
-        public void Command_Silence(Il2Cpp.Player callerPlayer, String args)
+        public static void Command_Silence(Player callerPlayer, String args)
         {
             // validate argument count
             int argumentCount = args.Split(' ').Count() - 1;
@@ -57,7 +88,7 @@ namespace Si_ChatSilence
 
             // validate argument contents
             String sTarget = args.Split(' ')[1];
-            Il2Cpp.Player? playerTarget = HelperMethods.FindTargetPlayer(sTarget);
+            Player? playerTarget = HelperMethods.FindTargetPlayer(sTarget);
 
             if (playerTarget == null)
             {
@@ -83,7 +114,7 @@ namespace Si_ChatSilence
             }
         }
 
-        public void Command_UnSilence(Il2Cpp.Player callerPlayer, String args)
+        public void Command_UnSilence(Player callerPlayer, String args)
         {
             // validate argument count
             int argumentCount = args.Split(' ').Count() - 1;
@@ -100,7 +131,7 @@ namespace Si_ChatSilence
 
             // validate argument contents
             String sTarget = args.Split(' ')[1];
-            Il2Cpp.Player? playerTarget = HelperMethods.FindTargetPlayer(sTarget);
+            Player? playerTarget = HelperMethods.FindTargetPlayer(sTarget);
 
             if (playerTarget == null)
             {
@@ -126,37 +157,41 @@ namespace Si_ChatSilence
             }
         }
 
-        public static bool IsPlayerSilenced(Il2Cpp.Player player)
+        public static bool IsPlayerSilenced(Player player)
         {
             return silencedPlayers.Any(s => s == player.PlayerID);
         }
 
-        public static bool IsSteamSilenced(Il2CppSteamworks.CSteamID steamID)
+        public static bool IsSteamSilenced(CSteamID steamID)
         {
             return silencedPlayers.Any(s => s ==  steamID);
         }
 
-        public static void SilencePlayer(Il2Cpp.Player playerTarget)
+        public static void SilencePlayer(Player playerTarget)
         {
             silencedPlayers.Add(playerTarget.PlayerID);
         }
 
-        public static void UnSilencePlayer(Il2Cpp.Player playerTarget)
+        public static void UnSilencePlayer(Player playerTarget)
         {
             silencedPlayers.Remove(playerTarget.PlayerID);
         }
 
-        [HarmonyPatch(typeof(Il2Cpp.GameByteStreamReader), nameof(Il2Cpp.GameByteStreamReader.GetGameByteStreamReader))]
+        [HarmonyPatch(typeof(GameByteStreamReader), nameof(GameByteStreamReader.GetGameByteStreamReader))]
         static class GetGameByteStreamReaderPrePatch
         {
-            public static void Prefix(Il2Cpp.GameByteStreamReader __result, Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppStructArray<byte> __0, int __1, bool __2)
+            #if NET6_0
+            public static void Prefix(GameByteStreamReader __result, Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppStructArray<byte> __0, int __1, bool __2)
+            #else
+            public static void Prefix(GameByteStreamReader __result, byte[] __0, int __1, bool __2)
+            #endif
             {
                 try
                 {
                     // byte[0] = (2) Byte
                     // byte[1] = ENetworkPacketType
-                    Il2Cpp.ENetworkPacketType packetType = (Il2Cpp.ENetworkPacketType)__0[1];
-                    if (packetType == Il2Cpp.ENetworkPacketType.ChatMessage)
+                    ENetworkPacketType packetType = (ENetworkPacketType)__0[1];
+                    if (packetType == ENetworkPacketType.ChatMessage)
                     {
                         // byte [2] = UInt64
                         // byte [3:10] = CSteamID
@@ -181,10 +216,10 @@ namespace Si_ChatSilence
             }
         }
 
-        [HarmonyPatch(typeof(Il2Cpp.GameMode), nameof(Il2Cpp.GameMode.OnPlayerLeftBase))]
+        [HarmonyPatch(typeof(GameMode), nameof(GameMode.OnPlayerLeftBase))]
         private static class Silence_Patch_GameMode_OnPlayerLeftBase
         {
-            public static void Prefix(Il2Cpp.GameMode __instance, Il2Cpp.Player __0)
+            public static void Prefix(GameMode __instance, Player __0)
             {
                 try
                 {
