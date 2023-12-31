@@ -1,18 +1,20 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
+    <TargetFrameworks>net6.0;netstandard2.1</TargetFrameworks>
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
-  <ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'net6.0'">
     <Reference Include="0Harmony">
       <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Silica\MelonLoader\net6\0Harmony.dll</HintPath>
     </Reference>
     <Reference Include="Assembly-CSharp">
       <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Silica\MelonLoader\Il2CppAssemblies\Assembly-CSharp.dll</HintPath>
     </Reference>
+	<Reference Include="Assembly-CSharp-firstpass">
+      <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Silica\MelonLoader\Il2CppAssemblies\Assembly-CSharp-firstpass.dll</HintPath>
+	</Reference>
     <Reference Include="Il2CppInterop.Runtime">
       <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Silica\MelonLoader\net6\Il2CppInterop.Runtime.dll</HintPath>
     </Reference>
@@ -21,9 +23,6 @@
     </Reference>
     <Reference Include="MelonLoader">
       <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Silica\MelonLoader\net6\MelonLoader.dll</HintPath>
-    </Reference>
-    <Reference Include="Si_AdminExtension">
-      <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Silica\MelonLoader\net6\Si_AdminExtension.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine">
       <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Silica\MelonLoader\Il2CppAssemblies\UnityEngine.dll</HintPath>
@@ -37,6 +36,39 @@
     <Reference Include="UnityEngine.PhysicsModule">
       <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Silica\MelonLoader\Il2CppAssemblies\UnityEngine.PhysicsModule.dll</HintPath>
     </Reference>
+	<Reference Include="Si_AdminMod">
+	  <HintPath>..\Si_AdminMod\bin\Release\net6.0\Si_AdminMod.dll</HintPath>
+	</Reference>
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.1'">
+    <Reference Include="0Harmony">
+      <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Silica Dedicated Server\MelonLoader\net35\0Harmony.dll</HintPath>
+    </Reference>
+    <Reference Include="Assembly-CSharp">
+      <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Silica Dedicated Server\Silica_Data\Managed\Assembly-CSharp.dll</HintPath>
+    </Reference>
+	<Reference Include="Assembly-CSharp-firstpass">
+	  <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Silica Dedicated Server\Silica_Data\Managed\Assembly-CSharp-firstpass.dll</HintPath>
+	</Reference>
+    <Reference Include="MelonLoader">
+      <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Silica Dedicated Server\MelonLoader\net35\MelonLoader.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine">
+      <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Silica Dedicated Server\Silica_Data\Managed\UnityEngine.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.CoreModule">
+      <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Silica Dedicated Server\Silica_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.InputLegacyModule">
+      <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Silica Dedicated Server\Silica_Data\Managed\UnityEngine.InputLegacyModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.PhysicsModule">
+      <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Silica Dedicated Server\Silica_Data\Managed\UnityEngine.PhysicsModule.dll</HintPath>
+    </Reference>
+	<Reference Include="Si_AdminMod">
+	  <HintPath>..\Si_AdminMod\bin\Release\netstandard2.1\Si_AdminMod.dll</HintPath>
+	</Reference>
   </ItemGroup>
 
 </Project>

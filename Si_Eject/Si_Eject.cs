@@ -21,35 +21,29 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#if NET6_0
 using Il2Cpp;
+#endif
+
 using MelonLoader;
 using Si_Eject;
-using AdminExtension;
+using System;
+using SilicaAdminMod;
 
-[assembly: MelonInfo(typeof(Eject), "[Si] Eject Command", "0.9.7", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(Eject), "Eject Command", "1.0.0", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
+[assembly: MelonOptionalDependencies("Admin Mod")]
 
 namespace Si_Eject
 {
     public class Eject : MelonMod
     {
-        static bool AdminModAvailable = false;
-
         public override void OnLateInitializeMelon()
         {
-            AdminModAvailable = RegisteredMelons.Any(m => m.Info.Name == "Admin Mod");
-
-            if (AdminModAvailable)
-            {
-                HelperMethods.CommandCallback ejectCallback = Command_Eject;
-                HelperMethods.RegisterAdminCommand("!eject", ejectCallback, Power.Eject);
-            }
-            else
-            {
-                MelonLogger.Warning("Dependency missing: Admin Mod");
-            }
+            HelperMethods.CommandCallback ejectCallback = Command_Eject;
+            HelperMethods.RegisterAdminCommand("!eject", ejectCallback, Power.Eject);
         }
-        public void Command_Eject(Il2Cpp.Player callerPlayer, String args)
+        public void Command_Eject(Player callerPlayer, String args)
         {
             // validate argument count
             int argumentCount = args.Split(' ').Length - 1;
@@ -66,7 +60,7 @@ namespace Si_Eject
 
             // validate argument contents
             String sTarget = args.Split(' ')[1];
-            Il2Cpp.Player? playerToEject = HelperMethods.FindTargetPlayer(sTarget);
+            Player? playerToEject = HelperMethods.FindTargetPlayer(sTarget);
 
             if (playerToEject == null)
             {
