@@ -10,30 +10,30 @@
 **Note:** *These mods are for hosts running Listen Servers only. Do not attempt to use any of these as a client. If you are a host and want to switch to a client then remove all of your MelonLoader Mods before connecting as a client!*
 
 ## Mod Summary
-| Mod Name | Version   | Link |
-|---------:|-----------|------|
-| Admin Mod | 1.1.6 | [Download](https://raw.githubusercontent.com/data-bomb/Silica/main/Si_AdminMod/bin/Si_AdminMod.dll) |
-| Auto Teams Mode Select | 1.1.0 | [Download](https://raw.githubusercontent.com/data-bomb/Silica/main/Si_AutoTeamsSelect/bin/Si_AutoTeamsSelect.dll) |
-| Mapcycle | 1.0.1 | Not Ready - Game Bug(s) |
-| SiRAC (Anti-Cheat) | 0.7.6 | Restricted Access - By Request Only |
-| Surrender Command | 1.1.8 | [Download](https://raw.githubusercontent.com/data-bomb/Silica/main/Si_SurrenderCommand/bin/Si_SurrenderCommand.dll) |
-| Anti-Grief | 1.1.1 | [Download](https://raw.githubusercontent.com/data-bomb/Silica/main/Si_AntiGrief/bin/Si_AntiGrief.dll) |
-| Headquarterless Humans Lose | 1.2.3 | [Download](https://raw.githubusercontent.com/data-bomb/Silica/main/Si_HQlessHumansLose/bin/Si_HQlessHumansLose.dll) |
-| Basic Team Balance | 1.1.1 | [Download](https://raw.githubusercontent.com/data-bomb/Silica/main/Si_BasicTeamBalance/bin/Si_BasicTeamBalance.dll) |
-| Basic Banlist | 1.2.3 | [Download](https://raw.githubusercontent.com/data-bomb/Silica/main/Si_BasicBanlist/bin/Si_BasicBanlist.dll) |
-| Chat Silence | 1.0.0 | [Download](https://raw.githubusercontent.com/data-bomb/Silica/main/Si_ChatSilence/bin/Si_ChatSilence.dll) |
-| Commander Management | 1.2.3 | [Download](https://raw.githubusercontent.com/data-bomb/Silica/main/Si_CommManagement/bin/Si_CommManagement.dll) |
-| Default Spawn Units | 0.9.4 | [Download](https://raw.githubusercontent.com/data-bomb/Silica/main/Si_DefaultUnits/bin/Si_DefaultUnits.dll) |
-| AFK Manager | 1.2.1 | [Download](https://raw.githubusercontent.com/data-bomb/Silica/main/Si_AFKManager/bin/Si_AFKManager.dll) |
-| Logging | 0.9.8 | [Download](https://raw.githubusercontent.com/data-bomb/Silica/main/Si_Logging/bin/Si_Logging.dll) |
-| GamePriority | 2.0.1 | [Download](https://github.com/MintLily/GamePriority/releases/download/2.0.1/GamePriority.dll) |
-| End Round | 1.0.0 | [Download](https://raw.githubusercontent.com/data-bomb/Silica/main/Si_EndRound/bin/Si_EndRound.dll) |
-| Friendly Fire Limits | 1.1.5 | [Download](https://raw.githubusercontent.com/data-bomb/Silica/main/Si_FriendlyFireLimits/bin/Si_FriendlyFireLimits.dll) |
-| Announcements | 1.0.2 | [Download](https://raw.githubusercontent.com/data-bomb/Silica/main/Si_Announcements/bin/Si_Announcements.dll) |
-| Spawn Configs | 0.8.8 | [Download](https://raw.githubusercontent.com/data-bomb/Silica/main/Si_SpawnConfigs/bin/Si_SpawnConfigs.dll) |
-| Resource Management | 1.0.1 | [Download](https://raw.githubusercontent.com/data-bomb/Silica/main/Si_Resources/bin/Si_Resources.dll) |
-| Tech Glitch | 0.9.0 | [Download](https://raw.githubusercontent.com/data-bomb/Silica/main/Si_TechGlitch/bin/Si_TechGlitch.dll) |
-| Eject Command | 0.9.7 | [Download](https://raw.githubusercontent.com/data-bomb/Silica/main/Si_Eject/bin/Si_Eject.dll) |
+| Mod Name | Version   | Listen Server (Il2Cpp) | Dedicated Server (Mono) |
+|---------:|-----------|----------|----------|
+| Admin Mod | 2.0.0 | [Download](https://raw.githubusercontent.com/data-bomb/Silica/main/Si_AdminMod/bin/Si_AdminMod.dll) | |
+| Auto Teams Mode Select | 1.1.0 | [Download](https://raw.githubusercontent.com/data-bomb/Silica/main/Si_AutoTeamsSelect/bin/Si_AutoTeamsSelect.dll) | |
+| Mapcycle | 1.0.1 | Not Ready - Game Bug(s) | |
+| SiRAC (Anti-Cheat) | 0.7.6 | Restricted Access - By Request Only | |
+| Surrender Command | 1.1.8 | [Download](https://raw.githubusercontent.com/data-bomb/Silica/main/Si_SurrenderCommand/bin/Si_SurrenderCommand.dll) | |
+| Anti-Grief | 1.1.1 | [Download](https://raw.githubusercontent.com/data-bomb/Silica/main/Si_AntiGrief/bin/Si_AntiGrief.dll) | |
+| Headquarterless Humans Lose | 1.2.3 | [Download](https://raw.githubusercontent.com/data-bomb/Silica/main/Si_HQlessHumansLose/bin/Si_HQlessHumansLose.dll) | |
+| Basic Team Balance | 1.1.1 | [Download](https://raw.githubusercontent.com/data-bomb/Silica/main/Si_BasicTeamBalance/bin/Si_BasicTeamBalance.dll) | |
+| Basic Banlist | 1.2.3 | [Download](https://raw.githubusercontent.com/data-bomb/Silica/main/Si_BasicBanlist/bin/Si_BasicBanlist.dll) | |
+| Chat Silence | 1.0.0 | [Download](https://raw.githubusercontent.com/data-bomb/Silica/main/Si_ChatSilence/bin/Si_ChatSilence.dll) | | 
+| Commander Management | 1.2.3 | [Download](https://raw.githubusercontent.com/data-bomb/Silica/main/Si_CommManagement/bin/Si_CommManagement.dll) | | 
+| Default Spawn Units | 0.9.4 | [Download](https://raw.githubusercontent.com/data-bomb/Silica/main/Si_DefaultUnits/bin/Si_DefaultUnits.dll) | |
+| AFK Manager | 1.2.1 | [Download](https://raw.githubusercontent.com/data-bomb/Silica/main/Si_AFKManager/bin/Si_AFKManager.dll) | |
+| Logging | 0.9.8 | [Download](https://raw.githubusercontent.com/data-bomb/Silica/main/Si_Logging/bin/Si_Logging.dll) | | 
+| GamePriority | 2.0.1 | [Download](https://github.com/MintLily/GamePriority/releases/download/2.0.1/GamePriority.dll) | |
+| End Round | 1.0.0 | [Download](https://raw.githubusercontent.com/data-bomb/Silica/main/Si_EndRound/bin/Si_EndRound.dll) | |
+| Friendly Fire Limits | 1.1.5 | [Download](https://raw.githubusercontent.com/data-bomb/Silica/main/Si_FriendlyFireLimits/bin/Si_FriendlyFireLimits.dll) | |
+| Announcements | 1.0.2 | [Download](https://raw.githubusercontent.com/data-bomb/Silica/main/Si_Announcements/bin/Si_Announcements.dll) | |
+| Spawn Configs | 0.8.8 | [Download](https://raw.githubusercontent.com/data-bomb/Silica/main/Si_SpawnConfigs/bin/Si_SpawnConfigs.dll) | |
+| Resource Management | 1.0.1 | [Download](https://raw.githubusercontent.com/data-bomb/Silica/main/Si_Resources/bin/Si_Resources.dll) | |
+| Tech Glitch | 0.9.0 | [Download](https://raw.githubusercontent.com/data-bomb/Silica/main/Si_TechGlitch/bin/Si_TechGlitch.dll) | |
+| Eject Command | 0.9.7 | [Download](https://raw.githubusercontent.com/data-bomb/Silica/main/Si_Eject/bin/Si_Eject.dll) | |
 
 ## Extension Summary
 | Mod Name | Version   | Link |
