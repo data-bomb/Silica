@@ -21,17 +21,26 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#if NET6_0
 using Il2Cpp;
+#else
+using System.Reflection;
+#endif
+
 using MelonLoader;
 using Si_SpawnConfigs;
 using UnityEngine;
-using AdminExtension;
 using MelonLoader.Utils;
-using System.Text.Json;
-using static Si_SpawnConfigs.SpawnConfigs;
+using System;
+using System.Collections.Generic;
+using SilicaAdminMod;
+using System.Linq;
+using System.IO;
+using Newtonsoft.Json;
 
-[assembly: MelonInfo(typeof(SpawnConfigs), "Admin Spawn Configs", "0.8.8", "databomb")]
+[assembly: MelonInfo(typeof(SpawnConfigs), "Admin Spawn Configs", "0.9.0", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
+[assembly: MelonOptionalDependencies("Admin Mod")]
 
 namespace Si_SpawnConfigs
 {
@@ -190,7 +199,7 @@ namespace Si_SpawnConfigs
             }
         }
 
-        public void Command_UndoSpawn(Il2Cpp.Player callerPlayer, String args)
+        public static void Command_UndoSpawn(Player callerPlayer, String args)
         {
             // validate argument count
             int argumentCount = args.Split(' ').Length - 1;
@@ -214,7 +223,7 @@ namespace Si_SpawnConfigs
             HelperMethods.AlertAdminAction(callerPlayer, "destroyed last spawned item (" + name + ")");
         }
 
-        public void Command_Spawn(Il2Cpp.Player callerPlayer, String args)
+        public static void Command_Spawn(Player callerPlayer, String args)
         {
             // validate argument count
             int argumentCount = args.Split(' ').Length - 1;
@@ -229,11 +238,11 @@ namespace Si_SpawnConfigs
                 return;
             }
 
-            Vector3 playerPosition = callerPlayer.m_ControlledUnit.WorldPhysicalCenter;
-            Quaternion playerRotation = callerPlayer.m_ControlledUnit.GetFacingRotation();
+            Vector3 playerPosition = callerPlayer.ControlledUnit.WorldPhysicalCenter;
+            Quaternion playerRotation = callerPlayer.ControlledUnit.GetFacingRotation();
             String spawnName = args.Split(' ')[1];
 
-            int teamIndex = callerPlayer.m_Team.Index;
+            int teamIndex = callerPlayer.Team.Index;
             GameObject? spawnedObject = SpawnAtLocation(spawnName, playerPosition, playerRotation, teamIndex);
             if (spawnedObject == null)
             {
@@ -283,17 +292,24 @@ namespace Si_SpawnConfigs
             {
                 // set team information
                 BaseGameObject baseObject = spawnedObject.GetBaseGameObject();
-                if (baseObject.m_Team.Index != teamIndex)
+                if (baseObject.Team.Index != teamIndex)
                 {
                     baseObject.Team = Team.Teams[teamIndex];
-                    baseObject.m_Team = Team.Teams[teamIndex];
+                    //baseObject.m_Team = Team.Teams[teamIndex];
+#if NET6_0
                     baseObject.UpdateToCurrentTeam();
+#else
+                    Type baseOjbectType = typeof(BaseGameObject);
+                    MethodInfo updateToCurrentTeamMethod = baseOjbectType.GetMethod("UpdateToCurrentTeam");
+
+                    updateToCurrentTeamMethod.Invoke(baseObject, null);
+#endif
                 }
             }
 
             return spawnedObject;
         }
-        public void Command_SaveSetup(Il2Cpp.Player callerPlayer, String args)
+        public static void Command_SaveSetup(Player callerPlayer, String args)
         {
             String commandName = args.Split(' ')[0];
 
@@ -360,12 +376,7 @@ namespace Si_SpawnConfigs
                 SpawnSetup spawnSetup = GenerateSpawnSetup();
 
                 // save to file
-                String JsonRaw = JsonSerializer.Serialize(
-                    spawnSetup, 
-                    new JsonSerializerOptions
-                    {
-                        WriteIndented = true
-                    });
+                String JsonRaw = JsonConvert.SerializeObject(spawnSetup, Newtonsoft.Json.Formatting.Indented);
 
                 File.WriteAllText(configFileFullPath, JsonRaw);
 
@@ -377,7 +388,7 @@ namespace Si_SpawnConfigs
             }
         }
 
-        public void Command_AddSetup(Il2Cpp.Player callerPlayer, String args)
+        public static void Command_AddSetup(Player callerPlayer, String args)
         {
             String commandName = args.Split(' ')[0];
 
@@ -430,20 +441,20 @@ namespace Si_SpawnConfigs
 
                 // check global config options
                 String JsonRaw = File.ReadAllText(configFileFullPath);
-                SpawnSetup? spawnSetup = JsonSerializer.Deserialize<SpawnSetup>(JsonRaw);
+                SpawnSetup? spawnSetup = JsonConvert.DeserializeObject<SpawnSetup>(JsonRaw);
                 if (spawnSetup == null) 
                 {
                     HelperMethods.ReplyToCommand(commandName + ": json error in configuration file");
                     return;
                 }
 
-                if (spawnSetup.Map != null && spawnSetup.Map != NetworkGameServer.GetServerMapName())
+                if (spawnSetup.Map != null && spawnSetup.Map != NetworkGameServer.GetServerMap())
                 {
                     HelperMethods.ReplyToCommand(commandName + ": incompatible map specified");
                     return;
                 }
 
-                MP_Strategy strategyInstance = GameObject.FindObjectOfType<Il2Cpp.MP_Strategy>();
+                MP_Strategy strategyInstance = GameObject.FindObjectOfType<MP_Strategy>();
                 if (spawnSetup.VersusMode != null && spawnSetup.VersusMode != strategyInstance.TeamsVersus.ToString())
                 {
                     HelperMethods.ReplyToCommand(commandName + ": incompatible mode specified");
@@ -464,7 +475,7 @@ namespace Si_SpawnConfigs
             }
         }
 
-        public void Command_LoadSetup(Il2Cpp.Player callerPlayer, String args)
+        public static void Command_LoadSetup(Player callerPlayer, String args)
         {
             String commandName = args.Split(' ')[0];
 
@@ -517,20 +528,20 @@ namespace Si_SpawnConfigs
 
                 // check global config options
                 String JsonRaw = File.ReadAllText(configFileFullPath);
-                SpawnSetup? spawnSetup = JsonSerializer.Deserialize<SpawnSetup>(JsonRaw);
+                SpawnSetup? spawnSetup = JsonConvert.DeserializeObject<SpawnSetup>(JsonRaw);
                 if (spawnSetup == null)
                 {
                     HelperMethods.ReplyToCommand(commandName + ": json error in configuration file");
                     return;
                 }
 
-                if (spawnSetup.Map != null && spawnSetup.Map != NetworkGameServer.GetServerMapName())
+                if (spawnSetup.Map != null && spawnSetup.Map != NetworkGameServer.GetServerMap())
                 {
                     HelperMethods.ReplyToCommand(commandName + ": incompatible map specified");
                     return;
                 }
 
-                MP_Strategy strategyInstance = GameObject.FindObjectOfType<Il2Cpp.MP_Strategy>();
+                MP_Strategy strategyInstance = GameObject.FindObjectOfType<MP_Strategy>();
                 if (spawnSetup.VersusMode != null && spawnSetup.VersusMode != strategyInstance.TeamsVersus.ToString())
                 {
                     HelperMethods.ReplyToCommand(commandName + ": incompatible mode specified");
@@ -653,8 +664,19 @@ namespace Si_SpawnConfigs
                 {
                     MelonLogger.Msg("Adding unit " + spawnEntry.Classname);
 
-                    Vector3 position = new(spawnEntry.Position[0], spawnEntry.Position[1], spawnEntry.Position[2]);
-                    Quaternion rotation = new(spawnEntry.Rotation[0], spawnEntry.Rotation[1], spawnEntry.Rotation[2], spawnEntry.Rotation[3]);
+                    Vector3 position = new Vector3
+                    {
+                        x = spawnEntry.Position[0],
+                        y = spawnEntry.Position[1],
+                        z = spawnEntry.Position[2]
+                    };
+                    Quaternion rotation = new Quaternion
+                    {
+                        x = spawnEntry.Rotation[0],
+                        y = spawnEntry.Rotation[1],
+                        z = spawnEntry.Rotation[2],
+                        w = spawnEntry.Rotation[3]
+                    };
                     GameObject? spawnedObject = SpawnAtLocation(spawnEntry.Classname, position, rotation, spawnEntry.TeamIndex);
                     if (spawnedObject == null)
                     {
@@ -688,8 +710,19 @@ namespace Si_SpawnConfigs
                 {
                     MelonLogger.Msg("Adding structure " + spawnEntry.Classname);
 
-                    Vector3 position = new(spawnEntry.Position[0], spawnEntry.Position[1], spawnEntry.Position[2]);
-                    Quaternion rotation = new(spawnEntry.Rotation[0], spawnEntry.Rotation[1], spawnEntry.Rotation[2], spawnEntry.Rotation[3]);
+                    Vector3 position = new Vector3
+                    {
+                        x = spawnEntry.Position[0],
+                        y = spawnEntry.Position[1],
+                        z = spawnEntry.Position[2]
+                    };
+                    Quaternion rotation = new Quaternion
+                    {
+                        x = spawnEntry.Rotation[0],
+                        y = spawnEntry.Rotation[1],
+                        z = spawnEntry.Rotation[2],
+                        w = spawnEntry.Rotation[3]
+                    };
                     GameObject? spawnedObject = SpawnAtLocation(spawnEntry.Classname, position, rotation, spawnEntry.TeamIndex);
                     if (spawnedObject == null)
                     {
@@ -709,7 +742,15 @@ namespace Si_SpawnConfigs
                         if (thisStructure != null)
                         {
                             thisStructure.StructureTechnologyTier = (int)spawnEntry.TechTier;
+
+#if NET6_0
                             thisStructure.RPC_SynchTechnologyTier();
+#else
+                            Type structureType = typeof(Structure);
+                            MethodInfo synchTechMethod = structureType.GetMethod("RPC_SynchTechnologyTier");
+
+                            synchTechMethod.Invoke(thisStructure, null);
+#endif
                         }
                     }
 
@@ -733,7 +774,7 @@ namespace Si_SpawnConfigs
                 foreach (TeamSpawn spawnEntry in addSetup.Teams)
                 {
                     Team.Teams[spawnEntry.TeamIndex].StartingResources = spawnEntry.Resources;
-                    Team.Teams[spawnEntry.TeamIndex].m_StartingResources = spawnEntry.Resources;
+                    //Team.Teams[spawnEntry.TeamIndex].m_StartingResources = spawnEntry.Resources;
                 }
             }
         }
@@ -760,9 +801,9 @@ namespace Si_SpawnConfigs
         public static SpawnSetup GenerateSpawnSetup(bool includeNetIDs = false)
         {
             // set global config options
-            SpawnSetup spawnSetup = new();
-            spawnSetup.Map = NetworkGameServer.GetServerMapName();
-            MP_Strategy strategyInstance = GameObject.FindObjectOfType<Il2Cpp.MP_Strategy>();
+            SpawnSetup spawnSetup = new SpawnSetup();
+            spawnSetup.Map = NetworkGameServer.GetServerMap();
+            MP_Strategy strategyInstance = GameObject.FindObjectOfType<MP_Strategy>();
             spawnSetup.VersusMode = strategyInstance.TeamsVersus.ToString();
 
             // create a list of all structures and units
@@ -777,8 +818,8 @@ namespace Si_SpawnConfigs
                     continue;
                 }
 
-                TeamSpawn thisTeamSpawn = new();
-                thisTeamSpawn.Resources = team.m_StartingResources;
+                TeamSpawn thisTeamSpawn = new TeamSpawn();
+                thisTeamSpawn.Resources = team.StartingResources;
                 thisTeamSpawn.TeamIndex = team.Index;
                 spawnSetup.Teams.Add(thisTeamSpawn);
 
@@ -790,7 +831,7 @@ namespace Si_SpawnConfigs
                         continue;
                     }
 
-                    StructureSpawn thisSpawnEntry = new();
+                    StructureSpawn thisSpawnEntry = new StructureSpawn();
 
                     BaseGameObject structureBaseObject = structure.gameObject.GetBaseGameObject();
                     float[] position = new float[]
@@ -840,7 +881,7 @@ namespace Si_SpawnConfigs
 
                 foreach (Unit unit in team.Units)
                 {
-                    UnitSpawn thisSpawnEntry = new();
+                    UnitSpawn thisSpawnEntry = new UnitSpawn();
 
                     float[] position = new float[]
                     {
