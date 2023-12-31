@@ -32,8 +32,9 @@ using MelonLoader.Utils;
 using System;
 using System.IO;
 using System.Collections.Generic;
+using SilicaAdminMod;
 
-[assembly: MelonInfo(typeof(MapCycleMod), "Mapcycle", "1.1.0", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(MapCycleMod), "Mapcycle", "1.2.0", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -41,6 +42,7 @@ namespace Si_Mapcycle
 {
     public class MapCycleMod : MelonMod
     {
+        static String mapName = "";
         static GameMode gameModeInstance;
         static bool bEndRound;
         static bool bTimerExpired;
@@ -83,6 +85,53 @@ namespace Si_Mapcycle
             catch (Exception exception)
             {
                 MelonLogger.Msg(exception.ToString());
+            }
+        }
+
+        public override void OnSceneWasLoaded(int buildIndex, string sceneName)
+        {
+            mapName = sceneName;
+        }
+
+        //TODO change to use the admin helper methods instead
+        #if NET6_0
+        [HarmonyPatch(typeof(Il2CppSilica.UI.Chat), nameof(Il2CppSilica.UI.Chat.MessageReceived))]
+        #else
+        [HarmonyPatch(typeof(Silica.UI.Chat), "MessageReceived")]
+        #endif
+        private static class ApplyChatReceiveCurrentMatchInfo
+        {
+            #if NET6_0
+            public static void Postfix(Il2CppSilica.UI.Chat __instance, Player __0, string __1, bool __2)
+            #else
+            public static void Postfix(Silica.UI.Chat __instance, Player __0, string __1, bool __2)
+            #endif
+            {
+                try
+                {
+                    if (!__instance.ToString().Contains("alien") || __2 == true)
+                    {
+                        return;
+                    }
+
+                    bool isCurrMapCommand = String.Equals(__1, "currentmap", StringComparison.OrdinalIgnoreCase);
+                    if (isCurrMapCommand)
+                    {
+                        HelperMethods.ReplyToCommand("Current map is " + mapName);
+                        return;
+                    }
+
+                    bool isNextMapCommand = String.Equals(__1, "nextmap", StringComparison.OrdinalIgnoreCase);
+                    if (isNextMapCommand)
+                    {
+                        HelperMethods.ReplyToCommand("Next map is " + sMapCycle[iMapLoadCount % sMapCycle.Length]);
+                        return;
+                    }
+                }
+                catch (Exception exception)
+                {
+                    HelperMethods.PrintError(exception);
+                }
             }
         }
 
