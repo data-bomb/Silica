@@ -23,14 +23,19 @@
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using HarmonyLib;
+#if NET6_0
 using Il2Cpp;
+#endif
+
+using System;
+using HarmonyLib;
 using MelonLoader;
 using Si_AntiGrief;
-using AdminExtension;
+using SilicaAdminMod;
 
-[assembly: MelonInfo(typeof(AntiGrief), "[Si] Anti-Grief", "1.1.2", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(AntiGrief), "Anti-Grief", "1.1.3", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
+[assembly: MelonOptionalDependencies("Admin Mod")]
 
 namespace Si_AntiGrief
 {
@@ -114,7 +119,6 @@ namespace Si_AntiGrief
                     MelonLogger.Msg(attackerPlayer.PlayerName + " destroyed a friendly unit with kill score of " + currentKillScore.ToString());
 
                     // check if another player was the victim
-                    Player serverPlayer = NetworkGameServer.GetServerPlayer();
                     if (victimPlayer != null)
                     {
                         MelonLogger.Msg(attackerPlayer.PlayerName + " team killed " + victimPlayer.PlayerName);
@@ -195,7 +199,6 @@ namespace Si_AntiGrief
 
                     string structName = GetStructureDisplayName(__0.ToString());
 
-                    Player serverPlayer = NetworkGameServer.GetServerPlayer();
                     MelonLogger.Msg(attackerPlayer.PlayerName + " team killed a structure " + structName);
                     HelperMethods.ReplyToCommand_Player(attackerPlayer, "killed a friendly structure (" + HelperMethods.GetTeamColor(attackerPlayer) + structName + HelperMethods.defaultColor + ")");
                 }
