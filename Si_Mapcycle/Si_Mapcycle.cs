@@ -1,6 +1,6 @@
 ﻿/*
 Silica Map Cycle
-Copyright (C) 2023 by databomb
+Copyright (C) 2024 by databomb
 
 * Description *
 Provides map management and cycles to a server.
@@ -33,8 +33,9 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 using SilicaAdminMod;
+using System.Linq;
 
-[assembly: MelonInfo(typeof(MapCycleMod), "Mapcycle", "1.2.1", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(MapCycleMod), "Mapcycle", "1.3.0", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -50,6 +51,40 @@ namespace Si_Mapcycle
         static string[] sMapCycle;
 
         private static System.Timers.Timer DelayTimer;
+        public override void OnLateInitializeMelon()
+        {
+            HelperMethods.CommandCallback mapCallback = Command_ChangeMap;
+            HelperMethods.RegisterAdminCommand("!map", mapCallback, Power.Map);
+        }
+        public static void Command_ChangeMap(Player callerPlayer, String args)
+        {
+            // validate argument count
+            int argumentCount = args.Split(' ').Length - 1;
+            if (argumentCount > 1)
+            {
+                HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Too many arguments");
+                return;
+            }
+            else if (argumentCount < 1)
+            {
+                HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Too few arguments");
+                return;
+            }
+
+            // validate argument
+            String targetMapName = args.Split(' ')[1];
+            bool validMap = sMapCycle.Any(k => k == targetMapName);
+            if (!validMap)
+            {
+                HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Invalid map name");
+                return;
+            }
+
+            HelperMethods.AlertAdminAction(callerPlayer, "changing map to " + targetMapName + "...");
+            MelonLogger.Msg("Changing map to " + targetMapName + "...");
+
+            NetworkGameServer.LoadLevel(targetMapName, GameMode.CurrentGameMode.GameModeInfo);
+        }
 
         public override void OnInitializeMelon()
         {
@@ -153,15 +188,12 @@ namespace Si_Mapcycle
                 if (MapCycleMod.bEndRound == true && MapCycleMod.bTimerExpired == true)
                 {
                     MapCycleMod.bEndRound = false;
-
                     MapCycleMod.iMapLoadCount++;
 
                     String sNextMap = sMapCycle[iMapLoadCount % (sMapCycle.Length-1)];
 
-                    String sCurrentMap = NetworkGameServer.GetServerMap();
                     MelonLogger.Msg("Changing map to " + sNextMap + "...");
-
-                    NetworkGameServer.LoadLevel(sNextMap, MapCycleMod.gameModeInstance.GameModeInfo);
+                    NetworkGameServer.LoadLevel(sNextMap, GameMode.CurrentGameMode.GameModeInfo);
                 }
             }
         }
@@ -176,7 +208,7 @@ namespace Si_Mapcycle
                 MapCycleMod.bEndRound = true;
                 MapCycleMod.bTimerExpired = false;
 
-                double interval = 12500.0;
+                double interval = 12000.0;
                 MapCycleMod.DelayTimer = new System.Timers.Timer(interval);
                 MapCycleMod.DelayTimer.Elapsed += new ElapsedEventHandler(MapCycleMod.HandleTimerChangeLevel);
                 MapCycleMod.DelayTimer.AutoReset = false;
