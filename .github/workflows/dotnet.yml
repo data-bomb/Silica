@@ -21,14 +21,23 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          
       - name: Generate matrix with all modules of the repo
         id: set-matrix
         run: |
           echo "::set-output name=matrix::$(ls -l | grep '^d' | awk -F ' ' '{print $9}' | grep -Po 'Si.*' | jq -R -s -c 'split("\n") | map(select(length > 0))')"
           
+      - name: Generate the commit number
+        id: commit-number
+        run: |
+          echo "::set-output name=comnum::$(git log --oneline | wc -l)" 
+          
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
+      comnum: ${{ steps.commit-number.outputs.comnum }}
 
 #  checklinks:
 #    needs: generateInputPaths
@@ -54,22 +63,28 @@ jobs:
     - name: Prepare environment sha
       shell: bash
       run: echo "GITHUB_SHA_SHORT=${GITHUB_SHA::7}" >> $GITHUB_ENV
+      
     - name: Prepare environment pwd
       shell: bash
       run: echo "START_DIR=`pwd`" >> $GITHUB_ENV
+      
     - uses: actions/checkout@v3
+    
     - name: Setup .NET 6
       uses: actions/setup-dotnet@v3
       with:
         dotnet-version: 6.0.x
+        
     - name: Restore dependencies
       run: |
         cd ${{ matrix.path }}
         dotnet restore
+        
     - name: Build
       run: |
         cd ${{ matrix.path }}
         dotnet build --no-restore -c Release
+        
     - name: Make output paths
       run: |
         cd ${{ env.START_DIR }}
@@ -77,15 +92,57 @@ jobs:
         mkdir -p listen/${{ matrix.path }}
         cp ${{ env.START_DIR }}/${{ matrix.path }}/bin/${{env.BUILD_TYPE}}/netstandard2.1/*.dll dedi/${{ matrix.path }}
         cp ${{ env.START_DIR }}/${{ matrix.path }}/bin/${{env.BUILD_TYPE}}/net6.0/*.dll listen/${{ matrix.path }}
+        
     - uses: actions/upload-artifact@v3
       with:
         name: ${{ matrix.path }}-build-${{ env.GITHUB_SHA_SHORT }}
         path: ${{ matrix.path }}/bin/${{env.BUILD_TYPE}}/**/*.dll
+        
     - uses: actions/upload-artifact@v3
       with:
         name: dedicated-server-${{ env.GITHUB_SHA_SHORT }}
         path: ${{ env.START_DIR }}/dedi
+        
     - uses: actions/upload-artifact@v3
       with:
         name: listen-server-${{ env.GITHUB_SHA_SHORT }}
         path: ${{ env.START_DIR }}/listen
+        
+  publish:
+    if: github.event_name == 'push'
+    permissions:
+      contents: write
+    needs: [ build, generateInputPaths ]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Prepare env
+        shell: bash
+        run: echo "GITHUB_SHA_SHORT=${GITHUB_SHA::7}" >> $GITHUB_ENV
+        
+      - name: Make output paths
+        run: |
+          mkdir -p release/dedi
+          mkdir -p release/listen
+          
+      - uses: actions/download-artifact@v3
+        with:
+          name: dedicated-server-${{ env.GITHUB_SHA_SHORT }}
+          path: release/dedi
+
+      - uses: actions/download-artifact@v3
+        with:
+          name: listen-server-${{ env.GITHUB_SHA_SHORT }}
+          path: release/listen
+
+      - name: Zip Builds
+        run: |
+          (cd release/dedi && zip -qq -r ../../DedicatedServer-${{ needs.generateInputPaths.outputs.comnum }}-${{ env.GITHUB_SHA_SHORT }}.zip *)
+          (cd release/listen && zip -qq -r ../../ListenServer-${{ needs.generateInputPaths.outputs.comnum }}-${{ env.GITHUB_SHA_SHORT }}.zip *)
+
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ needs.generateInputPaths.outputs.comnum }}
+          files: |
+            DedicatedServer-${{ needs.generateInputPaths.outputs.comnum }}-${{ env.GITHUB_SHA_SHORT }}.zip
+            ListenServer-${{ needs.generateInputPaths.outputs.comnum }}-${{ env.GITHUB_SHA_SHORT }}.zip
