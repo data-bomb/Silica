@@ -71,3 +71,11 @@ jobs:
       with:
         name: ${{ matrix.path }}-build-${{ env.GITHUB_SHA_SHORT }}
         path: ${{ matrix.path }}/bin/${{env.BUILD_TYPE}}/**/*.dll
+    - uses: actions/upload-artifact@v3
+      with:
+        name: dedicated-server-${{ env.GITHUB_SHA_SHORT }}
+        path: ../**/bin/netstandard2.1/*.dll
+    - uses: actions/upload-artifact@v3
+      with:
+        name: listen-server-${{ env.GITHUB_SHA_SHORT }}
+        path: ../**/bin/net6.0/*.dll
