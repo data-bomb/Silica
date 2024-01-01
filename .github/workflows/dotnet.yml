@@ -136,13 +136,13 @@ jobs:
 
       - name: Zip Builds
         run: |
-          (cd release/dedi && zip -qq -r ../../DedicatedServer-${{ needs.generateInputPaths.outputs.comnum }}-${{ env.GITHUB_SHA_SHORT }}.zip *)
-          (cd release/listen && zip -qq -r ../../ListenServer-${{ needs.generateInputPaths.outputs.comnum }}-${{ env.GITHUB_SHA_SHORT }}.zip *)
+          (cd release/dedi && zip -qq -r ../../DedicatedServer-v${{ needs.generateInputPaths.outputs.comnum }}-${{ env.GITHUB_SHA_SHORT }}.zip *)
+          (cd release/listen && zip -qq -r ../../ListenServer-v${{ needs.generateInputPaths.outputs.comnum }}-${{ env.GITHUB_SHA_SHORT }}.zip *)
 
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: v${{ needs.generateInputPaths.outputs.comnum }}
           files: |
-            DedicatedServer-${{ needs.generateInputPaths.outputs.comnum }}-${{ env.GITHUB_SHA_SHORT }}.zip
-            ListenServer-${{ needs.generateInputPaths.outputs.comnum }}-${{ env.GITHUB_SHA_SHORT }}.zip
+            DedicatedServer-v${{ needs.generateInputPaths.outputs.comnum }}-${{ env.GITHUB_SHA_SHORT }}.zip
+            ListenServer-v${{ needs.generateInputPaths.outputs.comnum }}-${{ env.GITHUB_SHA_SHORT }}.zip
