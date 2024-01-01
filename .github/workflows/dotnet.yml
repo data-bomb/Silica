@@ -14,7 +14,7 @@ on:
 
 jobs:
 
-  findAllProjects:
+  generateInputPaths:
     runs-on: ubuntu-latest
     
     steps:
@@ -41,7 +41,7 @@ jobs:
 #           ls -R | grep ":$" | sed -e 's/:$//' -e 's/[^-][^\/]*\//--/g' -e 's/^/   /' -e 's/-/|/'
      
   build:
-    needs: findAllProjects
+    needs: generateInputPaths
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
