@@ -70,6 +70,13 @@ jobs:
       run: |
         cd ${{ matrix.path }}
         dotnet build --no-restore -c Release
+    - name: Make output paths
+      run: |
+        cd ${{ env.START_DIR }}
+        mkdir -p dedi/${{ matrix.path }}
+        mkdir -p listen/${{ matrix.path }}
+        cp ${{ env.START_DIR }}/${{ matrix.path }}/bin/${{env.BUILD_TYPE}}/netstandard2.1/*.dll dedi/${{ matrix.path }}
+        cp ${{ env.START_DIR }}/${{ matrix.path }}/bin/${{env.BUILD_TYPE}}/net6.0/*.dll listen/${{ matrix.path }}
     - uses: actions/upload-artifact@v3
       with:
         name: ${{ matrix.path }}-build-${{ env.GITHUB_SHA_SHORT }}
@@ -77,8 +84,8 @@ jobs:
     - uses: actions/upload-artifact@v3
       with:
         name: dedicated-server-${{ env.GITHUB_SHA_SHORT }}
-        path: ${{ env.START_DIR }}/**/bin/${{env.BUILD_TYPE}}/netstandard2.1/*.dll
+        path: ${{ env.START_DIR }}/dedi
     - uses: actions/upload-artifact@v3
       with:
         name: listen-server-${{ env.GITHUB_SHA_SHORT }}
-        path: ${{ env.START_DIR }}/**/bin/${{env.BUILD_TYPE}}/net6.0/*.dll
+        path: ${{ env.START_DIR }}/listen
