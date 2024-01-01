@@ -77,8 +77,8 @@ jobs:
     - uses: actions/upload-artifact@v3
       with:
         name: dedicated-server-${{ env.GITHUB_SHA_SHORT }}
-        path: ${{ env.START_DIR }}/**/bin/netstandard2.1/*.dll
+        path: ${{ env.START_DIR }}/**/bin/${{env.BUILD_TYPE}}/netstandard2.1/*.dll
     - uses: actions/upload-artifact@v3
       with:
         name: listen-server-${{ env.GITHUB_SHA_SHORT }}
-        path: ${{ env.START_DIR }}/**/bin/net6.0/*.dll
+        path: ${{ env.START_DIR }}/**/bin/${{env.BUILD_TYPE}}/net6.0/*.dll
