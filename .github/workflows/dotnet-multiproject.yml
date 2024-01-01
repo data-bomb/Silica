@@ -61,13 +61,4 @@ jobs:
       run: |
         cd ${{ matrix.path }}
         dotnet build --no-restore
-    - name: Clean build directory
-      run: |
-        cd ${{ matrix.path }}
-        mkdir output
-        mv ${{env.BUILD_TYPE}}/*.dll output
-    - uses: actions/upload-artifact@v3
-      with:
-        name: silica-build-win-${{ env.GITHUB_SHA_SHORT }}
-        path: output/
 
