@@ -63,7 +63,7 @@ jobs:
     - name: Build
       run: |
         cd ${{ matrix.path }}
-        dotnet build --no-restore
+        dotnet build --no-restore -c Release
     - uses: actions/upload-artifact@v3
       with:
         name: ${{ matrix.path }}-build-windows-${{ env.GITHUB_SHA_SHORT }}
