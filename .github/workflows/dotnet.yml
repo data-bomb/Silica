@@ -11,7 +11,10 @@ on:
        - '!*.md'
   pull_request:
     branches: [ "main" ]
-
+    
+env:
+  BUILD_TYPE: Release
+  
 jobs:
 
   generateInputPaths:
@@ -61,4 +64,7 @@ jobs:
       run: |
         cd ${{ matrix.path }}
         dotnet build --no-restore
-
+    - uses: actions/upload-artifact@v3
+      with:
+        name: ${{ matrix.path }}-build-windows-${{ env.GITHUB_SHA_SHORT }}
+        path: ${{ matrix.path }}/bin/${{env.BUILD_TYPE}}
