@@ -51,6 +51,9 @@ jobs:
       matrix:
         path: ${{ fromJson(needs.generateInputPaths.outputs.matrix) }}
     steps:
+    - name: Prepare env
+      shell: bash
+      run: echo "GITHUB_SHA_SHORT=${GITHUB_SHA::7}" >> $GITHUB_ENV
     - uses: actions/checkout@v3
     - name: Setup .NET 6
       uses: actions/setup-dotnet@v3
@@ -66,5 +69,5 @@ jobs:
         dotnet build --no-restore -c Release
     - uses: actions/upload-artifact@v3
       with:
-        name: ${{ matrix.path }}-build-windows-${{ env.GITHUB_SHA_SHORT }}
-        path: ${{ matrix.path }}/bin/${{env.BUILD_TYPE}}
+        name: ${{ matrix.path }}-build-${{ env.GITHUB_SHA_SHORT }}
+        path: ${{ matrix.path }}/bin/${{env.BUILD_TYPE}}/**/*.dll
