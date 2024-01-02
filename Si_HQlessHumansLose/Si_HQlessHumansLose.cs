@@ -1,6 +1,6 @@
 ﻿/*
  Silica Headquarterless Humans Lose Mod
- Copyright (C) 2023 by databomb
+ Copyright (C) 2024 by databomb
  
  * Description *
  For Silica servers, automatically detects when humans have lost their 
@@ -34,7 +34,7 @@ using UnityEngine;
 using System;
 using SilicaAdminMod;
 
-[assembly: MelonInfo(typeof(HQlessHumansLose), "[Si] HQless Humans Lose", "1.2.4", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HQlessHumansLose), "[Si] HQless Humans Lose", "1.2.5", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -45,7 +45,7 @@ namespace Si_HQlessHumansLose
         static bool lostMessageTimerExpired;
         static Team? losingTeam;
         static Player? destroyerOfWorlds;
-        static System.Timers.Timer delayLostMessageTimer;
+        static System.Timers.Timer? delayLostMessageTimer;
 
         public static void TeamLostMessage(Team team)
         {
@@ -71,7 +71,7 @@ namespace Si_HQlessHumansLose
             return team.TeamName.Contains("Human") ? "Headquarters" : "Nest";
         }
 
-        static void HandleTimerSendLostMessage(object source, ElapsedEventArgs e)
+        static void HandleTimerSendLostMessage(object? source, ElapsedEventArgs e)
         {
             lostMessageTimerExpired = true;
         }
