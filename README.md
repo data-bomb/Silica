@@ -37,7 +37,8 @@
 4. Place `dobby.dll` in your `Silica Dedicated Server` directory
 5. Place the Admin Mod in your `Silica Dedicated Server\Mods` directory
 6. Place any other desired mods in your `Silica Dedicated Server\Mods` directory
-7. Launch Silica Dedicated Server
+7. Update the command line options for Silica Dedicated Server to include `--melonloader.hideconsole --melonloader.disablestartscreen`
+8. Launch Silica Dedicated Server
 
 For Dedicated Server hosts who wish to have an official server license, note that mods are not currently approved/supported as mods can negatively impact performance. The only exception to this is the GamePriority mod.
 
