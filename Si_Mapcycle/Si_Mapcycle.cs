@@ -35,7 +35,7 @@ using System.Collections.Generic;
 using SilicaAdminMod;
 using System.Linq;
 
-[assembly: MelonInfo(typeof(MapCycleMod), "Mapcycle", "1.3.0", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(MapCycleMod), "Mapcycle", "1.3.1", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -44,13 +44,13 @@ namespace Si_Mapcycle
     public class MapCycleMod : MelonMod
     {
         static String mapName = "";
-        static GameMode gameModeInstance;
         static bool bEndRound;
         static bool bTimerExpired;
         static int iMapLoadCount;
-        static string[] sMapCycle;
+        static string[]? sMapCycle;
 
-        private static System.Timers.Timer DelayTimer;
+        private static System.Timers.Timer? DelayTimer;
+
         public override void OnLateInitializeMelon()
         {
             HelperMethods.CommandCallback mapCallback = Command_ChangeMap;
@@ -72,6 +72,11 @@ namespace Si_Mapcycle
             }
 
             // validate argument
+            if (sMapCycle == null)
+            {
+                return;
+            }
+
             String targetMapName = args.Split(' ')[1];
             bool validMap = sMapCycle.Any(k => k == targetMapName);
             if (!validMap)
@@ -92,21 +97,7 @@ namespace Si_Mapcycle
 
             try
             {
-                if (File.Exists(mapCycleFile))
-                {
-                    // Open the stream and read it back.
-                    using (StreamReader mapFileStream = File.OpenText(mapCycleFile))
-                    {
-                        List<string> sMapList = new List<string>();
-                        string sMap = "";
-                        while ((sMap = mapFileStream.ReadLine()) != null)
-                        {
-                            sMapList.Add(sMap);
-                        }
-                        sMapCycle = sMapList.ToArray();
-                    }
-                }
-                else
+                if (!File.Exists(mapCycleFile))
                 {
                     // Create simple mapcycle.txt file
                     using (FileStream fs = File.Create(mapCycleFile))
@@ -116,6 +107,16 @@ namespace Si_Mapcycle
                     }
                 }
 
+                // Open the stream and read it back.
+                using StreamReader mapFileStream = File.OpenText(mapCycleFile);
+                List<string> sMapList = new List<string>();
+                string? sMap = "";
+
+                while ((sMap = mapFileStream.ReadLine()) != null)
+                {
+                    sMapList.Add(sMap);
+                }
+                sMapCycle = sMapList.ToArray();
             }
             catch (Exception exception)
             {
@@ -144,7 +145,7 @@ namespace Si_Mapcycle
             {
                 try
                 {
-                    if (!__instance.ToString().Contains("alien") || __2 == true)
+                    if (!__instance.ToString().Contains("alien") || __2 == true || sMapCycle == null)
                     {
                         return;
                     }
@@ -170,7 +171,7 @@ namespace Si_Mapcycle
             }
         }
 
-        private static void HandleTimerChangeLevel(object source, ElapsedEventArgs e)
+        private static void HandleTimerChangeLevel(object? source, ElapsedEventArgs e)
         {
             MapCycleMod.bTimerExpired = true;
         }
@@ -185,7 +186,7 @@ namespace Si_Mapcycle
             private static void Postfix(MusicJukeboxHandler __instance)
             {
                 // check if timer expired
-                if (MapCycleMod.bEndRound == true && MapCycleMod.bTimerExpired == true)
+                if (MapCycleMod.bEndRound == true && MapCycleMod.bTimerExpired == true && sMapCycle != null)
                 {
                     MapCycleMod.bEndRound = false;
                     MapCycleMod.iMapLoadCount++;
@@ -203,14 +204,16 @@ namespace Si_Mapcycle
         {
             public static void Postfix(MusicJukeboxHandler __instance, GameMode __0, Team __1)
             {
-                HelperMethods.ReplyToCommand("Preparing to change map to " + sMapCycle[(iMapLoadCount + 1) % (sMapCycle.Length-1)] + "..." );
-                MapCycleMod.gameModeInstance = __0;
+                if (sMapCycle != null)
+                {
+                    HelperMethods.ReplyToCommand("Preparing to change map to " + sMapCycle[(iMapLoadCount + 1) % (sMapCycle.Length - 1)] + "...");
+                }
                 MapCycleMod.bEndRound = true;
                 MapCycleMod.bTimerExpired = false;
 
                 double interval = 12000.0;
                 MapCycleMod.DelayTimer = new System.Timers.Timer(interval);
-                MapCycleMod.DelayTimer.Elapsed += new ElapsedEventHandler(MapCycleMod.HandleTimerChangeLevel);
+                MapCycleMod.DelayTimer.Elapsed += new ElapsedEventHandler(HandleTimerChangeLevel);
                 MapCycleMod.DelayTimer.AutoReset = false;
                 MapCycleMod.DelayTimer.Enabled = true;
             }
