@@ -33,25 +33,12 @@ jobs:
       - name: Generate the commit number
         id: commit-number
         run: |
-          echo "::set-output name=comnum::$(git log --oneline | wc -l)" 
+          echo "comnum=$(git log --oneline | wc -l)" >> "$GITHUB_OUTPUT"
           
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
       comnum: ${{ steps.commit-number.outputs.comnum }}
 
-#  checklinks:
-#    needs: generateInputPaths
-#    runs-on: ubuntu-latest
-#    strategy:
-#      fail-fast: false
-#      matrix:
-#        path: ${{ fromJson(needs.generateInputPaths.outputs.matrix) }}
-#    steps:
-#      - uses: actions/checkout@v2
-#      - name: Print Directory Structure
-#        run: |
-#           ls -R | grep ":$" | sed -e 's/:$//' -e 's/[^-][^\/]*\//--/g' -e 's/^/   /' -e 's/-/|/'
-     
   build:
     needs: generateInputPaths
     runs-on: ubuntu-latest
