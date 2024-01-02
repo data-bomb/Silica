@@ -1,6 +1,6 @@
 ﻿/*
  Silica Friendly-Fire Adjustments Mod
- Copyright (C) 2023 by databomb
+ Copyright (C) 2024 by databomb
  
  * Description *
  For Silica listen servers, adjust the amount of friendly fire damage 
@@ -31,7 +31,7 @@ using Si_FriendlyFireLimits;
 using System;
 using SilicaAdminMod;
 
-[assembly: MelonInfo(typeof(FriendlyFireLimits), "Friendly Fire Limits", "1.2.0", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(FriendlyFireLimits), "Friendly Fire Limits", "1.2.1", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -39,42 +39,25 @@ namespace Si_FriendlyFireLimits
 {
     public class FriendlyFireLimits : MelonMod
     {
+        #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
         static MelonPreferences_Category _modCategory;
         static MelonPreferences_Entry<float> _UnitOnUnitNonExplosionDamageMultipler;
         static MelonPreferences_Entry<float> _UnitOnUnitExplosionDamageMultiplier;
         static MelonPreferences_Entry<float> _UnitOnStructureExplosionDamageMultiplier;
         static MelonPreferences_Entry<float> _UnitOnStructureNonExplosionDamageMultiplier;
         static MelonPreferences_Entry<bool> _HarvesterPassthrough;
-
+        #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
         private const string ModCategory = "Silica";
 
         public override void OnInitializeMelon()
         {
-            if (_modCategory == null)
-            {
-                _modCategory = MelonPreferences.CreateCategory(ModCategory);
-            }
-            if (_UnitOnUnitNonExplosionDamageMultipler == null)
-            {
-                _UnitOnUnitNonExplosionDamageMultipler = _modCategory.CreateEntry<float>("FriendlyFire_UnitAttacked_DamageMultiplier", 0.75f);
-            }
-            if (_UnitOnUnitExplosionDamageMultiplier == null)
-            {
-                _UnitOnUnitExplosionDamageMultiplier = _modCategory.CreateEntry<float>("FriendlyFire_UnitAttacked_DamageMultiplier_Exp", 0.85f);
-            }
-            if (_UnitOnStructureExplosionDamageMultiplier == null)
-            {
-                _UnitOnStructureExplosionDamageMultiplier = _modCategory.CreateEntry<float>("FriendlyFire_StructureAttacked_DamageMultiplier_Exp", 0.65f);
-            }
-            if (_UnitOnStructureNonExplosionDamageMultiplier == null)
-            {
-                _UnitOnStructureNonExplosionDamageMultiplier = _modCategory.CreateEntry<float>("FriendlyFire_StructureAttacked_DamageMultiplier_NonExp", 0.0f);
-            }
-            if (_HarvesterPassthrough == null)
-            {
-                _HarvesterPassthrough = _modCategory.CreateEntry<bool>("FriendlyFire_Passthrough_Harvester_Damage", true);
-            }
+            _modCategory ??= MelonPreferences.CreateCategory(ModCategory);
+            _UnitOnUnitNonExplosionDamageMultipler ??= _modCategory.CreateEntry<float>("FriendlyFire_UnitAttacked_DamageMultiplier", 0.75f);
+            _UnitOnUnitExplosionDamageMultiplier ??= _modCategory.CreateEntry<float>("FriendlyFire_UnitAttacked_DamageMultiplier_Exp", 0.85f);
+            _UnitOnStructureExplosionDamageMultiplier ??= _modCategory.CreateEntry<float>("FriendlyFire_StructureAttacked_DamageMultiplier_Exp", 0.65f);
+            _UnitOnStructureNonExplosionDamageMultiplier ??= _modCategory.CreateEntry<float>("FriendlyFire_StructureAttacked_DamageMultiplier_NonExp", 0.0f);
+            _HarvesterPassthrough ??= _modCategory.CreateEntry<bool>("FriendlyFire_Passthrough_Harvester_Damage", true);
         }
 
         [HarmonyPatch(typeof(GameByteStreamReader), nameof(GameByteStreamReader.GetGameByteStreamReader))]
