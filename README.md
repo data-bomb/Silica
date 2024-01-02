@@ -9,32 +9,6 @@
 
 **Note:** *These mods are only for hosts running servers. Do not attempt to use any of these as a client. If you are a host of a Listen server and want to switch to a client then remove all of your MelonLoader Mods before connecting as a client.*
 
-## Mod Summary
-| Mod Name |
-|---------:|
-| Admin Mod |
-| AFK Manager | 
-| Announcements | 
-| Anti-Grief |
-| Auto Teams Mode Select |
-| Basic Banlist | 
-| Basic Team Balance | 
-| Chat Silence |
-| Commander Management |
-| Default Spawn Units | 
-| Eject Command | 
-| End Round |
-| Friendly Fire Limits | 
-| GamePriority | 
-| Headquarterless Humans Lose | 
-| Logging |
-| Mapcycle |
-| Resource Management |
-| Spawn Configs | 
-| SiRAC (Anti-Cheat) (Restricted Access) | 
-| Surrender Command | 
-| Tech Glitch |
-
 ## Silica Listen Server Requirements
 - 50Mbps upload bandwidth available (Individual clients can use about ~50kbps download bandwidth and up to ~1,500kbps upload bandwidth)
 - 32GB RAM
