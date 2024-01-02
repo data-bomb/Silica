@@ -45,13 +45,13 @@
 - 50Mbps upload bandwidth available (Individual clients can use about ~50kbps download bandwidth and up to ~1,500kbps upload bandwidth)
 - 16GB RAM
 - Decent CPU
-- 7GB Disk Space
+- 6GB Disk Space
 
 ## Listen Server Setup Instructions
 1. Install Silica
 2. Install [.NET 6.0 Runtime x64](https://dotnet.microsoft.com/en-us/download/dotnet/6.0)
 3. Install [MelonLoader using the Manual Installation](https://melonwiki.xyz/#/README?id=manual-installation) method for 64-bit games
-4. Place `dobby.dll` in your `Silica\` directory
+4. Place `dobby.dll` in your `Silica` directory
 6. Place the Admin Mod in your `Silica\Mods` directory
 7. Place any desired mods in your `Silica\Mods` directory
 8. Launch Silica and then exit the game to populate configuration parameters
@@ -60,12 +60,12 @@
 ## Dedicated Server Setup Instructions
 1. Install Silica Dedicated Server Tool
 2. Install alpha-development branch of [MelonLoader using the Manual Installation](https://melonwiki.xyz/#/README?id=manual-installation) method for 64-bit games
-4. Place `dobby.dll` in your `Silica Dedicated Server\` directory
+4. Place `dobby.dll` in your `Silica Dedicated Server` directory
 5. Place the Admin Mod in your `Silica Dedicated Server\Mods` directory
 6. Place any other desired mods in your `Silica Dedicated Server\Mods` directory
 7. Launch Silica Dedicated Server
 
-For Dedicated Servers who wish to have an official server license, all mods are not currently approved/supported as mods can (slightly) negatively impact performance. The only exception to this is the GamePriority mod.
+For Dedicated Server hosts who wish to have an official server license, note that mods are not currently approved/supported as mods can negatively impact performance. The only exception to this is the GamePriority mod.
 
 Kind suggestion to ensure that the server name reflects that there are mods so players can choose between mods and a vanilla game experience
 
