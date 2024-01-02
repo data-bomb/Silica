@@ -36,7 +36,7 @@ using UnityEngine;
 using System;
 using SilicaAdminMod;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "0.9.9", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.0.0", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -46,7 +46,7 @@ namespace Si_Logging
     public class HL_Logging : MelonMod
     {
         const int MaxTeams = 3;
-        static Player[]? lastCommander;
+        static Player?[]? lastCommander;
 
         static MelonPreferences_Category? _modCategory;
         static MelonPreferences_Entry<bool>? Pref_Log_Damage;
@@ -112,17 +112,6 @@ namespace Si_Logging
 
         static String CurrentLogFile = GetLogFilePath();
 
-        public static void PrintError(Exception exception, string? message = null)
-        {
-            if (message != null)
-            {
-                MelonLogger.Msg(message);
-            }
-            MelonLogger.Error(exception.Message);
-            MelonLogger.Error(exception.StackTrace);
-            MelonLogger.Error(exception.TargetSite);
-        }
-
         public static string GetPlayerID(Player player)
         {
             return player.ToString().Split('_')[1];
@@ -147,7 +136,7 @@ namespace Si_Logging
                     AddFirstLogLine();
                 }
 
-                lastCommander = new Player[MaxTeams];
+                lastCommander = new Player?[MaxTeams];
                 for (int i = 0; i < MaxTeams; i++)
                 {
                     lastCommander[i] = null;
@@ -155,12 +144,31 @@ namespace Si_Logging
             }
             catch (Exception error)
             {
-                PrintError(error, "Failed to initialize log directories or files");
+                HelperMethods.PrintError(error, "Failed to initialize log directories or files");
+            }
+        }
+
+        // 003. Change Map
+        public override void OnSceneWasLoaded(int buildIndex, string sceneName)
+        {
+            try
+            {
+                if (sceneName == "Intro" || sceneName == "MainMenu")
+                {
+                    return;
+                }
+
+                string LogLine = "Loading map \"" + sceneName + "\"";
+                PrintLogLine(LogLine);
+            }
+            catch (Exception error)
+            {
+                HelperMethods.PrintError(error);
             }
         }
 
         // 050. Connection
-        #if NET6_0
+#if NET6_0
         [HarmonyPatch(typeof(NetworkGameServer), nameof(NetworkGameServer.OnP2PSessionRequest))]
         #else
         [HarmonyPatch(typeof(NetworkGameServer), "OnP2PSessionRequest")]
@@ -177,7 +185,7 @@ namespace Si_Logging
                 }
                 catch (Exception error)
                 {
-                    PrintError(error, "Failed to run OnP2PSessionRequest");
+                    HelperMethods.PrintError(error, "Failed to run OnP2PSessionRequest");
                 }
             }
         }
@@ -202,7 +210,7 @@ namespace Si_Logging
                 }
                 catch (Exception error)
                 {
-                    PrintError(error, "Failed to run OnPlayerJoinedBase");
+                    HelperMethods.PrintError(error, "Failed to run OnPlayerJoinedBase");
                 }
             }
         }
@@ -234,7 +242,7 @@ namespace Si_Logging
                 }
                 catch (Exception error)
                 {
-                    PrintError(error, "Failed to run OnPlayerLeftBase");
+                    HelperMethods.PrintError(error, "Failed to run OnPlayerLeftBase");
                 }
             }
         }
@@ -262,7 +270,7 @@ namespace Si_Logging
                 }
                 catch (Exception error)
                 {
-                    PrintError(error, "Failed to run KickPlayer");
+                    HelperMethods.PrintError(error, "Failed to run KickPlayer");
                 }
             }
         }
@@ -300,9 +308,11 @@ namespace Si_Logging
 
                     bool isVictimHuman = (victimPlayer != null);
                     bool isAttackerHuman = (attackerPlayer != null);
-                    
+
+                    #pragma warning disable CS8602 // Dereference of a possibly null reference.
                     if (isVictimHuman)
                     {
+
                         int victimUserID = Math.Abs(victimPlayer.GetInstanceID());
 
                         if (attackerNetComp == null)
@@ -342,10 +352,11 @@ namespace Si_Logging
                         string LogLine = "\"" + attackerPlayer.PlayerName + "<" + attackerUserID + "><" + GetPlayerID(attackerPlayer) + "><" + attackerPlayer.Team.TeamName + ">\" killed \"" + __0.ToString().Split('(')[0] + "<><><" + __0.Team.TeamName + ">\" with \"" + __2.ToString().Split('(')[0] + "\" (dmgtype \"" + __1.ToString() + "\") (victim \"" + __0.ToString().Split('(')[0] + "\")";
                         PrintLogLine(LogLine);
                     }
+                    #pragma warning restore CS8602 // Dereference of a possibly null reference.
                 }
                 catch (Exception error)
                 {
-                    PrintError(error, "Failed to run OnUnitDestroyed");
+                    HelperMethods.PrintError(error, "Failed to run OnUnitDestroyed");
                 }
             }
         }
@@ -388,7 +399,7 @@ namespace Si_Logging
                 }
                 catch (Exception error)
                 {
-                    PrintError(error, "Failed to run OnPlayerChangedTeam");
+                    HelperMethods.PrintError(error, "Failed to run OnPlayerChangedTeam");
                 }
             }
         }
@@ -410,6 +421,7 @@ namespace Si_Logging
                         return;
                     }
 
+                    #pragma warning disable CS8602, CS8604 // Dereference of a possibly null reference.
                     if (__1 != null)
                     {
                         // is it the same as what we already captured?
@@ -449,6 +461,7 @@ namespace Si_Logging
 
                         lastCommander[__0.Index] = null;
                     }
+                    #pragma warning restore CS8602, CS8604 // Dereference of a possibly null reference.
                 }
                 catch (Exception error)
                 {
@@ -472,7 +485,7 @@ namespace Si_Logging
                 }
                 catch (Exception error)
                 {
-                    PrintError(error, "Failed to run SendPlayerChangeName");
+                    HelperMethods.PrintError(error, "Failed to run SendPlayerChangeName");
                 }
             }
         }
@@ -621,7 +634,7 @@ namespace Si_Logging
                 }
                 catch (Exception error)
                 {
-                    PrintError(error, "Failed to run OnStructureDestroyed");
+                    HelperMethods.PrintError(error, "Failed to run OnStructureDestroyed");
                 }
             }
         }
@@ -698,7 +711,7 @@ namespace Si_Logging
                 }
                 catch (Exception error)
                 {
-                    PrintError(error, "Failed to run OnGameEnded");
+                    HelperMethods.PrintError(error, "Failed to run OnGameEnded");
                 }
             }
         }
@@ -737,7 +750,7 @@ namespace Si_Logging
         [HarmonyPatch(typeof(MusicJukeboxHandler), nameof(MusicJukeboxHandler.OnGameStarted))]
         private static class ApplyPatchOnGameStarted
         {
-            public static void Postfix(MusicJukeboxHandler __instance, GameMode __0)
+            public static void Prefix(MusicJukeboxHandler __instance, GameMode __0)
             {
                 try
                 {
@@ -751,7 +764,7 @@ namespace Si_Logging
                 }
                 catch (Exception error)
                 {
-                    PrintError(error, "Failed to run OnGameStarted");
+                    HelperMethods.PrintError(error, "Failed to run OnGameStarted");
                 }
             }
         }
@@ -804,7 +817,7 @@ namespace Si_Logging
                 }
                 catch (Exception error)
                 {
-                    PrintError(error, "Failed to run Chat::MessageReceived");
+                    HelperMethods.PrintError(error, "Failed to run Chat::MessageReceived");
                 }
             }
         }
