@@ -36,7 +36,7 @@ using System.Collections.Generic;
 using SilicaAdminMod;
 using System.Linq;
 
-[assembly: MelonInfo(typeof(Announcements), "Server Announcements", "1.1.0", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(Announcements), "Server Announcements", "1.1.1", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -48,9 +48,9 @@ namespace Si_Announcements
         static MelonPreferences_Entry<int>? _Announcements_SecondsBetweenMessages;
         static MelonPreferences_Entry<bool>? _Announcements_ShowIfLastChatWasAnnouncement;
 
-        static System.Timers.Timer announcementTimer;
+        static System.Timers.Timer? announcementTimer;
         static int announcementCount;
-        static string[] announcementsText;
+        static string[]? announcementsText;
         static string? lastChatMessage;
         static bool timerExpired;
 
@@ -70,14 +70,14 @@ namespace Si_Announcements
                     // Create simple announcements.txt file
                     using FileStream fs = File.Create(announcementsFile);
                     fs.Close();
-                    System.IO.File.WriteAllText(announcementsFile, "Join discord at..\n");
+                    System.IO.File.WriteAllText(announcementsFile, "<color=#cc33ff>Server mods by databomb. Report issues in Discord or on GitHub.</color>\n");
                 }
 
                 // Open the stream and read it back
                 using (StreamReader announcementsFileStream = File.OpenText(announcementsFile))
                 {
                     List<string> announcementFileLine = new List<string>();
-                    string announcement = "";
+                    string? announcement = "";
                     while ((announcement = announcementsFileStream.ReadLine()) != null)
                     {
                         announcementFileLine.Add(announcement);
@@ -98,7 +98,7 @@ namespace Si_Announcements
             }
         }
 
-        private static void TimerCallbackAnnouncement(object source, ElapsedEventArgs e)
+        private static void TimerCallbackAnnouncement(object? source, ElapsedEventArgs e)
         {
             timerExpired = true;
         }
@@ -119,7 +119,7 @@ namespace Si_Announcements
                     {
                         timerExpired = false;
 
-                        if (_Announcements_ShowIfLastChatWasAnnouncement != null && !_Announcements_ShowIfLastChatWasAnnouncement.Value && lastChatMessage != null)
+                        if (_Announcements_ShowIfLastChatWasAnnouncement != null && !_Announcements_ShowIfLastChatWasAnnouncement.Value && lastChatMessage != null && announcementsText != null)
                         {
                             // check if the last chat message was an announcement
                             bool lastMessageWasAnnouncement = announcementsText.Any(m => m == lastChatMessage);
@@ -131,6 +131,11 @@ namespace Si_Announcements
                         }
                         
                         announcementCount++;
+
+                        if (announcementsText == null)
+                        {
+                            return;
+                        }
 
                         String thisAnnouncement = announcementsText[announcementCount % announcementsText.Length];
                         MelonLogger.Msg("Announcement: " + thisAnnouncement);
