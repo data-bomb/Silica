@@ -1,6 +1,6 @@
 ﻿/*
 Silica Versus Auto-Select
-Copyright (C) 2023 by databomb
+Copyright (C) 2024 by databomb
 
 * Description *
 For Silica listen servers, automatically sets the versus mode after
@@ -35,7 +35,7 @@ using System.Linq;
 using SilicaAdminMod;
 using System;
 
-[assembly: MelonInfo(typeof(VersusTeamsAutoSelectMod), "Versus Auto-Select Team", "1.1.1", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(VersusTeamsAutoSelectMod), "Versus Auto-Select Team", "1.1.2", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -44,16 +44,16 @@ namespace VersusTeamsAutoSelect
 
     public class VersusTeamsAutoSelectMod : MelonMod
     {
-        static MP_Strategy strategyInstance;
+        static MP_Strategy? strategyInstance;
         static bool bTimerExpired;
         static bool bRestartHasppened;
         static KeyCode overrideKey;
         static MP_Strategy.ETeamsVersus requestedMode;
 
-        private static System.Timers.Timer DelayTimer;
+        private static System.Timers.Timer? DelayTimer;
 
-        static MelonPreferences_Category _modCategory;
-        static MelonPreferences_Entry<MP_Strategy.ETeamsVersus> _versusAutoSelectMode;
+        static MelonPreferences_Category? _modCategory;
+        static MelonPreferences_Entry<MP_Strategy.ETeamsVersus>? _versusAutoSelectMode;
 
         private const string ModCategory = "Silica";
         private const string AutoSelectMode = "VersusAutoSelectMode";
@@ -132,9 +132,9 @@ namespace VersusTeamsAutoSelect
             HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Selected next mode as " + desiredVersusMode.ToString());
         }
 
-        private static void HandleTimerAutoRestart(object source, ElapsedEventArgs e)
+        private static void HandleTimerAutoRestart(object? source, ElapsedEventArgs e)
         {
-            VersusTeamsAutoSelectMod.bTimerExpired = true;
+            bTimerExpired = true;
         }
 
         #if NET6_0
@@ -149,12 +149,12 @@ namespace VersusTeamsAutoSelect
                 try
                 {
                     // check if timer expired
-                    if (VersusTeamsAutoSelectMod.bRestartHasppened == true && VersusTeamsAutoSelectMod.bTimerExpired == true)
+                    if (bRestartHasppened == true && bTimerExpired == true && _versusAutoSelectMode != null)
                     {
-                        VersusTeamsAutoSelectMod.bRestartHasppened = false;
-                        MP_Strategy.ETeamsVersus versusMode = VersusTeamsAutoSelectMod._versusAutoSelectMode.Value;
+                        bRestartHasppened = false;
+                        MP_Strategy.ETeamsVersus versusMode = _versusAutoSelectMode.Value;
 
-                        if (VersusTeamsAutoSelectMod.strategyInstance != null)
+                        if (strategyInstance != null)
                         {
                             // check for override key to allow host to manually select the versus mode
                             if (Input.GetKey(overrideKey))
@@ -164,14 +164,14 @@ namespace VersusTeamsAutoSelect
                             // check if an admin wanted to manually select the versus mode
                             else if (requestedMode != MP_Strategy.ETeamsVersus.NONE)
                             {
-                                VersusTeamsAutoSelectMod.strategyInstance.SetTeamVersusMode(requestedMode);
+                                strategyInstance.SetTeamVersusMode(requestedMode);
                                 MelonLogger.Msg("Selected Versus Mode for new round: " + requestedMode.ToString());
                                 requestedMode = MP_Strategy.ETeamsVersus.NONE;
                             }
                             // no requests to deviate from configured versus mode
                             else
                             {
-                                VersusTeamsAutoSelectMod.strategyInstance.SetTeamVersusMode(versusMode);
+                                strategyInstance.SetTeamVersusMode(versusMode);
                                 MelonLogger.Msg("Selected Versus Mode for new round: " + versusMode.ToString());
                             }
                         }
@@ -195,16 +195,16 @@ namespace VersusTeamsAutoSelect
             {
                 try
                 {
-                    VersusTeamsAutoSelectMod.strategyInstance = __instance;
-                    VersusTeamsAutoSelectMod.bTimerExpired = false;
-                    VersusTeamsAutoSelectMod.bRestartHasppened = true;
+                    strategyInstance = __instance;
+                    bTimerExpired = false;
+                    bRestartHasppened = true;
 
                     // introduce a delay to account for issue on latest game version causing clients and server to become desynchronized
                     double interval = 2000.0;
-                    VersusTeamsAutoSelectMod.DelayTimer = new System.Timers.Timer(interval);
-                    VersusTeamsAutoSelectMod.DelayTimer.Elapsed += new ElapsedEventHandler(VersusTeamsAutoSelectMod.HandleTimerAutoRestart);
-                    VersusTeamsAutoSelectMod.DelayTimer.AutoReset = false;
-                    VersusTeamsAutoSelectMod.DelayTimer.Enabled = true;
+                    DelayTimer = new System.Timers.Timer(interval);
+                    DelayTimer.Elapsed += new ElapsedEventHandler(VersusTeamsAutoSelectMod.HandleTimerAutoRestart);
+                    DelayTimer.AutoReset = false;
+                    DelayTimer.Enabled = true;
                 }
                 catch (Exception error)
                 {
