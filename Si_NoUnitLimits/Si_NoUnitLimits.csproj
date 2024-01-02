@@ -1,0 +1,13 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net6.0;netstandard2.1</TargetFrameworks>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Silica-MelonLoader-AdminMod" Version="2.0.0" />
+    <PackageReference Include="Silica-MelonLoader-Dependencies" Version="0.8.19" />
+  </ItemGroup>
+
+</Project>
