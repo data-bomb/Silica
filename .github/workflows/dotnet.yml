@@ -17,7 +17,7 @@ env:
   
 jobs:
 
-  generateInputPaths:
+  fanout:
     runs-on: ubuntu-latest
     
     steps:
@@ -40,12 +40,12 @@ jobs:
       comnum: ${{ steps.commit-number.outputs.comnum }}
 
   build:
-    needs: generateInputPaths
+    needs: fanout
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        path: ${{ fromJson(needs.generateInputPaths.outputs.matrix) }}
+        path: ${{ fromJson(needs.fanout.outputs.matrix) }}
     steps:
     - name: Prepare environment sha
       shell: bash
@@ -99,7 +99,7 @@ jobs:
     if: github.event_name == 'push'
     permissions:
       contents: write
-    needs: [ build, generateInputPaths ]
+    needs: [ build, fanout ]
     runs-on: ubuntu-latest
     steps:
       - name: Prepare env
@@ -123,13 +123,13 @@ jobs:
 
       - name: Zip Builds
         run: |
-          (cd release/dedi && zip -qq -r ../../DedicatedServer-v${{ needs.generateInputPaths.outputs.comnum }}-${{ env.GITHUB_SHA_SHORT }}.zip *)
-          (cd release/listen && zip -qq -r ../../ListenServer-v${{ needs.generateInputPaths.outputs.comnum }}-${{ env.GITHUB_SHA_SHORT }}.zip *)
+          (cd release/dedi && zip -qq -r ../../DedicatedServer-v${{ needs.fanout.outputs.comnum }}-${{ env.GITHUB_SHA_SHORT }}.zip *)
+          (cd release/listen && zip -qq -r ../../ListenServer-v${{ needs.fanout.outputs.comnum }}-${{ env.GITHUB_SHA_SHORT }}.zip *)
 
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: v${{ needs.generateInputPaths.outputs.comnum }}
+          tag_name: v${{ needs.fanout.outputs.comnum }}
           files: |
-            DedicatedServer-v${{ needs.generateInputPaths.outputs.comnum }}-${{ env.GITHUB_SHA_SHORT }}.zip
-            ListenServer-v${{ needs.generateInputPaths.outputs.comnum }}-${{ env.GITHUB_SHA_SHORT }}.zip
+            DedicatedServer-v${{ needs.fanout.outputs.comnum }}-${{ env.GITHUB_SHA_SHORT }}.zip
+            ListenServer-v${{ needs.fanout.outputs.comnum }}-${{ env.GITHUB_SHA_SHORT }}.zip
