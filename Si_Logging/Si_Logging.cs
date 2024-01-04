@@ -35,8 +35,9 @@ using Si_Logging;
 using UnityEngine;
 using System;
 using SilicaAdminMod;
+using System.Collections.Generic;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.0.0", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.1.0", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -574,61 +575,70 @@ namespace Si_Logging
             {
                 try
                 {
-                    if (__0 != null && __2 != null)
+                    //check if the destruction affects the tech tier.
+                    if (__0 == null) return;
+
+                    Team structureTeam = __0.Team;
+                    int tier = getHighestTechTier(structureTeam);
+                    if (tier != currTiers[structureTeam.name])
                     {
+                        currTiers[structureTeam.name] = tier;
+                        LogTierChange(structureTeam, tier);
+                    }
+                    if (__2 == null) return;
+
                         // Attacker
-                        BaseGameObject attackerBase = GameFuncs.GetBaseGameObject(__2);
+                    BaseGameObject attackerBase = GameFuncs.GetBaseGameObject(__2);
 
-                        if (attackerBase != null)
+                    if (attackerBase != null)
+                    {
+                        NetworkComponent attackerNetComp = attackerBase.NetworkComponent;
+                        // was teamkiller a playable character?
+                        if (attackerNetComp != null)
                         {
-                            NetworkComponent attackerNetComp = attackerBase.NetworkComponent;
-                            // was teamkiller a playable character?
-                            if (attackerNetComp != null)
+                            Player attackerPlayer = attackerNetComp.OwnerPlayer;
+
+                            if (attackerPlayer != null)
                             {
-                                Player attackerPlayer = attackerNetComp.OwnerPlayer;
-
-                                if (attackerPlayer != null)
+                                int userID = Math.Abs(attackerPlayer.GetInstanceID());
+                                string structName;
+                                if (__0.ToString().Contains('_'))
                                 {
-                                    int userID = Math.Abs(attackerPlayer.GetInstanceID());
-                                    string structName;
-                                    if (__0.ToString().Contains('_'))
-                                    {
-                                        structName = __0.ToString().Split('_')[0];
-                                    }
-                                    else if (__0.ToString().Contains('('))
-                                    {
-                                        structName = __0.ToString().Split('(')[0];
-                                    }
-                                    else
-                                    {
-                                        structName = __0.ToString();
-                                    }
-
-                                    string attackerPlayerTeam;
-                                    if (attackerPlayer.Team == null)
-                                    {
-                                        attackerPlayerTeam = "";
-                                    }
-                                    else
-                                    {
-                                        attackerPlayerTeam = attackerPlayer.Team.TeamName;
-                                    }
-
-                                    string structTeam;
-                                    if (__0.Team == null)
-                                    {
-                                        structTeam = "";
-                                    }
-                                    else
-                                    {
-                                        structTeam = __0.Team.TeamName;
-                                    }
-  
-                                    string LogLine = "\"" + attackerPlayer.PlayerName + "<" + userID + "><" + GetPlayerID(attackerPlayer) + "><" + attackerPlayerTeam + ">\" triggered \"structure_kill\" (structure \"" + structName + "\") (struct_team \"" + structTeam + "\")";
-                                    PrintLogLine(LogLine);
+                                    structName = __0.ToString().Split('_')[0];
+                                }
+                                else if (__0.ToString().Contains('('))
+                                {
+                                    structName = __0.ToString().Split('(')[0];
+                                }
+                                else
+                                {
+                                    structName = __0.ToString();
                                 }
 
+                                string attackerPlayerTeam;
+                                if (attackerPlayer.Team == null)
+                                {
+                                    attackerPlayerTeam = "";
+                                }
+                                else
+                                {
+                                    attackerPlayerTeam = attackerPlayer.Team.TeamName;
+                                }
+
+                                string structTeam;
+                                if (__0.Team == null)
+                                {
+                                    structTeam = "";
+                                }
+                                else
+                                {
+                                    structTeam = __0.Team.TeamName;
+                                }
+
+                                string LogLine = "\"" + attackerPlayer.PlayerName + "<" + userID + "><" + GetPlayerID(attackerPlayer) + "><" + attackerPlayerTeam + ">\" triggered \"structure_kill\" (structure \"" + structName + "\") (struct_team \"" + structTeam + "\")";
+                                PrintLogLine(LogLine);
                             }
+
                         }
                     }
                 }
@@ -716,36 +726,66 @@ namespace Si_Logging
             }
         }
 
+
         // 061. Team Objectives/Actions - Research Tier
-        /*[HarmonyPatch(typeof(Il2Cpp.Team), nameof(Il2Cpp.Team.UpdateTechnologyTier))]
-        private static class ApplyPatchUpdateTechnologyTier
+        public static Dictionary<string, int> currTiers = new Dictionary<string, int>();
+        public static int getHighestTechTier(Team team)
         {
-            public static void Postfix(Il2Cpp.Team __instance)
+            for (int i = 4; i > 0; i--)
+            {
+                int count = team.GetTechnologyTierStructureCount(i);
+                if (count > 0) { return i; }
+            }
+            return 0;
+
+        }
+
+        public static void initializeTiers(ref Dictionary<string, int> tiers)
+        {
+            for (int i = 0; i < Team.Teams.Count; i++)
+            {
+                tiers[Team.Teams[i].name] = 0;
+            }
+
+        }
+
+
+        #if NET6_0
+        [HarmonyPatch(typeof(BarksHandler), nameof(BarksHandler.OnConstructionCompleted))]
+        #else
+        [HarmonyPatch(typeof(BarksHandler), "OnConstructionCompleted")]
+        #endif
+        private static class ApplyPatchOnSetTechnologyTier
+        {
+            public static void Postfix(ConstructionSite constructionSite, bool wasCompleted)
             {
                 try
                 {
-                    
-                }
+                    Team siteTeam = constructionSite.Team;
+                    int tier = getHighestTechTier(siteTeam);
+                    if (tier != currTiers[siteTeam.name])
+                    {
+                        currTiers[siteTeam.name] = tier;
+                        LogTierChange(siteTeam, tier);
+
+                    }
+                } 
+
                 catch (Exception error)
                 {
-                    PrintError(error, "Failed to run UpdateTechnologyTier");
+                    HelperMethods.PrintError(error, "Failed to run OnSetConstructionSite");
                 }
+
             }
-        }*/
+        }
 
-
-
-        /*[HarmonyPatch(typeof(Il2Cpp.Team))]
-        [HarmonyPatch(nameof(Il2Cpp.Team.CurrentTechnologyTier), MethodType.Setter)]
-        private static class ApplyPatchOnSetTechnologyTier
+        public static void LogTierChange(Team team, int tier)
         {
-            public static void Postfix(Il2Cpp.Team __instance, ref int __result)
-            {
-                string LogLine = "Team \"" + __instance.TeamName + "\" triggered \"technology_change\" (tier \"" + __result.ToString() + "\"";
+                string LogLine = "Team \"" + team.TeamName + "\" triggered \"technology_change\" (tier \"" + tier.ToString() + "\")";
                 PrintLogLine(LogLine);
-            }
-        }*/
 
+        }
+        
         // 062. World Objectives/Actions - Round_Start
         [HarmonyPatch(typeof(MusicJukeboxHandler), nameof(MusicJukeboxHandler.OnGameStarted))]
         private static class ApplyPatchOnGameStarted
@@ -757,8 +797,9 @@ namespace Si_Logging
                     MP_Strategy strategyInstance = GameObject.FindObjectOfType<MP_Strategy>();
                     MP_Strategy.ETeamsVersus versusMode = strategyInstance.TeamsVersus;
 
-                    string RoundWinLogLine = "World triggered \"Round_Start\" (gametype \"" + versusMode.ToString() + "\")";
-                    PrintLogLine(RoundWinLogLine);
+                    string RoundStartLogLine = "World triggered \"Round_Start\" (gametype \"" + versusMode.ToString() + "\")";
+                    PrintLogLine(RoundStartLogLine);
+                    initializeTiers(ref currTiers);
 
                     firedRoundEndOnce = false;
                 }
