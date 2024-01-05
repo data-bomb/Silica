@@ -39,8 +39,8 @@ namespace SilicaAdminMod
         static MelonPreferences_Category? _modCategory;
         public static MelonPreferences_Entry<bool>? Pref_Admin_AcceptTeamChatCommands;
 
-        public static List<Admin> AdminList;
-        public static List<AdminCommand> AdminCommands;
+        public static List<Admin> AdminList = null!;
+        public static List<AdminCommand> AdminCommands = null!;
 
         public override void OnInitializeMelon()
         {

@@ -22,8 +22,10 @@ using System;
 
 #if NET6_0
 using Il2Cpp;
+using Il2CppSteamworks;
 #else
 using System.Collections.Generic;
+using Steamworks;
 #endif
 
 namespace SilicaAdminMod
@@ -42,26 +44,56 @@ namespace SilicaAdminMod
 
         public static void ReplyToCommand(params string[] messages)
         {
-            Player serverPlayer = NetworkGameServer.GetServerPlayer();
-            serverPlayer.SendChatMessage(chatPrefix + String.Concat(messages), false);
+            Player broadcastPlayer = FindBroadcastPlayer();
+            broadcastPlayer.SendChatMessage(chatPrefix + String.Concat(messages), false);
         }
 
         public static void ReplyToCommand_Player(Player player, params string[] messages)
         {
-            Player serverPlayer = NetworkGameServer.GetServerPlayer();
-            serverPlayer.SendChatMessage(chatPrefix + GetTeamColor(player) + player.PlayerName + defaultColor + " " + String.Concat(messages), false);
+            Player broadcastPlayer = FindBroadcastPlayer();
+            broadcastPlayer.SendChatMessage(chatPrefix + GetTeamColor(player) + player.PlayerName + defaultColor + " " + String.Concat(messages), false);
         }
 
         public static void AlertAdminActivity(Player adminPlayer, Player targetPlayer, string action)
         {
-            Player serverPlayer = NetworkGameServer.GetServerPlayer();
-            serverPlayer.SendChatMessage(chatPrefix + GetAdminColor() + adminPlayer.PlayerName + defaultColor + " " + action + " " + GetTeamColor(targetPlayer) + targetPlayer.PlayerName, false);
+            Player broadcastPlayer = FindBroadcastPlayer();
+            broadcastPlayer.SendChatMessage(chatPrefix + GetAdminColor() + adminPlayer.PlayerName + defaultColor + " " + action + " " + GetTeamColor(targetPlayer) + targetPlayer.PlayerName, false);
         }
 
         public static void AlertAdminAction(Player adminPlayer, string action)
         {
-            Player serverPlayer = NetworkGameServer.GetServerPlayer();
-            serverPlayer.SendChatMessage(chatPrefix + GetAdminColor() + adminPlayer.PlayerName + defaultColor + " " + action, false);
+            Player broadcastPlayer = FindBroadcastPlayer();
+            broadcastPlayer.SendChatMessage(chatPrefix + GetAdminColor() + adminPlayer.PlayerName + defaultColor + " " + action, false);
+        }
+
+        public static void SendChatMessageToPlayer(Player player, params string[] messages)
+        {
+            Player broadcastPlayer = FindBroadcastPlayer();
+
+            GameByteStreamWriter gameByteStreamWriter = GameByteStreamWriter.GetGameByteStreamWriter(true);
+            gameByteStreamWriter.WriteByte((byte)ENetworkPacketType.ChatMessage);
+            gameByteStreamWriter.WriteUInt64((ulong)broadcastPlayer.PlayerID);
+            gameByteStreamWriter.WriteByte((byte)broadcastPlayer.PlayerChannel);
+            gameByteStreamWriter.WriteString(String.Concat(messages));
+            gameByteStreamWriter.WriteBool(false);
+
+            SteamGameServerNetworking.SendP2PPacket(player.PlayerID, gameByteStreamWriter.GetByteData(), (uint)gameByteStreamWriter.GetByteDataSize(), EP2PSend.k_EP2PSendReliable, player.PlayerChannel);
+        }
+
+        public static Player FindBroadcastPlayer()
+        {
+            if (!NetworkGameServer.GetServerDedicated())
+            {
+                return NetworkGameServer.GetServerPlayer();
+            }
+
+            // not ideal but funnel messages through the first player for now
+            if (Player.Players.Count > 0)
+            {
+                return Player.Players[0];
+            }
+
+            return NetworkGameServer.GetServerPlayer();
         }
 
         public static void PrintError(Exception exception, string? message = null)

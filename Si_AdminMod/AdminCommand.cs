@@ -23,16 +23,22 @@ namespace SilicaAdminMod
 {
     public class AdminCommand
     {
+        private string _admincommandtext = null!;
+
         public String AdminCommandText
         {
-            get;
-            set;
+            get => _admincommandtext;
+            set => _admincommandtext = value ?? throw new ArgumentNullException("Command name is required.");
         }
+
+        private HelperMethods.CommandCallback _commandCallback = null!;
+
         public HelperMethods.CommandCallback AdminCallback
         {
-            get;
-            set;
+            get => _commandCallback;
+            set => _commandCallback = value ?? throw new ArgumentNullException("Command callback is required.");
         }
+
         public Power AdminPower
         {
             get;
