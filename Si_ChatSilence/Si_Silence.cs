@@ -1,6 +1,6 @@
 ﻿/*
 Silica Chat Silence
-Copyright (C) 2023 by databomb
+Copyright (C) 2024 by databomb
 
 * Description *
 Provides an admin command to silence a player, which prevents that 
@@ -37,7 +37,7 @@ using System;
 using System.Linq;
 
 
-[assembly: MelonInfo(typeof(ChatSilence), "Silence Admin Command", "1.1.0", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(ChatSilence), "Silence Admin Command", "1.1.1", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -46,7 +46,7 @@ namespace Si_ChatSilence
     public class ChatSilence : MelonMod
     {
         static bool adminModAvailable = false;
-        static List<CSteamID> silencedPlayers;
+        static List<CSteamID> silencedPlayers = null!;
 
         public override void OnInitializeMelon()
         {

@@ -31,7 +31,7 @@ using Si_Resources;
 using SilicaAdminMod;
 using System;
 
-[assembly: MelonInfo(typeof(ResourceConfig), "Resource Configuration", "1.0.4", "databomb")]
+[assembly: MelonInfo(typeof(ResourceConfig), "Resource Configuration", "1.0.5", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -39,11 +39,9 @@ namespace Si_Resources
 {
     public class ResourceConfig : MelonMod
     {
-        #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
-        static MelonPreferences_Category _modCategory;
-        static MelonPreferences_Entry<int> Pref_Resources_Humans_StartingAmount;
-        static MelonPreferences_Entry<int> Pref_Resources_Aliens_StartingAmount;
-        #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+        static MelonPreferences_Category _modCategory = null!;
+        static MelonPreferences_Entry<int> Pref_Resources_Humans_StartingAmount = null!;
+        static MelonPreferences_Entry<int> Pref_Resources_Aliens_StartingAmount = null!;
 
         public override void OnInitializeMelon()
         {

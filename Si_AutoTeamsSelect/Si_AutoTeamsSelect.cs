@@ -35,7 +35,7 @@ using System.Linq;
 using SilicaAdminMod;
 using System;
 
-[assembly: MelonInfo(typeof(VersusTeamsAutoSelectMod), "Versus Auto-Select Team", "1.1.3", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(VersusTeamsAutoSelectMod), "Versus Auto-Select Team", "1.1.4", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -53,7 +53,7 @@ namespace VersusTeamsAutoSelect
         private static System.Timers.Timer? DelayTimer;
 
         static MelonPreferences_Category _modCategory = null!;
-        static MelonPreferences_Entry<MP_Strategy.ETeamsVersus> _versusAutoSelectMode = null;
+        static MelonPreferences_Entry<MP_Strategy.ETeamsVersus> _versusAutoSelectMode = null!;
 
         private const string ModCategory = "Silica";
         private const string AutoSelectMode = "VersusAutoSelectMode";
