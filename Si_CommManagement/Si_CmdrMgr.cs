@@ -1,6 +1,6 @@
 ﻿/*
  Silica Commander Management Mod
- Copyright (C) 2023 by databomb
+ Copyright (C) 2024 by databomb
  
  * Description *
  For Silica servers, establishes a random selection for commander at the 
@@ -40,7 +40,7 @@ using System.Collections.Generic;
 using SilicaAdminMod;
 using System.Linq;
 
-[assembly: MelonInfo(typeof(CommanderManager), "Commander Management", "1.3.2", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(CommanderManager), "Commander Management", "1.3.3", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -83,7 +83,6 @@ namespace Si_CommanderManagement
         static List<Player>[]? commanderApplicants;
         static List<Player>? previousCommanders;
         static bool bOnGameInitFired;
-        static bool promotedSequenceStarted;
         static bool AdminModAvailable = false;
 
         static Player?[]? teamswapCommanderChecks;
