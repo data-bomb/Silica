@@ -1,6 +1,6 @@
 ﻿/*
 Silica AFK Manager
-Copyright (C) 2023 by databomb
+Copyright (C) 2024 by databomb
 
 * Description *
 For Silica listen servers, allows hosts to use the !kick or !afk command
@@ -34,7 +34,7 @@ using System.Linq;
 using SilicaAdminMod;
 using System;
 
-[assembly: MelonInfo(typeof(AwayFromKeyboard), "AFK Manager", "1.2.2", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(AwayFromKeyboard), "AFK Manager", "1.2.3", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -44,13 +44,23 @@ namespace Si_AFKManager
     {
         public class AFKCount
         {
-            public Player Player { get; set; }
-            public uint Minutes { get; set; }
+            private Player _player = null!;
+
+            public Player Player
+            { 
+                get => _player;
+                set => _player = value ?? throw new ArgumentNullException("Player is required.");
+            }
+            public uint Minutes
+            {
+                get; 
+                set;
+            }
         }
 
-        static System.Timers.Timer afkTimer;
+        static Timer afkTimer = null!;
         static bool AdminModAvailable = false;
-        static List<AFKCount> AFKTracker;
+        static List<AFKCount> AFKTracker = null!;
         static bool oneMinuteCheckTime;
         static bool skippedFirstCheck;
 
@@ -210,7 +220,7 @@ namespace Si_AFKManager
             }
         }
 
-        private static void TimerCallbackOneMinute(object source, ElapsedEventArgs e)
+        private static void TimerCallbackOneMinute(object? source, ElapsedEventArgs e)
         {
             oneMinuteCheckTime = true;
         }
