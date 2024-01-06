@@ -1,6 +1,6 @@
 ﻿/*
  Silica Logging Mod
- Copyright (C) 2023 by databomb
+ Copyright (C) 2024 by databomb
  
  * Description *
  For Silica listen servers, creates a log file with console replication
@@ -37,7 +37,7 @@ using System;
 using SilicaAdminMod;
 using System.Collections.Generic;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.1.0", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.1.1", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -49,9 +49,9 @@ namespace Si_Logging
         const int MaxTeams = 3;
         static Player?[]? lastCommander;
 
-        static MelonPreferences_Category? _modCategory;
-        static MelonPreferences_Entry<bool>? Pref_Log_Damage;
-        static MelonPreferences_Entry<bool>? Pref_Log_Kills_Include_AI_vs_Player;
+        static MelonPreferences_Category _modCategory = null!;
+        static MelonPreferences_Entry<bool> Pref_Log_Damage = null!;
+        static MelonPreferences_Entry<bool> Pref_Log_Kills_Include_AI_vs_Player = null!;
 
         public static void PrintLogLine(string LogMessage, bool suppressConsoleOutput = false)
         {
@@ -290,11 +290,6 @@ namespace Si_Logging
                         return;
                     }
 
-                    if (Pref_Log_Kills_Include_AI_vs_Player == null)
-                    {
-                        return;
-                    }
-
                     // Attacker
                     BaseGameObject attackerBase = GameFuncs.GetBaseGameObject(__2);
                     if (attackerBase == null)
@@ -502,7 +497,7 @@ namespace Si_Logging
             public static void Postfix(DamageManager __instance, UnityEngine.Collider __0, float __1, EDamageType __2, UnityEngine.GameObject __3, UnityEngine.Vector3 __4)
             {
                 // should we log the damage?
-                if (Pref_Log_Damage != null && !Pref_Log_Damage.Value)
+                if (!Pref_Log_Damage.Value)
                 {
                     return;
                 }

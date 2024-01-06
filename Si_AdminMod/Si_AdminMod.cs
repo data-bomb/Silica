@@ -1,6 +1,6 @@
 ﻿/*
 Silica Admin Mod
-Copyright (C) 2023 by databomb
+Copyright (C) 2024 by databomb
 
 * Description *
 Provides basic admin mod system to allow additional admins beyond
@@ -36,8 +36,8 @@ namespace SilicaAdminMod
 {
     public class SiAdminMod : MelonMod
     {
-        static MelonPreferences_Category? _modCategory;
-        public static MelonPreferences_Entry<bool>? Pref_Admin_AcceptTeamChatCommands;
+        static MelonPreferences_Category _modCategory = null!;
+        public static MelonPreferences_Entry<bool> Pref_Admin_AcceptTeamChatCommands = null!;
 
         public static List<Admin> AdminList = null!;
         public static List<AdminCommand> AdminCommands = null!;

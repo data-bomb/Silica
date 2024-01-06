@@ -31,7 +31,7 @@ using Si_Resources;
 using SilicaAdminMod;
 using System;
 
-[assembly: MelonInfo(typeof(ResourceConfig), "Resource Configuration", "1.0.3", "databomb")]
+[assembly: MelonInfo(typeof(ResourceConfig), "Resource Configuration", "1.0.4", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 

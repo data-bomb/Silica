@@ -1,6 +1,6 @@
 ﻿/*
  Silica Announcements Mod
- Copyright (C) 2023 by databomb
+ Copyright (C) 2024 by databomb
  
  * Description *
  For Silica listen servers, periodically sends a pre-set announcement
@@ -36,7 +36,7 @@ using System.Collections.Generic;
 using SilicaAdminMod;
 using System.Linq;
 
-[assembly: MelonInfo(typeof(Announcements), "Server Announcements", "1.1.1", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(Announcements), "Server Announcements", "1.1.2", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -44,11 +44,11 @@ namespace Si_Announcements
 {
     public class Announcements : MelonMod
     {
-        static MelonPreferences_Category? _modCategory;
-        static MelonPreferences_Entry<int>? _Announcements_SecondsBetweenMessages;
-        static MelonPreferences_Entry<bool>? _Announcements_ShowIfLastChatWasAnnouncement;
+        static MelonPreferences_Category _modCategory = null!;
+        static MelonPreferences_Entry<int> _Announcements_SecondsBetweenMessages = null!;
+        static MelonPreferences_Entry<bool> _Announcements_ShowIfLastChatWasAnnouncement = null!;
 
-        static System.Timers.Timer? announcementTimer;
+        static Timer announcementTimer = null!;
         static int announcementCount;
         static string[]? announcementsText;
         static string? lastChatMessage;

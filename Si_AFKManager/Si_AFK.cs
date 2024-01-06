@@ -34,7 +34,7 @@ using System.Linq;
 using SilicaAdminMod;
 using System;
 
-[assembly: MelonInfo(typeof(AwayFromKeyboard), "AFK Manager", "1.2.3", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(AwayFromKeyboard), "AFK Manager", "1.2.4", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -64,9 +64,9 @@ namespace Si_AFKManager
         static bool oneMinuteCheckTime;
         static bool skippedFirstCheck;
 
-        static MelonPreferences_Category? _modCategory;
-        static MelonPreferences_Entry<bool>? Pref_AFK_KickIfServerNotFull;
-        static MelonPreferences_Entry<int>? Pref_AFK_MinutesBeforeKick;
+        static MelonPreferences_Category _modCategory = null!;
+        static MelonPreferences_Entry<bool> Pref_AFK_KickIfServerNotFull = null!;
+        static MelonPreferences_Entry<int> Pref_AFK_MinutesBeforeKick = null!;
 
         public override void OnInitializeMelon()
         {

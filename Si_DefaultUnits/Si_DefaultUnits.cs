@@ -1,6 +1,6 @@
 ﻿/*
  Silica Default Spawn Units
- Copyright (C) 2023 by databomb
+ Copyright (C) 2024 by databomb
  
  * Description *
  For Silica servers, allows hosts to modify the default spawn units at
@@ -42,20 +42,20 @@ namespace Si_DefaultUnits
 {
     public class DefaultUnits : MelonMod
     {
-        static MelonPreferences_Category? _modCategory;
+        static MelonPreferences_Category _modCategory = null!;
         private const string ModCategory = "Silica";
 
-        static MelonPreferences_Entry<string>? _Human_Unit_Tier_0;
-        static MelonPreferences_Entry<string>? _Human_Unit_Tier_I;
-        static MelonPreferences_Entry<string>? _Human_Unit_Tier_II;
-        static MelonPreferences_Entry<string>? _Human_Unit_Tier_III;
-        static MelonPreferences_Entry<string>? _Human_Unit_Tier_IV;
+        static MelonPreferences_Entry<string> _Human_Unit_Tier_0 = null!;
+        static MelonPreferences_Entry<string> _Human_Unit_Tier_I = null!;
+        static MelonPreferences_Entry<string> _Human_Unit_Tier_II = null!;
+        static MelonPreferences_Entry<string> _Human_Unit_Tier_III = null!;
+        static MelonPreferences_Entry<string> _Human_Unit_Tier_IV = null!;
 
-        static MelonPreferences_Entry<string>? _Alien_Unit_Tier_0;
-        static MelonPreferences_Entry<string>? _Alien_Unit_Tier_I;
-        static MelonPreferences_Entry<string>? _Alien_Unit_Tier_II;
-        static MelonPreferences_Entry<string>? _Alien_Unit_Tier_III;
-        static MelonPreferences_Entry<string>? _Alien_Unit_Tier_IV;
+        static MelonPreferences_Entry<string> _Alien_Unit_Tier_0 = null!;
+        static MelonPreferences_Entry<string> _Alien_Unit_Tier_I = null!;
+        static MelonPreferences_Entry<string> _Alien_Unit_Tier_II = null!;
+        static MelonPreferences_Entry<string> _Alien_Unit_Tier_III = null!;
+        static MelonPreferences_Entry<string> _Alien_Unit_Tier_IV = null!;
 
         const int MaxTeams = 3;
         static int[]? teamTechTiers;
@@ -219,12 +219,7 @@ namespace Si_DefaultUnits
         {
             bool humanTeam = team.TeamName.StartsWith("Human");
 
-            if (teamTechTiers == null || 
-                _Human_Unit_Tier_0 == null || _Alien_Unit_Tier_0 == null || 
-                _Human_Unit_Tier_I == null || _Alien_Unit_Tier_I == null || 
-                _Human_Unit_Tier_II == null || _Alien_Unit_Tier_II == null || 
-                _Human_Unit_Tier_III == null || _Alien_Unit_Tier_III == null || 
-                _Human_Unit_Tier_IV == null || _Alien_Unit_Tier_IV == null)
+            if (teamTechTiers == null)
             {
                 return "";
             }

@@ -1,6 +1,6 @@
 ﻿/*
  Silica Anti-Grief Mod
- Copyright (C) 2023 by databomb
+ Copyright (C) 2024 by databomb
  
  * Description *
  For Silica servers, automatically identifies players who fall below a 
@@ -33,7 +33,7 @@ using MelonLoader;
 using Si_AntiGrief;
 using SilicaAdminMod;
 
-[assembly: MelonInfo(typeof(AntiGrief), "Anti-Grief", "1.1.3", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(AntiGrief), "Anti-Grief", "1.1.4", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -41,9 +41,9 @@ namespace Si_AntiGrief
 {
     public class AntiGrief : MelonMod
     {
-        static MelonPreferences_Category? _modCategory;
-        static MelonPreferences_Entry<int>? _NegativeKillsThreshold;
-        static MelonPreferences_Entry<bool>? _NegativeKills_Penalty_Ban;
+        static MelonPreferences_Category _modCategory = null!;
+        static MelonPreferences_Entry<int> _NegativeKillsThreshold = null!;
+        static MelonPreferences_Entry<bool> _NegativeKills_Penalty_Ban = null!;
 
         private const string ModCategory = "Silica";
 

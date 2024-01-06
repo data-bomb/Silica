@@ -1,6 +1,6 @@
 ﻿/*
  Silica Basic Banlist Mod
- Copyright (C) 2023 by databomb
+ Copyright (C) 2024 by databomb
  
  * Description *
  For Silica listen servers, retains history of kicked players across
@@ -35,7 +35,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-[assembly: MelonInfo(typeof(BasicBanlist), "Basic Banlist", "1.3.0", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(BasicBanlist), "Basic Banlist", "1.3.1", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -71,8 +71,8 @@ namespace Si_BasicBanlist
         static readonly String banListFile = System.IO.Path.Combine(MelonEnvironment.UserDataDirectory, "banned_users.json");
         static bool AdminModAvailable = false;
 
-        static MelonPreferences_Category _modCategory;
-        static MelonPreferences_Entry<bool> Pref_Ban_KickButton_PermaBan;
+        static MelonPreferences_Category _modCategory = null!;
+        static MelonPreferences_Entry<bool> _Pref_Ban_KickButton_PermaBan = null!;
 
         public static void UpdateBanFile()
         {
@@ -86,7 +86,7 @@ namespace Si_BasicBanlist
             try
             {
                 _modCategory ??= MelonPreferences.CreateCategory("Silica");
-                Pref_Ban_KickButton_PermaBan ??= _modCategory.CreateEntry<bool>("Ban_HostKickButton_Permabans", false);
+                _Pref_Ban_KickButton_PermaBan ??= _modCategory.CreateEntry<bool>("Ban_HostKickButton_Permabans", false);
 
                 if (System.IO.File.Exists(banListFile))
                 {
@@ -270,7 +270,7 @@ namespace Si_BasicBanlist
                     }
 
                     // if we just intended to kick, we can skip the rest
-                    if (!Pref_Ban_KickButton_PermaBan.Value)
+                    if (!_Pref_Ban_KickButton_PermaBan.Value)
                     {
                         MelonLogger.Msg("Kicked player name (" + __0.PlayerName + ") SteamID (" + __0.ToString() + ")");
                         return;

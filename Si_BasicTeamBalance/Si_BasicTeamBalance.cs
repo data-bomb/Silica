@@ -38,7 +38,7 @@ using System.Timers;
 using System;
 using SilicaAdminMod;
 
-[assembly: MelonInfo(typeof(BasicTeamBalance), "Basic Team Balance", "1.2.1", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(BasicTeamBalance), "Basic Team Balance", "1.2.2", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -46,13 +46,13 @@ namespace Si_BasicTeamBalance
 {
     public class BasicTeamBalance : MelonMod
     {
-        static MelonPreferences_Category? _modCategory;
-        static MelonPreferences_Entry<float>? _TwoTeamBalanceDivisor;
-        static MelonPreferences_Entry<float>? _TwoTeamBalanceAddend;
-        static MelonPreferences_Entry<float>? _ThreeTeamBalanceDivisor;
-        static MelonPreferences_Entry<float>? _ThreeTeamBalanceAddend;
-        static MelonPreferences_Entry<bool>?  _PreventEarlyTeamSwitches;
-        static MelonPreferences_Entry<int>?   _AllowTeamSwitchAfterTime;
+        static MelonPreferences_Category _modCategory = null!;
+        static MelonPreferences_Entry<float> _TwoTeamBalanceDivisor = null!;
+        static MelonPreferences_Entry<float> _TwoTeamBalanceAddend = null!;
+        static MelonPreferences_Entry<float> _ThreeTeamBalanceDivisor = null!;
+        static MelonPreferences_Entry<float> _ThreeTeamBalanceAddend = null!;
+        static MelonPreferences_Entry<bool> _PreventEarlyTeamSwitches = null!;
+        static MelonPreferences_Entry<int> _AllowTeamSwitchAfterTime = null!;
 
         static Player? LastPlayerChatMessage;
         static bool preventTeamSwitches;
@@ -175,7 +175,7 @@ namespace Si_BasicTeamBalance
         // Team Index 2 - Human (Sol)
         public static bool JoinCausesImbalance(Team? TargetTeam)
         {
-            if (TargetTeam == null || _TwoTeamBalanceDivisor == null || _TwoTeamBalanceAddend == null || _ThreeTeamBalanceDivisor == null || _ThreeTeamBalanceAddend == null)
+            if (TargetTeam == null)
             {
                 return false;
             }
@@ -231,7 +231,7 @@ namespace Si_BasicTeamBalance
             {
                 try
                 {
-                    if (__instance == null || __0 == null || _PreventEarlyTeamSwitches == null)
+                    if (__instance == null || __0 == null)
                     {
                         return true;
                     }
@@ -348,7 +348,7 @@ namespace Si_BasicTeamBalance
             {
                 try
                 {
-                    if (_PreventEarlyTeamSwitches != null && _PreventEarlyTeamSwitches.Value && _AllowTeamSwitchAfterTime != null)
+                    if (_PreventEarlyTeamSwitches.Value)
                     {
                         preventTeamSwitches = true;
 
@@ -382,7 +382,7 @@ namespace Si_BasicTeamBalance
             {
                 try
                 {
-                    if (_PreventEarlyTeamSwitches != null && !_PreventEarlyTeamSwitches.Value || Timer_AllowTeamSwitches == null)
+                    if (!_PreventEarlyTeamSwitches.Value || Timer_AllowTeamSwitches == null)
                     {
                         return;
                     }
