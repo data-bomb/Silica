@@ -75,10 +75,10 @@ jobs:
     - name: Make output paths
       run: |
         cd ${{ env.START_DIR }}
-        mkdir -p dedi/${{ matrix.path }}
-        mkdir -p listen/${{ matrix.path }}
-        cp ${{ env.START_DIR }}/${{ matrix.path }}/bin/${{env.BUILD_TYPE}}/netstandard2.1/*.dll dedi/${{ matrix.path }}
-        cp ${{ env.START_DIR }}/${{ matrix.path }}/bin/${{env.BUILD_TYPE}}/net6.0/*.dll listen/${{ matrix.path }}
+        mkdir -p dedi/Mods
+        mkdir -p listen/Mods
+        cp ${{ env.START_DIR }}/${{ matrix.path }}/bin/${{env.BUILD_TYPE}}/netstandard2.1/*.dll dedi/Mods
+        cp ${{ env.START_DIR }}/${{ matrix.path }}/bin/${{env.BUILD_TYPE}}/net6.0/*.dll listen/Mods
         
     - uses: actions/upload-artifact@v3
       with:
