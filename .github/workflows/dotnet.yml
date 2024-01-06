@@ -18,7 +18,37 @@ env:
   
 jobs:
 
+  find-if-nuget-update-is-needed:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: dorny/paths-filter@v2
+        id: checkAdminMod
+        with:
+          filters: |
+            admin-updated:
+              - 'Si_AdminMod/**'
+      # run only if 'workflows' files were changed
+      - name: adminmod updated
+        if: steps.checkAdminMod.outputs.admin-updated == 'true'
+        run: echo "AdminMod Update Found."
+
+      # run only if not 'workflows' files were changed
+      - name: no adminmod updates
+        if: steps.checkAdminMod.outputs.admin-updated != 'true'
+        run: echo "No AdminMod Update Found. Skipping nuget packages..."
+    outputs:
+      admin-updated: ${{ steps.checkAdminMod.outputs.admin-updated }}
+
+  create-package:
+    needs: find-if-nuget-update-is-needed
+    if: needs.find-if-nuget-update-is-needed.outputs.admin-updated == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: test-adminmod-udpate
+        run: echo "Preparing Nuget package"
+
   fanout:
+    needs: [ find-if-nuget-update-is-needed, create-package ]
     runs-on: ubuntu-latest
     
     steps:
