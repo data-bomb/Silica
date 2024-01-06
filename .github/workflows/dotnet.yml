@@ -9,6 +9,7 @@ on:
     paths: 
        - '**/Si_*/**'
        - '!*.md'
+       - '!*.json'
   pull_request:
     branches: [ "main" ]
     
