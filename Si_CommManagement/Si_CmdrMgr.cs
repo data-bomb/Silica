@@ -40,7 +40,7 @@ using System.Collections.Generic;
 using SilicaAdminMod;
 using System.Linq;
 
-[assembly: MelonInfo(typeof(CommanderManager), "Commander Management", "1.3.3", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(CommanderManager), "Commander Management", "1.3.4", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -145,7 +145,6 @@ namespace Si_CommanderManagement
                 CommanderManager.teamswapCommanderChecks = new Player[MaxTeams];
                 CommanderManager.promotedCommanders = new Player[MaxTeams];
 
-                promotedSequenceStarted = false;
                 bOnGameInitFired = false;
             }
             catch (Exception error)
@@ -307,8 +306,6 @@ namespace Si_CommanderManagement
                     // *** TODO: need to account for if a player leaves the game within the 30 second window
                     System.Random randomIndex = new System.Random();
                     Player? RemovePlayer = null;
-
-                    promotedSequenceStarted = true;
 
                     for (int i = 0; i < MaxTeams; i++)
                     {
