@@ -10,5 +10,4 @@
     <PackageReference Include="Silica-MelonLoader-AdminMod" Version="*"/>
     <PackageReference Include="Silica-MelonLoader-Dependencies" Version="*"/>
   </ItemGroup>
-
 </Project>
