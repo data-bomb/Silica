@@ -145,8 +145,10 @@ jobs:
         cd ${{ env.START_DIR }}
         mkdir -p dedi/Mods
         mkdir -p listen/Mods
-        cp LICENSE dedi/Mod-License.txt
-        cp LICENSE listen/Mod-License.txt
+        mkdir -p dedi/UserData
+        mkdir -p listen/UserData
+        cp LICENSE dedi/UserData/Mod-License.txt
+        cp LICENSE listen/UserData/Mod-License.txt
         cp ${{ env.START_DIR }}/${{ matrix.path }}/bin/${{env.BUILD_TYPE}}/netstandard2.1/*.dll dedi/Mods
         cp ${{ env.START_DIR }}/${{ matrix.path }}/bin/${{env.BUILD_TYPE}}/net6.0/*.dll listen/Mods
         
