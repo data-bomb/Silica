@@ -65,17 +65,26 @@ jobs:
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: 6.0.x
-      - name: Navigate
+      - name: Restore
         run: |
           cd Si_AdminMod
+          dotnet restore
       - name: Build
-        run: dotnet build -c ${{env.BUILD_TYPE}}
+        run: |
+          cd Si_AdminMod
+          dotnet build --no-restore -c ${{env.BUILD_TYPE}}
       - name: Test
-        run: dotnet test -c ${{env.BUILD_TYPE}} --no-build
+        run: |
+          cd Si_AdminMod
+          dotnet test -c ${{env.BUILD_TYPE}} --no-build
       - name: Pack NuGet
-        run: dotnet pack -c ${{env.BUILD_TYPE}} --no-build --output . /p:Version=2.0.${{ needs.get-commit-number.outputs.comnum }}
+        run: |
+          cd Si_AdminMod
+          dotnet pack -c ${{env.BUILD_TYPE}} --no-build --output . /p:Version=2.0.${{ needs.get-commit-number.outputs.comnum }}
       - name: Push to NuGet
-        run: dotnet nuget push "*.nupkg" --api-key ${{secrets.NUGET_ADMINMOD_API_KEY}} --source https://api.nuget.org/v3/index.json
+        run: |
+          cd Si_AdminMod
+          dotnet nuget push "*.nupkg" --api-key ${{secrets.NUGET_ADMINMOD_API_KEY}} --source https://api.nuget.org/v3/index.json
 
   fanout:
     needs: [ find-if-nuget-update-is-needed, create-package ]
@@ -123,7 +132,7 @@ jobs:
     - name: Build
       run: |
         cd ${{ matrix.path }}
-        dotnet build --no-restore -c Release
+        dotnet build --no-restore -c ${{env.BUILD_TYPE}}
         
     - name: Make output paths
       run: |
