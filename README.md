@@ -34,8 +34,8 @@
 ## Dedicated Server Setup Instructions
 1. Install Silica Dedicated Server Tool from Steam
 2. Download the [MelonLoader.Windows.x64.CI.Release on the alpha-development branch](https://github.com/LavaGang/MelonLoader/actions/runs/7427565301) and unzip all files to your `Silica Dedicated Server` directory
-3. Place the Admin Mod in your `Silica Dedicated Server\Mods` directory
-4. Place any other desired mods in your `Silica Dedicated Server\Mods` directory
+3. Download the latest [Dedicated Server release](https://github.com/data-bomb/Silica/releases) and unzip all files to your `Silica Dedicated Server` directory
+4. Review the `Silica Dedicated Server\Mods` directory and remove any undesired mods
 5. Update the command line options for Silica Dedicated Server to include `--melonloader.hideconsole --melonloader.disablestartscreen` (e.g., in Steam, right-click the Silica Dedicated Server Tool from the Steam Library and put these in the Launch Options)
 6. Launch Silica Dedicated Server
 
