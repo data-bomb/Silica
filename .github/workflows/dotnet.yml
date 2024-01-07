@@ -107,6 +107,7 @@ jobs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
 
   build:
+    if: success() || ${{ failure() && needs.find-if-nuget-update-is-needed.outputs.admin-updated == 'false' }}
     needs: fanout
     runs-on: ubuntu-latest
     strategy:
@@ -165,7 +166,7 @@ jobs:
         path: ${{ env.START_DIR }}/listen
         
   publish:
-    if: github.event_name == 'push'
+    if: github.event_name == 'push' && (success() || ${{ failure() && needs.find-if-nuget-update-is-needed.outputs.admin-updated == 'false' }})
     permissions:
       contents: write
     needs: [ get-commit-number, build, fanout ]
