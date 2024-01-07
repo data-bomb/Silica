@@ -91,6 +91,7 @@ jobs:
           time: 10m
 
   fanout:
+    if: success() || ${{ failure() && needs.find-if-nuget-update-is-needed.outputs.admin-updated == 'false' }}
     needs: [ find-if-nuget-update-is-needed, create-package ]
     runs-on: ubuntu-latest
     
