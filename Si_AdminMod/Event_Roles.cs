@@ -82,8 +82,11 @@ namespace SilicaAdminMod
                     if (onRequestCommanderArgs.Block)
                     {
                         MelonLogger.Msg("Blocking commander role request");
-                        __instance.SpawnUnitForPlayer(requestingPlayer, requestingPlayer.Team);
-                        FireOnRoleChangedEvent(requestingPlayer, MP_Strategy.ETeamRole.INFANTRY);
+                        if (!onRequestCommanderArgs.PreventSpawnWhenBlocked)
+                        {
+                            __instance.SpawnUnitForPlayer(requestingPlayer, requestingPlayer.Team);
+                            FireOnRoleChangedEvent(requestingPlayer, MP_Strategy.ETeamRole.INFANTRY);
+                        }
                         return false;
                     }
 
@@ -141,6 +144,7 @@ namespace SilicaAdminMod
             OnRequestCommanderArgs onRequestCommanderArgs = new OnRequestCommanderArgs();
             onRequestCommanderArgs.Requester = player;
             onRequestCommanderArgs.Block = false;
+            onRequestCommanderArgs.PreventSpawnWhenBlocked = false;
             EventHandler<OnRequestCommanderArgs>? requestCommanderEvent = OnRequestCommander;
             if (requestCommanderEvent != null)
             {

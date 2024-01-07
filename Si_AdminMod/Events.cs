@@ -49,6 +49,12 @@ namespace SilicaAdminMod
             get;
             set;
         }
+
+        public bool PreventSpawnWhenBlocked
+        {
+            get;
+            set;
+        }
     }
 
     public class OnRoleChangedArgs : EventArgs
