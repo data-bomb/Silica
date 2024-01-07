@@ -85,6 +85,10 @@ jobs:
         run: |
           cd Si_AdminMod
           dotnet nuget push "*.nupkg" --api-key ${{secrets.NUGET_ADMINMOD_API_KEY}} --source https://api.nuget.org/v3/index.json
+      - name: Wait for publishing
+        uses: juliangruber/sleep-action@v2.0.0
+        with:
+          time: 10m
 
   fanout:
     needs: [ find-if-nuget-update-is-needed, create-package ]
