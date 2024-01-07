@@ -22,7 +22,7 @@
 - 6GB Disk Space
 
 ## Listen Server Setup Instructions
-1. Install Silica
+1. Install Silica from Steam
 2. Install [.NET 6.0 Runtime x64](https://dotnet.microsoft.com/en-us/download/dotnet/6.0)
 3. Install [MelonLoader using the Manual Installation](https://melonwiki.xyz/#/README?id=manual-installation) method for 64-bit games
 4. Place `dobby.dll` in your `Silica` directory
@@ -32,12 +32,12 @@
 9. Review and modify the configuration parameters in the `Silica\UserData\MelonPreferences.cfg` file
 
 ## Dedicated Server Setup Instructions
-1. Install Silica Dedicated Server Tool
+1. Install Silica Dedicated Server Tool from Steam
 2. Install the [MelonLoader.Windows.x64.CI.Release on the alpha-development branch](https://github.com/LavaGang/MelonLoader/actions/runs/7359733121) of MelonLoader using the [Manual Installation](https://melonwiki.xyz/#/README?id=manual-installation) method for 64-bit games
 4. Place `dobby.dll` in your `Silica Dedicated Server` directory
 5. Place the Admin Mod in your `Silica Dedicated Server\Mods` directory
 6. Place any other desired mods in your `Silica Dedicated Server\Mods` directory
-7. Update the command line options for Silica Dedicated Server to include `--melonloader.hideconsole --melonloader.disablestartscreen`
+7. Update the command line options for Silica Dedicated Server to include `--melonloader.hideconsole --melonloader.disablestartscreen` (e.g., in Steam, right-click the Silica Dedicated Server Tool from the Steam Library and put these in the Launch Options)
 8. Launch Silica Dedicated Server
 
 For Dedicated Server hosts who wish to have an official server license, note that mods are not currently approved/supported as mods can negatively impact performance. The only exception to this is the GamePriority mod.
