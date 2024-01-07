@@ -59,19 +59,20 @@ jobs:
     if: needs.find-if-nuget-update-is-needed.outputs.admin-updated == 'true'
     runs-on: ubuntu-latest
     steps:
-      - name: test-adminmod-udpate
-        run: echo "Preparing Nuget package"
       - name: Checkout
         uses: actions/checkout@v3
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: 6.0.x
+      - name: Navigate
+        run: |
+          cd Si_AdminMod
       - name: Build
         run: dotnet build -c ${{env.BUILD_TYPE}}
       - name: Test
         run: dotnet test -c ${{env.BUILD_TYPE}} --no-build
-      - name: Pack nugets
+      - name: Pack NuGet
         run: dotnet pack -c ${{env.BUILD_TYPE}} --no-build --output . /p:Version=2.0.${{ needs.get-commit-number.outputs.comnum }}
       - name: Push to NuGet
         run: dotnet nuget push "*.nupkg" --api-key ${{secrets.NUGET_ADMINMOD_API_KEY}} --source https://api.nuget.org/v3/index.json
