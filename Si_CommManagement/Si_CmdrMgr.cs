@@ -40,7 +40,7 @@ using System.Collections.Generic;
 using SilicaAdminMod;
 using System.Linq;
 
-[assembly: MelonInfo(typeof(CommanderManager), "Commander Management", "1.3.4", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(CommanderManager), "Commander Management", "1.4.0", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -80,10 +80,9 @@ namespace Si_CommanderManagement
             }
         }
 
-        static List<Player>[]? commanderApplicants;
+        static List<Player>[] commanderApplicants = null!;
         static List<Player>? previousCommanders;
         static bool bOnGameInitFired;
-        static bool AdminModAvailable = false;
 
         static Player?[]? teamswapCommanderChecks;
         static Player[]? promotedCommanders;
@@ -155,26 +154,21 @@ namespace Si_CommanderManagement
 
         public override void OnLateInitializeMelon()
         {
-            AdminModAvailable = RegisteredMelons.Any(m => m.Info.Name == "Admin Mod");
+            // register commands
+            HelperMethods.CommandCallback commanderBanCallback = Command_CommanderBan;
+            HelperMethods.RegisterAdminCommand("!cmdrban", commanderBanCallback, Power.Commander);
+            HelperMethods.RegisterAdminCommand("!commanderban", commanderBanCallback, Power.Commander);
+            HelperMethods.RegisterAdminCommand("!cban", commanderBanCallback, Power.Commander);
 
-            if (AdminModAvailable)
-            {
-                HelperMethods.CommandCallback commanderBanCallback = Command_CommanderBan;
-                HelperMethods.RegisterAdminCommand("!cmdrban", commanderBanCallback, Power.Commander);
-                HelperMethods.RegisterAdminCommand("!commanderban", commanderBanCallback, Power.Commander);
-                HelperMethods.RegisterAdminCommand("!cban", commanderBanCallback, Power.Commander);
+            HelperMethods.CommandCallback commanderUnbanCallback = Command_CommanderUnban;
+            HelperMethods.RegisterAdminCommand("!removecommanderban", commanderUnbanCallback, Power.Commander);
+            HelperMethods.RegisterAdminCommand("!uncban", commanderUnbanCallback, Power.Commander);
 
-                HelperMethods.CommandCallback commanderUnbanCallback = Command_CommanderUnban;
-                HelperMethods.RegisterAdminCommand("!removecommanderban", commanderUnbanCallback, Power.Commander);
-                HelperMethods.RegisterAdminCommand("!uncban", commanderUnbanCallback, Power.Commander);
+            HelperMethods.CommandCallback commanderDemoteCallback = Command_CommanderDemote;
+            HelperMethods.RegisterAdminCommand("!demote", commanderDemoteCallback, Power.Commander);
 
-                HelperMethods.CommandCallback commanderDemoteCallback = Command_CommanderDemote;
-                HelperMethods.RegisterAdminCommand("!demote", commanderDemoteCallback, Power.Commander);
-            }
-            else
-            {
-                MelonLogger.Warning("Dependency missing: Admin Mod");
-            }
+            // subscribe to the OnRequestCommander event
+            Event_Roles.OnRequestCommander += OnRequestCommander;
         }
 
         public static void SendToRole(Player FormerCommander, MP_Strategy.ETeamRole role)
@@ -186,14 +180,15 @@ namespace Si_CommanderManagement
                 return;
             }
 
-            theRoleStream.WriteUInt64(FormerCommander.PlayerID.m_SteamID);
+            theRoleStream.WriteUInt64((ulong)FormerCommander.PlayerID);
             theRoleStream.WriteByte((byte)FormerCommander.PlayerChannel);
             theRoleStream.WriteByte((byte)role);
             GameMode.CurrentGameMode.SendRPCPacket(theRoleStream);
         }
 
         // may need to re-think this approach on preventing commander promotion
-        [HarmonyPatch(typeof(MP_Strategy), nameof(MP_Strategy.GetStrategyCommanderTeamSetup))]
+        
+        /*[HarmonyPatch(typeof(MP_Strategy), nameof(MP_Strategy.GetStrategyCommanderTeamSetup))]
         private static class ApplyPatchCommanderTeamSetup
         {
             public static bool Prefix(MP_Strategy __instance, StrategyTeamSetup? __result, Player? __0)
@@ -229,7 +224,7 @@ namespace Si_CommanderManagement
 
                 return true;
             }
-        }
+        }*/
 
         [HarmonyPatch(typeof(MusicJukeboxHandler), nameof(MusicJukeboxHandler.OnGameInit))]
         private static class ApplyPatchOnGameInit
@@ -339,6 +334,19 @@ namespace Si_CommanderManagement
                             promotedCommanders[CommanderPlayer.Team.Index] = CommanderPlayer;
                             PromoteToCommander(CommanderPlayer);
                             previousCommanders.Add(CommanderPlayer);
+                            commanderApplicants[i].RemoveAt(iCommanderIndex);
+                        }
+
+                        // switch remaining players to infantry
+                        foreach (Player infantryPlayer in commanderApplicants[i])
+                        {
+                            if (infantryPlayer == null)
+                            {
+                                continue;
+                            }
+
+                            MelonLogger.Msg("Player " + infantryPlayer.PlayerName + " lost commander lottery. Spawning as infantry.");
+                            GameMode.CurrentGameMode.SpawnUnitForPlayer(infantryPlayer, infantryPlayer.Team);
                         }
                     }
                 }
@@ -360,6 +368,8 @@ namespace Si_CommanderManagement
             {
                 try
                 {
+                    MelonLogger.Msg("Reached SetCommander Patch for Team " + __0.TeamName);
+
                     if (__instance == null || __0 == null || MasterBanList == null || commanderApplicants == null || teamswapCommanderChecks == null || promotedCommanders == null)
                     {
                         return true;
@@ -367,45 +377,6 @@ namespace Si_CommanderManagement
 
                     if (__1 != null)
                     {
-                        // check if player is allowed to be commander
-                        long JoiningPlayerSteamId = long.Parse(__1.ToString().Split('_')[1]);
-                        BanEntry? banEntry = MasterBanList.Find(i => i.OffenderSteamId == JoiningPlayerSteamId);
-                        if (banEntry != null)
-                        {
-                            MelonLogger.Msg("Preventing " + banEntry.OffenderName + " from playing as commander.");
-
-                            // need to get the player back to Infantry and not stuck in no-clip
-                            SendToRole(__1, MP_Strategy.ETeamRole.INFANTRY);
-                            // respawn
-                            GameMode.CurrentGameMode.SpawnUnitForPlayer(__1, __0);
-
-                            __1 = null;
-                            return false;
-                        }
-
-                        // check if they're trying to join before the 30 second countdown expires and the game begins
-                        if (GameMode.CurrentGameMode.Started && !GameMode.CurrentGameMode.GameBegun)
-                        {
-                            // check if player is already an applicant
-                            if (!commanderApplicants[__1.Team.Index].Contains(__1))
-                            {
-                                HelperMethods.ReplyToCommand_Player(__1, "has applied for commander");
-
-                                // need to get the player back to Infantry and not stuck in no-clip
-                                SendToRole(__1, MP_Strategy.ETeamRole.INFANTRY);
-                                // respawn
-                                GameMode.CurrentGameMode.SpawnUnitForPlayer(__1, __0);
-
-                                commanderApplicants[__1.Team.Index].Add(__1);
-                            }
-                            Player? stratComm = __instance.GetStrategyTeamSetup(__1.Team).Commander;
-
-                            MelonLogger.Msg("Denied SetCommander with player " + __1.PlayerName + " Team's Commander is: " + stratComm.PlayerName);
-
-                            __1 = null;
-                            return false;
-                        }
-
                         // when the game is in full swing
                         if (GameMode.CurrentGameMode.Started && GameMode.CurrentGameMode.GameBegun)
                         {
@@ -529,69 +500,57 @@ namespace Si_CommanderManagement
         {
             MP_Strategy strategyInstance = GameObject.FindObjectOfType<MP_Strategy>();
 
-            // lock in commanders on the server side
-            StrategyTeamSetup strategyTeamInstance = strategyInstance.GetStrategyTeamSetup(CommanderPlayer.Team);
-
-#if NET6_0
+            // mimic switching to role NONE first
             GameMode.CurrentGameMode.DestroyAllUnitsForPlayer(CommanderPlayer);
+            #if NET6_0
             if (strategyInstance.PlayerRespawnTracker.ContainsKey(CommanderPlayer))
             {
                 strategyInstance.PlayerRespawnTracker.Remove(CommanderPlayer);
             }
-            strategyInstance.SetCommander(CommanderPlayer.Team, CommanderPlayer);
-            strategyInstance.RPC_SynchCommander(CommanderPlayer.Team);
-#else
-            GameMode.CurrentGameMode.DestroyAllUnitsForPlayer(CommanderPlayer);
-            FieldInfo respawnTrackerField = typeof(MP_Strategy).GetField("PlayerRespawnTracker", BindingFlags.NonPublic | BindingFlags.Instance);
-            Dictionary<Player, float> respawnCopy = (Dictionary<Player, float>)respawnTrackerField.GetValue(strategyInstance);
-            if (respawnCopy.ContainsKey(CommanderPlayer))
+            #else
+            FieldInfo playerRespawnTrackerField = typeof(MP_Strategy).GetField("PlayerRespawnTracker", BindingFlags.NonPublic | BindingFlags.Instance);
+            Dictionary<Player, float> localPlayerRespawnTracker = (Dictionary<Player, float>)playerRespawnTrackerField.GetValue(strategyInstance);
+            if (localPlayerRespawnTracker.ContainsKey(CommanderPlayer))
             {
-                respawnCopy.Remove(CommanderPlayer);
-                respawnTrackerField.SetValue(strategyInstance, respawnCopy);
+                localPlayerRespawnTracker.Remove(CommanderPlayer);
+                playerRespawnTrackerField.SetValue(strategyInstance, localPlayerRespawnTracker);
             }
-
-            MethodInfo setCommanderMethod = typeof(MP_Strategy).GetMethod("SetCommander", BindingFlags.Instance | BindingFlags.NonPublic);
-            setCommanderMethod.Invoke(strategyInstance, new object[] { CommanderPlayer.Team, CommanderPlayer });
-            MethodInfo synchCommanderMethod = typeof(MP_Strategy).GetMethod("RPC_SynchCommander", BindingFlags.Instance | BindingFlags.NonPublic);
-            synchCommanderMethod.Invoke(strategyInstance, new object[] { CommanderPlayer.Team });
             #endif
 
-            MelonLogger.Msg("Trying to promote " + CommanderPlayer.PlayerName + " on team " + CommanderPlayer.Team.TeamName + " and team instance " + strategyTeamInstance.ToString());
+            // now mimic switching to COMMANDER role
+            StrategyTeamSetup strategyTeamInstance = strategyInstance.GetStrategyTeamSetup(CommanderPlayer.Team);
+            MelonLogger.Msg("Trying to promote " + CommanderPlayer.PlayerName + " on team " + CommanderPlayer.Team.TeamName);
 
-            // replicate to client to get them to re-select commander
-            /*
-            Il2Cpp.GameByteStreamWriter theTeamStream;
-            theTeamStream = Il2Cpp.GameMode.CurrentGameMode.CreateRPCPacket((byte)MP_Strategy.ERPCs.REQUEST_ROLE);
-            if (theTeamStream == null)
-            {
-                MelonLogger.Warning("Could not create GameByteStreamWriter for PromoteToCommander");
-                return;
-            }
+            
+#if NET6_0
+            strategyInstance.SetCommander(strategyTeamInstance.Team, CommanderPlayer);
+            strategyInstance.RPC_SynchCommander(strategyTeamInstance.Team);
+#else
+            Type strategyType = typeof(MP_Strategy);
+            MethodInfo setCommanderMethod = strategyType.GetMethod("SetCommander", BindingFlags.Instance | BindingFlags.NonPublic);
+            setCommanderMethod.Invoke(strategyInstance, parameters: new object?[] { strategyTeamInstance.Team, CommanderPlayer });
 
-            theTeamStream.WriteUInt64(CommanderPlayer.PlayerID.m_SteamID);
-            theTeamStream.WriteByte((byte)CommanderPlayer.PlayerChannel);
-            theTeamStream.WriteByte((byte)MP_Strategy.ETeamRole.COMMANDER);
-            theTeamStream.WriteTeam(CommanderPlayer.Team);
-            Il2Cpp.GameMode.CurrentGameMode.SendRPCPacket(theTeamStream);
-            */
-            // TODO: Investigate what more to do so commanders don't need to switch back to commander using 'T'
+            MethodInfo synchCommanderMethod = strategyType.GetMethod("RPC_SynchCommander", BindingFlags.Instance | BindingFlags.NonPublic);
+            synchCommanderMethod.Invoke(strategyInstance, new object[] { strategyTeamInstance.Team });
+#endif
+            
         }
 
         public static void DemoteTeamsCommander(MP_Strategy strategyInstance, Team TargetTeam)
         {
             Player DemotedCommander = strategyInstance.GetCommanderForTeam(TargetTeam);
 
-            #if NET6_0
+#if NET6_0
             strategyInstance.SetCommander(TargetTeam, null);
             strategyInstance.RPC_SynchCommander(TargetTeam);
-            #else
+#else
             Type strategyType = typeof(MP_Strategy);
             MethodInfo setCommanderMethod = strategyType.GetMethod("SetCommander", BindingFlags.Instance | BindingFlags.NonPublic);
             setCommanderMethod.Invoke(strategyInstance, parameters: new object?[] { TargetTeam, null });
 
             MethodInfo synchCommanderMethod = strategyType.GetMethod("RPC_SynchCommander", BindingFlags.Instance | BindingFlags.NonPublic);
             synchCommanderMethod.Invoke(strategyInstance, new object[] { TargetTeam });
-            #endif
+#endif
 
             // need to get the player back to Infantry and not stuck in no-clip
             SendToRole(DemotedCommander, MP_Strategy.ETeamRole.INFANTRY);
@@ -985,6 +944,38 @@ namespace Si_CommanderManagement
             }
 
             return true;
+        }
+
+        public void OnRequestCommander(object sender, OnRequestCommanderArgs args)
+        {
+            if (args.Requester == null || MasterBanList == null)
+            {
+                return;
+            }
+
+            // check if player is allowed to be commander
+            long requestingPlayerSteamId = long.Parse(args.Requester.ToString().Split('_')[1]);
+            BanEntry? banEntry = MasterBanList.Find(i => i.OffenderSteamId == requestingPlayerSteamId);
+            if (banEntry != null)
+            {
+                MelonLogger.Msg("Preventing " + banEntry.OffenderName + " from playing as commander.");
+                args.Block = true;
+            }
+
+            // check if they're trying to join before the 30 second countdown expires and the game begins
+            if (GameMode.CurrentGameMode.Started && !GameMode.CurrentGameMode.GameBegun)
+            {
+                // check if player is already an applicant
+                if (!commanderApplicants[args.Requester.Team.Index].Contains(args.Requester))
+                {
+                    HelperMethods.ReplyToCommand_Player(args.Requester, "has applied for commander");
+                    commanderApplicants[args.Requester.Team.Index].Add(args.Requester);
+                }
+
+                MelonLogger.Msg("Denied early game commander join for " + args.Requester.PlayerName);
+                args.Block = true;
+                args.PreventSpawnWhenBlocked = true;
+            }
         }
     }
 }
