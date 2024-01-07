@@ -26,6 +26,7 @@ using Newtonsoft.Json.Linq;
 using MelonLoader.ICSharpCode.SharpZipLib.Core;
 using System.Runtime.CompilerServices;
 using System.Reflection;
+using System.Data;
 
 #if NET6_0
 using Il2Cpp;
@@ -36,9 +37,10 @@ using Steamworks;
 
 namespace SilicaAdminMod
 {
-    public static class Event_OnRequestCommander
+    public static class Event_Roles
     {
-        public static event EventHandler<OnRequestCommanderArgs>? OnRequestCommander = delegate { };
+        public static event EventHandler<OnRequestCommanderArgs> OnRequestCommander = delegate { };
+        public static event EventHandler<OnRoleChangedArgs> OnRoleChanged = delegate { };
 
         [HarmonyPatch(typeof(MP_Strategy), nameof(MP_Strategy.ProcessNetRPC))]
         static class ApplyPatch_MPStrategy_RequestRole
@@ -64,11 +66,8 @@ namespace SilicaAdminMod
                     // would the game code treat it as an infantry/no role request?
                     if (eRole != MP_Strategy.ETeamRole.COMMANDER || __instance.GetCommanderForTeam(requestingPlayer.Team))
                     {
-                        GameByteStreamWriter gameByteStreamWriter = GameByteStreamWriter.GetGameByteStreamWriter(true);
-                        gameByteStreamWriter.WriteUInt64((ulong)requestingPlayer.PlayerID);
-                        gameByteStreamWriter.WriteByte((byte)requestingPlayer.PlayerChannel);
-                        gameByteStreamWriter.WriteByte((byte)eRole);
-                        __0 = GameByteStreamReader.GetGameByteStreamReader(gameByteStreamWriter.GetByteData(), gameByteStreamWriter.GetByteDataSize(), true);
+                        __0 = RestoreRPC_RequestRoleReader(requestingPlayer, eRole);
+                        FireOnRoleChangedEvent(requestingPlayer, eRole);
                         return true;
                     }
 
@@ -78,19 +77,13 @@ namespace SilicaAdminMod
                         return false;
                     }
 
-                    OnRequestCommanderArgs onRequestCommanderArgs = new OnRequestCommanderArgs();
-                    onRequestCommanderArgs.Requester = requestingPlayer;
-                    onRequestCommanderArgs.Block = false;
-                    EventHandler<OnRequestCommanderArgs>? requestCommanderEvent = OnRequestCommander;
-                    if (requestCommanderEvent != null)
-                    {
-                        requestCommanderEvent(null, onRequestCommanderArgs);
-                    }
+                    OnRequestCommanderArgs onRequestCommanderArgs = FireOnRequestCommanderEvent(requestingPlayer);
 
                     if (onRequestCommanderArgs.Block)
                     {
                         MelonLogger.Msg("Blocking commander role request");
                         __instance.SpawnUnitForPlayer(requestingPlayer, requestingPlayer.Team);
+                        FireOnRoleChangedEvent(requestingPlayer, MP_Strategy.ETeamRole.INFANTRY);
                         return false;
                     }
 
@@ -107,6 +100,8 @@ namespace SilicaAdminMod
                     synchCommanderMethod.Invoke(__instance, new object[] { strategyTeamSetup.Team });
                     #endif
 
+                    FireOnRoleChangedEvent(requestingPlayer, MP_Strategy.ETeamRole.COMMANDER);
+
                     return false;
                 }
                 catch (Exception error)
@@ -116,6 +111,43 @@ namespace SilicaAdminMod
 
                 return true;
             }
+        }
+
+        public static GameByteStreamReader RestoreRPC_RequestRoleReader(Player requestingPlayer, MP_Strategy.ETeamRole role)
+        {
+            GameByteStreamWriter gameByteStreamWriter = GameByteStreamWriter.GetGameByteStreamWriter(true);
+            gameByteStreamWriter.WriteUInt64((ulong)requestingPlayer.PlayerID);
+            gameByteStreamWriter.WriteByte((byte)requestingPlayer.PlayerChannel);
+            gameByteStreamWriter.WriteByte((byte)role);
+            return GameByteStreamReader.GetGameByteStreamReader(gameByteStreamWriter.GetByteData(), gameByteStreamWriter.GetByteDataSize(), true);
+        }
+
+        public static void FireOnRoleChangedEvent(Player player, MP_Strategy.ETeamRole role)
+        {
+            MelonLogger.Msg("Firing Role Change Event for " + player.PlayerName + " to role " + role.ToString());
+
+            OnRoleChangedArgs onRoleChangedArgs = new OnRoleChangedArgs();
+            onRoleChangedArgs.Player = player;
+            onRoleChangedArgs.Role = role;
+            EventHandler<OnRoleChangedArgs> roleChangeEvent = OnRoleChanged;
+            if (roleChangeEvent != null)
+            {
+                roleChangeEvent(null, onRoleChangedArgs);
+            }
+        }
+
+        public static OnRequestCommanderArgs FireOnRequestCommanderEvent(Player player)
+        {
+            OnRequestCommanderArgs onRequestCommanderArgs = new OnRequestCommanderArgs();
+            onRequestCommanderArgs.Requester = player;
+            onRequestCommanderArgs.Block = false;
+            EventHandler<OnRequestCommanderArgs>? requestCommanderEvent = OnRequestCommander;
+            if (requestCommanderEvent != null)
+            {
+                requestCommanderEvent(null, onRequestCommanderArgs);
+            }
+
+            return onRequestCommanderArgs;
         }
     }
 }

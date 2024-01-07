@@ -50,4 +50,20 @@ namespace SilicaAdminMod
             set;
         }
     }
+
+    public class OnRoleChangedArgs : EventArgs
+    {
+        private Player _player = null!;
+
+        public Player Player
+        {
+            get => _player;
+            set => _player = value ?? throw new ArgumentNullException("Player is required.");
+        }
+        public MP_Strategy.ETeamRole Role
+        {
+            get;
+            set;
+        }
+    }
 }
