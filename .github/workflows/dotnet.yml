@@ -18,6 +18,20 @@ env:
   
 jobs:
 
+  get-commit-number:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+    - name: Generate the commit number
+      id: commit-number
+      run: |
+        echo "comnum=$(git log --oneline | wc -l)" >> "$GITHUB_OUTPUT"
+          
+    outputs:
+      comnum: ${{ steps.commit-number.outputs.comnum }}
+      
   find-if-nuget-update-is-needed:
     runs-on: ubuntu-latest
     steps:
@@ -41,12 +55,26 @@ jobs:
       admin-updated: ${{ steps.checkAdminMod.outputs.admin-updated }}
 
   create-package:
-    needs: find-if-nuget-update-is-needed
+    needs: [ find-if-nuget-update-is-needed, get-commit-number ]
     if: needs.find-if-nuget-update-is-needed.outputs.admin-updated == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: test-adminmod-udpate
         run: echo "Preparing Nuget package"
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: 6.0.x
+      - name: Build
+        run: dotnet build -c ${{env.BUILD_TYPE}}
+      - name: Test
+        run: dotnet test -c ${{env.BUILD_TYPE}} --no-build
+      - name: Pack nugets
+        run: dotnet pack -c ${{env.BUILD_TYPE}} --no-build --output . /p:Version=2.0.${{ needs.get-commit-number.outputs.comnum }}
+      - name: Push to NuGet
+        run: dotnet nuget push "*.nupkg" --api-key ${{secrets.NUGET_ADMINMOD_API_KEY}} --source https://api.nuget.org/v3/index.json
 
   fanout:
     needs: [ find-if-nuget-update-is-needed, create-package ]
@@ -54,22 +82,14 @@ jobs:
     
     steps:
       - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
           
       - name: Generate matrix with all modules of the repo
         id: set-matrix
         run: |
           echo "matrix=$(ls -l | grep '^d' | awk -F ' ' '{print $9}' | grep -Po 'Si.*' | jq -R -s -c 'split("\n") | map(select(length > 0))')" >> "$GITHUB_OUTPUT"
           
-      - name: Generate the commit number
-        id: commit-number
-        run: |
-          echo "comnum=$(git log --oneline | wc -l)" >> "$GITHUB_OUTPUT"
-          
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
-      comnum: ${{ steps.commit-number.outputs.comnum }}
 
   build:
     needs: fanout
@@ -133,7 +153,7 @@ jobs:
     if: github.event_name == 'push'
     permissions:
       contents: write
-    needs: [ build, fanout ]
+    needs: [ get-commit-number, build, fanout ]
     runs-on: ubuntu-latest
     steps:
       - name: Prepare env
@@ -157,13 +177,13 @@ jobs:
 
       - name: Zip Builds
         run: |
-          (cd release/dedi && zip -qq -r ../../DedicatedServer-v${{ needs.fanout.outputs.comnum }}-${{ env.GITHUB_SHA_SHORT }}.zip *)
-          (cd release/listen && zip -qq -r ../../ListenServer-v${{ needs.fanout.outputs.comnum }}-${{ env.GITHUB_SHA_SHORT }}.zip *)
+          (cd release/dedi && zip -qq -r ../../DedicatedServer-v${{ needs.get-commit-number.outputs.comnum }}-${{ env.GITHUB_SHA_SHORT }}.zip *)
+          (cd release/listen && zip -qq -r ../../ListenServer-v${{ needs.get-commit-number.outputs.comnum }}-${{ env.GITHUB_SHA_SHORT }}.zip *)
 
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: v${{ needs.fanout.outputs.comnum }}
+          tag_name: v${{ needs.get-commit-number.outputs.comnum }}
           files: |
-            DedicatedServer-v${{ needs.fanout.outputs.comnum }}-${{ env.GITHUB_SHA_SHORT }}.zip
-            ListenServer-v${{ needs.fanout.outputs.comnum }}-${{ env.GITHUB_SHA_SHORT }}.zip
+            DedicatedServer-v${{ needs.get-commit-number.outputs.comnum }}-${{ env.GITHUB_SHA_SHORT }}.zip
+            ListenServer-v${{ needs.get-commit-number.outputs.comnum }}-${{ env.GITHUB_SHA_SHORT }}.zip
