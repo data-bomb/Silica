@@ -33,7 +33,7 @@
 
 ## Dedicated Server Setup Instructions
 1. Install Silica Dedicated Server Tool from Steam
-2. Install the [MelonLoader.Windows.x64.CI.Release on the alpha-development branch](https://github.com/LavaGang/MelonLoader/actions/runs/7359733121) of MelonLoader using the [Manual Installation](https://melonwiki.xyz/#/README?id=manual-installation) method for 64-bit games
+2. Install the [MelonLoader.Windows.x64.CI.Release on the alpha-development branch](https://github.com/LavaGang/MelonLoader/actions/runs/7427565301) of MelonLoader using the [Manual Installation](https://melonwiki.xyz/#/README?id=manual-installation) method for 64-bit games
 4. Place `dobby.dll` in your `Silica Dedicated Server` directory
 5. Place the Admin Mod in your `Silica Dedicated Server\Mods` directory
 6. Place any other desired mods in your `Silica Dedicated Server\Mods` directory
