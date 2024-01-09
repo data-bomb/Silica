@@ -54,7 +54,7 @@ namespace SilicaAdminMod
                 {
                     if (__instance == null || __0 == null)
                     {
-                        return true;
+                        return true
                     }
 
                     // only broadcast player-controlled events with valid units
