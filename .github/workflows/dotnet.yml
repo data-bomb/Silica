@@ -168,7 +168,7 @@ jobs:
         path: ${{ env.START_DIR }}/listen
         
   publish:
-    if: github.event_name == 'push' && ${{ !failure() && !cancelled() }}
+    if: github.event_name == 'push' && ${{ success() }}
     permissions:
       contents: write
     needs: [ get-commit-number, build, fanout ]
