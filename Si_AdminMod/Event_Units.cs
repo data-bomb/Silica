@@ -54,13 +54,13 @@ namespace SilicaAdminMod
                 {
                     if (__instance == null || __0 == null)
                     {
-                        return true
+                        return true;
                     }
 
                     // only broadcast player-controlled events with valid units
                     if (__0.ControlledBy == null || __instance.OwnerUnit == null)
                     {
-                        return true;
+                        return true
                     }
 
                     OnRequestEnterUnitArgs onRequestEnterUnitArgs = FireOnRequestEnterUnitEvent(__0.ControlledBy, __instance.OwnerUnit, __instance.IsDriver);
