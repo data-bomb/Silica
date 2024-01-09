@@ -41,7 +41,11 @@ namespace SilicaAdminMod
     {
         public static event EventHandler<OnRequestEnterUnitArgs> OnRequestEnterUnit = delegate { };
 
+        #if NET6_0
         [HarmonyPatch(typeof(UnitCompartment), nameof(UnitCompartment.AddUnit))]
+        #else
+        [HarmonyPatch(typeof(UnitCompartment), "AddUnit")]
+        #endif
         static class ApplyPatch_UnitCompartment_AddUnit
         {
             public static bool Prefix(UnitCompartment __instance, Unit __0)
