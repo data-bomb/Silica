@@ -52,7 +52,7 @@ namespace Si_CommanderManagement
         static MelonPreferences_Entry<bool>? _BlockRoundStartUntilEnoughApplicants;
 
         const int MaxTeams = 3;
-        const int AlienTeam = 0
+        const int AlienTeam = 0;
         const int CentauriTeam = 1;
         const int SolTeam = 2;
 
