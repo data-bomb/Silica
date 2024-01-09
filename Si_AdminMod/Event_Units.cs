@@ -60,7 +60,7 @@ namespace SilicaAdminMod
                     // only broadcast player-controlled events with valid units
                     if (__0.ControlledBy == null || __instance.OwnerUnit == null)
                     {
-                        return true
+                        return true;
                     }
 
                     OnRequestEnterUnitArgs onRequestEnterUnitArgs = FireOnRequestEnterUnitEvent(__0.ControlledBy, __instance.OwnerUnit, __instance.IsDriver);
@@ -68,7 +68,7 @@ namespace SilicaAdminMod
                     if (onRequestEnterUnitArgs.Block)
                     {
                         MelonLogger.Msg("Blocking player " + __0.ControlledBy.PlayerName + " from entering unit " + __instance.OwnerUnit.ToString());
-                        return false;
+                        return false
                     }
 
                     MelonLogger.Msg("Allowing player to enter unit's compartment");
