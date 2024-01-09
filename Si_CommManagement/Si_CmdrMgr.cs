@@ -40,7 +40,7 @@ using System.Collections.Generic;
 using SilicaAdminMod;
 using System.Linq;
 
-[assembly: MelonInfo(typeof(CommanderManager), "Commander Management", "1.4.0", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(CommanderManager), "Commander Management", "1.4.1", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -54,7 +54,7 @@ namespace Si_CommanderManagement
         const int MaxTeams = 3;
         const int AlienTeam = 0;
         const int CentauriTeam = 1;
-        const int SolTeam = 2;
+        const int SolTeam = 2
 
         public class BanEntry
         {
@@ -946,7 +946,7 @@ namespace Si_CommanderManagement
             return true;
         }
 
-        public void OnRequestCommander(object sender, OnRequestCommanderArgs args)
+        public void OnRequestCommander(object? sender, OnRequestCommanderArgs args)
         {
             if (args.Requester == null || MasterBanList == null)
             {
