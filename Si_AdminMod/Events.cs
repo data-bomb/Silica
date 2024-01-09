@@ -35,6 +35,36 @@ using Steamworks;
 
 namespace SilicaAdminMod
 {
+    public class OnRequestEnterUnitArgs : EventArgs
+    {
+        private Player _player = null!;
+        private Unit _unit = null!;
+
+        public Player Player
+        {
+            get => _player;
+            set => _player = value ?? throw new ArgumentNullException("Player is required.");
+        }
+
+        public Unit Unit
+        {
+            get => _unit;
+            set => _unit = value ?? throw new ArgumentNullException("Unit is required.");
+        }
+
+        public bool AsDriver
+        {
+            get;
+            set;
+        }
+
+        public bool Block
+        {
+            get;
+            set;
+        }
+    }
+
     public class OnRequestCommanderArgs : EventArgs
     {
         private Player _requester = null!;
