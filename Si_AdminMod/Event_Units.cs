@@ -68,7 +68,7 @@ namespace SilicaAdminMod
                     if (onRequestEnterUnitArgs.Block)
                     {
                         MelonLogger.Msg("Blocking player " + __0.ControlledBy.PlayerName + " from entering unit " + __instance.OwnerUnit.ToString());
-                        return false
+                        return false;
                     }
 
                     MelonLogger.Msg("Allowing player to enter unit's compartment");
