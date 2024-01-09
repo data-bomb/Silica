@@ -91,7 +91,7 @@ jobs:
           time: 10m
 
   fanout:
-    if: success() || ${{ !failure() && !cancelled() && needs.find-if-nuget-update-is-needed.outputs.admin-updated == 'false' }}
+    if: ${{ !failure() && !cancelled() }}
     needs: [ find-if-nuget-update-is-needed, create-package ]
     runs-on: ubuntu-latest
     
@@ -107,7 +107,7 @@ jobs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
 
   build:
-    if: success() || ${{ !failure() && !cancelled() && needs.find-if-nuget-update-is-needed.outputs.admin-updated == 'false' }}
+    if: ${{ !failure() && !cancelled() }}
     needs: fanout
     runs-on: ubuntu-latest
     strategy:
@@ -168,7 +168,7 @@ jobs:
         path: ${{ env.START_DIR }}/listen
         
   publish:
-    if: github.event_name == 'push' && (success() || ${{ !failure() && !cancelled() && needs.find-if-nuget-update-is-needed.outputs.admin-updated == 'false' }})
+    if: github.event_name == 'push'
     permissions:
       contents: write
     needs: [ get-commit-number, build, fanout ]
