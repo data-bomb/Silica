@@ -145,6 +145,8 @@ jobs:
         cd ${{ env.START_DIR }}
         mkdir -p dedi/Mods
         mkdir -p listen/Mods
+        mkdir -p dedi/Mods/disabled
+        mkdir -p listen/Mods/disabled
         mkdir -p dedi/UserData
         mkdir -p listen/UserData
         cp LICENSE dedi/UserData/Mod-License.txt
