@@ -33,7 +33,7 @@
 
 ## Dedicated Server Setup Instructions
 1. Install Silica Dedicated Server Tool from Steam
-2. Download and run the [MelonLoader.Installer.exe]([https://github.com/LavaGang/MelonLoader/actions/runs/7427565301](https://github.com/LavaGang/MelonLoader/releases/tag/v0.6.2))
+2. Download and run the [MelonLoader.Installer.exe](https://github.com/LavaGang/MelonLoader/releases/tag/v0.6.2)
 3. Using the Automated tab, hit the <b>SELECT</b> button for Unity Game and specify `C:\Program Files (x86)\Steam\steamapps\common\Silica Dedicated Server\Silica.exe` or your custom path to the Silica.exe in your Dedicated Server installation directory
 4. Ensure that the <b>Version</b> is set to v0.6.2 or later
 5. Ensure that the <b>Game Arch</b> is set to x64
