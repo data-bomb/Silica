@@ -21,12 +21,7 @@ using Newtonsoft.Json;
 using System;
 using MelonLoader.Utils;
 using MelonLoader;
-
-#if NET6_0
-using Il2CppSystem.Collections.Generic;
-#else
 using System.Collections.Generic;
-#endif
 
 namespace SilicaAdminMod
 {

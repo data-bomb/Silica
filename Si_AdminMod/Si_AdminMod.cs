@@ -23,7 +23,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #if NET6_0
 using Il2Cpp;
-using Il2CppSystem.Collections.Generic;
 #else
 using System.Collections.Generic;
 #endif
@@ -31,6 +30,7 @@ using System.Collections.Generic;
 using HarmonyLib;
 using MelonLoader;
 using System;
+using System.Collections.Generic;
 
 namespace SilicaAdminMod
 {
