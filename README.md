@@ -33,15 +33,19 @@
 
 ## Dedicated Server Setup Instructions
 1. Install Silica Dedicated Server Tool from Steam
-2. Download the [MelonLoader.Windows.x64.CI.Release on the alpha-development branch](https://github.com/LavaGang/MelonLoader/actions/runs/7427565301) and unzip all files to your `Silica Dedicated Server` directory
-3. Download the latest [Dedicated Server release](https://github.com/data-bomb/Silica/releases) and unzip all files to your `Silica Dedicated Server` directory
-4. Review the `Silica Dedicated Server\Mods` directory and remove any undesired mods
-5. Update the command line options for Silica Dedicated Server to include `--melonloader.hideconsole --melonloader.disablestartscreen` (e.g., in Steam, right-click the Silica Dedicated Server Tool from the Steam Library and put these in the Launch Options)
-6. Launch Silica Dedicated Server
+2. Download and run the [MelonLoader.Installer.exe]([https://github.com/LavaGang/MelonLoader/actions/runs/7427565301](https://github.com/LavaGang/MelonLoader/releases/tag/v0.6.2))
+3. Using the Automated tab, hit the <b>SELECT</b> button for Unity Game and specify `C:\Program Files (x86)\Steam\steamapps\common\Silica Dedicated Server\Silica.exe` or your custom path to the Silica.exe in your Dedicated Server installation directory
+4. Ensure that the <b>Version</b> is set to v0.6.2 or later
+5. Ensure that the <b>Game Arch</b> is set to x64
+6. Select Install
+7. Download the latest [Dedicated Server release](https://github.com/data-bomb/Silica/releases) and unzip all files to your `Silica Dedicated Server` directory
+8. Review the `Silica Dedicated Server\Mods` directory and remove any undesired mods
+9. Update the command line options for Silica Dedicated Server to include `--melonloader.hideconsole --melonloader.disablestartscreen` (e.g., in Steam, right-click the Silica Dedicated Server Tool from the Steam Library and put these in the Launch Options)
+10. Launch Silica Dedicated Server
 
-For Dedicated Server hosts who wish to have an official server license, note that mods are not currently approved/supported as mods can negatively impact performance. The only exception to this is the GamePriority mod.
+For Dedicated Server hosts who wish to have an official server license, note that mods are not currently supported as mods may negatively impact performance. The only exception to this is the GamePriority mod.
 
-Kind suggestion to ensure that the server name reflects that there are mods so players can choose between mods and a vanilla game experience
+Kind suggestion to ensure that the server name reflects that there are mods so players can choose between mods and a vanilla game experience.
 
 ## [Mod Descriptions](https://github.com/data-bomb/Silica/wiki/Mod-Descriptions)
 
