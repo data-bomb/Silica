@@ -124,7 +124,21 @@ jobs:
       run: echo "START_DIR=`pwd`" >> $GITHUB_ENV
       
     - uses: actions/checkout@v3
-    
+
+    - name: QList
+      uses: robinraju/release-downloader@v1.8
+      with:
+        repository: "dodad-2/QList"
+        latest: true
+        fileName: "QList.dll"
+        tarBall: false
+        zipBall: false
+
+    - name: Copy QList
+      run: |
+        cd ${{ matrix.path }}/include
+        cp -r ${{ fromJson(steps.QList.outputs.downloaded_files)[0] }} .
+        
     - name: Setup .NET 6
       uses: actions/setup-dotnet@v3
       with:
