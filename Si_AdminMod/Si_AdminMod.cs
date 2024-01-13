@@ -23,12 +23,19 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #if NET6_0
 using Il2Cpp;
+using Il2CppDebugTools;
+#else
+using DebugTools;
+using System.Reflection;
 #endif
 
 using HarmonyLib;
 using MelonLoader;
 using System;
 using System.Collections.Generic;
+using System.Data;
+using UnityEngine;
+using static MelonLoader.MelonLogger;
 
 namespace SilicaAdminMod
 {
@@ -49,6 +56,20 @@ namespace SilicaAdminMod
 
                 _modCategory ??= MelonPreferences.CreateCategory("Silica");
                 Pref_Admin_AcceptTeamChatCommands ??= _modCategory.CreateEntry<bool>("Admin_AllowTeamChatCommands", false);
+
+                #if !NET6_0
+                MelonLogger.Msg("Registering console commands..");
+                FieldInfo commandField = typeof(DebugConsole).GetField("s_Commands", BindingFlags.NonPublic | BindingFlags.Static);
+
+                DebugConsole.ICommand addAdminConsoleCmd = (DebugConsole.ICommand)Activator.CreateInstance(typeof(CSAM_AddAdmin));
+                if (addAdminConsoleCmd != null)
+                {
+                    Dictionary<string, DebugConsole.ICommand> s_Commands = (Dictionary<string, DebugConsole.ICommand>)commandField.GetValue(null);
+                    MelonLogger.Msg(addAdminConsoleCmd.Key.ToLower() + " registered.");
+                    s_Commands.Add(addAdminConsoleCmd.Key.ToLower(), addAdminConsoleCmd);
+                    commandField.SetValue(null, s_Commands);
+                }
+                #endif
             }
             catch (Exception error)
             {

@@ -51,12 +51,12 @@ namespace SilicaAdminMod
                     int argumentCount = __0.Split(' ').Length - 1;
                     if (argumentCount > 3)
                     {
-                        HelperMethods.ReplyToCommand(__0.Split(' ')[0] + ": Too many arguments");
+                        HelperMethods.ReplyToCommand(__0.Split(' ')[0] + SiConstants.SAM_AddAdmin_Usage);
                         return false;
                     }
                     else if (argumentCount < 3)
                     {
-                        HelperMethods.ReplyToCommand(__0.Split(' ')[0] + ": Too few arguments");
+                        HelperMethods.ReplyToCommand(__0.Split(' ')[0] + SiConstants.SAM_AddAdmin_Usage);
                         return false;
                     }
 
