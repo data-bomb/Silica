@@ -103,19 +103,6 @@ jobs:
         run: |
           echo "matrix=$(ls -l | grep '^d' | awk -F ' ' '{print $9}' | grep -Po 'Si.*' | jq -R -s -c 'split("\n") | map(select(length > 0))')" >> "$GITHUB_OUTPUT"
           
-      - name: Download QList
-        uses: robinraju/release-downloader@v1.8
-        with:
-          repository: "dodad-2/QList"
-          latest: true
-          fileName: "QList.dll"
-          tarBall: false
-          zipBall: false
-
-      - name: Move QList
-        run: |
-          mv QList.dll include/
-          
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
 
@@ -137,6 +124,19 @@ jobs:
       run: echo "START_DIR=`pwd`" >> $GITHUB_ENV
       
     - uses: actions/checkout@v3
+    
+    - name: Download QList
+      uses: robinraju/release-downloader@v1.8
+      with:
+        repository: "dodad-2/QList"
+        latest: true
+        fileName: "QList.dll"
+        tarBall: false
+        zipBall: false
+
+    - name: Move QList
+      run: |
+        mv QList.dll ../include/
         
     - name: Setup .NET 6
       uses: actions/setup-dotnet@v3
