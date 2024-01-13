@@ -36,7 +36,7 @@ using System.Collections.Generic;
 using SilicaAdminMod;
 using System.Linq;
 
-[assembly: MelonInfo(typeof(Announcements), "Server Announcements", "1.1.2", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(Announcements), "Server Announcements", "1.1.3", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -97,6 +97,25 @@ namespace Si_Announcements
                 HelperMethods.PrintError(exception, "Failed in OnInitializeMelon");
             }
         }
+
+        #if NET6_0
+        public override void OnLateInitializeMelon()
+        {
+            bool QListLoaded = RegisteredMelons.Any(m => m.Info.Name == "QList");
+            if (!QListLoaded)
+            {
+                return;
+            }
+
+            QList.Options.RegisterMod(this);
+
+            QList.OptionTypes.IntOption secondsBeforeAnnouncing = new(_Announcements_SecondsBetweenMessages, true, _Announcements_SecondsBetweenMessages.Value, 60, 1200, 30);
+            QList.OptionTypes.BoolOption showDoubleAnnouncements = new(_Announcements_ShowIfLastChatWasAnnouncement, _Announcements_ShowIfLastChatWasAnnouncement.Value);
+
+            QList.Options.AddOption(secondsBeforeAnnouncing);
+            QList.Options.AddOption(showDoubleAnnouncements);
+        }
+        #endif
 
         private static void TimerCallbackAnnouncement(object? source, ElapsedEventArgs e)
         {

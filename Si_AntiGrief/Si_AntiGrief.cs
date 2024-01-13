@@ -32,8 +32,9 @@ using HarmonyLib;
 using MelonLoader;
 using Si_AntiGrief;
 using SilicaAdminMod;
+using System.Linq;
 
-[assembly: MelonInfo(typeof(AntiGrief), "Anti-Grief", "1.1.4", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(AntiGrief), "Anti-Grief", "1.1.5", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -50,9 +51,28 @@ namespace Si_AntiGrief
         public override void OnInitializeMelon()
         {
             _modCategory ??= MelonPreferences.CreateCategory(ModCategory);
-            _NegativeKillsThreshold ??= _modCategory.CreateEntry<int>("Grief_NegativeKills_Threshold", -120);
+            _NegativeKillsThreshold ??= _modCategory.CreateEntry<int>("Grief_NegativeKills_Threshold", -125);
             _NegativeKills_Penalty_Ban ??= _modCategory.CreateEntry<bool>("Grief_NegativeKills_Penalty_Ban", true);
         }
+
+        #if NET6_0
+        public override void OnLateInitializeMelon()
+        {
+            bool QListLoaded = RegisteredMelons.Any(m => m.Info.Name == "QList");
+            if (!QListLoaded)
+            {
+                return;
+            }
+
+            QList.Options.RegisterMod(this);
+
+            QList.OptionTypes.IntOption negativeThreshold = new(_NegativeKillsThreshold, true, _NegativeKillsThreshold.Value, -3000, -100, 25);
+            QList.OptionTypes.BoolOption banGriefers = new(_NegativeKills_Penalty_Ban, _NegativeKills_Penalty_Ban.Value);
+
+            QList.Options.AddOption(negativeThreshold);
+            QList.Options.AddOption(banGriefers);
+        }
+        #endif
 
         [HarmonyPatch(typeof(StrategyMode), nameof(StrategyMode.OnUnitDestroyed))]
         private static class ApplyPatch_StrategyMode_OnUnitDestroyed

@@ -33,8 +33,9 @@ using System.Collections.Generic;
 using System.Linq;
 using SilicaAdminMod;
 using System;
+using System.Collections;
 
-[assembly: MelonInfo(typeof(AwayFromKeyboard), "AFK Manager", "1.2.4", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(AwayFromKeyboard), "AFK Manager", "1.2.5", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -81,23 +82,32 @@ namespace Si_AFKManager
 
             AFKTracker = new List<AFKCount>();
 
-            if (AdminModAvailable)
-            {
-                HelperMethods.CommandCallback kickCallback = Command_Kick;
-                HelperMethods.CommandCallback afkCallback = Command_AFK;
-                HelperMethods.RegisterAdminCommand("!kick", kickCallback, Power.Kick);
-                HelperMethods.RegisterAdminCommand("!afk", afkCallback, Power.Kick);
-            }
-            else
-            {
-                MelonLogger.Warning("Dependency missing: Admin Mod");
-            }
+            HelperMethods.CommandCallback kickCallback = Command_Kick;
+            HelperMethods.CommandCallback afkCallback = Command_AFK;
+            HelperMethods.RegisterAdminCommand("!kick", kickCallback, Power.Kick);
+            HelperMethods.RegisterAdminCommand("!afk", afkCallback, Power.Kick);
 
             double interval = 60000.0f;
             afkTimer = new System.Timers.Timer(interval);
             afkTimer.Elapsed += new ElapsedEventHandler(TimerCallbackOneMinute);
             afkTimer.AutoReset = true;
             afkTimer.Enabled = true;
+
+            #if NET6_0
+            bool QListLoaded = RegisteredMelons.Any(m => m.Info.Name == "QList");
+            if (!QListLoaded)
+            {
+                return;
+            }
+
+            QList.Options.RegisterMod(this);
+
+            QList.OptionTypes.BoolOption kickWhenNotFull = new(Pref_AFK_KickIfServerNotFull, Pref_AFK_KickIfServerNotFull.Value);
+            QList.OptionTypes.IntOption minutesBeforeKick = new(Pref_AFK_MinutesBeforeKick, true, Pref_AFK_MinutesBeforeKick.Value, 1, 60);
+
+            QList.Options.AddOption(kickWhenNotFull);
+            QList.Options.AddOption(minutesBeforeKick);
+            #endif
         }
 
         public static bool ServerAlmostFull()

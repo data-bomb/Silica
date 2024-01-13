@@ -40,7 +40,7 @@ using System.Collections.Generic;
 using SilicaAdminMod;
 using System.Linq;
 
-[assembly: MelonInfo(typeof(CommanderManager), "Commander Management", "1.4.1", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(CommanderManager), "Commander Management", "1.4.2", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -48,8 +48,8 @@ namespace Si_CommanderManagement
 {
     public class CommanderManager : MelonMod
     {
-        static MelonPreferences_Category? _modCategory;
-        static MelonPreferences_Entry<bool>? _BlockRoundStartUntilEnoughApplicants;
+        static MelonPreferences_Category _modCategory = null!;
+        static MelonPreferences_Entry<bool> _BlockRoundStartUntilEnoughApplicants = null!;
 
         const int MaxTeams = 3;
         const int AlienTeam = 0;
@@ -169,6 +169,21 @@ namespace Si_CommanderManagement
 
             // subscribe to the OnRequestCommander event
             Event_Roles.OnRequestCommander += OnRequestCommander;
+
+            #if NET6_0
+            bool QListLoaded = RegisteredMelons.Any(m => m.Info.Name == "QList");
+            if (!QListLoaded)
+            {
+                return;
+            }
+
+            QList.Options.RegisterMod(this);
+
+            QList.OptionTypes.BoolOption dontStartWithoutCommanders = new(_BlockRoundStartUntilEnoughApplicants, _BlockRoundStartUntilEnoughApplicants.Value);
+            
+            QList.Options.AddOption(dontStartWithoutCommanders);
+
+            #endif
         }
 
         public static void SendToRole(Player FormerCommander, MP_Strategy.ETeamRole role)

@@ -30,8 +30,9 @@ using MelonLoader;
 using Si_Resources;
 using SilicaAdminMod;
 using System;
+using System.Linq;
 
-[assembly: MelonInfo(typeof(ResourceConfig), "Resource Configuration", "1.0.5", "databomb")]
+[assembly: MelonInfo(typeof(ResourceConfig), "Resource Configuration", "1.0.6", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -49,6 +50,25 @@ namespace Si_Resources
             Pref_Resources_Humans_StartingAmount ??= _modCategory.CreateEntry<int>("Resources_Humans_StartingAmount", 11000);
             Pref_Resources_Aliens_StartingAmount ??= _modCategory.CreateEntry<int>("Resources_Aliens_StartingAmount", 9000);
         }
+
+        #if NET6_0
+        public override void OnLateInitializeMelon()
+        {
+            bool QListLoaded = RegisteredMelons.Any(m => m.Info.Name == "QList");
+            if (!QListLoaded)
+            {
+                return;
+            }
+
+            QList.Options.RegisterMod(this);
+
+            QList.OptionTypes.IntOption humanStartingRes = new(Pref_Resources_Humans_StartingAmount, true, Pref_Resources_Humans_StartingAmount.Value, 3500, 50000, 500);
+            QList.OptionTypes.IntOption alienStartingRes = new(Pref_Resources_Aliens_StartingAmount, true, Pref_Resources_Aliens_StartingAmount.Value, 3500, 50000, 500);
+
+            QList.Options.AddOption(humanStartingRes);
+            QList.Options.AddOption(alienStartingRes);
+        }
+        #endif
 
         [HarmonyPatch(typeof(MP_Strategy), nameof(MP_Strategy.SetTeamVersusMode))]
         private static class Resources_Patch_MPStrategy_SetTeamVersusMode

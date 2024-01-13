@@ -36,8 +36,9 @@ using UnityEngine;
 using System;
 using SilicaAdminMod;
 using System.Collections.Generic;
+using System.Linq;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.1.1", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.1.2", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -148,6 +149,25 @@ namespace Si_Logging
                 HelperMethods.PrintError(error, "Failed to initialize log directories or files");
             }
         }
+
+        #if NET6_0
+        public override void OnLateInitializeMelon()
+        {
+            bool QListLoaded = RegisteredMelons.Any(m => m.Info.Name == "QList");
+            if (!QListLoaded)
+            {
+                return;
+            }
+
+            QList.Options.RegisterMod(this);
+
+            QList.OptionTypes.BoolOption logDamage = new(Pref_Log_Damage, Pref_Log_Damage.Value);
+            QList.OptionTypes.BoolOption logAllKills = new(Pref_Log_Kills_Include_AI_vs_Player, Pref_Log_Kills_Include_AI_vs_Player.Value);
+
+            QList.Options.AddOption(logDamage);
+            QList.Options.AddOption(logAllKills);
+        }
+        #endif
 
         // 003. Change Map
         public override void OnSceneWasLoaded(int buildIndex, string sceneName)

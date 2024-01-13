@@ -33,8 +33,9 @@ using Si_DefaultUnits;
 using UnityEngine;
 using System;
 using SilicaAdminMod;
+using System.Linq;
 
-[assembly: MelonInfo(typeof(DefaultUnits), "Default Spawn Units", "1.0.0", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(DefaultUnits), "Default Spawn Units", "1.0.1", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -80,6 +81,43 @@ namespace Si_DefaultUnits
             teamTechTiers = new int[MaxTeams];
             teamFirstSpawn = new bool[MaxTeams];
         }
+
+        #if NET6_0
+        public override void OnLateInitializeMelon()
+        {
+            bool QListLoaded = RegisteredMelons.Any(m => m.Info.Name == "QList");
+            if (!QListLoaded)
+            {
+                return;
+            }
+
+            QList.Options.RegisterMod(this);
+
+            QList.OptionTypes.StringOption humanTier0 = new(_Human_Unit_Tier_0, _Human_Unit_Tier_0.Value);
+            QList.OptionTypes.StringOption humanTier1 = new(_Human_Unit_Tier_I, _Human_Unit_Tier_I.Value);
+            QList.OptionTypes.StringOption humanTier2 = new(_Human_Unit_Tier_II, _Human_Unit_Tier_II.Value);
+            QList.OptionTypes.StringOption humanTier3 = new(_Human_Unit_Tier_III, _Human_Unit_Tier_III.Value);
+            QList.OptionTypes.StringOption humanTier4 = new(_Human_Unit_Tier_IV, _Human_Unit_Tier_IV.Value);
+
+            QList.Options.AddOption(humanTier0);
+            QList.Options.AddOption(humanTier1);
+            QList.Options.AddOption(humanTier2);
+            QList.Options.AddOption(humanTier3);
+            QList.Options.AddOption(humanTier4);
+
+            QList.OptionTypes.StringOption alienTier0 = new(_Alien_Unit_Tier_0, _Alien_Unit_Tier_0.Value);
+            QList.OptionTypes.StringOption alienTier1 = new(_Alien_Unit_Tier_I, _Alien_Unit_Tier_I.Value);
+            QList.OptionTypes.StringOption alienTier2 = new(_Alien_Unit_Tier_II, _Alien_Unit_Tier_II.Value);
+            QList.OptionTypes.StringOption alienTier3 = new(_Alien_Unit_Tier_III, _Alien_Unit_Tier_III.Value);
+            QList.OptionTypes.StringOption alienTier4 = new(_Alien_Unit_Tier_IV, _Alien_Unit_Tier_IV.Value);
+
+            QList.Options.AddOption(alienTier0);
+            QList.Options.AddOption(alienTier1);
+            QList.Options.AddOption(alienTier2);
+            QList.Options.AddOption(alienTier3);
+            QList.Options.AddOption(alienTier4);
+        }
+        #endif
 
         // patch as close to where it's used
         [HarmonyPatch(typeof(MP_Strategy), nameof(MP_Strategy.GetUnitPrefabForPlayer))]
