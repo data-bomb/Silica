@@ -1,14 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
-  <PropertyGroup>
-    <TargetFrameworks>net6.0;netstandard2.1</TargetFrameworks>
-    <Nullable>enable</Nullable>
-  </PropertyGroup>
-
+  <Import Project="..\include\common.csproj" /> 
+  <Import Project="..\include\net6.csproj" Condition="'$(TargetFramework)' == 'net6.0'"/> 
+  
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageReference Include="Silica-MelonLoader-AdminMod" Version="*"/>
-    <PackageReference Include="Silica-MelonLoader-Dependencies" Version="*"/>
   </ItemGroup>
-
 </Project>
