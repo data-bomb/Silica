@@ -23,8 +23,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #if NET6_0
 using Il2Cpp;
-#else
-using System.Collections.Generic;
 #endif
 
 using HarmonyLib;
