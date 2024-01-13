@@ -125,7 +125,7 @@ jobs:
       
     - uses: actions/checkout@v3
 
-    - name: QList
+    - name: Download QList
       uses: robinraju/release-downloader@v1.8
       with:
         repository: "dodad-2/QList"
@@ -134,10 +134,9 @@ jobs:
         tarBall: false
         zipBall: false
 
-    - name: Copy QList
+    - name: Move QList
       run: |
-        cd ${{ matrix.path }}/include
-        cp -r ${{ fromJson(steps.QList.outputs.downloaded_files)[0] }} .
+        mv -r ${{ matrix.path }}/QList.dll ${{ matrix.path }}/include
         
     - name: Setup .NET 6
       uses: actions/setup-dotnet@v3
