@@ -24,12 +24,16 @@
 ## Listen Server Setup Instructions
 1. Install Silica from Steam
 2. Install [.NET 6.0 Runtime x64](https://dotnet.microsoft.com/en-us/download/dotnet/6.0)
-3. Install [MelonLoader using the Manual Installation](https://melonwiki.xyz/#/README?id=manual-installation) method for 64-bit games
-4. Place `dobby.dll` in your `Silica` directory
-6. Place the Admin Mod in your `Silica\Mods` directory
-7. Place any desired mods in your `Silica\Mods` directory
-8. Launch Silica and then exit the game to populate configuration parameters
-9. Review and modify the configuration parameters in the `Silica\UserData\MelonPreferences.cfg` file
+3. Download and run the [MelonLoader.Installer.exe](https://github.com/LavaGang/MelonLoader/releases/tag/v0.6.2)
+4. Using the Automated tab, hit the <b>SELECT</b> button for Unity Game and specify `C:\Program Files (x86)\Steam\steamapps\common\Silica\Silica.exe` or your custom path to the Silica.exe in your game installation directory
+5. Ensure that the <b>Version</b> is set to v0.6.2 or later
+6. Ensure that the <b>Game Arch</b> is set to x64
+7. Select <b>Install</b>
+8. Download the latest [Listen Server release](https://github.com/data-bomb/Silica/releases) and unzip all files to your `Silica` directory
+9. Review the `Silica\Mods` directory and place any undesired mods in the `disabled` directory
+10. Launch Silica and then exit the game to populate configuration parameters
+11. Review and modify the configuration parameters in the `Silica\UserData\MelonPreferences.cfg` file
+12. (Optional) Install the [QList Mod](https://github.com/dodad-2/QList) to adjust configuration parameters on-the-fly
 
 ## Dedicated Server Setup Instructions
 1. Install Silica Dedicated Server Tool from Steam
@@ -37,9 +41,9 @@
 3. Using the Automated tab, hit the <b>SELECT</b> button for Unity Game and specify `C:\Program Files (x86)\Steam\steamapps\common\Silica Dedicated Server\Silica.exe` or your custom path to the Silica.exe in your Dedicated Server installation directory
 4. Ensure that the <b>Version</b> is set to v0.6.2 or later
 5. Ensure that the <b>Game Arch</b> is set to x64
-6. Select Install
+6. Select <b>Install</b>
 7. Download the latest [Dedicated Server release](https://github.com/data-bomb/Silica/releases) and unzip all files to your `Silica Dedicated Server` directory
-8. Review the `Silica Dedicated Server\Mods` directory and remove any undesired mods
+8. Review the `Silica Dedicated Server\Mods` directory and place any undesired mods in the `disabled` directory
 9. Update the command line options for Silica Dedicated Server to include `--melonloader.hideconsole --melonloader.disablestartscreen` (e.g., in Steam, right-click the Silica Dedicated Server Tool from the Steam Library and put these in the Launch Options)
 10. Launch Silica Dedicated Server
 
