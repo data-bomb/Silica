@@ -39,7 +39,7 @@ using System;
 using SilicaAdminMod;
 using System.Linq;
 
-[assembly: MelonInfo(typeof(BasicTeamBalance), "Basic Team Balance", "1.2.3", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(BasicTeamBalance), "Basic Team Balance", "1.2.4", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -293,7 +293,8 @@ namespace Si_BasicTeamBalance
                     }
 
                     // these would normally get processed at this point but check if early team switching is being stopped and the player already has a team
-                    if (_PreventEarlyTeamSwitches.Value && GameMode.CurrentGameMode.GameOngoing && preventTeamSwitches && JoiningPlayer.Team != null)
+                    // if re-joining the current team would be considered as imbalanced, then override the prevention - player is trying to help
+                    if (_PreventEarlyTeamSwitches.Value && GameMode.CurrentGameMode.GameOngoing && preventTeamSwitches && mTeam != null && !JoinCausesImbalance(mTeam))
                     {
                         // avoid chat spam
                         if (LastPlayerChatMessage != JoiningPlayer)
