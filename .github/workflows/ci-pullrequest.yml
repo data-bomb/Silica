@@ -3,7 +3,9 @@
 
 name: Eval-PR
 
-on: pull_request
+on:
+  pull_request:
+    types: [opened, reopened]
     
 env:
   BUILD_TYPE: Release
