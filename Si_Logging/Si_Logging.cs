@@ -38,7 +38,7 @@ using SilicaAdminMod;
 using System.Collections.Generic;
 using System.Linq;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.1.2", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.1.3", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -593,12 +593,15 @@ namespace Si_Logging
                     //check if the destruction affects the tech tier.
                     if (__0 == null) return;
 
-                    Team structureTeam = __0.Team;
-                    int tier = getHighestTechTier(structureTeam);
-                    if (tier != currTiers[structureTeam.name])
+                    if (__0.Team != null)
                     {
-                        currTiers[structureTeam.name] = tier;
-                        LogTierChange(structureTeam, tier);
+                        Team structureTeam = __0.Team;
+                        int tier = getHighestTechTier(structureTeam);
+                        if (tier != currTiers[structureTeam.name])
+                        {
+                            currTiers[structureTeam.name] = tier;
+                            LogTierChange(structureTeam, tier);
+                        }
                     }
                     if (__2 == null) return;
 
