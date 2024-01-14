@@ -1,0 +1,4 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="..\include\common.csproj" /> 
+  <Import Project="..\include\net6.csproj" Condition="'$(TargetFramework)' == 'net6.0'" /> 
+</Project>
