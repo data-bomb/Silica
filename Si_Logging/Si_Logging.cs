@@ -38,7 +38,7 @@ using SilicaAdminMod;
 using System.Collections.Generic;
 using System.Linq;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.1.2", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.1.3", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
