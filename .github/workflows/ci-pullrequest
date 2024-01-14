@@ -1,0 +1,102 @@
+# This workflow will build a .NET project
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-net
+
+name: Eval-PR
+
+on:
+  pull_request:
+    branches: [ "main" ]
+    
+env:
+  BUILD_TYPE: Release
+  
+jobs:
+
+  fanout:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v3
+          
+      - name: Generate matrix with all modules of the repo
+        id: set-matrix
+        run: |
+          echo "matrix=$(ls -l | grep '^d' | awk -F ' ' '{print $9}' | grep -Po 'Si.*' | jq -R -s -c 'split("\n") | map(select(length > 0))')" >> "$GITHUB_OUTPUT"
+          
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+
+  build:
+    needs: fanout
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        path: ${{ fromJson(needs.fanout.outputs.matrix) }}
+    steps:
+    - name: Prepare environment sha
+      shell: bash
+      run: echo "GITHUB_SHA_SHORT=${GITHUB_SHA::7}" >> $GITHUB_ENV
+      
+    - name: Prepare environment pwd
+      shell: bash
+      run: echo "START_DIR=`pwd`" >> $GITHUB_ENV
+      
+    - uses: actions/checkout@v3
+    
+    - name: Download QList
+      uses: robinraju/release-downloader@v1.8
+      with:
+        repository: "dodad-2/QList"
+        latest: true
+        fileName: "QList.dll"
+        tarBall: false
+        zipBall: false
+
+    - name: Move QList
+      run: |
+        mv QList.dll include/
+        
+    - name: Setup .NET 6
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: 6.0.x
+        
+    - name: Restore dependencies
+      run: |
+        cd ${{ matrix.path }}
+        dotnet restore
+        
+    - name: Build
+      run: |
+        cd ${{ matrix.path }}
+        dotnet build --no-restore -c ${{env.BUILD_TYPE}}
+        
+    - name: Make output paths
+      run: |
+        cd ${{ env.START_DIR }}
+        mkdir -p dedi/Mods
+        mkdir -p listen/Mods
+        mkdir -p dedi/Mods/disabled
+        mkdir -p listen/Mods/disabled
+        mkdir -p dedi/UserData
+        mkdir -p listen/UserData
+        cp LICENSE dedi/UserData/Mod-License.txt
+        cp LICENSE listen/UserData/Mod-License.txt
+        cp ${{ env.START_DIR }}/${{ matrix.path }}/bin/${{env.BUILD_TYPE}}/netstandard2.1/*.dll dedi/Mods
+        cp ${{ env.START_DIR }}/${{ matrix.path }}/bin/${{env.BUILD_TYPE}}/net6.0/*.dll listen/Mods
+        
+    - uses: actions/upload-artifact@v3
+      with:
+        name: ${{ matrix.path }}-build-${{ env.GITHUB_SHA_SHORT }}
+        path: ${{ matrix.path }}/bin/${{env.BUILD_TYPE}}/**/*.dll
+        
+    - uses: actions/upload-artifact@v3
+      with:
+        name: dedicated-server-${{ env.GITHUB_SHA_SHORT }}
+        path: ${{ env.START_DIR }}/dedi
+        
+    - uses: actions/upload-artifact@v3
+      with:
+        name: listen-server-${{ env.GITHUB_SHA_SHORT }}
+        path: ${{ env.START_DIR }}/listen
