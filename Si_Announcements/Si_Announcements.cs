@@ -1,6 +1,6 @@
 ﻿/*
  Silica Announcements Mod
- Copyright (C) 2023 by databomb
+ Copyright (C) 2024 by databomb
  
  * Description *
  For Silica listen servers, periodically sends a pre-set announcement
@@ -36,7 +36,7 @@ using System.Collections.Generic;
 using SilicaAdminMod;
 using System.Linq;
 
-[assembly: MelonInfo(typeof(Announcements), "Server Announcements", "1.1.1", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(Announcements), "Server Announcements", "1.1.3", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -44,11 +44,11 @@ namespace Si_Announcements
 {
     public class Announcements : MelonMod
     {
-        static MelonPreferences_Category? _modCategory;
-        static MelonPreferences_Entry<int>? _Announcements_SecondsBetweenMessages;
-        static MelonPreferences_Entry<bool>? _Announcements_ShowIfLastChatWasAnnouncement;
+        static MelonPreferences_Category _modCategory = null!;
+        static MelonPreferences_Entry<int> _Announcements_SecondsBetweenMessages = null!;
+        static MelonPreferences_Entry<bool> _Announcements_ShowIfLastChatWasAnnouncement = null!;
 
-        static System.Timers.Timer? announcementTimer;
+        static Timer announcementTimer = null!;
         static int announcementCount;
         static string[]? announcementsText;
         static string? lastChatMessage;
@@ -97,6 +97,25 @@ namespace Si_Announcements
                 HelperMethods.PrintError(exception, "Failed in OnInitializeMelon");
             }
         }
+
+        #if NET6_0
+        public override void OnLateInitializeMelon()
+        {
+            bool QListLoaded = RegisteredMelons.Any(m => m.Info.Name == "QList");
+            if (!QListLoaded)
+            {
+                return;
+            }
+
+            QList.Options.RegisterMod(this);
+
+            QList.OptionTypes.IntOption secondsBeforeAnnouncing = new(_Announcements_SecondsBetweenMessages, true, _Announcements_SecondsBetweenMessages.Value, 60, 1200, 30);
+            QList.OptionTypes.BoolOption showDoubleAnnouncements = new(_Announcements_ShowIfLastChatWasAnnouncement, _Announcements_ShowIfLastChatWasAnnouncement.Value);
+
+            QList.Options.AddOption(secondsBeforeAnnouncing);
+            QList.Options.AddOption(showDoubleAnnouncements);
+        }
+        #endif
 
         private static void TimerCallbackAnnouncement(object? source, ElapsedEventArgs e)
         {

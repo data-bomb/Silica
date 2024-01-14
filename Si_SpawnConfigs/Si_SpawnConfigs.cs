@@ -1,6 +1,6 @@
 ﻿/*
 Silica Spawn Configuration System
-Copyright (C) 2023 by databomb
+Copyright (C) 2024 by databomb
 
 * Description *
 For Silica listen servers, allows admins to build configs of pre-built
@@ -38,7 +38,7 @@ using System.Linq;
 using System.IO;
 using Newtonsoft.Json;
 
-[assembly: MelonInfo(typeof(SpawnConfigs), "Admin Spawn Configs", "0.9.0", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(SpawnConfigs), "Admin Spawn Configs", "0.9.1", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -99,22 +99,28 @@ namespace Si_SpawnConfigs
 
         public class ObjectSpawn
         {
+            private string _classname = null!;
+
             public String Classname
             {
-                get;
-                set;
+                get => _classname;
+                set => _classname = value ?? throw new ArgumentNullException("Classname name is required.");
             }
+
+            private float[] _position = null!;
 
             public float[] Position
             {
-                get;
-                set;
+                get => _position;
+                set => _position = value ?? throw new ArgumentNullException("Position is required.");
             }
+
+            private float[] _rotation = null!;
 
             public float[] Rotation
             {
-                get;
-                set;
+                get => _rotation;
+                set => _rotation = value ?? throw new ArgumentNullException("Rotation is required.");
             }
 
             public uint? NetID
@@ -801,8 +807,10 @@ namespace Si_SpawnConfigs
         public static SpawnSetup GenerateSpawnSetup(bool includeNetIDs = false)
         {
             // set global config options
-            SpawnSetup spawnSetup = new SpawnSetup();
-            spawnSetup.Map = NetworkGameServer.GetServerMap();
+            SpawnSetup spawnSetup = new SpawnSetup
+            {
+                Map = NetworkGameServer.GetServerMap()
+            };
             MP_Strategy strategyInstance = GameObject.FindObjectOfType<MP_Strategy>();
             spawnSetup.VersusMode = strategyInstance.TeamsVersus.ToString();
 
@@ -818,9 +826,11 @@ namespace Si_SpawnConfigs
                     continue;
                 }
 
-                TeamSpawn thisTeamSpawn = new TeamSpawn();
-                thisTeamSpawn.Resources = team.StartingResources;
-                thisTeamSpawn.TeamIndex = team.Index;
+                TeamSpawn thisTeamSpawn = new TeamSpawn
+                {
+                    Resources = team.StartingResources,
+                    TeamIndex = team.Index
+                };
                 spawnSetup.Teams.Add(thisTeamSpawn);
 
                 foreach (Structure structure in team.Structures)
@@ -833,7 +843,6 @@ namespace Si_SpawnConfigs
 
                     StructureSpawn thisSpawnEntry = new StructureSpawn();
 
-                    BaseGameObject structureBaseObject = structure.gameObject.GetBaseGameObject();
                     float[] position = new float[]
                     {
                             structure.transform.position.x,

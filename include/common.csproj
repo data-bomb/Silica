@@ -1,0 +1,13 @@
+<Project>
+
+  <PropertyGroup>
+    <TargetFrameworks>net6.0;netstandard2.1</TargetFrameworks>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Silica-MelonLoader-AdminMod" Version="*" />
+    <PackageReference Include="Silica-MelonLoader-Dependencies" Version="*" />
+  </ItemGroup>
+
+</Project>

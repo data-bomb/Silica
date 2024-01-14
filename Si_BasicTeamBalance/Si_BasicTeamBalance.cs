@@ -37,8 +37,9 @@ using UnityEngine;
 using System.Timers;
 using System;
 using SilicaAdminMod;
+using System.Linq;
 
-[assembly: MelonInfo(typeof(BasicTeamBalance), "Basic Team Balance", "1.2.1", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(BasicTeamBalance), "Basic Team Balance", "1.2.4", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -46,13 +47,13 @@ namespace Si_BasicTeamBalance
 {
     public class BasicTeamBalance : MelonMod
     {
-        static MelonPreferences_Category? _modCategory;
-        static MelonPreferences_Entry<float>? _TwoTeamBalanceDivisor;
-        static MelonPreferences_Entry<float>? _TwoTeamBalanceAddend;
-        static MelonPreferences_Entry<float>? _ThreeTeamBalanceDivisor;
-        static MelonPreferences_Entry<float>? _ThreeTeamBalanceAddend;
-        static MelonPreferences_Entry<bool>?  _PreventEarlyTeamSwitches;
-        static MelonPreferences_Entry<int>?   _AllowTeamSwitchAfterTime;
+        static MelonPreferences_Category _modCategory = null!;
+        static MelonPreferences_Entry<float> _TwoTeamBalanceDivisor = null!;
+        static MelonPreferences_Entry<float> _TwoTeamBalanceAddend = null!;
+        static MelonPreferences_Entry<float> _ThreeTeamBalanceDivisor = null!;
+        static MelonPreferences_Entry<float> _ThreeTeamBalanceAddend = null!;
+        static MelonPreferences_Entry<bool> _PreventEarlyTeamSwitches = null!;
+        static MelonPreferences_Entry<int> _AllowTeamSwitchAfterTime = null!;
 
         static Player? LastPlayerChatMessage;
         static bool preventTeamSwitches;
@@ -68,10 +69,37 @@ namespace Si_BasicTeamBalance
             _ThreeTeamBalanceDivisor ??= _modCategory.CreateEntry<float>("TeamBalance_ThreeTeam_Divisor", 10.0f);
             _ThreeTeamBalanceAddend ??= _modCategory.CreateEntry<float>("TeamBalance_ThreeTeam_Addend", 0.0f);
             _PreventEarlyTeamSwitches ??= _modCategory.CreateEntry<bool>("TeamBalance_Prevent_EarlySwitching", false);
-            _AllowTeamSwitchAfterTime ??= _modCategory.CreateEntry<int>("TeamBalance_Prevent_EarlySwitching_For_Seconds", 360);
+            _AllowTeamSwitchAfterTime ??= _modCategory.CreateEntry<int>("TeamBalance_Prevent_EarlySwitching_For_Seconds", 75);
 
             preventTeamSwitches = false;
         }
+
+        #if NET6_0
+        public override void OnLateInitializeMelon()
+        {
+            bool QListLoaded = RegisteredMelons.Any(m => m.Info.Name == "QList");
+            if (!QListLoaded)
+            {
+                return;
+            }
+
+            QList.Options.RegisterMod(this);
+
+            QList.OptionTypes.FloatOption twoTeamDivisor = new(_TwoTeamBalanceDivisor, false, _TwoTeamBalanceDivisor.Value, 0.1f, 1000.0f);
+            QList.OptionTypes.FloatOption twoTeamAddend = new(_TwoTeamBalanceAddend, false, _TwoTeamBalanceAddend.Value, 0.0f, 1000.0f);
+            QList.OptionTypes.FloatOption threeTeamDivisor = new(_ThreeTeamBalanceDivisor, false, _ThreeTeamBalanceDivisor.Value, 0.1f, 1000.0f);
+            QList.OptionTypes.FloatOption threeTeamAddend = new(_ThreeTeamBalanceAddend, false, _ThreeTeamBalanceAddend.Value, 0.0f, 1000.0f);
+            QList.OptionTypes.BoolOption preventEarlyTeamSwitches = new(_PreventEarlyTeamSwitches, _PreventEarlyTeamSwitches.Value);
+            QList.OptionTypes.IntOption preventEarlyTeamSwitchDuration = new(_AllowTeamSwitchAfterTime, true, _AllowTeamSwitchAfterTime.Value, 0, 300, 15);
+
+            QList.Options.AddOption(twoTeamDivisor);
+            QList.Options.AddOption(twoTeamAddend);
+            QList.Options.AddOption(threeTeamDivisor);
+            QList.Options.AddOption(threeTeamAddend);
+            QList.Options.AddOption(preventEarlyTeamSwitches);
+            QList.Options.AddOption(preventEarlyTeamSwitchDuration);
+        }
+        #endif
 
         public static void SendClearRequest(ulong thisPlayerSteam64, int thisPlayerChannel)
         {
@@ -175,7 +203,7 @@ namespace Si_BasicTeamBalance
         // Team Index 2 - Human (Sol)
         public static bool JoinCausesImbalance(Team? TargetTeam)
         {
-            if (TargetTeam == null || _TwoTeamBalanceDivisor == null || _TwoTeamBalanceAddend == null || _ThreeTeamBalanceDivisor == null || _ThreeTeamBalanceAddend == null)
+            if (TargetTeam == null)
             {
                 return false;
             }
@@ -231,7 +259,7 @@ namespace Si_BasicTeamBalance
             {
                 try
                 {
-                    if (__instance == null || __0 == null || _PreventEarlyTeamSwitches == null)
+                    if (__instance == null || __0 == null)
                     {
                         return true;
                     }
@@ -265,7 +293,8 @@ namespace Si_BasicTeamBalance
                     }
 
                     // these would normally get processed at this point but check if early team switching is being stopped and the player already has a team
-                    if (_PreventEarlyTeamSwitches.Value && GameMode.CurrentGameMode.GameOngoing && preventTeamSwitches && JoiningPlayer.Team != null)
+                    // if re-joining the current team would be considered as imbalanced, then override the prevention - player is trying to help
+                    if (_PreventEarlyTeamSwitches.Value && GameMode.CurrentGameMode.GameOngoing && preventTeamSwitches && mTeam != null && !JoinCausesImbalance(mTeam))
                     {
                         // avoid chat spam
                         if (LastPlayerChatMessage != JoiningPlayer)
@@ -348,7 +377,7 @@ namespace Si_BasicTeamBalance
             {
                 try
                 {
-                    if (_PreventEarlyTeamSwitches != null && _PreventEarlyTeamSwitches.Value && _AllowTeamSwitchAfterTime != null)
+                    if (_PreventEarlyTeamSwitches.Value)
                     {
                         preventTeamSwitches = true;
 
@@ -382,7 +411,7 @@ namespace Si_BasicTeamBalance
             {
                 try
                 {
-                    if (_PreventEarlyTeamSwitches != null && !_PreventEarlyTeamSwitches.Value || Timer_AllowTeamSwitches == null)
+                    if (!_PreventEarlyTeamSwitches.Value || Timer_AllowTeamSwitches == null)
                     {
                         return;
                     }

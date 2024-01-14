@@ -35,7 +35,7 @@ using System.Linq;
 using SilicaAdminMod;
 using System;
 
-[assembly: MelonInfo(typeof(VersusTeamsAutoSelectMod), "Versus Auto-Select Team", "1.1.2", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(VersusTeamsAutoSelectMod), "Versus Auto-Select Team", "1.1.5", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -52,13 +52,11 @@ namespace VersusTeamsAutoSelect
 
         private static System.Timers.Timer? DelayTimer;
 
-        static MelonPreferences_Category? _modCategory;
-        static MelonPreferences_Entry<MP_Strategy.ETeamsVersus>? _versusAutoSelectMode;
+        static MelonPreferences_Category _modCategory = null!;
+        static MelonPreferences_Entry<MP_Strategy.ETeamsVersus> _versusAutoSelectMode = null!;
 
         private const string ModCategory = "Silica";
         private const string AutoSelectMode = "VersusAutoSelectMode";
-
-        static bool AdminModAvailable = false;
 
         public override void OnInitializeMelon()
         {
@@ -74,19 +72,25 @@ namespace VersusTeamsAutoSelect
                 _versusAutoSelectMode = _modCategory.CreateEntry<MP_Strategy.ETeamsVersus>(AutoSelectMode, MP_Strategy.ETeamsVersus.HUMANS_VS_ALIENS, "Valid choices are HUMANS_VS_HUMANS, HUMANS_VS_ALIENS, or HUMANS_VS_HUMANS_VS_ALIENS");
             }
         }
+       
         public override void OnLateInitializeMelon()
         {
-            AdminModAvailable = RegisteredMelons.Any(m => m.Info.Name == "Admin Mod");
+            HelperMethods.CommandCallback changeNextModeCallback = Command_ChangeNextMode;
+            HelperMethods.RegisterAdminCommand("!nextmode", changeNextModeCallback, Power.Map);
 
-            if (AdminModAvailable)
+            #if NET6_0
+            bool QListLoaded = RegisteredMelons.Any(m => m.Info.Name == "QList");
+            if (!QListLoaded)
             {
-                HelperMethods.CommandCallback changeNextModeCallback = Command_ChangeNextMode;
-                HelperMethods.RegisterAdminCommand("!nextmode", changeNextModeCallback, Power.Map);
+                return;
             }
-            else
-            {
-                MelonLogger.Warning("Dependency missing: Admin Mod");
-            }
+
+            QList.Options.RegisterMod(this);
+
+            QList.OptionTypes.IntOption negativeThreshold = new(_versusAutoSelectMode, false, (int)_versusAutoSelectMode.Value, 0, 5);
+
+            QList.Options.AddOption(negativeThreshold);
+            #endif
         }
 
         public static void Command_ChangeNextMode(Player callerPlayer, String args)

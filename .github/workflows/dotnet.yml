@@ -9,6 +9,7 @@ on:
     paths: 
        - '**/Si_*/**'
        - '!*.md'
+       - '!*.json'
   pull_request:
     branches: [ "main" ]
     
@@ -17,29 +18,96 @@ env:
   
 jobs:
 
+  get-commit-number:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+    - name: Generate the commit number
+      id: commit-number
+      run: |
+        echo "comnum=$(git log --oneline | wc -l)" >> "$GITHUB_OUTPUT"
+          
+    outputs:
+      comnum: ${{ steps.commit-number.outputs.comnum }}
+      
+  find-if-nuget-update-is-needed:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dorny/paths-filter@v2
+        id: checkAdminMod
+        with:
+          filters: |
+            admin-updated:
+              - 'Si_AdminMod/**'
+      # run only if 'workflows' files were changed
+      - name: adminmod updated
+        if: steps.checkAdminMod.outputs.admin-updated == 'true'
+        run: echo "AdminMod Update Found."
+
+      # run only if not 'workflows' files were changed
+      - name: no adminmod updates
+        if: steps.checkAdminMod.outputs.admin-updated != 'true'
+        run: echo "No AdminMod Update Found. Skipping nuget packages..."
+    outputs:
+      admin-updated: ${{ steps.checkAdminMod.outputs.admin-updated }}
+
+  create-package:
+    needs: [ find-if-nuget-update-is-needed, get-commit-number ]
+    if: needs.find-if-nuget-update-is-needed.outputs.admin-updated == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: 6.0.x
+      - name: Restore
+        run: |
+          cd Si_AdminMod
+          dotnet restore
+      - name: Build
+        run: |
+          cd Si_AdminMod
+          dotnet build --no-restore -c ${{env.BUILD_TYPE}}
+      - name: Test
+        run: |
+          cd Si_AdminMod
+          dotnet test -c ${{env.BUILD_TYPE}} --no-build
+      - name: Pack NuGet
+        run: |
+          cd Si_AdminMod
+          dotnet pack -c ${{env.BUILD_TYPE}} --no-build --output . /p:Version=2.0.${{ needs.get-commit-number.outputs.comnum }}
+      - name: Push to NuGet
+        run: |
+          cd Si_AdminMod
+          dotnet nuget push "*.nupkg" --api-key ${{secrets.NUGET_ADMINMOD_API_KEY}} --source https://api.nuget.org/v3/index.json
+      - name: Wait for publishing
+        uses: juliangruber/sleep-action@v2.0.0
+        with:
+          time: 10m
+
   fanout:
+    if: ${{ !failure() && !cancelled() }}
+    needs: [ find-if-nuget-update-is-needed, create-package ]
     runs-on: ubuntu-latest
     
     steps:
       - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
           
       - name: Generate matrix with all modules of the repo
         id: set-matrix
         run: |
           echo "matrix=$(ls -l | grep '^d' | awk -F ' ' '{print $9}' | grep -Po 'Si.*' | jq -R -s -c 'split("\n") | map(select(length > 0))')" >> "$GITHUB_OUTPUT"
           
-      - name: Generate the commit number
-        id: commit-number
-        run: |
-          echo "comnum=$(git log --oneline | wc -l)" >> "$GITHUB_OUTPUT"
-          
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
-      comnum: ${{ steps.commit-number.outputs.comnum }}
 
   build:
+    if: ${{ !failure() && !cancelled() }}
     needs: fanout
     runs-on: ubuntu-latest
     strategy:
@@ -57,6 +125,19 @@ jobs:
       
     - uses: actions/checkout@v3
     
+    - name: Download QList
+      uses: robinraju/release-downloader@v1.8
+      with:
+        repository: "dodad-2/QList"
+        latest: true
+        fileName: "QList.dll"
+        tarBall: false
+        zipBall: false
+
+    - name: Move QList
+      run: |
+        mv QList.dll include/
+        
     - name: Setup .NET 6
       uses: actions/setup-dotnet@v3
       with:
@@ -70,15 +151,21 @@ jobs:
     - name: Build
       run: |
         cd ${{ matrix.path }}
-        dotnet build --no-restore -c Release
+        dotnet build --no-restore -c ${{env.BUILD_TYPE}}
         
     - name: Make output paths
       run: |
         cd ${{ env.START_DIR }}
-        mkdir -p dedi/${{ matrix.path }}
-        mkdir -p listen/${{ matrix.path }}
-        cp ${{ env.START_DIR }}/${{ matrix.path }}/bin/${{env.BUILD_TYPE}}/netstandard2.1/*.dll dedi/${{ matrix.path }}
-        cp ${{ env.START_DIR }}/${{ matrix.path }}/bin/${{env.BUILD_TYPE}}/net6.0/*.dll listen/${{ matrix.path }}
+        mkdir -p dedi/Mods
+        mkdir -p listen/Mods
+        mkdir -p dedi/Mods/disabled
+        mkdir -p listen/Mods/disabled
+        mkdir -p dedi/UserData
+        mkdir -p listen/UserData
+        cp LICENSE dedi/UserData/Mod-License.txt
+        cp LICENSE listen/UserData/Mod-License.txt
+        cp ${{ env.START_DIR }}/${{ matrix.path }}/bin/${{env.BUILD_TYPE}}/netstandard2.1/*.dll dedi/Mods
+        cp ${{ env.START_DIR }}/${{ matrix.path }}/bin/${{env.BUILD_TYPE}}/net6.0/*.dll listen/Mods
         
     - uses: actions/upload-artifact@v3
       with:
@@ -96,10 +183,10 @@ jobs:
         path: ${{ env.START_DIR }}/listen
         
   publish:
-    if: github.event_name == 'push'
+    if: github.event_name == 'push' && ${{ !failure() && !cancelled() }}
     permissions:
       contents: write
-    needs: [ build, fanout ]
+    needs: [ get-commit-number, build, fanout ]
     runs-on: ubuntu-latest
     steps:
       - name: Prepare env
@@ -123,13 +210,13 @@ jobs:
 
       - name: Zip Builds
         run: |
-          (cd release/dedi && zip -qq -r ../../DedicatedServer-v${{ needs.fanout.outputs.comnum }}-${{ env.GITHUB_SHA_SHORT }}.zip *)
-          (cd release/listen && zip -qq -r ../../ListenServer-v${{ needs.fanout.outputs.comnum }}-${{ env.GITHUB_SHA_SHORT }}.zip *)
+          (cd release/dedi && zip -qq -r ../../DedicatedServer-v${{ needs.get-commit-number.outputs.comnum }}-${{ env.GITHUB_SHA_SHORT }}.zip *)
+          (cd release/listen && zip -qq -r ../../ListenServer-v${{ needs.get-commit-number.outputs.comnum }}-${{ env.GITHUB_SHA_SHORT }}.zip *)
 
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: v${{ needs.fanout.outputs.comnum }}
+          tag_name: v${{ needs.get-commit-number.outputs.comnum }}
           files: |
-            DedicatedServer-v${{ needs.fanout.outputs.comnum }}-${{ env.GITHUB_SHA_SHORT }}.zip
-            ListenServer-v${{ needs.fanout.outputs.comnum }}-${{ env.GITHUB_SHA_SHORT }}.zip
+            DedicatedServer-v${{ needs.get-commit-number.outputs.comnum }}-${{ env.GITHUB_SHA_SHORT }}.zip
+            ListenServer-v${{ needs.get-commit-number.outputs.comnum }}-${{ env.GITHUB_SHA_SHORT }}.zip

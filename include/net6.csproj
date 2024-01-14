@@ -1,0 +1,9 @@
+<Project>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net6.0'">
+    <Reference Include="QList">
+      <HintPath>..\include\QList.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+</Project>

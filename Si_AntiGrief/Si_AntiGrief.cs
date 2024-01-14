@@ -1,6 +1,6 @@
 ﻿/*
  Silica Anti-Grief Mod
- Copyright (C) 2023 by databomb
+ Copyright (C) 2024 by databomb
  
  * Description *
  For Silica servers, automatically identifies players who fall below a 
@@ -32,8 +32,9 @@ using HarmonyLib;
 using MelonLoader;
 using Si_AntiGrief;
 using SilicaAdminMod;
+using System.Linq;
 
-[assembly: MelonInfo(typeof(AntiGrief), "Anti-Grief", "1.1.3", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(AntiGrief), "Anti-Grief", "1.1.5", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -41,18 +42,37 @@ namespace Si_AntiGrief
 {
     public class AntiGrief : MelonMod
     {
-        static MelonPreferences_Category? _modCategory;
-        static MelonPreferences_Entry<int>? _NegativeKillsThreshold;
-        static MelonPreferences_Entry<bool>? _NegativeKills_Penalty_Ban;
+        static MelonPreferences_Category _modCategory = null!;
+        static MelonPreferences_Entry<int> _NegativeKillsThreshold = null!;
+        static MelonPreferences_Entry<bool> _NegativeKills_Penalty_Ban = null!;
 
         private const string ModCategory = "Silica";
 
         public override void OnInitializeMelon()
         {
             _modCategory ??= MelonPreferences.CreateCategory(ModCategory);
-            _NegativeKillsThreshold ??= _modCategory.CreateEntry<int>("Grief_NegativeKills_Threshold", -120);
+            _NegativeKillsThreshold ??= _modCategory.CreateEntry<int>("Grief_NegativeKills_Threshold", -125);
             _NegativeKills_Penalty_Ban ??= _modCategory.CreateEntry<bool>("Grief_NegativeKills_Penalty_Ban", true);
         }
+
+        #if NET6_0
+        public override void OnLateInitializeMelon()
+        {
+            bool QListLoaded = RegisteredMelons.Any(m => m.Info.Name == "QList");
+            if (!QListLoaded)
+            {
+                return;
+            }
+
+            QList.Options.RegisterMod(this);
+
+            QList.OptionTypes.IntOption negativeThreshold = new(_NegativeKillsThreshold, true, _NegativeKillsThreshold.Value, -3000, -100, 25);
+            QList.OptionTypes.BoolOption banGriefers = new(_NegativeKills_Penalty_Ban, _NegativeKills_Penalty_Ban.Value);
+
+            QList.Options.AddOption(negativeThreshold);
+            QList.Options.AddOption(banGriefers);
+        }
+        #endif
 
         [HarmonyPatch(typeof(StrategyMode), nameof(StrategyMode.OnUnitDestroyed))]
         private static class ApplyPatch_StrategyMode_OnUnitDestroyed

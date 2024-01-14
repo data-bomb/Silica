@@ -30,8 +30,9 @@ using HarmonyLib;
 using Si_FriendlyFireLimits;
 using System;
 using SilicaAdminMod;
+using System.Linq;
 
-[assembly: MelonInfo(typeof(FriendlyFireLimits), "Friendly Fire Limits", "1.2.1", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(FriendlyFireLimits), "Friendly Fire Limits", "1.2.3", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -39,14 +40,12 @@ namespace Si_FriendlyFireLimits
 {
     public class FriendlyFireLimits : MelonMod
     {
-        #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
-        static MelonPreferences_Category _modCategory;
-        static MelonPreferences_Entry<float> _UnitOnUnitNonExplosionDamageMultipler;
-        static MelonPreferences_Entry<float> _UnitOnUnitExplosionDamageMultiplier;
-        static MelonPreferences_Entry<float> _UnitOnStructureExplosionDamageMultiplier;
-        static MelonPreferences_Entry<float> _UnitOnStructureNonExplosionDamageMultiplier;
-        static MelonPreferences_Entry<bool> _HarvesterPassthrough;
-        #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+        static MelonPreferences_Category _modCategory = null!;
+        static MelonPreferences_Entry<float> _UnitOnUnitNonExplosionDamageMultipler = null!;
+        static MelonPreferences_Entry<float> _UnitOnUnitExplosionDamageMultiplier = null!;
+        static MelonPreferences_Entry<float> _UnitOnStructureExplosionDamageMultiplier = null!;
+        static MelonPreferences_Entry<float> _UnitOnStructureNonExplosionDamageMultiplier = null!;
+        static MelonPreferences_Entry<bool> _HarvesterPassthrough = null!;
 
         private const string ModCategory = "Silica";
 
@@ -59,6 +58,31 @@ namespace Si_FriendlyFireLimits
             _UnitOnStructureNonExplosionDamageMultiplier ??= _modCategory.CreateEntry<float>("FriendlyFire_StructureAttacked_DamageMultiplier_NonExp", 0.0f);
             _HarvesterPassthrough ??= _modCategory.CreateEntry<bool>("FriendlyFire_Passthrough_Harvester_Damage", true);
         }
+
+        #if NET6_0
+        public override void OnLateInitializeMelon()
+        {
+            bool QListLoaded = RegisteredMelons.Any(m => m.Info.Name == "QList");
+            if (!QListLoaded)
+            {
+                return;
+            }
+
+            QList.Options.RegisterMod(this);
+
+            QList.OptionTypes.FloatOption unitNonExplosion = new(_UnitOnUnitNonExplosionDamageMultipler, false, _UnitOnUnitNonExplosionDamageMultipler.Value, 0.0f, 100.0f);
+            QList.OptionTypes.FloatOption unitExplosion = new(_UnitOnUnitExplosionDamageMultiplier, false, _UnitOnUnitExplosionDamageMultiplier.Value, 0.0f, 100.0f);
+            QList.OptionTypes.FloatOption structureExplosion = new(_UnitOnStructureExplosionDamageMultiplier, false, _UnitOnStructureExplosionDamageMultiplier.Value, 0.0f, 100.0f);
+            QList.OptionTypes.FloatOption structureNonExplosion = new(_UnitOnStructureNonExplosionDamageMultiplier, false, _UnitOnStructureNonExplosionDamageMultiplier.Value, 0.0f, 100.0f);
+            QList.OptionTypes.BoolOption harvesterPassthrough = new(_HarvesterPassthrough, _HarvesterPassthrough.Value);
+
+            QList.Options.AddOption(unitNonExplosion);
+            QList.Options.AddOption(unitExplosion);
+            QList.Options.AddOption(structureExplosion);
+            QList.Options.AddOption(structureNonExplosion);
+            QList.Options.AddOption(harvesterPassthrough);
+        }
+        #endif
 
         [HarmonyPatch(typeof(GameByteStreamReader), nameof(GameByteStreamReader.GetGameByteStreamReader))]
         static class GetGameByteStreamReaderPrePatch

@@ -3,15 +3,22 @@
   <PropertyGroup>
     <TargetFrameworks>net6.0;netstandard2.1</TargetFrameworks>
     <Nullable>enable</Nullable>
-    <Version>2.0.0</Version>
     <PackageId>Silica-MelonLoader-AdminMod</PackageId>
     <Authors>databomb</Authors>
-    <Copyright>Copyright (C) 2023 by databomb</Copyright>
-    <PackageProjectUrl>https://github.com/data-bomb/Silica/tree/main/Si_AdminMod</PackageProjectUrl>
+    <Copyright>Copyright (C) 2024 by databomb</Copyright>
+    <PackageProjectUrl>https://github.com/data-bomb/Silica</PackageProjectUrl>
+    <PackageReadmeFile>readme.md</PackageReadmeFile>
     <PackageIcon>SilicaModding.png</PackageIcon>
     <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
   </PropertyGroup>
-
+  
+  <ItemGroup>
+    <None Include="docs\readme.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
+  
   <ItemGroup>
     <None Include="lib\SilicaModding.png">
       <Pack>True</Pack>
@@ -21,9 +28,9 @@
 
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageReference Include="Silica-MelonLoader-Dependencies" Version="0.8.19" />
+    <PackageReference Include="Silica-MelonLoader-Dependencies" Version="*" />
   </ItemGroup>
-  
+
   <ItemGroup Condition="'$(TargetFramework)' == 'net6.0'">
     <PackageReference Include="LavaGang.MelonLoader" Version="0.6.1" />
   </ItemGroup>

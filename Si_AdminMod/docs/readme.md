@@ -1,0 +1,1 @@
+This package installs the Admin Mod dependency for building a MelonLoader mod for the Silica game.

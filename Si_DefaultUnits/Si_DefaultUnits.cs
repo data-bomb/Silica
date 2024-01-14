@@ -1,6 +1,6 @@
 ﻿/*
  Silica Default Spawn Units
- Copyright (C) 2023 by databomb
+ Copyright (C) 2024 by databomb
  
  * Description *
  For Silica servers, allows hosts to modify the default spawn units at
@@ -33,8 +33,9 @@ using Si_DefaultUnits;
 using UnityEngine;
 using System;
 using SilicaAdminMod;
+using System.Linq;
 
-[assembly: MelonInfo(typeof(DefaultUnits), "Default Spawn Units", "1.0.0", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(DefaultUnits), "Default Spawn Units", "1.0.1", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -42,20 +43,20 @@ namespace Si_DefaultUnits
 {
     public class DefaultUnits : MelonMod
     {
-        static MelonPreferences_Category? _modCategory;
+        static MelonPreferences_Category _modCategory = null!;
         private const string ModCategory = "Silica";
 
-        static MelonPreferences_Entry<string>? _Human_Unit_Tier_0;
-        static MelonPreferences_Entry<string>? _Human_Unit_Tier_I;
-        static MelonPreferences_Entry<string>? _Human_Unit_Tier_II;
-        static MelonPreferences_Entry<string>? _Human_Unit_Tier_III;
-        static MelonPreferences_Entry<string>? _Human_Unit_Tier_IV;
+        static MelonPreferences_Entry<string> _Human_Unit_Tier_0 = null!;
+        static MelonPreferences_Entry<string> _Human_Unit_Tier_I = null!;
+        static MelonPreferences_Entry<string> _Human_Unit_Tier_II = null!;
+        static MelonPreferences_Entry<string> _Human_Unit_Tier_III = null!;
+        static MelonPreferences_Entry<string> _Human_Unit_Tier_IV = null!;
 
-        static MelonPreferences_Entry<string>? _Alien_Unit_Tier_0;
-        static MelonPreferences_Entry<string>? _Alien_Unit_Tier_I;
-        static MelonPreferences_Entry<string>? _Alien_Unit_Tier_II;
-        static MelonPreferences_Entry<string>? _Alien_Unit_Tier_III;
-        static MelonPreferences_Entry<string>? _Alien_Unit_Tier_IV;
+        static MelonPreferences_Entry<string> _Alien_Unit_Tier_0 = null!;
+        static MelonPreferences_Entry<string> _Alien_Unit_Tier_I = null!;
+        static MelonPreferences_Entry<string> _Alien_Unit_Tier_II = null!;
+        static MelonPreferences_Entry<string> _Alien_Unit_Tier_III = null!;
+        static MelonPreferences_Entry<string> _Alien_Unit_Tier_IV = null!;
 
         const int MaxTeams = 3;
         static int[]? teamTechTiers;
@@ -80,6 +81,43 @@ namespace Si_DefaultUnits
             teamTechTiers = new int[MaxTeams];
             teamFirstSpawn = new bool[MaxTeams];
         }
+
+        #if NET6_0
+        public override void OnLateInitializeMelon()
+        {
+            bool QListLoaded = RegisteredMelons.Any(m => m.Info.Name == "QList");
+            if (!QListLoaded)
+            {
+                return;
+            }
+
+            QList.Options.RegisterMod(this);
+
+            QList.OptionTypes.StringOption humanTier0 = new(_Human_Unit_Tier_0, _Human_Unit_Tier_0.Value);
+            QList.OptionTypes.StringOption humanTier1 = new(_Human_Unit_Tier_I, _Human_Unit_Tier_I.Value);
+            QList.OptionTypes.StringOption humanTier2 = new(_Human_Unit_Tier_II, _Human_Unit_Tier_II.Value);
+            QList.OptionTypes.StringOption humanTier3 = new(_Human_Unit_Tier_III, _Human_Unit_Tier_III.Value);
+            QList.OptionTypes.StringOption humanTier4 = new(_Human_Unit_Tier_IV, _Human_Unit_Tier_IV.Value);
+
+            QList.Options.AddOption(humanTier0);
+            QList.Options.AddOption(humanTier1);
+            QList.Options.AddOption(humanTier2);
+            QList.Options.AddOption(humanTier3);
+            QList.Options.AddOption(humanTier4);
+
+            QList.OptionTypes.StringOption alienTier0 = new(_Alien_Unit_Tier_0, _Alien_Unit_Tier_0.Value);
+            QList.OptionTypes.StringOption alienTier1 = new(_Alien_Unit_Tier_I, _Alien_Unit_Tier_I.Value);
+            QList.OptionTypes.StringOption alienTier2 = new(_Alien_Unit_Tier_II, _Alien_Unit_Tier_II.Value);
+            QList.OptionTypes.StringOption alienTier3 = new(_Alien_Unit_Tier_III, _Alien_Unit_Tier_III.Value);
+            QList.OptionTypes.StringOption alienTier4 = new(_Alien_Unit_Tier_IV, _Alien_Unit_Tier_IV.Value);
+
+            QList.Options.AddOption(alienTier0);
+            QList.Options.AddOption(alienTier1);
+            QList.Options.AddOption(alienTier2);
+            QList.Options.AddOption(alienTier3);
+            QList.Options.AddOption(alienTier4);
+        }
+        #endif
 
         // patch as close to where it's used
         [HarmonyPatch(typeof(MP_Strategy), nameof(MP_Strategy.GetUnitPrefabForPlayer))]
@@ -219,12 +257,7 @@ namespace Si_DefaultUnits
         {
             bool humanTeam = team.TeamName.StartsWith("Human");
 
-            if (teamTechTiers == null || 
-                _Human_Unit_Tier_0 == null || _Alien_Unit_Tier_0 == null || 
-                _Human_Unit_Tier_I == null || _Alien_Unit_Tier_I == null || 
-                _Human_Unit_Tier_II == null || _Alien_Unit_Tier_II == null || 
-                _Human_Unit_Tier_III == null || _Alien_Unit_Tier_III == null || 
-                _Human_Unit_Tier_IV == null || _Alien_Unit_Tier_IV == null)
+            if (teamTechTiers == null)
             {
                 return "";
             }
