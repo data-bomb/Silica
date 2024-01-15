@@ -47,7 +47,12 @@
 9. Update the command line options for Silica Dedicated Server to include `--melonloader.hideconsole --melonloader.disablestartscreen` (e.g., in Steam, right-click the Silica Dedicated Server Tool from the Steam Library and put these in the Launch Options)
 10. Launch Silica Dedicated Server
 
-For Dedicated Server hosts who wish to have an official server license, note that mods are not currently supported as mods may negatively impact performance. The only exception to this is the GamePriority mod.
+## Modding and License Considerations
+Note that this is not legal advice and databomb is not a lawyer. If you do have concerns then you should consult the appropriate person before running server mods.
+| Server Type | Considerations |
+| Listen Server | Although no game files are modified, running mods on a listen server might be construed as modifying the game, which is not expressly permitted by the game's EULA. Depending on relevant local laws, this may be a concern. |
+| Dedicated Server | There is no EULA on the server tool (only the game), so installing and running mods of the dedicated server tool is acceptable. |
+| Licensed Dedicated Server | See A2.3 General Policy guidelines in the Silica Hosting Discord: `A2.3 – Game Mods: Licensed servers are permitted to run modded game modes; however, it is important for license holders and their server admin teams to ensure that the server's performance meets the standards set for a server license. If the modded game mode negatively impacts the server's performance, it may be necessary to remove it. Failure to maintain the required performance standards may result in the revocation of the server license.` |
 
 Kind suggestion to ensure that the server name reflects that there are mods so players can choose between mods and a vanilla game experience.
 
