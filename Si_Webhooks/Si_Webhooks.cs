@@ -38,7 +38,7 @@ using System.Collections.Generic;
 using Newtonsoft.Json;
 using static System.Net.Mime.MediaTypeNames;
 
-[assembly: MelonInfo(typeof(Webhooks), "Webhooks", "1.2.0", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(Webhooks), "Webhooks", "1.2.1", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -136,7 +136,9 @@ namespace Si_Webhooks
                     bool isUserReport = String.Equals(rawMessage, "!report", StringComparison.OrdinalIgnoreCase);
                     if (isUserReport)
                     {
-                        rawMessage = rawMessage + " <@&" + _RoleToMentionForReports.Value + ">";
+                        rawMessage = __0.PlayerName + "(" + __0.PlayerID.ToString() + ") is requesting an admin in the game. <@&" + _RoleToMentionForReports.Value + ">";
+                        SendMessageToWebhook(rawMessage, _Server_Shortname.Value, _Server_Avatar_URL.Value);
+                        return;
                     }
 
                     if (avatarURL == null || avatarURL == string.Empty)
