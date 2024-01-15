@@ -35,7 +35,7 @@ using System;
 using System.Text;
 using System.Text.RegularExpressions;
 
-[assembly: MelonInfo(typeof(Webhooks), "Webhooks", "1.0.0", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(Webhooks), "Webhooks", "1.1.0", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -45,11 +45,15 @@ namespace Si_Webhooks
     {
         static MelonPreferences_Category _modCategory = null!;
         static MelonPreferences_Entry<string> _Webhooks_URL = null!;
+        static MelonPreferences_Entry<string> _Server_Shortname = null!;
+        static MelonPreferences_Entry<string> _RoleToMentionForReports = null!;
 
         public override void OnInitializeMelon()
         {
             _modCategory ??= MelonPreferences.CreateCategory("Silica");
             _Webhooks_URL ??= _modCategory.CreateEntry<string>("Webhooks_URL", "");
+            _Server_Shortname ??= _modCategory.CreateEntry<string>("Webhooks_Server_Shortname", "Server");
+            _RoleToMentionForReports ??= _modCategory.CreateEntry<string>("Webhooks_Report_To_Role", "@Moderator");
         }
 
         #if NET6_0
@@ -78,13 +82,28 @@ namespace Si_Webhooks
                         return;
                     }
 
-                    string rawMessage = StripHTML(__1);
+                    string rawMessage = ConvertHTML(__1);
                     if (rawMessage == string.Empty)
                     {
                         return;
                     }
 
-                    SendMessageToWebhook(rawMessage, __0.PlayerName);
+                    string username = __0.PlayerName;
+                    if (rawMessage.StartsWith("**[SAM"))
+                    {
+                        username = _Server_Shortname.Value;
+                    }
+
+                    // is this a user report?
+                    bool isUserReport = String.Equals(rawMessage, "!report", StringComparison.OrdinalIgnoreCase);
+                    if (isUserReport)
+                    {
+                        rawMessage = rawMessage + " " + _RoleToMentionForReports.Value;
+                        SendMessageToWebhook(rawMessage, username, true);
+                        return;
+                    }
+
+                    SendMessageToWebhook(rawMessage, username);
                 }
                 catch (Exception error)
                 {
@@ -93,7 +112,7 @@ namespace Si_Webhooks
             }
         }
 
-        static void SendMessageToWebhook(string message, string username)
+        static void SendMessageToWebhook(string message, string username, bool mentionsAllowed = false)
         {
             if (_Webhooks_URL.Value == string.Empty || message == string.Empty)
             {
@@ -108,6 +127,12 @@ namespace Si_Webhooks
 
             HTTPRequestHandle request = SteamHTTP.CreateHTTPRequest(EHTTPMethod.k_EHTTPMethodPOST, _Webhooks_URL.Value);
             string payload = "{\"content\": \"" + message + "\", \"username\": \"" + username + "\"}";
+
+            if (mentionsAllowed)
+            {
+                payload = "{\"content\": \"" + message + "\", \"username\": \"" + username + "\", \"allowed_mentions\": { \"parse\": [\"roles\"] } }";
+            }
+
             byte[] bytes = Encoding.ASCII.GetBytes(payload);
 
             SteamHTTP.SetHTTPRequestRawPostBody(request, "application/json", bytes, (uint)bytes.Length);
@@ -115,9 +140,33 @@ namespace Si_Webhooks
             SteamHTTP.SendHTTPRequest(request, out steamAPICall_T);
         }
 
-        static string StripHTML(string html)
+        static string ConvertHTML(string html)
         {
+            ConvertFormatting(ref html);
             return Regex.Replace(html, "<.*?>", String.Empty);
+        }
+
+        static void ConvertFormatting(ref string text)
+        {
+            HandleBolds(ref text);
+            HandleUnderlines(ref text);
+            HandleItalics(ref text);
+        }
+
+        static void HandleBolds(ref string text)
+        {
+            text.Replace("<b>", "**");
+            text.Replace("</b>", "**");
+        }
+        static void HandleUnderlines(ref string text)
+        {
+            text.Replace("<u>", "__");
+            text.Replace("</u>", "__");
+        }
+        static void HandleItalics(ref string text)
+        {
+            text.Replace("<i>", "_");
+            text.Replace("</i>", "_");
         }
     }
 }
