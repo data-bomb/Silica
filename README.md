@@ -44,7 +44,7 @@
 6. Select <b>Install</b>
 7. Download the latest [Dedicated Server release](https://github.com/data-bomb/Silica/releases) and unzip all files to your `Silica Dedicated Server` directory
 8. Review the `Silica Dedicated Server\Mods` directory and place any undesired mods in the `disabled` directory
-9. Update the command line options for Silica Dedicated Server to include `--melonloader.hideconsole --melonloader.disablestartscreen` (e.g., in Steam, right-click the Silica Dedicated Server Tool from the Steam Library and put these in the Launch Options)
+9. Update the command line options for Silica Dedicated Server to include <br>`--melonloader.hideconsole --melonloader.disablestartscreen`<br> (e.g., in Steam, right-click the Silica Dedicated Server Tool from the Steam Library and put these in the Launch Options)
 10. Launch Silica Dedicated Server
 
 ## Modding and License Considerations
