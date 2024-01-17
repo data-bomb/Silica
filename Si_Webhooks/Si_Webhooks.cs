@@ -38,7 +38,7 @@ using System.Collections.Generic;
 using Newtonsoft.Json;
 using static System.Net.Mime.MediaTypeNames;
 
-[assembly: MelonInfo(typeof(Webhooks), "Webhooks", "1.2.1", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(Webhooks), "Webhooks", "1.2.2", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -133,11 +133,23 @@ namespace Si_Webhooks
                     }
 
                     // is this a user report?
-                    bool isUserReport = String.Equals(rawMessage, "!report", StringComparison.OrdinalIgnoreCase);
+                    int spaceCharacter = rawMessage.IndexOf(" ");
+                    string commandText = (spaceCharacter == -1) ? rawMessage : rawMessage.Substring(0, spaceCharacter);
+
+                    bool isUserReport = String.Equals(commandText, "!report", StringComparison.OrdinalIgnoreCase);
                     if (isUserReport)
                     {
-                        rawMessage = __0.PlayerName + "(" + __0.PlayerID.ToString() + ") is requesting an admin in the game. <@&" + _RoleToMentionForReports.Value + ">";
-                        SendMessageToWebhook(rawMessage, _Server_Shortname.Value, _Server_Avatar_URL.Value);
+                        string reportMessage;
+                        if (spaceCharacter == -1)
+                        {
+                            reportMessage = __0.PlayerName + " (" + __0.PlayerID.ToString() + ") is requesting an admin in the game. <@&" + _RoleToMentionForReports.Value + ">";
+                        }
+                        else
+                        {
+                            reportMessage = __0.PlayerName + " (" + __0.PlayerID.ToString() + ") is requesting an admin in the game. Report:" + rawMessage.Substring(spaceCharacter) + " <@&" + _RoleToMentionForReports.Value + ">";
+                        }
+                        
+                        SendMessageToWebhook(reportMessage, _Server_Shortname.Value, _Server_Avatar_URL.Value);
                         return;
                     }
 
