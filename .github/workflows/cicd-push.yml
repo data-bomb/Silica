@@ -60,7 +60,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Setup .NET SDK
-        uses: actions/setup-dotnet@v3
+        uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 6.0.x
       - name: Restore
@@ -137,7 +137,7 @@ jobs:
         mv QList.dll include/
         
     - name: Setup .NET 6
-      uses: actions/setup-dotnet@v3
+      uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 6.0.x
         
@@ -164,7 +164,7 @@ jobs:
     - uses: actions/upload-artifact@v4
       with:
         name: listen-server-${{ matrix.path }}-build-${{ env.GITHUB_SHA_SHORT }}
-        path: ${{ matrix.path }}/bin/${{env.BUILD_TYPE}}/net6.0/*.dll
+        path: ${{ matrix.path }}/bin/${{env.BUILD_TYPE}}/net6.0/${{ matrix.path }}.dll
         
   publish:
     if: github.event_name == 'push' && ${{ !failure() && !cancelled() }}
@@ -183,8 +183,8 @@ jobs:
           mkdir -p release/listen/Mods/disabled
           mkdir -p release/dedi/UserData
           mkdir -p release/listen/UserData
-          cp LICENSE release/dedi/UserData/Mod-License.txt
-          cp LICENSE release/listen/UserData/Mod-License.txt
+          cp ${{ env.START_DIR }}/LICENSE release/dedi/UserData/Mod-License.txt
+          cp ${{ env.START_DIR }}/LICENSE release/listen/UserData/Mod-License.txt
           
       - uses: actions/download-artifact@v4
         with:
