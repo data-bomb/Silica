@@ -194,13 +194,13 @@ jobs:
         with:
           pattern: dedicated-server-*
           merge-multiple: true
-          path: release/dedi
+          path: release/dedi/Mods
 
       - uses: actions/download-artifact@v4
         with:
           pattern: listen-server-*
           merge-multiple: true
-          path: release/listen
+          path: release/listen/Mods
 
       - name: Zip Builds
         run: |
