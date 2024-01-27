@@ -151,20 +151,6 @@ jobs:
         cd ${{ matrix.path }}
         dotnet build --no-restore -c ${{env.BUILD_TYPE}}
         
-    - name: Make output paths
-      run: |
-        cd ${{ env.START_DIR }}
-        mkdir -p dedi/Mods
-        mkdir -p listen/Mods
-        mkdir -p dedi/Mods/disabled
-        mkdir -p listen/Mods/disabled
-        mkdir -p dedi/UserData
-        mkdir -p listen/UserData
-        cp LICENSE dedi/UserData/Mod-License.txt
-        cp LICENSE listen/UserData/Mod-License.txt
-        cp ${{ env.START_DIR }}/${{ matrix.path }}/bin/${{env.BUILD_TYPE}}/netstandard2.1/*.dll dedi/Mods
-        cp ${{ env.START_DIR }}/${{ matrix.path }}/bin/${{env.BUILD_TYPE}}/net6.0/*.dll listen/Mods
-        
     - uses: actions/upload-artifact@v4
       with:
         name: ${{ matrix.path }}-build-${{ env.GITHUB_SHA_SHORT }}
@@ -173,12 +159,12 @@ jobs:
     - uses: actions/upload-artifact@v4
       with:
         name: dedicated-server-${{ matrix.path }}-build-${{ env.GITHUB_SHA_SHORT }}
-        path: ${{ env.START_DIR }}/dedi/Mods/${{ matrix.path }}
+        path: ${{ matrix.path }}/bin/${{env.BUILD_TYPE}}/netstandard2.1/*.dll
         
     - uses: actions/upload-artifact@v4
       with:
         name: listen-server-${{ matrix.path }}-build-${{ env.GITHUB_SHA_SHORT }}
-        path: ${{ env.START_DIR }}/listen/Mods/${{ matrix.path }}
+        path: ${{ matrix.path }}/bin/${{env.BUILD_TYPE}}/net6.0/*.dll
         
   publish:
     if: github.event_name == 'push' && ${{ !failure() && !cancelled() }}
@@ -193,8 +179,12 @@ jobs:
         
       - name: Make output paths
         run: |
-          mkdir -p release/dedi
-          mkdir -p release/listen
+          mkdir -p release/dedi/Mods/disabled
+          mkdir -p release/listen/Mods/disabled
+          mkdir -p release/dedi/UserData
+          mkdir -p release/listen/UserData
+          cp LICENSE release/dedi/UserData/Mod-License.txt
+          cp LICENSE release/listen/UserData/Mod-License.txt
           
       - uses: actions/download-artifact@v4
         with:
