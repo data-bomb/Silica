@@ -36,7 +36,7 @@ using System.Collections.Generic;
 using SilicaAdminMod;
 using System.Linq;
 
-[assembly: MelonInfo(typeof(Announcements), "Server Announcements", "1.1.3", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(Announcements), "Server Announcements", "1.1.4", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -159,8 +159,8 @@ namespace Si_Announcements
                         String thisAnnouncement = announcementsText[announcementCount % announcementsText.Length];
                         MelonLogger.Msg("Announcement: " + thisAnnouncement);
 
-                        Player serverPlayer = NetworkGameServer.GetServerPlayer();
-                        NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, thisAnnouncement, false);
+                        Player broadcastPlayer = HelperMethods.FindBroadcastPlayer();
+                        broadcastPlayer.SendChatMessage(thisAnnouncement);
                     }
                 }
                 catch (Exception exception)
