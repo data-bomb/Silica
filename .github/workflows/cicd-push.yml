@@ -172,13 +172,13 @@ jobs:
         
     - uses: actions/upload-artifact@v4
       with:
-        name: dedicated-server-${{ env.GITHUB_SHA_SHORT }}
-        path: ${{ env.START_DIR }}/dedi
+        name: dedicated-server-${{ matrix.path }}-build-${{ env.GITHUB_SHA_SHORT }}
+        path: ${{ env.START_DIR }}/dedi/Mods/${{ matrix.path }}
         
     - uses: actions/upload-artifact@v4
       with:
-        name: listen-server-${{ env.GITHUB_SHA_SHORT }}
-        path: ${{ env.START_DIR }}/listen
+        name: listen-server-${{ matrix.path }}-build-${{ env.GITHUB_SHA_SHORT }}
+        path: ${{ env.START_DIR }}/listen/Mods/${{ matrix.path }}
         
   publish:
     if: github.event_name == 'push' && ${{ !failure() && !cancelled() }}
@@ -198,12 +198,14 @@ jobs:
           
       - uses: actions/download-artifact@v4
         with:
-          name: dedicated-server-${{ env.GITHUB_SHA_SHORT }}
+          pattern: dedicated-server-*
+          merge-multiple: true
           path: release/dedi
 
       - uses: actions/download-artifact@v4
         with:
-          name: listen-server-${{ env.GITHUB_SHA_SHORT }}
+          pattern: listen-server-*
+          merge-multiple: true
           path: release/listen
 
       - name: Zip Builds
