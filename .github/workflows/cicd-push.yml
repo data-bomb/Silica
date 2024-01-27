@@ -202,6 +202,21 @@ jobs:
           merge-multiple: true
           path: release/listen/Mods
 
+      - name: Disable some mods
+        run: |
+          # AutoTeamsSelect was addressed with a game update to vote on the next mode
+          mv release/dedi/Mods/Si_AutoTeamsSelect.dll release/dedi/Mods/disabled
+          mv release/listen/Mods/Si_AutoTeamsSelect.dll release/listen/Mods/disabled
+          # FriendlyFireLimits is disabled by default
+          mv release/dedi/Mods/Si_FriendlyFireLimits.dll release/dedi/Mods/disabled
+          mv release/listen/Mods/Si_FriendlyFireLimits.dll release/listen/Mods/disabled
+          # HQ was re-dfined as the default loss condition with a game update
+          # mv release/dedi/Mods/Si_HQlessHumansLose.dll release/dedi/Mods/disabled
+          # mv release/listen/Mods/Si_HQlessHumansLose.dll release/listen/Mods/disabled
+          # There are still too many game bugs for mapcycle to be on by default
+          mv release/dedi/Mods/Si_Mapcycle.dll release/dedi/Mods/disabled
+          mv release/listen/Mods/Si_Mapcycle.dll release/listen/Mods/disabled
+
       - name: Zip Builds
         run: |
           (cd release/dedi && zip -qq -r ../../DedicatedServer-v${{ needs.get-commit-number.outputs.comnum }}-${{ env.GITHUB_SHA_SHORT }}.zip *)
