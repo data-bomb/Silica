@@ -39,7 +39,7 @@ using System;
 using SilicaAdminMod;
 using System.Linq;
 
-[assembly: MelonInfo(typeof(BasicTeamBalance), "Basic Team Balance", "1.2.4", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(BasicTeamBalance), "Basic Team Balance", "1.2.5", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -299,8 +299,7 @@ namespace Si_BasicTeamBalance
                         // avoid chat spam
                         if (LastPlayerChatMessage != JoiningPlayer)
                         {
-                            Player serverPlayer = NetworkGameServer.GetServerPlayer();
-                            NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, HelperMethods.chatPrefix + HelperMethods.GetTeamColor(JoiningPlayer) + JoiningPlayer.PlayerName + HelperMethods.defaultColor + "'s switch was denied due to early game team lock", false);
+                            HelperMethods.ReplyToCommand_Player(JoiningPlayer, "'s switch was denied due to early game team lock");
                             LastPlayerChatMessage = JoiningPlayer;
                         }
 
@@ -329,8 +328,7 @@ namespace Si_BasicTeamBalance
                             // avoid chat spam
                             if (LastPlayerChatMessage != JoiningPlayer)
                             {
-                                Player serverPlayer = NetworkGameServer.GetServerPlayer();
-                                NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, HelperMethods.chatPrefix + HelperMethods.GetTeamColor(TargetTeam) + JoiningPlayer.PlayerName + HelperMethods.defaultColor + " was forced to " + HelperMethods.GetTeamColor(ForcedTeam) + ForcedTeam.TeamName + HelperMethods.defaultColor + " to fix imbalance", false);
+                                HelperMethods.ReplyToCommand_Player(JoiningPlayer, " was forced to " + HelperMethods.GetTeamColor(ForcedTeam) + ForcedTeam.TeamName + HelperMethods.defaultColor + " to fix imbalance");
                                 LastPlayerChatMessage = JoiningPlayer;
                             }
 
@@ -351,8 +349,7 @@ namespace Si_BasicTeamBalance
                     // avoid chat spam
                     if (LastPlayerChatMessage != JoiningPlayer)
                     {
-                        Player serverPlayer = NetworkGameServer.GetServerPlayer();
-                        NetworkLayer.SendChatMessage(serverPlayer.PlayerID, serverPlayer.PlayerChannel, HelperMethods.chatPrefix + HelperMethods.GetTeamColor(JoiningPlayer) + JoiningPlayer.PlayerName + HelperMethods.defaultColor + "'s switch was denied due to imbalance", false);
+                        HelperMethods.ReplyToCommand_Player(JoiningPlayer, "'s switch was denied due to imbalance");
                         LastPlayerChatMessage = JoiningPlayer;
                     }
 
