@@ -30,7 +30,7 @@ using Si_Eject;
 using System;
 using SilicaAdminMod;
 
-[assembly: MelonInfo(typeof(Eject), "Eject Command", "1.0.2", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(Eject), "Eject Command", "1.0.3", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -49,12 +49,12 @@ namespace Si_Eject
             int argumentCount = args.Split(' ').Length - 1;
             if (argumentCount > 1)
             {
-                HelperMethods.SendChatMessageToPlayer(callerPlayer, args.Split(' ')[0], ": Too many arguments");
+                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, args.Split(' ')[0], ": Too many arguments");
                 return;
             }
             else if (argumentCount < 1)
             {
-                HelperMethods.SendChatMessageToPlayer(callerPlayer, args.Split(' ')[0], ": Too few arguments");
+                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, args.Split(' ')[0], ": Too few arguments");
                 return;
             }
 
@@ -64,7 +64,7 @@ namespace Si_Eject
 
             if (playerToEject == null)
             {
-                HelperMethods.SendChatMessageToPlayer(callerPlayer, args.Split(' ')[0], ": Ambiguous or invalid target");
+                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, args.Split(' ')[0], ": Ambiguous or invalid target");
                 return;
             }
 
