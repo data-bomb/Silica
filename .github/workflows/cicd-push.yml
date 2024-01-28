@@ -124,7 +124,7 @@ jobs:
     - uses: actions/checkout@v4
     
     - name: Download QList
-      uses: robinraju/release-downloader@v1.8
+      uses: robinraju/release-downloader@v1.9
       with:
         repository: "dodad-2/QList"
         latest: true
