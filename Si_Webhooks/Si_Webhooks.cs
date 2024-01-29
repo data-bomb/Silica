@@ -38,7 +38,7 @@ using System.Collections.Generic;
 using Newtonsoft.Json;
 using static System.Net.Mime.MediaTypeNames;
 
-[assembly: MelonInfo(typeof(Webhooks), "Webhooks", "1.2.2", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(Webhooks), "Webhooks", "1.2.3", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -76,6 +76,8 @@ namespace Si_Webhooks
             OnHTTPRequestCompletedCallResult = CallResult<HTTPRequestCompleted_t>.Create((CallResult<HTTPRequestCompleted_t>.APIDispatchDelegate)OnHTTPRequestCompleted);
 
             CacheAvatarURLs = new Dictionary<ulong, string>();
+
+            SteamAPI.Init();
         }
 
         #if NET6_0
@@ -109,7 +111,6 @@ namespace Si_Webhooks
                     {
                         return;
                     }
-
 
                     if (rawMessage.StartsWith("**[SAM"))
                     {
