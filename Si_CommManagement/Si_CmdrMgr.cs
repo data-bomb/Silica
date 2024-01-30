@@ -40,7 +40,7 @@ using System.Collections.Generic;
 using SilicaAdminMod;
 using System.Linq;
 
-[assembly: MelonInfo(typeof(CommanderManager), "Commander Management", "1.4.3", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(CommanderManager), "Commander Management", "1.4.4", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -754,6 +754,7 @@ namespace Si_CommanderManagement
             }
         }
 
+        #if false
         [HarmonyPatch(typeof(GameMode), nameof(GameMode.CreateRPCPacket))]
         private static class CommanderManager_Patch_GameMode_GameByteStreamWriter
         {
@@ -766,7 +767,7 @@ namespace Si_CommanderManagement
                     // is this the countdown timer for the round to start?
                     if (__0 == (byte)MP_Strategy.ERPCs.TIMER_UPDATE && !strategyInstance.GameOver)
                     {
-#if NET6_0
+                        #if NET6_0
                         if (!AllTeamsHaveCommanderApplicants() && strategyInstance.Timer < 5f && strategyInstance.Timer > 4f)
                         {
                             // reset timer value and keep counting down
@@ -775,7 +776,7 @@ namespace Si_CommanderManagement
                             HelperMethods.ReplyToCommand("Round cannot start because all teams don't have a commander. Chat !commander to apply.");
                         }
 
-#else
+                        #else
                         Type strategyType = typeof(MP_Strategy);
                         FieldInfo timerField = strategyType.GetField("Timer", BindingFlags.NonPublic | BindingFlags.Instance);
 
@@ -787,11 +788,12 @@ namespace Si_CommanderManagement
                             // TODO: Fix repeating message 
                             HelperMethods.ReplyToCommand("Round cannot start because all teams don't have a commander. Chat !commander to apply.");
                         }
-#endif
+                        #endif
                     }
                 }
             }
         }
+        #endif
 
         [HarmonyPatch(typeof(GameMode), nameof(GameMode.OnPlayerLeftBase))]
         private static class CommanderManager_Patch_GameMode_OnPlayerLeftBase
