@@ -187,7 +187,7 @@ jobs:
           mkdir -p release/listen/Mods/disabled
           mkdir -p release/dedi/UserData
           mkdir -p release/listen/UserData
-          cp launch.bat release/dedi
+          cp launch.bat release/dedi/launch.bat
           cp LICENSE release/dedi/UserData/Mod-License.txt
           cp LICENSE release/listen/UserData/Mod-License.txt
           
