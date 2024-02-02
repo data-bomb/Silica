@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using MelonLoader;
 using System;
+using UnityEngine;
 
 #if NET6_0
 using Il2Cpp;
@@ -26,6 +27,7 @@ using Il2CppSteamworks;
 #else
 using System.Collections.Generic;
 using Steamworks;
+using System.Reflection;
 #endif
 
 namespace SilicaAdminMod
@@ -333,6 +335,61 @@ namespace SilicaAdminMod
             NetworkLayer.SendPlayerConnect(ENetworkPlayerConnectType.Disconnected, playerSteam, playerChannel);
 
             return true;
+        }
+
+        public static GameObject? SpawnAtLocation(String name, Vector3 position, Quaternion rotation, int teamIndex = -1)
+        {
+            int prefabIndex = GameDatabase.GetSpawnablePrefabIndex(name);
+            if (prefabIndex <= -1)
+            {
+                return null;
+            }
+
+            GameObject prefabObject = GameDatabase.GetSpawnablePrefab(prefabIndex);
+            GameObject spawnedObject = Game.SpawnPrefab(prefabObject, null, true, true);
+
+            if (spawnedObject == null)
+            {
+                return null;
+            }
+
+            Unit testUnit = spawnedObject.GetComponent<Unit>();
+            // unit
+            if (testUnit != null)
+            {
+                position.y += 3f;
+                spawnedObject.transform.position = position;
+                spawnedObject.transform.rotation = rotation;
+
+                spawnedObject.transform.GetBaseGameObject().Teleport(position, rotation);
+            }
+            // structure
+            else
+            {
+                spawnedObject.transform.position = position;
+                spawnedObject.transform.rotation = rotation;
+            }
+
+            if (teamIndex > -1)
+            {
+                // set team information
+                BaseGameObject baseObject = spawnedObject.GetBaseGameObject();
+                if (baseObject.Team.Index != teamIndex)
+                {
+                    baseObject.Team = Team.Teams[teamIndex];
+                    //baseObject.m_Team = Team.Teams[teamIndex];
+                    #if NET6_0
+                    baseObject.UpdateToCurrentTeam();
+                    #else
+                    Type baseOjbectType = typeof(BaseGameObject);
+                    MethodInfo updateToCurrentTeamMethod = baseOjbectType.GetMethod("UpdateToCurrentTeam");
+
+                    updateToCurrentTeamMethod.Invoke(baseObject, null);
+                #endif
+                }
+            }
+
+            return spawnedObject;
         }
     }
 }
