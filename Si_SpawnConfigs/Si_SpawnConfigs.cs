@@ -38,7 +38,7 @@ using System.Linq;
 using System.IO;
 using Newtonsoft.Json;
 
-[assembly: MelonInfo(typeof(SpawnConfigs), "Admin Spawn Configs", "0.9.1", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(SpawnConfigs), "Admin Spawn Configs", "0.9.2", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -249,7 +249,7 @@ namespace Si_SpawnConfigs
             String spawnName = args.Split(' ')[1];
 
             int teamIndex = callerPlayer.Team.Index;
-            GameObject? spawnedObject = SpawnAtLocation(spawnName, playerPosition, playerRotation, teamIndex);
+            GameObject? spawnedObject = HelperMethods.SpawnAtLocation(spawnName, playerPosition, playerRotation, teamIndex);
             if (spawnedObject == null)
             {
                 HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Failed to spawn");
@@ -259,62 +259,7 @@ namespace Si_SpawnConfigs
             HelperMethods.AlertAdminAction(callerPlayer, "spawned " + spawnName);
         }
 
-        public static GameObject? SpawnAtLocation(String name, Vector3 position, Quaternion rotation, int teamIndex = -1)
-        {
-            int prefabIndex = GameDatabase.GetSpawnablePrefabIndex(name);
-            if (prefabIndex <= -1)
-            {
-                return null;
-            }
 
-            GameObject prefabObject = GameDatabase.GetSpawnablePrefab(prefabIndex);
-            GameObject spawnedObject = Game.SpawnPrefab(prefabObject, null, true, true);
-
-            if (spawnedObject == null)
-            {
-                return null;
-            }
-
-            lastSpawnedObject = spawnedObject;
-
-            Unit testUnit = spawnedObject.GetComponent<Unit>();
-            // unit
-            if (testUnit != null)
-            {
-                position.y += 3f;
-                spawnedObject.transform.position = position;
-                spawnedObject.transform.rotation = rotation;
-
-                spawnedObject.transform.GetBaseGameObject().Teleport(position, rotation);
-            }
-            // structure
-            else
-            {
-                spawnedObject.transform.position = position;
-                spawnedObject.transform.rotation = rotation;
-            }
-
-            if (teamIndex > -1)
-            {
-                // set team information
-                BaseGameObject baseObject = spawnedObject.GetBaseGameObject();
-                if (baseObject.Team.Index != teamIndex)
-                {
-                    baseObject.Team = Team.Teams[teamIndex];
-                    //baseObject.m_Team = Team.Teams[teamIndex];
-#if NET6_0
-                    baseObject.UpdateToCurrentTeam();
-#else
-                    Type baseOjbectType = typeof(BaseGameObject);
-                    MethodInfo updateToCurrentTeamMethod = baseOjbectType.GetMethod("UpdateToCurrentTeam");
-
-                    updateToCurrentTeamMethod.Invoke(baseObject, null);
-#endif
-                }
-            }
-
-            return spawnedObject;
-        }
         public static void Command_SaveSetup(Player callerPlayer, String args)
         {
             String commandName = args.Split(' ')[0];
@@ -683,7 +628,7 @@ namespace Si_SpawnConfigs
                         z = spawnEntry.Rotation[2],
                         w = spawnEntry.Rotation[3]
                     };
-                    GameObject? spawnedObject = SpawnAtLocation(spawnEntry.Classname, position, rotation, spawnEntry.TeamIndex);
+                    GameObject? spawnedObject = HelperMethods.SpawnAtLocation(spawnEntry.Classname, position, rotation, spawnEntry.TeamIndex);
                     if (spawnedObject == null)
                     {
                         return false;
@@ -729,7 +674,7 @@ namespace Si_SpawnConfigs
                         z = spawnEntry.Rotation[2],
                         w = spawnEntry.Rotation[3]
                     };
-                    GameObject? spawnedObject = SpawnAtLocation(spawnEntry.Classname, position, rotation, spawnEntry.TeamIndex);
+                    GameObject? spawnedObject = HelperMethods.SpawnAtLocation(spawnEntry.Classname, position, rotation, spawnEntry.TeamIndex);
                     if (spawnedObject == null)
                     {
                         return false;
