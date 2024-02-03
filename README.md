@@ -30,7 +30,7 @@
 6. Ensure that the <b>Game Arch</b> is set to x64
 7. Select <b>Install</b>
 8. Download the latest [Listen Server release](https://github.com/data-bomb/Silica/releases) and unzip all files to your `Silica` directory
-9. Review the `Silica\Mods` directory and place any undesired mods in the `disabled` directory
+9. Review the `Silica\Mods` directory and place any undesired mods in the `disabled` directory (Note: You should NOT disable Admin Mod.)
 10. Launch Silica and then exit the game to populate configuration parameters
 11. Review and modify the configuration parameters in the `Silica\UserData\MelonPreferences.cfg` file
 12. (Optional) Install the [QList Mod](https://github.com/dodad-2/QList) to adjust configuration parameters on-the-fly
@@ -43,9 +43,9 @@
 5. Ensure that the <b>Game Arch</b> is set to x64
 6. Select <b>Install</b>
 7. Download the latest [Dedicated Server release](https://github.com/data-bomb/Silica/releases) and unzip all files to your `Silica Dedicated Server` directory
-8. Review the `Silica Dedicated Server\Mods` directory and place any undesired mods in the `disabled` directory
-9. Update the command line options for Silica Dedicated Server to include <br>`--melonloader.hideconsole --melonloader.disablestartscreen`<br> (e.g., in Steam, right-click the Silica Dedicated Server Tool from the Steam Library and put these in the Launch Options)
-10. Launch Silica Dedicated Server
+8. Review the `Silica Dedicated Server\Mods` directory and place any undesired mods in the `disabled` directory. (Note: You should NOT disable Admin Mod.)
+9. Review and update the Settings in `Documents\Silica\ServerSettings.xml`
+10. Launch Silica Dedicated Server by double-clicking `launch.bat`
 
 ## Modding and License Considerations
 Note that this is not legal advice and databomb is not a lawyer. If you do have concerns then you should consult the appropriate person before running server mods.
