@@ -45,7 +45,8 @@
 7. Download the latest [Dedicated Server release](https://github.com/data-bomb/Silica/releases) and unzip all files to your `Silica Dedicated Server` directory
 8. Review the `Silica Dedicated Server\Mods` directory and place any undesired mods in the `disabled` directory. (Note: You should NOT disable Admin Mod.)
 9. Review and update the Settings in `Documents\Silica\ServerSettings.xml`
-10. Launch Silica Dedicated Server by double-clicking `launch.bat`
+10. Launch Silica Dedicated Server by double-clicking `launch.bat` and then exit the server to populate configuration parameters
+11. Review and modify the configuration parameters in the `Silica\UserData\MelonPreferences.cfg` file
 
 ## Modding and License Considerations
 Note that this is not legal advice and databomb is not a lawyer. If you do have concerns then you should consult the appropriate person before running server mods.
