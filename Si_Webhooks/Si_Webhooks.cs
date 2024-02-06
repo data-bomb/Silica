@@ -143,11 +143,11 @@ namespace Si_Webhooks
                         string reportMessage;
                         if (spaceCharacter == -1)
                         {
-                            reportMessage = __0.PlayerName + " (" + __0.PlayerID.ToString() + ") is requesting an admin in the game. <@&" + _RoleToMentionForReports.Value + ">";
+                            reportMessage = __0.PlayerName + " (" + __0.PlayerID.ToString() + ") is requesting an admin in the game. <&" + _RoleToMentionForReports.Value + ">";
                         }
                         else
                         {
-                            reportMessage = __0.PlayerName + " (" + __0.PlayerID.ToString() + ") is requesting an admin in the game. Report:" + rawMessage.Substring(spaceCharacter) + " <@&" + _RoleToMentionForReports.Value + ">";
+                            reportMessage = __0.PlayerName + " (" + __0.PlayerID.ToString() + ") is requesting an admin in the game. Report:" + rawMessage.Substring(spaceCharacter) + " <&" + _RoleToMentionForReports.Value + ">";
                         }
                         
                         SendMessageToWebhook(reportMessage, _Server_Shortname.Value, _Server_Avatar_URL.Value);
