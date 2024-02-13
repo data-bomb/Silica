@@ -40,7 +40,7 @@ using System.Collections.Generic;
 using SilicaAdminMod;
 using System.Linq;
 
-[assembly: MelonInfo(typeof(CommanderManager), "Commander Management", "1.4.4", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(CommanderManager), "Commander Management", "1.4.5", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -319,7 +319,7 @@ namespace Si_CommanderManagement
 
                     for (int i = 0; i < MaxTeams; i++)
                     {
-                        if (commanderApplicants[i].Count == 0)
+                        if (Team.Teams[i] == null || commanderApplicants[i].Count == 0)
                         {
                             continue;
                         }
@@ -352,6 +352,10 @@ namespace Si_CommanderManagement
                             previousCommanders.Add(CommanderPlayer);
                             commanderApplicants[i].RemoveAt(iCommanderIndex);
                         }
+                        else
+                        {
+                            MelonLogger.Warning("Can't find lottery winner. Not promoting for team " + Team.Teams[i].TeamName);
+                        }
 
                         // switch remaining players to infantry
                         foreach (Player infantryPlayer in commanderApplicants[i])
@@ -364,6 +368,10 @@ namespace Si_CommanderManagement
                             MelonLogger.Msg("Player " + infantryPlayer.PlayerName + " lost commander lottery. Spawning as infantry.");
                             GameMode.CurrentGameMode.SpawnUnitForPlayer(infantryPlayer, infantryPlayer.Team);
                         }
+
+                        // everyone is promoted or moved to infantry, clear for the next round
+                        commanderApplicants[i].Clear();
+                        MelonLogger.Msg("Clearing commander lottery for team " + Team.Teams[i].TeamName);
                     }
                 }
                 catch (Exception error)
