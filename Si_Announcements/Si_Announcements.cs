@@ -36,7 +36,7 @@ using System.Collections.Generic;
 using SilicaAdminMod;
 using System.Linq;
 
-[assembly: MelonInfo(typeof(Announcements), "Server Announcements", "1.1.4", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(Announcements), "Server Announcements", "1.1.5", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -80,10 +80,16 @@ namespace Si_Announcements
                     string? announcement = "";
                     while ((announcement = announcementsFileStream.ReadLine()) != null)
                     {
-                        announcementFileLine.Add(announcement);
+                        // ignore a line with only LF/CR
+                        if (announcement.Length > 2)
+                        {
+                            announcementFileLine.Add(announcement);
+                        }
                     }
                     announcementsText = announcementFileLine.ToArray();
                 }
+
+                MelonLogger.Msg("Loaded announcements.txt file with " + announcementsText.Length + " announcements");
 
                 double interval = _Announcements_SecondsBetweenMessages.Value * 1000.0f;
                 announcementTimer = new System.Timers.Timer(interval);
