@@ -40,7 +40,7 @@ using System.Collections.Generic;
 using SilicaAdminMod;
 using System.Linq;
 
-[assembly: MelonInfo(typeof(CommanderManager), "Commander Management", "1.4.6", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(CommanderManager), "Commander Management", "1.4.7", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -80,8 +80,25 @@ namespace Si_CommanderManagement
             }
         }
 
+        public class PreviousCommander
+        {
+            private Player _commander = null!;
+
+            public Player Commander
+            {
+                get => _commander;
+                set => _commander = value ?? throw new ArgumentNullException("Player is required.");
+            }
+
+            public int RoundsLeft
+            {
+                get;
+                set;
+            }
+        }
+
         static List<Player>[] commanderApplicants = null!;
-        static List<Player>? previousCommanders;
+        static List<PreviousCommander>? previousCommanders;
 
         static Player?[]? teamswapCommanderChecks;
         static Player[]? promotedCommanders;
@@ -138,7 +155,7 @@ namespace Si_CommanderManagement
                 CommanderManager.commanderApplicants[CentauriTeam] = new List<Player>();
                 CommanderManager.commanderApplicants[SolTeam] = new List<Player>();
 
-                CommanderManager.previousCommanders = new List<Player>();
+                CommanderManager.previousCommanders = new List<PreviousCommander>();
 
                 CommanderManager.teamswapCommanderChecks = new Player[MaxTeams];
                 CommanderManager.promotedCommanders = new Player[MaxTeams];
@@ -213,15 +230,6 @@ namespace Si_CommanderManagement
                     System.Random randomIndex = new System.Random();
                     Player? RemovePlayer = null;
 
-                    int NumCommandersPastRound = 0;
-                    for (int i = 0; i < MaxTeams; i++)
-                    {
-                        if (commanderApplicants[i].Count > 0)
-                        {
-                            NumCommandersPastRound++;
-                        }
-                    }
-
                     for (int i = 0; i < MaxTeams; i++)
                     {
                         // clear previous commander tracking status, if any
@@ -245,7 +253,7 @@ namespace Si_CommanderManagement
                         // remove previous commanders from applicant list
                         for (int j = 0; j < CommanderManager.previousCommanders.Count; j++)
                         {
-                            RemovePlayer = commanderApplicants[i].Find(k => k == CommanderManager.previousCommanders[j]);
+                            RemovePlayer = commanderApplicants[i].Find(k => k == CommanderManager.previousCommanders[j].Commander);
                             if (RemovePlayer != null)
                             {
                                 MelonLogger.Msg("Removing applicant from 2 rounds ago from random selection: " + RemovePlayer.PlayerName);
@@ -267,7 +275,12 @@ namespace Si_CommanderManagement
                             HelperMethods.ReplyToCommand("Promoted " + HelperMethods.GetTeamColor(CommanderPlayer) + CommanderPlayer.PlayerName + HelperMethods.defaultColor + " to commander for " + HelperMethods.GetTeamColor(CommanderPlayer) + CommanderPlayer.Team.TeamName);
                             promotedCommanders[CommanderPlayer.Team.Index] = CommanderPlayer;
                             PromoteToCommander(CommanderPlayer);
-                            previousCommanders.Add(CommanderPlayer);
+                            PreviousCommander prevCommander = new PreviousCommander()
+                            {
+                                Commander = CommanderPlayer,
+                                RoundsLeft = 2
+                            };
+                            previousCommanders.Add(prevCommander);
                             commanderApplicants[i].RemoveAt(iCommanderIndex);
                         }
                         else
@@ -293,20 +306,28 @@ namespace Si_CommanderManagement
                     }
 
                     // we want to remove the oldest commanders from the list
-                    int NumCommandersToRemove = previousCommanders.Count - NumCommandersPastRound;
-                    if (NumCommandersToRemove < 0)
+                    List<PreviousCommander>? stalePreviousCommanders = new List<PreviousCommander>();
+                    foreach (PreviousCommander previousCommander in previousCommanders)
                     {
-                        MelonLogger.Warning("Logic error. NumCommandersToRemove is " + NumCommandersToRemove.ToString());
-                        NumCommandersPastRound = 0;
+                        previousCommander.RoundsLeft -= 1;
+                        if (previousCommander.Commander == null)
+                        {
+                            stalePreviousCommanders.Add(previousCommander);
+                            MelonLogger.Msg("Adding stale, invalid commander.");
+                            continue;
+                        }
+
+                        if (previousCommander.RoundsLeft <= 0)
+                        {
+                            stalePreviousCommanders.Add(previousCommander);
+                            MelonLogger.Msg("Adding stale commander with 0 rounds left: " + previousCommander.Commander.PlayerName);
+                        }
                     }
 
-                    if (CommanderManager.previousCommanders.Count > NumCommandersToRemove)
+                    foreach (PreviousCommander stalePreviousCommander in stalePreviousCommanders)
                     {
-                        // remove the commanders from 2 rounds ago. first entry is the oldest.
-                        for (int i = 0; i < NumCommandersToRemove; i++)
-                        {
-                            CommanderManager.previousCommanders.RemoveAt(i);
-                        }
+                        previousCommanders.Remove(stalePreviousCommander);
+                        MelonLogger.Msg("Removed stale commander.");
                     }
                 }
                 catch (Exception error)
