@@ -31,8 +31,9 @@ using MelonLoader;
 using Si_NoUnitLimits;
 using SilicaAdminMod;
 using System;
+using Newtonsoft.Json;
 
-[assembly: MelonInfo(typeof(NoUnitLimits), "No Unit Limits", "1.0.0", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(NoUnitLimits), "No Unit Limits", "1.1.0", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -40,6 +41,15 @@ namespace Si_NoUnitLimits
 {
     public class NoUnitLimits : MelonMod
     {
+        static MelonPreferences_Category _modCategory = null!;
+        static MelonPreferences_Entry<int> _UnitCap = null!;
+
+        public override void OnInitializeMelon()
+        {
+            _modCategory = MelonPreferences.CreateCategory("Silica");
+            _UnitCap = _modCategory.CreateEntry<int>("UnitCap", 0);
+        }
+
         [HarmonyPatch(typeof(MP_Strategy), nameof(MP_Strategy.UpdateUnitCapMultFromSetting))]
         private static class ApplyPatch_Strategy_UpdateUnitCapMultFromSetting
         {
@@ -47,19 +57,33 @@ namespace Si_NoUnitLimits
             {
                 try
                 {
-                    if (__instance == null)
+                    if (__instance == null || _UnitCap == null)
                     {
                         return;
                     }
 
-                    #if NET6_0
-                    __instance.UnitCapMultiplier = 0;
+                    int unitCap = _UnitCap.Value;
+                    if (unitCap < 0)
+                    {
+                        unitCap = 0;
+                    }
+
+#if NET6_0
+                    __instance.UnitCapMultiplier = unitCap;
                     #else
                     PropertyInfo unitCapProperty = typeof(MP_Strategy).GetProperty("UnitCapMultiplier", BindingFlags.NonPublic | BindingFlags.Instance);
-                    unitCapProperty.SetValue(__instance, (int)0);
+                    unitCapProperty.SetValue(__instance, (int)unitCap);
                     #endif
 
-                    MelonLogger.Msg("Setting unit cap to unlimited.");
+                    if (unitCap == 0)
+                    {
+                        MelonLogger.Msg("Setting unit cap to unlimited.");
+                    }
+                    else
+                    {
+                        MelonLogger.Msg("Setting unit cap to: " + unitCap);
+                    }
+                    
                 }
                 catch (Exception error)
                 {
