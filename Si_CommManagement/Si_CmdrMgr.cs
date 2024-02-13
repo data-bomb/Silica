@@ -40,7 +40,7 @@ using System.Collections.Generic;
 using SilicaAdminMod;
 using System.Linq;
 
-[assembly: MelonInfo(typeof(CommanderManager), "Commander Management", "1.4.5", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(CommanderManager), "Commander Management", "1.4.6", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -82,7 +82,6 @@ namespace Si_CommanderManagement
 
         static List<Player>[] commanderApplicants = null!;
         static List<Player>? previousCommanders;
-        static bool bOnGameInitFired;
 
         static Player?[]? teamswapCommanderChecks;
         static Player[]? promotedCommanders;
@@ -143,8 +142,6 @@ namespace Si_CommanderManagement
 
                 CommanderManager.teamswapCommanderChecks = new Player[MaxTeams];
                 CommanderManager.promotedCommanders = new Player[MaxTeams];
-
-                bOnGameInitFired = false;
             }
             catch (Exception error)
             {
@@ -201,104 +198,6 @@ namespace Si_CommanderManagement
             GameMode.CurrentGameMode.SendRPCPacket(theRoleStream);
         }
 
-        // may need to re-think this approach on preventing commander promotion
-        
-        /*[HarmonyPatch(typeof(MP_Strategy), nameof(MP_Strategy.GetStrategyCommanderTeamSetup))]
-        private static class ApplyPatchCommanderTeamSetup
-        {
-            public static bool Prefix(MP_Strategy __instance, StrategyTeamSetup? __result, Player? __0)
-            {
-                try
-                {
-                    if (__0 == null)
-                    {
-                        return true;
-                    }
-
-                    if (MasterBanList == null)
-                    {
-                        return true;
-                    }
-
-                    // check if player is allowed to be commander
-                    long joiningPlayerSteamId = long.Parse(__0.ToString().Split('_')[1]);
-                    BanEntry? banEntry = MasterBanList.Find(i => i.OffenderSteamId == joiningPlayerSteamId);
-                    if (banEntry != null)
-                    {
-                        MelonLogger.Msg("Preventing " + banEntry.OffenderName + " from selecting commander.");
-
-                        __0 = null;
-                        __result = null;
-                        return false;
-                    }
-                }
-                catch (Exception error)
-                {
-                    HelperMethods.PrintError(error, "Failed to run MP_Strategy::GetStrategyCommanderTeamSetup");
-                }
-
-                return true;
-            }
-        }*/
-
-        [HarmonyPatch(typeof(MusicJukeboxHandler), nameof(MusicJukeboxHandler.OnGameInit))]
-        private static class ApplyPatchOnGameInit
-        {
-            public static void Postfix(MusicJukeboxHandler __instance, GameMode __0)
-            {
-                try
-                {
-                    if (commanderApplicants == null || teamswapCommanderChecks == null || previousCommanders == null)
-                    {
-                        return;
-                    }
-
-                    // prevent from running twice in one round switch cycle
-                    if (!bOnGameInitFired)
-                    {
-                        bOnGameInitFired = true;
-
-                        int NumCommandersPastRound = 0;
-                        for (int i = 0; i < MaxTeams; i++)
-                        {
-                            if (commanderApplicants[i].Count > 0)
-                            {
-                                MelonLogger.Msg("Clearing applicants from team index " + i.ToString());
-                                commanderApplicants[i].Clear();
-
-                                NumCommandersPastRound++;
-
-                                // clear previous commander tracking status, if any
-                                teamswapCommanderChecks[i] = null;
-                            }
-                        }
-
-
-                        // we want to remove the oldest commanders from the list
-                        int NumCommandersToRemove = previousCommanders.Count - NumCommandersPastRound;
-                        if (NumCommandersToRemove < 0)
-                        {
-                            MelonLogger.Warning("Logic error. NumCommandersToRemove is " + NumCommandersToRemove.ToString());
-                            NumCommandersPastRound = 0;
-                        }
-
-                        if (CommanderManager.previousCommanders.Count > NumCommandersToRemove)
-                        {
-                            // remove the commanders from 2 rounds ago. first entry is the oldest.
-                            for (int i = 0; i < NumCommandersToRemove; i++)
-                            {
-                                CommanderManager.previousCommanders.RemoveAt(i);
-                            }
-                        }
-                    }
-                }
-                catch (Exception error)
-                {
-                    HelperMethods.PrintError(error, "Failed to run MusicJukeboxHandler::OnGameInit");
-                }
-            }
-        }
-
         [HarmonyPatch(typeof(MusicJukeboxHandler), nameof(MusicJukeboxHandler.OnGameStarted))]
         private static class ApplyPatchOnGameStarted
         {
@@ -306,20 +205,39 @@ namespace Si_CommanderManagement
             {
                 try
                 {
-                    bOnGameInitFired = false;
-
                     if (commanderApplicants == null || previousCommanders == null || promotedCommanders == null)
                     {
                         return;
                     }
 
-                    // *** TODO: need to account for if a player leaves the game within the 30 second window
                     System.Random randomIndex = new System.Random();
                     Player? RemovePlayer = null;
 
+                    int NumCommandersPastRound = 0;
                     for (int i = 0; i < MaxTeams; i++)
                     {
-                        if (Team.Teams[i] == null || commanderApplicants[i].Count == 0)
+                        if (commanderApplicants[i].Count > 0)
+                        {
+                            NumCommandersPastRound++;
+                        }
+                    }
+
+                    for (int i = 0; i < MaxTeams; i++)
+                    {
+                        // clear previous commander tracking status, if any
+                        if (teamswapCommanderChecks != null)
+                        {
+                            teamswapCommanderChecks[i] = null;
+                        }
+
+                        if (Team.Teams[i] == null)
+                        {
+                            // account for transitions from 2 to 3 team rounds
+                            commanderApplicants[i].Clear();
+                            continue;
+                        }
+
+                        if (commanderApplicants[i].Count == 0)
                         {
                             continue;
                         }
@@ -372,6 +290,23 @@ namespace Si_CommanderManagement
                         // everyone is promoted or moved to infantry, clear for the next round
                         commanderApplicants[i].Clear();
                         MelonLogger.Msg("Clearing commander lottery for team " + Team.Teams[i].TeamName);
+                    }
+
+                    // we want to remove the oldest commanders from the list
+                    int NumCommandersToRemove = previousCommanders.Count - NumCommandersPastRound;
+                    if (NumCommandersToRemove < 0)
+                    {
+                        MelonLogger.Warning("Logic error. NumCommandersToRemove is " + NumCommandersToRemove.ToString());
+                        NumCommandersPastRound = 0;
+                    }
+
+                    if (CommanderManager.previousCommanders.Count > NumCommandersToRemove)
+                    {
+                        // remove the commanders from 2 rounds ago. first entry is the oldest.
+                        for (int i = 0; i < NumCommandersToRemove; i++)
+                        {
+                            CommanderManager.previousCommanders.RemoveAt(i);
+                        }
                     }
                 }
                 catch (Exception error)
