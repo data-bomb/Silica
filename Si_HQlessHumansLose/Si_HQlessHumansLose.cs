@@ -34,7 +34,7 @@ using UnityEngine;
 using System;
 using SilicaAdminMod;
 
-[assembly: MelonInfo(typeof(HQlessHumansLose), "[Si] HQless Humans Lose", "1.2.5", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HQlessHumansLose), "[Si] HQless Humans Lose", "1.2.6", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -102,6 +102,8 @@ namespace Si_HQlessHumansLose
             MP_Strategy strategyInstance = GameObject.FindObjectOfType<MP_Strategy>();
             MP_Strategy.ETeamsVersus versusMode = strategyInstance.TeamsVersus;
 
+            MelonLogger.Msg("Eliminating team " + team.TeamName + " on versus mode " + versusMode.ToString());
+
             // are there still two remaining factions after this one is eliminated?
             if (versusMode == MP_Strategy.ETeamsVersus.HUMANS_VS_HUMANS_VS_ALIENS && !OneFactionEliminated())
             {
@@ -118,10 +120,7 @@ namespace Si_HQlessHumansLose
                 }
 
                 // destroy units (otherwise AI will roam around doing odd things)
-                for (int i = 0; i < team.Units.Count; i++)
-                {
-                    team.Units[i].DamageManager.SetHealth01(0.0f);
-                }
+                DestroyAllUnits(team);
             }
             else
             {
@@ -129,6 +128,14 @@ namespace Si_HQlessHumansLose
             }
 
             DelayTeamLostMessage(team);
+        }
+
+        private static void DestroyAllUnits(Team team)
+        {
+            for (int i = 0; i < team.Units.Count; i++)
+            {
+                team.Units[i].DamageManager.SetHealth01(0.0f);
+            }
         }
 
         // introduce a delay so clients can see chat message after round ends
@@ -253,6 +260,50 @@ namespace Si_HQlessHumansLose
             }
         }
 
+        // don't let the structure count reach 0 if HQ/Nest is under construction
+        #if NET6_0
+        [HarmonyPatch(typeof(Team), nameof(Team.UpdateMajorStructuresCount))]
+        #else
+        [HarmonyPatch(typeof(Team), "UpdateMajorStructuresCount")]
+        #endif
+        private static class ApplyPatch_UpdateMajorStructuresCount
+        {
+            private static void Postfix(Team __instance)
+            {
+                // only spend the CPU if the team is about to lose
+                if (__instance.NumMajorStructures == 0 && GameMode.CurrentGameMode.GameOngoing)
+                {
+                    if (HasRootStructureUnderConstruction(__instance))
+                    {
+                        MelonLogger.Msg("Found Major Structure under Construction. Adjusting count.");
+                        __instance.NumMajorStructures = 1;
+                    }
+                }
+            }
+        }
+
+        // don't count it as a loss if HQ/Nest is under construction
+        #if NET6_0
+        [HarmonyPatch(typeof(StrategyTeamSetup), nameof(StrategyTeamSetup.GetHasLost))]
+        #else
+        [HarmonyPatch(typeof(StrategyTeamSetup), "GetHasLost")]
+        #endif
+        private static class ApplyPatch_GetHasLost
+        {
+            private static void Postfix(StrategyTeamSetup __instance, bool __result)
+            {
+                // only spend the CPU if the team is about to lose
+                if (__result == true && GameMode.CurrentGameMode.GameOngoing)
+                {
+                    if (HasRootStructureUnderConstruction(__instance.Team))
+                    {
+                        MelonLogger.Msg("Found Major Structure under Construction. Preventing loss.");
+                        __result = false;
+                    }
+                }
+            }
+        }
+
         #if NET6_0
         [HarmonyPatch(typeof(ConstructionSite), nameof(ConstructionSite.Update))]
         #else
@@ -343,25 +394,7 @@ namespace Si_HQlessHumansLose
                     }
 
                     // no HQ/nests left or being constructed
-                    // end the round if it's humans
-                    // Alien team index = 0
-                    if (structureTeam.Index != 0)
-                    {
-                        EliminateTeam(structureTeam);
-                    }
-                    // otherwise, send a chat right away
-                    else
-                    {
-                        if (destroyerOfWorlds == null)
-                        {
-                            TeamLostMessage(structureTeam);
-                        }
-                        else
-                        {
-                            TeamLostByPlayerMessage(structureTeam, destroyerOfWorlds);
-                        }
-                    }
-                    
+                    EliminateTeam(structureTeam);
                 }
                 catch (Exception error)
                 {

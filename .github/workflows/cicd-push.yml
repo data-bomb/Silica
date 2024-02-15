@@ -212,8 +212,8 @@ jobs:
           mv release/dedi/Mods/Si_FriendlyFireLimits.dll release/dedi/Mods/disabled
           mv release/listen/Mods/Si_FriendlyFireLimits.dll release/listen/Mods/disabled
           # HQ was re-dfined as the default loss condition with a game update
-          mv release/dedi/Mods/Si_HQlessHumansLose.dll release/dedi/Mods/disabled
-          mv release/listen/Mods/Si_HQlessHumansLose.dll release/listen/Mods/disabled
+          #mv release/dedi/Mods/Si_HQlessHumansLose.dll release/dedi/Mods/disabled
+          #mv release/listen/Mods/Si_HQlessHumansLose.dll release/listen/Mods/disabled
           # There are still too many game bugs for mapcycle to be on by default
           mv release/dedi/Mods/Si_Mapcycle.dll release/dedi/Mods/disabled
           mv release/listen/Mods/Si_Mapcycle.dll release/listen/Mods/disabled
