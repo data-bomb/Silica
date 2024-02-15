@@ -34,7 +34,7 @@ using UnityEngine;
 using System;
 using SilicaAdminMod;
 
-[assembly: MelonInfo(typeof(HQlessHumansLose), "[Si] HQless Humans Lose", "1.2.6", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HQlessHumansLose), "[Si] HQless Humans Lose", "1.2.7", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -49,16 +49,16 @@ namespace Si_HQlessHumansLose
 
         public static void TeamLostMessage(Team team)
         {
-            Player serverPlayer = NetworkGameServer.GetServerPlayer();
+            Player broadcastPlayer = HelperMethods.FindBroadcastPlayer();
             String rootStructureName = GetRootStructureFullName(team);
-            serverPlayer.SendChatMessage(HelperMethods.chatPrefix + HelperMethods.GetTeamColor(team) + team.TeamName + HelperMethods.defaultColor + " lost their last " + rootStructureName, false);
+            broadcastPlayer.SendChatMessage(HelperMethods.chatPrefix + HelperMethods.GetTeamColor(team) + team.TeamName + HelperMethods.defaultColor + " lost their last " + rootStructureName, false);
         }
 
         public static void TeamLostByPlayerMessage(Team team, Player player)
         {
-            Player serverPlayer = NetworkGameServer.GetServerPlayer();
+            Player broadcastPlayer = HelperMethods.FindBroadcastPlayer();
             String rootStructureName = GetRootStructureFullName(team);
-            serverPlayer.SendChatMessage(HelperMethods.chatPrefix + HelperMethods.GetTeamColor(player) + player.PlayerName + HelperMethods.defaultColor + " destroyed " + HelperMethods.GetTeamColor(team) + team.TeamName + "'s last " + rootStructureName, false);
+            broadcastPlayer.SendChatMessage(HelperMethods.chatPrefix + HelperMethods.GetTeamColor(player) + player.PlayerName + HelperMethods.defaultColor + " destroyed " + HelperMethods.GetTeamColor(team) + team.TeamName + "'s last " + rootStructureName, false);
         }
 
         static String GetRootStructurePrefix(Team team)
@@ -91,9 +91,11 @@ namespace Si_HQlessHumansLose
 
             if (TeamsWithMajorStructures < 3)
             {
+                MelonLogger.Msg("OneFactionEliminated: true");
                 return true;
             }
 
+            MelonLogger.Msg("OneFactionEliminated: false");
             return false;
         }
 
@@ -134,7 +136,10 @@ namespace Si_HQlessHumansLose
         {
             for (int i = 0; i < team.Units.Count; i++)
             {
-                team.Units[i].DamageManager.SetHealth01(0.0f);
+                if (!team.Units[i].IsDestroyed)
+                {
+                    team.Units[i].DamageManager.SetHealth(0.0f);
+                }
             }
         }
 
