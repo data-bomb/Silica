@@ -310,6 +310,28 @@ namespace Si_HQlessHumansLose
         }
 
         #if NET6_0
+        [HarmonyPatch(typeof(Team), nameof(Team.GetHasAnyMajorStructures))]
+        #else
+        [HarmonyPatch(typeof(Team), "GetHasAnyMajorStructures")]
+        #endif
+        private static class ApplyPatch_GetHasAnyMajorStructures
+        {
+            private static void Postfix(Team __instance, bool __result)
+            {
+                // only spend the CPU if the team is about to lose
+                if (__result == false && GameMode.CurrentGameMode.GameOngoing)
+                {
+                    if (HasRootStructureUnderConstruction(__instance))
+                    {
+                        MelonLogger.Msg("Found Major Structure under Construction. Preventing loss...");
+                        __result = true;
+                    }
+                }
+            }
+        }
+
+
+#if NET6_0
         [HarmonyPatch(typeof(ConstructionSite), nameof(ConstructionSite.Update))]
         #else
         [HarmonyPatch(typeof(ConstructionSite), "Update")]
