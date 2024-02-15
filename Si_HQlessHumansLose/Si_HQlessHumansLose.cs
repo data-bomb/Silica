@@ -34,7 +34,7 @@ using UnityEngine;
 using System;
 using SilicaAdminMod;
 
-[assembly: MelonInfo(typeof(HQlessHumansLose), "[Si] HQless Humans Lose", "1.2.7", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HQlessHumansLose), "[Si] HQless Humans Lose", "1.2.8", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
