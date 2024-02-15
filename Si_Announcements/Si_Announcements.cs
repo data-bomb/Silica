@@ -36,7 +36,7 @@ using System.Collections.Generic;
 using SilicaAdminMod;
 using System.Linq;
 
-[assembly: MelonInfo(typeof(Announcements), "Server Announcements", "1.1.5", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(Announcements), "Server Announcements", "1.1.6", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -67,10 +67,7 @@ namespace Si_Announcements
             {
                 if (!File.Exists(announcementsFile))
                 {
-                    // Create simple announcements.txt file
-                    using FileStream fs = File.Create(announcementsFile);
-                    fs.Close();
-                    System.IO.File.WriteAllText(announcementsFile, "<color=#cc33ff>Server mods by databomb. Report issues in Discord or on GitHub.</color>\n");
+                    CreateStarterAnnouncementsFile(announcementsFile);
                 }
 
                 // Open the stream and read it back
@@ -80,11 +77,12 @@ namespace Si_Announcements
                     string? announcement = "";
                     while ((announcement = announcementsFileStream.ReadLine()) != null)
                     {
-                        // ignore a line with only LF/CR
-                        if (announcement.Length > 2)
+                        if (!IsValidAnnouncement(announcement))
                         {
-                            announcementFileLine.Add(announcement);
+                            continue;
                         }
+
+                        announcementFileLine.Add(announcement);
                     }
                     announcementsText = announcementFileLine.ToArray();
                 }
@@ -207,6 +205,22 @@ namespace Si_Announcements
                     HelperMethods.PrintError(error, "Failed to run Chat::MessageReceived");
                 }
             }
+        }
+
+        private static void CreateStarterAnnouncementsFile(string filePath)
+        {
+            File.WriteAllText(filePath, "<color=#cc33ff>Server mods by databomb. Report issues in Discord or on GitHub.</color>\n");
+        }
+
+        private static bool IsValidAnnouncement(string announcementText)
+        {
+            // ignore a line with only LF/CR
+            if (announcementText.Length <= 2)
+            {
+                return false;
+            }
+
+            return true;
         }
     }
 }
