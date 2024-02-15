@@ -36,7 +36,7 @@ using System.Collections.Generic;
 using SilicaAdminMod;
 using System.Linq;
 
-[assembly: MelonInfo(typeof(Announcements), "Server Announcements", "1.1.6", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(Announcements), "Server Announcements", "1.1.7", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -84,10 +84,11 @@ namespace Si_Announcements
 
                         announcementFileLine.Add(announcement);
                     }
+
                     announcementsText = announcementFileLine.ToArray();
                 }
 
-                MelonLogger.Msg("Loaded announcements.txt file with " + announcementsText.Length + " announcements");
+                MelonLogger.Msg("Loaded announcements.txt file with " + announcementsText.Length + " announcements.");
 
                 double interval = _Announcements_SecondsBetweenMessages.Value * 1000.0f;
                 announcementTimer = new System.Timers.Timer(interval);
@@ -142,29 +143,25 @@ namespace Si_Announcements
                     {
                         timerExpired = false;
 
-                        if (_Announcements_ShowIfLastChatWasAnnouncement != null && !_Announcements_ShowIfLastChatWasAnnouncement.Value && lastChatMessage != null && announcementsText != null)
-                        {
-                            // check if the last chat message was an announcement
-                            bool lastMessageWasAnnouncement = announcementsText.Any(m => m == lastChatMessage);
-                            if (lastMessageWasAnnouncement)
-                            {
-                                MelonLogger.Msg("Skipping Announcement - Repeated Message");
-                                return;
-                            }
-                        }
-                        
-                        announcementCount++;
-
                         if (announcementsText == null)
                         {
                             return;
                         }
 
-                        String thisAnnouncement = announcementsText[announcementCount % announcementsText.Length];
-                        MelonLogger.Msg("Announcement: " + thisAnnouncement);
+                        if (!_Announcements_ShowIfLastChatWasAnnouncement.Value)
+                        {
+                            // check if the last chat message was an announcement
+                            if (IsPreviousChatMessageAnnouncement(lastChatMessage))
+                            {
+                                MelonLogger.Msg("Skipping Announcement - Repeated Message");
+                                return;
+                            }
+                        }
+
+                        string nextAnnouncement = GetNextAnnouncement();
 
                         Player broadcastPlayer = HelperMethods.FindBroadcastPlayer();
-                        broadcastPlayer.SendChatMessage(thisAnnouncement);
+                        broadcastPlayer.SendChatMessage(nextAnnouncement);
                     }
                 }
                 catch (Exception exception)
@@ -207,9 +204,33 @@ namespace Si_Announcements
             }
         }
 
+        private static bool IsPreviousChatMessageAnnouncement(string? previousChat)
+        {
+            if (previousChat == null || announcementsText == null)
+            {
+                return false;
+            }
+
+            return announcementsText.Any(m => m == previousChat);
+        }
+
         private static void CreateStarterAnnouncementsFile(string filePath)
         {
             File.WriteAllText(filePath, "<color=#cc33ff>Server mods by databomb. Report issues in Discord or on GitHub.</color>\n");
+        }
+
+        private static string GetNextAnnouncement()
+        {
+            if (announcementsText == null)
+            {
+                return "";
+            }
+
+            announcementCount++;
+            string nextAnnouncement = announcementsText[announcementCount % announcementsText.Length];
+
+            MelonLogger.Msg("Announcement: " + nextAnnouncement);
+            return nextAnnouncement;
         }
 
         private static bool IsValidAnnouncement(string announcementText)
