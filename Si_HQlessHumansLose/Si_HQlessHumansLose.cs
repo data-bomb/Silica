@@ -34,7 +34,7 @@ using UnityEngine;
 using System;
 using SilicaAdminMod;
 
-[assembly: MelonInfo(typeof(HQlessHumansLose), "[Si] HQless Humans Lose", "1.2.8", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HQlessHumansLose), "HQless Humans Lose", "1.2.9", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -76,7 +76,7 @@ namespace Si_HQlessHumansLose
             lostMessageTimerExpired = true;
         }
 
-        public static bool OneFactionEliminated()
+        public static bool OneFactionAlreadyEliminated()
         {
             int TeamsWithMajorStructures = 0;
             for (int i = 0; i < Team.Teams.Count; i++)
@@ -89,13 +89,13 @@ namespace Si_HQlessHumansLose
                 }
             }
 
-            if (TeamsWithMajorStructures < 3)
+            if (TeamsWithMajorStructures < 2)
             {
-                MelonLogger.Msg("OneFactionEliminated: true");
+                MelonLogger.Msg("OneFactionAlreadyEliminated: true");
                 return true;
             }
 
-            MelonLogger.Msg("OneFactionEliminated: false");
+            MelonLogger.Msg("OneFactionAlreadyEliminated: false");
             return false;
         }
 
@@ -107,7 +107,7 @@ namespace Si_HQlessHumansLose
             MelonLogger.Msg("Eliminating team " + team.TeamName + " on versus mode " + versusMode.ToString());
 
             // are there still two remaining factions after this one is eliminated?
-            if (versusMode == MP_Strategy.ETeamsVersus.HUMANS_VS_HUMANS_VS_ALIENS && !OneFactionEliminated())
+            if (versusMode == MP_Strategy.ETeamsVersus.HUMANS_VS_HUMANS_VS_ALIENS && !OneFactionAlreadyEliminated())
             {
                 // destroy structures
                 for (int i = 0; i < team.Structures.Count; i++)
@@ -146,6 +146,8 @@ namespace Si_HQlessHumansLose
         // introduce a delay so clients can see chat message after round ends
         private static void DelayTeamLostMessage(Team team)
         {
+            MelonLogger.Msg("Starting delay lost timer for team " + team.TeamName);
+
             lostMessageTimerExpired = false;
             losingTeam = team;
 
@@ -238,6 +240,8 @@ namespace Si_HQlessHumansLose
                         return;
                     }
 
+                    MelonLogger.Msg("Structure construction destroyed: " + __instance.name);
+
                     Team constructionSiteTeam = __instance.Team;
                     String rootStructureMatchText = GetRootStructurePrefix(constructionSiteTeam);
                     if (!__instance.ToString().Contains(rootStructureMatchText))
@@ -295,7 +299,7 @@ namespace Si_HQlessHumansLose
         #endif
         private static class ApplyPatch_GetHasLost
         {
-            private static void Postfix(StrategyTeamSetup __instance, bool __result)
+            private static void Postfix(StrategyTeamSetup __instance, ref bool __result)
             {
                 // only spend the CPU if the team is about to lose
                 if (__result == true && GameMode.CurrentGameMode.GameOngoing)
@@ -316,7 +320,7 @@ namespace Si_HQlessHumansLose
         #endif
         private static class ApplyPatch_GetHasAnyMajorStructures
         {
-            private static void Postfix(Team __instance, bool __result)
+            private static void Postfix(Team __instance, ref bool __result)
             {
                 // only spend the CPU if the team is about to lose
                 if (__result == false && GameMode.CurrentGameMode.GameOngoing)
@@ -382,6 +386,8 @@ namespace Si_HQlessHumansLose
                     {
                         return;
                     }
+
+                    MelonLogger.Msg("Structure destroyed: " + __0.name);
 
                     Team structureTeam = __0.Team;
                     if (structureTeam == null)
