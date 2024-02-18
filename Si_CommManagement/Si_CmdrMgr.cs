@@ -40,7 +40,7 @@ using System.Collections.Generic;
 using SilicaAdminMod;
 using System.Linq;
 
-[assembly: MelonInfo(typeof(CommanderManager), "Commander Management", "1.4.7", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(CommanderManager), "Commander Management", "1.4.8", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -783,7 +783,8 @@ namespace Si_CommanderManagement
 
                     if (GameMode.CurrentGameMode.Started && GameMode.CurrentGameMode.GameBegun)
                     {
-                        if (__0.IsCommander)
+                        // don't display message if the team has since been eliminated
+                        if (__0.IsCommander && __0.Team.NumMajorStructures > 0)
                         {
                             HelperMethods.ReplyToCommand_Player(__0, "left commander position vacant by disconnecting");
                         }
@@ -803,7 +804,7 @@ namespace Si_CommanderManagement
             {
                 try
                 {
-                    if (teamswapCommanderChecks == null || __0 == null)
+                    if (teamswapCommanderChecks == null || __0 == null || __0.Team == null)
                     {
                         return;
                     }
@@ -826,6 +827,13 @@ namespace Si_CommanderManagement
                         {
                             Team departingTeam = Team.Teams[commanderSwappedTeamIndex];
                             teamswapCommanderChecks[commanderSwappedTeamIndex] = null;
+
+                            // don't display if the team has been eliminated
+                            if (departingTeam.NumMajorStructures <= 0)
+                            {
+                                return;
+                            }
+
                             HelperMethods.ReplyToCommand_Player(__0, "left commander position vacant for " + HelperMethods.GetTeamColor(departingTeam) + departingTeam.TeamName + HelperMethods.defaultColor + " by switching to infantry");
                         }
                     }
