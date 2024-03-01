@@ -40,7 +40,7 @@ using System.Collections.Generic;
 using SilicaAdminMod;
 using System.Linq;
 
-[assembly: MelonInfo(typeof(CommanderManager), "Commander Management", "1.4.9", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(CommanderManager), "Commander Management", "1.5.0", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -916,7 +916,7 @@ namespace Si_CommanderManagement
                 return true;
             }
 
-            for (int i = 0; i < Team.Teams.Count; i++)
+            for (int i = 0; i < SiConstants.MaxPlayableTeams; i++)
             {
                 if (Team.Teams[i] == null)
                 {
