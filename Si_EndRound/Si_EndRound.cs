@@ -1,6 +1,6 @@
 ﻿/*
 Silica End Round
-Copyright (C) 2023 by databomb
+Copyright (C) 2023-2024 by databomb
 
 * Description *
 Provides an admin command to end the round early (e.g., if the 
@@ -34,7 +34,7 @@ using System;
 using System.Linq;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(EndRound), "End Round", "1.0.1", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(EndRound), "End Round", "1.0.2", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -72,7 +72,7 @@ namespace Si_EndRound
         public static void Force_EndRound()
         {
             // destroy all structures on all teams
-            for (int i = 0; i < Team.Teams.Count; i++)
+            for (int i = 0; i < SiConstants.MaxPlayableTeams; i++)
             {
                 for (int j = 0; j < Team.Teams[i].Structures.Count; j++)
                 {
