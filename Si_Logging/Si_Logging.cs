@@ -38,7 +38,7 @@ using SilicaAdminMod;
 using System.Collections.Generic;
 using System.Linq;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.1.4", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.1.5", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -254,7 +254,7 @@ namespace Si_Logging
                         }
                         else
                         {
-                            teamName = __0.Team.TeamName;
+                            teamName = __0.Team.TeamShortName;
                         }
 
                         string LogLine = "\"" + __0.PlayerName + "<" + userID + "><" + GetPlayerID(__0) + "><" + teamName + ">\" disconnected";
@@ -284,7 +284,7 @@ namespace Si_Logging
                     }
                     else
                     {
-                        teamName = __0.Team.TeamName;
+                        teamName = __0.Team.TeamShortName;
                     }
                     string LogLine = "Kick: \"" + __0.PlayerName + "<" + userID + "><" + GetPlayerID(__0) + "><" + teamName + "\" was kicked by \"Console\" (message \"\")";
                     PrintLogLine(LogLine);
@@ -343,21 +343,21 @@ namespace Si_Logging
                             if (isSuicide)
                             {
 
-                                string LogLine = "\"" + victimPlayer.PlayerName + "<" + victimUserID + "><" + GetPlayerID(victimPlayer) + "><" + victimPlayer.Team.TeamName + ">\" committed suicide with \"" + __2.ToString().Split('(')[0] + "\" (dmgtype \"" + __1.ToString() + "\")";
+                                string LogLine = "\"" + victimPlayer.PlayerName + "<" + victimUserID + "><" + GetPlayerID(victimPlayer) + "><" + victimPlayer.Team.TeamShortName + ">\" committed suicide with \"" + __2.ToString().Split('(')[0] + "\" (dmgtype \"" + __1.ToString() + "\")";
                                 PrintLogLine(LogLine);
                             }
                             // human-controlled player killed another human-controlled player
                             else
                             {
                                 int attackerUserID = Math.Abs(attackerPlayer.GetInstanceID());
-                                string LogLine = "\"" + attackerPlayer.PlayerName + "<" + attackerUserID + "><" + GetPlayerID(attackerPlayer) + "><" + attackerPlayer.Team.TeamName + ">\" killed \"" + victimPlayer.PlayerName + "<" + victimUserID + "><" + GetPlayerID(victimPlayer) + "><" + victimPlayer.Team.TeamName + ">\" with \"" + __2.ToString().Split('(')[0] + "\" (dmgtype \"" + __1.ToString() + "\") (victim \"" + __0.ToString().Split('(')[0] + "\")";
+                                string LogLine = "\"" + attackerPlayer.PlayerName + "<" + attackerUserID + "><" + GetPlayerID(attackerPlayer) + "><" + attackerPlayer.Team.TeamShortName + ">\" killed \"" + victimPlayer.PlayerName + "<" + victimUserID + "><" + GetPlayerID(victimPlayer) + "><" + victimPlayer.Team.TeamShortName + ">\" with \"" + __2.ToString().Split('(')[0] + "\" (dmgtype \"" + __1.ToString() + "\") (victim \"" + __0.ToString().Split('(')[0] + "\")";
                                 PrintLogLine(LogLine);
                             }
                         }
                         else if (Pref_Log_Kills_Include_AI_vs_Player.Value)
                         // Attacker is an AI, Victim is a human
                         {
-                            string LogLine = "\"" + __2.ToString().Split('(')[0] + "<><><" + attackerBase.Team.TeamName + ">\" killed \"" + victimPlayer.PlayerName + "<" + victimUserID + "><" + GetPlayerID(victimPlayer) + "><" + victimPlayer.Team.TeamName + ">\" with \"" + __2.ToString().Split('(')[0] + "\" (dmgtype \"" + __1.ToString() + "\") (victim \"" + __0.ToString().Split('(')[0] + "\")";
+                            string LogLine = "\"" + __2.ToString().Split('(')[0] + "<><><" + attackerBase.Team.TeamShortName + ">\" killed \"" + victimPlayer.PlayerName + "<" + victimUserID + "><" + GetPlayerID(victimPlayer) + "><" + victimPlayer.Team.TeamShortName + ">\" with \"" + __2.ToString().Split('(')[0] + "\" (dmgtype \"" + __1.ToString() + "\") (victim \"" + __0.ToString().Split('(')[0] + "\")";
                             PrintLogLine(LogLine);
                         }
                     }
@@ -365,7 +365,7 @@ namespace Si_Logging
                     // Attacker is a human, Victim is an AI
                     {
                         int attackerUserID = Math.Abs(attackerPlayer.GetInstanceID());
-                        string LogLine = "\"" + attackerPlayer.PlayerName + "<" + attackerUserID + "><" + GetPlayerID(attackerPlayer) + "><" + attackerPlayer.Team.TeamName + ">\" killed \"" + __0.ToString().Split('(')[0] + "<><><" + __0.Team.TeamName + ">\" with \"" + __2.ToString().Split('(')[0] + "\" (dmgtype \"" + __1.ToString() + "\") (victim \"" + __0.ToString().Split('(')[0] + "\")";
+                        string LogLine = "\"" + attackerPlayer.PlayerName + "<" + attackerUserID + "><" + GetPlayerID(attackerPlayer) + "><" + attackerPlayer.Team.TeamShortName + ">\" killed \"" + __0.ToString().Split('(')[0] + "<><><" + __0.Team.TeamShortName + ">\" with \"" + __2.ToString().Split('(')[0] + "\" (dmgtype \"" + __1.ToString() + "\") (victim \"" + __0.ToString().Split('(')[0] + "\")";
                         PrintLogLine(LogLine);
                     }
                     #pragma warning restore CS8602 // Dereference of a possibly null reference.
@@ -392,7 +392,7 @@ namespace Si_Logging
                     }
                     else
                     {
-                        theOldTeamName = __1.TeamName;
+                        theOldTeamName = __1.TeamShortName;
                     }
 
                     string theNewTeamName;
@@ -403,7 +403,7 @@ namespace Si_Logging
                     }
                     else
                     {
-                        theNewTeamName = __2.TeamName;
+                        theNewTeamName = __2.TeamShortName;
                     }
 
                     if (__0 != null)
@@ -448,7 +448,7 @@ namespace Si_Logging
 
                         // a change occurred and this player was promoted
                         int commanderUserID = Math.Abs(__1.GetInstanceID());
-                        string LogLine = "\"" + __1.PlayerName + "<" + commanderUserID + "><" + GetPlayerID(__1) + "><" + __0.TeamName + ">\" changed role to \"Commander\"";
+                        string LogLine = "\"" + __1.PlayerName + "<" + commanderUserID + "><" + GetPlayerID(__1) + "><" + __0.TeamShortName + ">\" changed role to \"Commander\"";
                         PrintLogLine(LogLine);
 
                         // check if another player was demoted
@@ -456,7 +456,7 @@ namespace Si_Logging
                         {
                             // this player is no longer commander
                             int prevCommanderUserID = Math.Abs(lastCommander[__0.Index].GetInstanceID());
-                            LogLine = "\"" + lastCommander[__0.Index].PlayerName + "<" + prevCommanderUserID + "><" + GetPlayerID(lastCommander[__0.Index]) + "><" + __0.TeamName + ">\" changed role to \"Infantry\"";
+                            LogLine = "\"" + lastCommander[__0.Index].PlayerName + "<" + prevCommanderUserID + "><" + GetPlayerID(lastCommander[__0.Index]) + "><" + __0.TeamShortName + ">\" changed role to \"Infantry\"";
                             PrintLogLine(LogLine);
                         }
 
@@ -472,7 +472,7 @@ namespace Si_Logging
 
                         // a change occurred and this player is no longer commander
                         int prevCommanderUserID = Math.Abs(lastCommander[__0.Index].GetInstanceID());
-                        string LogLine = "\"" + lastCommander[__0.Index].PlayerName + "<" + prevCommanderUserID + "><" + GetPlayerID(lastCommander[__0.Index]) + "><" + __0.TeamName + ">\" changed role to \"Infantry\"";
+                        string LogLine = "\"" + lastCommander[__0.Index].PlayerName + "<" + prevCommanderUserID + "><" + GetPlayerID(lastCommander[__0.Index]) + "><" + __0.TeamShortName + ">\" changed role to \"Infantry\"";
                         PrintLogLine(LogLine);
 
                         lastCommander[__0.Index] = null;
@@ -574,7 +574,7 @@ namespace Si_Logging
 
                 int attackerUserID = Math.Abs(attackerPlayer.GetInstanceID());
                 int victimUserID = Math.Abs(victimPlayer.GetInstanceID());
-                string LogLine = "\"" + attackerPlayer.PlayerName + "<" + attackerUserID + "><" + GetPlayerID(attackerPlayer) + "><" + attackerPlayer.Team.TeamName + ">\" attacked \"" + victimPlayer.PlayerName + "<" + victimUserID + "><" + GetPlayerID(victimPlayer) + "><" + victimPlayer.Team.TeamName + ">\" with \"" + __3.ToString().Split('(')[0] + "\"" + " (damage \"" + damage.ToString() + "\")";
+                string LogLine = "\"" + attackerPlayer.PlayerName + "<" + attackerUserID + "><" + GetPlayerID(attackerPlayer) + "><" + attackerPlayer.Team.TeamShortName + ">\" attacked \"" + victimPlayer.PlayerName + "<" + victimUserID + "><" + GetPlayerID(victimPlayer) + "><" + victimPlayer.Team.TeamShortName + ">\" with \"" + __3.ToString().Split('(')[0] + "\"" + " (damage \"" + damage.ToString() + "\")";
                 PrintLogLine(LogLine, true);
             }
         }
@@ -640,7 +640,7 @@ namespace Si_Logging
                                 }
                                 else
                                 {
-                                    attackerPlayerTeam = attackerPlayer.Team.TeamName;
+                                    attackerPlayerTeam = attackerPlayer.Team.TeamShortName;
                                 }
 
                                 string structTeam;
@@ -650,7 +650,7 @@ namespace Si_Logging
                                 }
                                 else
                                 {
-                                    structTeam = __0.Team.TeamName;
+                                    structTeam = __0.Team.TeamShortName;
                                 }
 
                                 string LogLine = "\"" + attackerPlayer.PlayerName + "<" + userID + "><" + GetPlayerID(attackerPlayer) + "><" + attackerPlayerTeam + ">\" triggered \"structure_kill\" (structure \"" + structName + "\") (struct_team \"" + structTeam + "\")";
@@ -688,7 +688,7 @@ namespace Si_Logging
                     {
                         firedRoundEndOnce = true;
 
-                        string VictoryLogLine = "Team \"" + __1.TeamName + "\" triggered \"Victory\"";
+                        string VictoryLogLine = "Team \"" + __1.TeamShortName + "\" triggered \"Victory\"";
                         PrintLogLine(VictoryLogLine);
 
                         MP_Strategy strategyInstance = GameObject.FindObjectOfType<MP_Strategy>();
@@ -707,7 +707,7 @@ namespace Si_Logging
                             }
 
                             // TODO: Investigate what else to use for team score. Add up all player scores? For now resources is used but it's not using Total acculumated resources so need to find something else.
-                            string TeamLogLine = "Team \"" + thisTeam.TeamName + "\" scored \"" + thisTeam.TotalResources.ToString() + "\" with \"" + thisTeam.GetNumPlayers().ToString() + "\" players";
+                            string TeamLogLine = "Team \"" + thisTeam.TeamShortName + "\" scored \"" + thisTeam.TotalResources.ToString() + "\" with \"" + thisTeam.GetNumPlayers().ToString() + "\" players";
                             PrintLogLine(TeamLogLine);
                         }
 
@@ -725,7 +725,7 @@ namespace Si_Logging
                                 }
                                 else
                                 {
-                                    playerTeam = thisPlayer.Team.TeamName;
+                                    playerTeam = thisPlayer.Team.TeamShortName;
                                 }
 
                                 string PlayerLogLine = "Player \"" + thisPlayer.PlayerName + "<" + userID + "><" + GetPlayerID(thisPlayer) + "><" + playerTeam + ">\" scored \"" + thisPlayer.Score + "\" (kills \"" + thisPlayer.Kills + "\") (deaths \"" + thisPlayer.Deaths + "\")";
@@ -799,7 +799,7 @@ namespace Si_Logging
 
         public static void LogTierChange(Team team, int tier)
         {
-                string LogLine = "Team \"" + team.TeamName + "\" triggered \"technology_change\" (tier \"" + tier.ToString() + "\")";
+                string LogLine = "Team \"" + team.TeamShortName + "\" triggered \"technology_change\" (tier \"" + tier.ToString() + "\")";
                 PrintLogLine(LogLine);
 
         }
@@ -856,7 +856,7 @@ namespace Si_Logging
                         }
                         else
                         {
-                            teamName = __0.Team.TeamName;
+                            teamName = __0.Team.TeamShortName;
                         }
 
                         // __2 true = team-only message
