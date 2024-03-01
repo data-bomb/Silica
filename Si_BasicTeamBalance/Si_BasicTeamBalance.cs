@@ -1,6 +1,6 @@
 ﻿/*
  Silica Basic Team Balance Mod
- Copyright (C) 2024 by databomb
+ Copyright (C) 2023-2024 by databomb
  
  * Description *
  For Silica servers, allows server operators to configure the exact
@@ -39,7 +39,7 @@ using System;
 using SilicaAdminMod;
 using System.Linq;
 
-[assembly: MelonInfo(typeof(BasicTeamBalance), "Basic Team Balance", "1.2.5", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(BasicTeamBalance), "Basic Team Balance", "1.2.6", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -116,7 +116,7 @@ namespace Si_BasicTeamBalance
         public static bool OneFactionEliminated()
         {
             int TeamsWithMajorStructures = 0;
-            for (int i = 0; i < Team.Teams.Count; i++)
+            for (int i = 0; i < SiConstants.MaxPlayableTeams; i++)
             {
                 Team? thisTeam = Team.Teams[i];
                 int thisTeamMajorStructures = thisTeam.NumMajorStructures;
@@ -168,16 +168,14 @@ namespace Si_BasicTeamBalance
             int LowestTeamNumPlayers = NetworkGameServer.GetPlayersMax() + 1;
             Team? LowestPopTeam = null;
 
-            for (int i = 0; i < Team.Teams.Count; i++)
+            for (int i = 0; i < SiConstants.MaxPlayableTeams; i++)
             {
                 Team? thisTeam = Team.Teams[i];
-                // skip Alien index on HvH
-                if (versusMode == MP_Strategy.ETeamsVersus.HUMANS_VS_HUMANS && i == 0)
+                if (versusMode == MP_Strategy.ETeamsVersus.HUMANS_VS_HUMANS && i == (int)SiConstants.ETeam.Alien)
                 {
                     continue;
                 }
-                // skip Centauri index on HvA
-                else if (versusMode == MP_Strategy.ETeamsVersus.HUMANS_VS_ALIENS && i == 1)
+                else if (versusMode == MP_Strategy.ETeamsVersus.HUMANS_VS_ALIENS && i == (int)SiConstants.ETeam.Centauri)
                 {
                     continue;
                 }
@@ -328,11 +326,11 @@ namespace Si_BasicTeamBalance
                             // avoid chat spam
                             if (LastPlayerChatMessage != JoiningPlayer)
                             {
-                                HelperMethods.ReplyToCommand_Player(JoiningPlayer, " was forced to " + HelperMethods.GetTeamColor(ForcedTeam) + ForcedTeam.TeamName + HelperMethods.defaultColor + " to fix imbalance");
+                                HelperMethods.ReplyToCommand_Player(JoiningPlayer, " was forced to " + HelperMethods.GetTeamColor(ForcedTeam) + ForcedTeam.TeamShortName + HelperMethods.defaultColor + " to fix imbalance");
                                 LastPlayerChatMessage = JoiningPlayer;
                             }
 
-                            MelonLogger.Msg(JoiningPlayer.PlayerName + " was forced to " + ForcedTeam.TeamName + " to fix imbalance");
+                            MelonLogger.Msg(JoiningPlayer.PlayerName + " was forced to " + ForcedTeam.TeamShortName + " to fix imbalance");
 
                             JoiningPlayer.Team = ForcedTeam;
                             NetworkLayer.SendPlayerSelectTeam(JoiningPlayer, ForcedTeam);
