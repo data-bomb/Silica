@@ -40,7 +40,7 @@ using System.Collections.Generic;
 using SilicaAdminMod;
 using System.Linq;
 
-[assembly: MelonInfo(typeof(CommanderManager), "Commander Management", "1.4.8", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(CommanderManager), "Commander Management", "1.4.9", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -272,7 +272,7 @@ namespace Si_CommanderManagement
 
                         if (CommanderPlayer != null && CommanderPlayer.Team.Index == i)
                         {
-                            HelperMethods.ReplyToCommand("Promoted " + HelperMethods.GetTeamColor(CommanderPlayer) + CommanderPlayer.PlayerName + HelperMethods.defaultColor + " to commander for " + HelperMethods.GetTeamColor(CommanderPlayer) + CommanderPlayer.Team.TeamName);
+                            HelperMethods.ReplyToCommand("Promoted " + HelperMethods.GetTeamColor(CommanderPlayer) + CommanderPlayer.PlayerName + HelperMethods.defaultColor + " to commander for " + HelperMethods.GetTeamColor(CommanderPlayer) + CommanderPlayer.Team.TeamShortName);
                             promotedCommanders[CommanderPlayer.Team.Index] = CommanderPlayer;
                             PromoteToCommander(CommanderPlayer);
                             PreviousCommander prevCommander = new PreviousCommander()
@@ -285,7 +285,7 @@ namespace Si_CommanderManagement
                         }
                         else
                         {
-                            MelonLogger.Warning("Can't find lottery winner. Not promoting for team " + Team.Teams[i].TeamName);
+                            MelonLogger.Warning("Can't find lottery winner. Not promoting for team " + Team.Teams[i].TeamShortName);
                         }
 
                         // switch remaining players to infantry
@@ -302,7 +302,7 @@ namespace Si_CommanderManagement
 
                         // everyone is promoted or moved to infantry, clear for the next round
                         commanderApplicants[i].Clear();
-                        MelonLogger.Msg("Clearing commander lottery for team " + Team.Teams[i].TeamName);
+                        MelonLogger.Msg("Clearing commander lottery for team " + Team.Teams[i].TeamShortName);
                     }
 
                     // we want to remove the oldest commanders from the list
@@ -348,7 +348,7 @@ namespace Si_CommanderManagement
             {
                 try
                 {
-                    MelonLogger.Msg("Reached SetCommander Patch for Team " + __0.TeamName);
+                    MelonLogger.Msg("Reached SetCommander Patch for Team " + __0.TeamShortName);
 
                     if (__instance == null || __0 == null || MasterBanList == null || commanderApplicants == null || teamswapCommanderChecks == null || promotedCommanders == null)
                     {
@@ -380,7 +380,7 @@ namespace Si_CommanderManagement
                             if (commanderSwappedTeamIndex != -1)
                             {
                                 Team departingTeam = Team.Teams[commanderSwappedTeamIndex];
-                                HelperMethods.ReplyToCommand_Player(__1, "has left command of " + HelperMethods.GetTeamColor(departingTeam) + departingTeam.TeamName + HelperMethods.defaultColor + " and taken command of " + HelperMethods.GetTeamColor(__0) + __0.TeamName);
+                                HelperMethods.ReplyToCommand_Player(__1, "has left command of " + HelperMethods.GetTeamColor(departingTeam) + departingTeam.TeamShortName + HelperMethods.defaultColor + " and taken command of " + HelperMethods.GetTeamColor(__0) + __0.TeamShortName);
                                 teamswapCommanderChecks[commanderSwappedTeamIndex] = null;
                             }
                             else
@@ -389,7 +389,7 @@ namespace Si_CommanderManagement
                                 if (teamswapCommanderChecks[__0.Index] != __1 && promotedCommanders[__0.Index] != __1)
                                 {
                                     promotedCommanders[__0.Index] = __1;
-                                    HelperMethods.ReplyToCommand_Player(__1, "has taken command of " + HelperMethods.GetTeamColor(__0) + __0.TeamName);
+                                    HelperMethods.ReplyToCommand_Player(__1, "has taken command of " + HelperMethods.GetTeamColor(__0) + __0.TeamShortName);
                                 }
                             }
                         }
@@ -499,7 +499,7 @@ namespace Si_CommanderManagement
 
             // now mimic switching to COMMANDER role
             StrategyTeamSetup strategyTeamInstance = strategyInstance.GetStrategyTeamSetup(CommanderPlayer.Team);
-            MelonLogger.Msg("Trying to promote " + CommanderPlayer.PlayerName + " on team " + CommanderPlayer.Team.TeamName);
+            MelonLogger.Msg("Trying to promote " + CommanderPlayer.PlayerName + " on team " + CommanderPlayer.Team.TeamShortName);
 
             
 #if NET6_0
@@ -834,7 +834,7 @@ namespace Si_CommanderManagement
                                 return;
                             }
 
-                            HelperMethods.ReplyToCommand_Player(__0, "left commander position vacant for " + HelperMethods.GetTeamColor(departingTeam) + departingTeam.TeamName + HelperMethods.defaultColor + " by switching to infantry");
+                            HelperMethods.ReplyToCommand_Player(__0, "left commander position vacant for " + HelperMethods.GetTeamColor(departingTeam) + departingTeam.TeamShortName + HelperMethods.defaultColor + " by switching to infantry");
                         }
                     }
                 }
