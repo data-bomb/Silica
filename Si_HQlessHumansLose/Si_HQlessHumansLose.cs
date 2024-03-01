@@ -34,7 +34,7 @@ using UnityEngine;
 using System;
 using SilicaAdminMod;
 
-[assembly: MelonInfo(typeof(HQlessHumansLose), "HQless Humans Lose", "1.2.9", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HQlessHumansLose), "HQless Humans Lose", "1.3.0", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -51,14 +51,14 @@ namespace Si_HQlessHumansLose
         {
             Player broadcastPlayer = HelperMethods.FindBroadcastPlayer();
             String rootStructureName = GetRootStructureFullName(team);
-            broadcastPlayer.SendChatMessage(HelperMethods.chatPrefix + HelperMethods.GetTeamColor(team) + team.TeamName + HelperMethods.defaultColor + " lost their last " + rootStructureName, false);
+            broadcastPlayer.SendChatMessage(HelperMethods.chatPrefix + HelperMethods.GetTeamColor(team) + team.TeamShortName + HelperMethods.defaultColor + " lost their last " + rootStructureName, false);
         }
 
         public static void TeamLostByPlayerMessage(Team team, Player player)
         {
             Player broadcastPlayer = HelperMethods.FindBroadcastPlayer();
             String rootStructureName = GetRootStructureFullName(team);
-            broadcastPlayer.SendChatMessage(HelperMethods.chatPrefix + HelperMethods.GetTeamColor(player) + player.PlayerName + HelperMethods.defaultColor + " destroyed " + HelperMethods.GetTeamColor(team) + team.TeamName + "'s last " + rootStructureName, false);
+            broadcastPlayer.SendChatMessage(HelperMethods.chatPrefix + HelperMethods.GetTeamColor(player) + player.PlayerName + HelperMethods.defaultColor + " destroyed " + HelperMethods.GetTeamColor(team) + team.TeamShortName + "'s last " + rootStructureName, false);
         }
 
         static String GetRootStructurePrefix(Team team)
@@ -79,7 +79,7 @@ namespace Si_HQlessHumansLose
         public static bool OneFactionAlreadyEliminated()
         {
             int TeamsWithMajorStructures = 0;
-            for (int i = 0; i < Team.Teams.Count; i++)
+            for (int i = 0; i < SiConstants.MaxPlayableTeams; i++)
             {
                 Team? thisTeam = Team.Teams[i];
                 int thisTeamMajorStructures = thisTeam.NumMajorStructures;
@@ -104,7 +104,7 @@ namespace Si_HQlessHumansLose
             MP_Strategy strategyInstance = GameObject.FindObjectOfType<MP_Strategy>();
             MP_Strategy.ETeamsVersus versusMode = strategyInstance.TeamsVersus;
 
-            MelonLogger.Msg("Eliminating team " + team.TeamName + " on versus mode " + versusMode.ToString());
+            MelonLogger.Msg("Eliminating team " + team.TeamShortName + " on versus mode " + versusMode.ToString());
 
             // are there still two remaining factions after this one is eliminated?
             if (versusMode == MP_Strategy.ETeamsVersus.HUMANS_VS_HUMANS_VS_ALIENS && !OneFactionAlreadyEliminated())
@@ -146,7 +146,7 @@ namespace Si_HQlessHumansLose
         // introduce a delay so clients can see chat message after round ends
         private static void DelayTeamLostMessage(Team team)
         {
-            MelonLogger.Msg("Starting delay lost timer for team " + team.TeamName);
+            MelonLogger.Msg("Starting delay lost timer for team " + team.TeamShortName);
 
             lostMessageTimerExpired = false;
             losingTeam = team;
