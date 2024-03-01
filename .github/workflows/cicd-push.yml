@@ -224,7 +224,7 @@ jobs:
           (cd release/listen && zip -qq -r ../../ListenServer-v${{ needs.get-commit-number.outputs.comnum }}-${{ env.GITHUB_SHA_SHORT }}.zip *)
 
       - name: Release
-        uses: softprops/action-gh-release@ 975c1b265e11dd76618af1c374e7981f9a6ff44a
+        uses: softprops/action-gh-release@975c1b265e11dd76618af1c374e7981f9a6ff44a
         with:
           tag_name: v${{ needs.get-commit-number.outputs.comnum }}
           files: |
