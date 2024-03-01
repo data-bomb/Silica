@@ -146,16 +146,14 @@ namespace SilicaAdminMod
             return "<color=#DFA725>";
         }
 
-        private static string TeamColorTextFromIndex(int teamIndex)
+        private static string TeamColorTextFromIndex(SiConstants.ETeam teamIndex)
         {
             return teamIndex switch
             {
-                // Alien
-                0 => "<color=#70FF70>",
-                // Centauri
-                1 => "<color=#FF7070>",
-                // Sol
-                2 => "<color=#7070FF>",
+                SiConstants.ETeam.Alien => "<color=#007000>",
+                SiConstants.ETeam.Centauri => "<color=#FF0000>",
+                SiConstants.ETeam.Sol => "<color=#0055FF>",
+                SiConstants.ETeam.Wildlife => "<color=#cc8800>",
                 _ => "<color=#FFFFFF>",
             };
         }
@@ -167,7 +165,7 @@ namespace SilicaAdminMod
                 return "<color=#FFFFFF>";
             }
 
-            return TeamColorTextFromIndex(team.Index);
+            return TeamColorTextFromIndex((SiConstants.ETeam)team.Index);
         }
 
         public static string GetTeamColor(Player player)
@@ -184,7 +182,7 @@ namespace SilicaAdminMod
             }
 
             int teamIndex = team.Index;
-            return TeamColorTextFromIndex(teamIndex);
+            return TeamColorTextFromIndex((SiConstants.ETeam)teamIndex);
         }
 
         public static Power PowerTextToPower(String powerText)
