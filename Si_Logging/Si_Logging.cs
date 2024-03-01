@@ -38,7 +38,7 @@ using SilicaAdminMod;
 using System.Collections.Generic;
 using System.Linq;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.1.3", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.1.4", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -694,14 +694,14 @@ namespace Si_Logging
                         MP_Strategy strategyInstance = GameObject.FindObjectOfType<MP_Strategy>();
                         MP_Strategy.ETeamsVersus versusMode = strategyInstance.TeamsVersus;
 
-                        for (int i = 0; i < Team.Teams.Count; i++)
+                        for (int i = 0; i < SiConstants.MaxPlayableTeams; i++)
                         {
                             Team? thisTeam = Team.Teams[i];
-                            if (versusMode == MP_Strategy.ETeamsVersus.HUMANS_VS_HUMANS && i == 0)
+                            if (versusMode == MP_Strategy.ETeamsVersus.HUMANS_VS_HUMANS && i == (int)SiConstants.ETeam.Alien)
                             {
                                 continue;
                             }
-                            else if (versusMode == MP_Strategy.ETeamsVersus.HUMANS_VS_ALIENS && i == 1)
+                            else if (versusMode == MP_Strategy.ETeamsVersus.HUMANS_VS_ALIENS && i == (int)SiConstants.ETeam.Centauri)
                             {
                                 continue;
                             }
@@ -760,7 +760,7 @@ namespace Si_Logging
 
         public static void initializeTiers(ref Dictionary<string, int> tiers)
         {
-            for (int i = 0; i < Team.Teams.Count; i++)
+            for (int i = 0; i < SiConstants.MaxPlayableTeams; i++)
             {
                 tiers[Team.Teams[i].name] = 0;
             }
