@@ -61,6 +61,12 @@ namespace SilicaAdminMod
                     }
 
                     Player requestingPlayer = Player.FindPlayer((CSteamID)__0.ReadUInt64(), (int)__0.ReadByte());
+                    if (requestingPlayer == null)
+                    {
+                        MelonLogger.Warning("Cannot find player in role request.");
+                        return false;
+                    }
+
                     MP_Strategy.ETeamRole eRole = (MP_Strategy.ETeamRole)__0.ReadByte();
 
                     // would the game code treat it as an infantry/no role request?
