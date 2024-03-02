@@ -150,9 +150,9 @@ namespace SilicaAdminMod
         {
             return teamIndex switch
             {
-                SiConstants.ETeam.Alien => "<color=#007000>",
-                SiConstants.ETeam.Centauri => "<color=#FF0000>",
-                SiConstants.ETeam.Sol => "<color=#0055FF>",
+                SiConstants.ETeam.Alien => "<color=#54CC54>",
+                SiConstants.ETeam.Centauri => "<color=#FF5454>",
+                SiConstants.ETeam.Sol => "<color=#548DFF>",
                 SiConstants.ETeam.Wildlife => "<color=#cc8800>",
                 _ => "<color=#FFFFFF>",
             };
