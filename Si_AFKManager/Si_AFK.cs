@@ -1,6 +1,6 @@
 ﻿/*
 Silica AFK Manager
-Copyright (C) 2024 by databomb
+Copyright (C) 2023-2024 by databomb
 
 * Description *
 For Silica listen servers, allows hosts to use the !kick or !afk command
@@ -35,7 +35,7 @@ using SilicaAdminMod;
 using System;
 using System.Collections;
 
-[assembly: MelonInfo(typeof(AwayFromKeyboard), "AFK Manager", "1.2.5", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(AwayFromKeyboard), "AFK Manager", "1.2.6", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -269,8 +269,18 @@ namespace Si_AFKManager
                                 continue;
                             }
 
+                            int afkIndex = AFKTracker.FindIndex(p => p.Player == player);
+
+                            // for now, we'll only care about people who idle and don't join a team
                             if (player.Team != null)
                             {
+                                // if they've joined a team then remove them from the AFK tracker
+                                if (afkIndex >= 0)
+                                {
+                                    MelonLogger.Msg("Removing " + player.PlayerName + " from AFK list for being on a team.");
+                                    AFKTracker.RemoveAt(afkIndex);
+                                }
+
                                 continue;
                             }
 
@@ -280,7 +290,6 @@ namespace Si_AFKManager
                                 continue;
                             }
 
-                            int afkIndex = AFKTracker.FindIndex(p => p.Player == player);
                             // they were AFK for another minute
                             if (afkIndex >= 0)
                             {
