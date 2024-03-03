@@ -37,7 +37,7 @@ using System;
 using System.Linq;
 
 
-[assembly: MelonInfo(typeof(ChatSilence), "Silence Admin Command", "1.2.0", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(ChatSilence), "Silence Admin Command", "1.2.1", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -55,20 +55,16 @@ namespace Si_ChatSilence
 
         public override void OnLateInitializeMelon()
         {
-            adminModAvailable = RegisteredMelons.Any(m => m.Info.Name == "Admin Mod");
+            // register commands
+            HelperMethods.CommandCallback silenceCallback = Command_Silence;
+            HelperMethods.RegisterAdminCommand("!silence", silenceCallback, Power.Mute);
 
-            if (adminModAvailable)
-            {
-                HelperMethods.CommandCallback silenceCallback = Command_Silence;
-                HelperMethods.RegisterAdminCommand("!silence", silenceCallback, Power.Mute);
+            HelperMethods.CommandCallback unSilenceCallback = Command_UnSilence;
+            HelperMethods.RegisterAdminCommand("!unsilence", unSilenceCallback, Power.Mute);
 
-                HelperMethods.CommandCallback unSilenceCallback = Command_UnSilence;
-                HelperMethods.RegisterAdminCommand("!unsilence", unSilenceCallback, Power.Mute);
-            }
-            else
-            {
-                MelonLogger.Warning("Dependency missing: Admin Mod");
-            }
+
+            // subscribe to the OnRequestPlayerChat event
+            Event_Netcode.OnRequestPlayerChat += OnRequestPlayerChat;
         }
 
         public static void Command_Silence(Player callerPlayer, String args)
