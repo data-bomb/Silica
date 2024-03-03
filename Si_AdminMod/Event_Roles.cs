@@ -127,6 +127,7 @@ namespace SilicaAdminMod
         public static GameByteStreamReader RestoreRPC_RequestRoleReader(Player requestingPlayer, MP_Strategy.ETeamRole role)
         {
             GameByteStreamWriter gameByteStreamWriter = GameByteStreamWriter.GetGameByteStreamWriter(true);
+            gameByteStreamWriter.WriteByte((byte)MP_Strategy.ERPCs.REQUEST_ROLE);
             gameByteStreamWriter.WriteUInt64((ulong)requestingPlayer.PlayerID);
             gameByteStreamWriter.WriteByte((byte)requestingPlayer.PlayerChannel);
             gameByteStreamWriter.WriteByte((byte)role);
