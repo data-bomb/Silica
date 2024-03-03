@@ -60,9 +60,6 @@ namespace SilicaAdminMod
                         return true;
                     }
 
-                    GameByteStreamReader originalStreamReader = new GameByteStreamReader();
-                    originalStreamReader = __0;
-
                     Player requestingPlayer = Player.FindPlayer((CSteamID)__0.ReadUInt64(), (int)__0.ReadByte());
                     if (requestingPlayer == null)
                     {
@@ -75,7 +72,7 @@ namespace SilicaAdminMod
                     // would the game code treat it as an infantry/no role request?
                     if (eRole != MP_Strategy.ETeamRole.COMMANDER || __instance.GetCommanderForTeam(requestingPlayer.Team))
                     {
-                        __0 = originalStreamReader;
+                        RestoreRPC_RequestRoleReader(requestingPlayer, eRole);
                         FireOnRoleChangedEvent(requestingPlayer, eRole);
                         return true;
                     }
@@ -130,7 +127,6 @@ namespace SilicaAdminMod
         public static GameByteStreamReader RestoreRPC_RequestRoleReader(Player requestingPlayer, MP_Strategy.ETeamRole role)
         {
             GameByteStreamWriter gameByteStreamWriter = GameByteStreamWriter.GetGameByteStreamWriter(true);
-            gameByteStreamWriter.WriteByte((byte)MP_Strategy.ERPCs.REQUEST_ROLE);
             gameByteStreamWriter.WriteUInt64((ulong)requestingPlayer.PlayerID);
             gameByteStreamWriter.WriteByte((byte)requestingPlayer.PlayerChannel);
             gameByteStreamWriter.WriteByte((byte)role);
