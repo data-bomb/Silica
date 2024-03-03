@@ -1,6 +1,6 @@
 ﻿/*
 Silica Admin Mod
-Copyright (C) 2024 by databomb
+Copyright (C) 2023-2024 by databomb
 
 * License *
 This program is free software: you can redistribute it and/or modify
@@ -60,6 +60,9 @@ namespace SilicaAdminMod
                         return true;
                     }
 
+                    GameByteStreamReader originalStreamReader = new GameByteStreamReader();
+                    originalStreamReader = __0;
+
                     Player requestingPlayer = Player.FindPlayer((CSteamID)__0.ReadUInt64(), (int)__0.ReadByte());
                     if (requestingPlayer == null)
                     {
@@ -72,7 +75,7 @@ namespace SilicaAdminMod
                     // would the game code treat it as an infantry/no role request?
                     if (eRole != MP_Strategy.ETeamRole.COMMANDER || __instance.GetCommanderForTeam(requestingPlayer.Team))
                     {
-                        __0 = RestoreRPC_RequestRoleReader(requestingPlayer, eRole);
+                        __0 = originalStreamReader;
                         FireOnRoleChangedEvent(requestingPlayer, eRole);
                         return true;
                     }
@@ -138,27 +141,23 @@ namespace SilicaAdminMod
         {
             MelonLogger.Msg("Firing Role Change Event for " + player.PlayerName + " to role " + role.ToString());
 
-            OnRoleChangedArgs onRoleChangedArgs = new OnRoleChangedArgs();
-            onRoleChangedArgs.Player = player;
-            onRoleChangedArgs.Role = role;
-            EventHandler<OnRoleChangedArgs> roleChangeEvent = OnRoleChanged;
-            if (roleChangeEvent != null)
+            OnRoleChangedArgs onRoleChangedArgs = new OnRoleChangedArgs
             {
-                roleChangeEvent(null, onRoleChangedArgs);
-            }
+                Player = player,
+                Role = role
+            };
+            OnRoleChanged?.Invoke(null, onRoleChangedArgs);
         }
 
         public static OnRequestCommanderArgs FireOnRequestCommanderEvent(Player player)
         {
-            OnRequestCommanderArgs onRequestCommanderArgs = new OnRequestCommanderArgs();
-            onRequestCommanderArgs.Requester = player;
-            onRequestCommanderArgs.Block = false;
-            onRequestCommanderArgs.PreventSpawnWhenBlocked = false;
-            EventHandler<OnRequestCommanderArgs> requestCommanderEvent = OnRequestCommander;
-            if (requestCommanderEvent != null)
+            OnRequestCommanderArgs onRequestCommanderArgs = new OnRequestCommanderArgs
             {
-                requestCommanderEvent(null, onRequestCommanderArgs);
-            }
+                Requester = player,
+                Block = false,
+                PreventSpawnWhenBlocked = false
+            };
+            OnRequestCommander?.Invoke(null, onRequestCommanderArgs);
 
             return onRequestCommanderArgs;
         }
