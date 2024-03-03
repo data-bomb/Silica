@@ -102,15 +102,13 @@ namespace SilicaAdminMod
 
         public static OnRequestPlayerChatArgs FireOnRequestPlayerChatEvent(Player player, string message)
         {
-            OnRequestPlayerChatArgs onRequestPlayerChatArgs = new OnRequestPlayerChatArgs();
-            onRequestPlayerChatArgs.Player = player;
-            onRequestPlayerChatArgs.Text = message;
-            onRequestPlayerChatArgs.Block = false;
-            EventHandler<OnRequestPlayerChatArgs> requestPlayerChatEvent = OnRequestPlayerChat;
-            if (requestPlayerChatEvent != null)
+            OnRequestPlayerChatArgs onRequestPlayerChatArgs = new OnRequestPlayerChatArgs
             {
-                requestPlayerChatEvent(null, onRequestPlayerChatArgs);
-            }
+                Player = player,
+                Text = message,
+                Block = false
+            };
+            OnRequestPlayerChat?.Invoke(null, onRequestPlayerChatArgs);
 
             return onRequestPlayerChatArgs;
         }

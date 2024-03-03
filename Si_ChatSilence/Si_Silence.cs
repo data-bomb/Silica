@@ -184,6 +184,8 @@ namespace Si_ChatSilence
                 return;
             }
 
+            MelonLogger.Msg("Checking if player is silenced.");
+
             // check if player is allowed to chat
             if (IsSteamSilenced(args.Player.PlayerID))
             {
