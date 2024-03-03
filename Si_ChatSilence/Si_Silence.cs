@@ -1,6 +1,6 @@
 ﻿/*
 Silica Chat Silence
-Copyright (C) 2024 by databomb
+Copyright (C) 2023-2024 by databomb
 
 * Description *
 Provides an admin command to silence a player, which prevents that 
@@ -37,7 +37,7 @@ using System;
 using System.Linq;
 
 
-[assembly: MelonInfo(typeof(ChatSilence), "Silence Admin Command", "1.1.1", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(ChatSilence), "Silence Admin Command", "1.2.0", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -74,7 +74,7 @@ namespace Si_ChatSilence
         public static void Command_Silence(Player callerPlayer, String args)
         {
             // validate argument count
-            int argumentCount = args.Split(' ').Count() - 1;
+            int argumentCount = args.Split(' ').Length - 1;
             if (argumentCount > 1)
             {
                 HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Too many arguments");
@@ -114,10 +114,10 @@ namespace Si_ChatSilence
             }
         }
 
-        public void Command_UnSilence(Player callerPlayer, String args)
+        public static void Command_UnSilence(Player callerPlayer, String args)
         {
             // validate argument count
-            int argumentCount = args.Split(' ').Count() - 1;
+            int argumentCount = args.Split(' ').Length - 1;
             if (argumentCount > 1)
             {
                 HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Too many arguments");
@@ -177,42 +177,18 @@ namespace Si_ChatSilence
             silencedPlayers.Remove(playerTarget.PlayerID);
         }
 
-        [HarmonyPatch(typeof(GameByteStreamReader), nameof(GameByteStreamReader.GetGameByteStreamReader))]
-        static class GetGameByteStreamReaderPrePatch
+        public void OnRequestPlayerChat(object? sender, OnRequestPlayerChatArgs args)
         {
-            #if NET6_0
-            public static void Prefix(GameByteStreamReader __result, Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppStructArray<byte> __0, int __1, bool __2)
-            #else
-            public static void Prefix(GameByteStreamReader __result, byte[] __0, int __1, bool __2)
-            #endif
+            if (args.Player == null)
             {
-                try
-                {
-                    // byte[0] = (2) Byte
-                    // byte[1] = ENetworkPacketType
-                    ENetworkPacketType packetType = (ENetworkPacketType)__0[1];
-                    if (packetType == ENetworkPacketType.ChatMessage)
-                    {
-                        // byte [2] = UInt64
-                        // byte [3:10] = CSteamID
-                        CSteamID cSteamID = (CSteamID)BitConverter.ToUInt64(__0, 3);
+                return;
+            }
 
-                        if (IsSteamSilenced(cSteamID))
-                        {
-                            // null out bytes in player
-                            for (int i = 0; i < sizeof(UInt64); i++)
-                            {
-                                __0[3 + i] = 0;
-                            }
-
-                            return;
-                        }
-                    }
-                }
-                catch (Exception error)
-                {
-                    HelperMethods.PrintError(error, "Failed to run GameByteStreamReader::GetGameByteStreamReader");
-                }
+            // check if player is allowed to chat
+            if (IsSteamSilenced(args.Player.PlayerID))
+            {
+                MelonLogger.Msg("Preventing " + args.Player.PlayerName + " from talking in chat.");
+                args.Block = true;
             }
         }
 
