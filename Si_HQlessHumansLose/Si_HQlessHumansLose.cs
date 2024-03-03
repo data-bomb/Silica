@@ -1,6 +1,6 @@
 ﻿/*
  Silica Headquarterless Humans Lose Mod
- Copyright (C) 2024 by databomb
+ Copyright (C) 2023-2024 by databomb
  
  * Description *
  For Silica servers, automatically detects when humans have lost their 
@@ -34,7 +34,7 @@ using UnityEngine;
 using System;
 using SilicaAdminMod;
 
-[assembly: MelonInfo(typeof(HQlessHumansLose), "HQless Humans Lose", "1.3.0", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HQlessHumansLose), "HQless Humans Lose", "1.3.1", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -275,10 +275,15 @@ namespace Si_HQlessHumansLose
         #else
         [HarmonyPatch(typeof(Team), "UpdateMajorStructuresCount")]
         #endif
-        private static class ApplyPatch_UpdateMajorStructuresCount
+        public static class ApplyPatch_UpdateMajorStructuresCount
         {
-            private static void Postfix(Team __instance)
+            public static void Postfix(Team __instance)
             {
+                if (__instance == null)
+                {
+                    return;
+                }
+
                 // only spend the CPU if the team is about to lose
                 if (__instance.NumMajorStructures == 0 && GameMode.CurrentGameMode.GameOngoing)
                 {
@@ -297,9 +302,9 @@ namespace Si_HQlessHumansLose
         #else
         [HarmonyPatch(typeof(StrategyTeamSetup), "GetHasLost")]
         #endif
-        private static class ApplyPatch_GetHasLost
+        public static class ApplyPatch_GetHasLost
         {
-            private static void Postfix(StrategyTeamSetup __instance, ref bool __result)
+            public static void Postfix(StrategyTeamSetup __instance, ref bool __result)
             {
                 // only spend the CPU if the team is about to lose
                 if (__result == true && GameMode.CurrentGameMode.GameOngoing)
@@ -318,9 +323,9 @@ namespace Si_HQlessHumansLose
         #else
         [HarmonyPatch(typeof(Team), "GetHasAnyMajorStructures")]
         #endif
-        private static class ApplyPatch_GetHasAnyMajorStructures
+        public static class ApplyPatch_GetHasAnyMajorStructures
         {
-            private static void Postfix(Team __instance, ref bool __result)
+            public static void Postfix(Team __instance, ref bool __result)
             {
                 // only spend the CPU if the team is about to lose
                 if (__result == false && GameMode.CurrentGameMode.GameOngoing)
@@ -335,14 +340,14 @@ namespace Si_HQlessHumansLose
         }
 
 
-#if NET6_0
+        #if NET6_0
         [HarmonyPatch(typeof(ConstructionSite), nameof(ConstructionSite.Update))]
         #else
         [HarmonyPatch(typeof(ConstructionSite), "Update")]
         #endif
-        private static class ApplyPatch_ConstructionSite_Update
+        public static class ApplyPatch_ConstructionSite_Update
         {
-            private static void Postfix(ConstructionSite __instance)
+            public static void Postfix(ConstructionSite __instance)
             {
                 try
                 {
