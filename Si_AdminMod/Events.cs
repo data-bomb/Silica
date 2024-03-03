@@ -102,4 +102,28 @@ namespace SilicaAdminMod
             set;
         }
     }
+
+    public class  OnRequestPlayerChatArgs : EventArgs
+    {
+        private Player _player = null!;
+        private string _text = null!;
+
+        public Player Player
+        {
+            get => _player;
+            set => _player = value ?? throw new ArgumentNullException("Player is required.");
+        }
+
+        public string Text
+        { 
+            get => _text;
+            set => _text = value ?? throw new ArgumentNullException("Text cannot be empty.");
+        }
+
+        public bool Block
+        {
+            get;
+            set;
+        }
+    }
 }
