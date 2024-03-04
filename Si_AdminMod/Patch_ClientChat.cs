@@ -18,77 +18,113 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 using HarmonyLib;
+using MelonLoader;
 using System;
 
 namespace SilicaAdminMod
 {
-        #if NET6_0
-        [HarmonyPatch(typeof(Il2CppSilica.UI.Chat), nameof(Il2CppSilica.UI.Chat.MessageReceived))]
-        #else
-        [HarmonyPatch(typeof(Silica.UI.Chat), "MessageReceived")]
-        #endif
-        static class Patch_MessageReceived_AdminCommands
+    public static class ClientChatHandler
+    {
+        public static void OnRequestPlayerChat(object? sender, OnRequestPlayerChatArgs args)
         {
-            #if NET6_0
-            public static void Postfix(Il2CppSilica.UI.Chat __instance, Il2Cpp.Player __0, string __1, bool __2)
-            #else
-            public static void Postfix(Silica.UI.Chat __instance, Player __0, string __1, bool __2)
-            #endif
-            {
-                try
+            try
+            { 
+                if (args.Player == null)
                 {
-                    // check if this even has a '!' or '/' as the command prefix
-                    if (__1[0] != '!' && __1[0] != '/')
-                    {
-                        return;
-                    }
+                    return;
+                }
 
-                    // ignore team chat if preference is set
-                    if (__2 && SiAdminMod.Pref_Admin_AcceptTeamChatCommands != null && !SiAdminMod.Pref_Admin_AcceptTeamChatCommands.Value)
-                    {
-                        return;
-                    }
+                // check if this even starts with a character that indicates it's a command
+                if (!IsValidCommandPrefix(args.Text))
+                {
+                    return;
+                }
 
-                    // each faction has its own chat manager but by looking at alien and only global messages this catches commands only once
-                    if (!__instance.ToString().Contains("alien"))
-                    {
-                        return;
-                    }
+                MelonLogger.Msg("Processing admin or player command.");
 
-                    // check if the first portion matches an admin command
-                    String thisCommandText = __1.Split(' ')[0];
-                    AdminCommand? checkCommand = AdminMethods.FindAdminCommandFromString(thisCommandText);
+                // ignore team chat if preference is set
+                if (args.TeamOnly && SiAdminMod.Pref_Admin_AcceptTeamChatCommands != null && !SiAdminMod.Pref_Admin_AcceptTeamChatCommands.Value)
+                {
+                    return;
+                }
 
-                    if (checkCommand == null)
-                    {
-                        return;
-                    }
-
+                // check if the first portion matches an admin command
+                AdminCommand? adminCommand = GetAdminCommand(args.Text);
+                if (adminCommand != null)
+                {
                     // are they an admin?
-                    if (!__0.IsAdmin())
+                    if (!args.Player.IsAdmin())
                     {
-                        HelperMethods.ReplyToCommand_Player(__0, "is not an admin");
+                        HelperMethods.ReplyToCommand_Player(args.Player, "is not an admin");
                         return;
                     }
 
                     // do they have the matching power?
-                    Power callerPowers = __0.GetAdminPowers();
+                    Power callerPowers = args.Player.GetAdminPowers();
 
-                    if (!AdminMethods.PowerInPowers(checkCommand.AdminPower, callerPowers))
+                    if (!AdminMethods.PowerInPowers(adminCommand.AdminPower, callerPowers))
                     {
-                        HelperMethods.ReplyToCommand_Player(__0, "unauthorized command");
+                        HelperMethods.ReplyToCommand_Player(args.Player, "unauthorized command");
                         return;
                     }
 
                     // run the callback
-                    checkCommand.AdminCallback(__0, __1);
-                }
-                catch (Exception error)
-                {
-                    HelperMethods.PrintError(error, "Failed to run MessageReceived");
+                    adminCommand.AdminCallback(args.Player, args.Text);
+                    return;
                 }
 
-                return;
+                // check if the first portion matches a player command
+                PlayerCommand? playerCommand = GetPlayerCommand(args.Text);
+                if (playerCommand == null)
+                {
+                    return;
+                }
+
+                // run the callback
+                playerCommand.PlayerCommandCallback(args.Player, args.Text);
+
+                // let the command registrant decide whether the chat goes through
+                args.Block = playerCommand.HideChatMessage;
+            }
+            catch (Exception error)
+            {
+                HelperMethods.PrintError(error, "Failed to run AdminMod::OnRequestPlayerChat");
+            }
+        }
+
+        public static bool IsValidCommandPrefix(string commandString)
+        {
+            if (commandString[0] == '!' || commandString[0] == '/' || commandString[0] == '.')
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        public static AdminCommand? GetAdminCommand(string commandString)
+        {
+            String thisCommandText = commandString.Split(' ')[0];
+            return AdminMethods.FindAdminCommandFromString(thisCommandText);
+        }
+
+        public static PlayerCommand? GetPlayerCommand(string commandString)
+        {
+            String thisCommandText = commandString.Split(' ')[0];
+            return FindPlayerCommandFromString(thisCommandText);
+        }
+
+        public static PlayerCommand? FindPlayerCommandFromString(String commandText)
+        {
+            foreach (PlayerCommand command in SiAdminMod.PlayerCommands)
+            {
+                if (command.CommandName == commandText)
+                {
+                    return command;
+                }
+            }
+
+            return null;
         }
     }
 }

@@ -1,6 +1,6 @@
 ﻿/*
 Silica Admin Mod
-Copyright (C) 2024 by databomb
+Copyright (C) 2023-2024 by databomb
 
 * Description *
 Provides basic admin mod system to allow additional admins beyond
@@ -46,12 +46,14 @@ namespace SilicaAdminMod
 
         public static List<Admin> AdminList = null!;
         public static List<AdminCommand> AdminCommands = null!;
+        public static List<PlayerCommand> PlayerCommands = null!;
 
         public override void OnInitializeMelon()
         {
             try
             {
                 AdminCommands = new List<AdminCommand>();
+                PlayerCommands = new List<PlayerCommand>();
                 AdminList = AdminFile.Initialize();
 
                 _modCategory ??= MelonPreferences.CreateCategory("Silica");
@@ -79,12 +81,26 @@ namespace SilicaAdminMod
 
         public static void RegisterAdminCommand(String adminCommand, HelperMethods.CommandCallback adminCallback, Power adminPower)
         {
-            AdminCommand thisCommand = new AdminCommand();
-            thisCommand.AdminCommandText = adminCommand;
-            thisCommand.AdminCallback = adminCallback;
-            thisCommand.AdminPower = adminPower;
+            AdminCommand thisCommand = new AdminCommand
+            {
+                AdminCommandText = adminCommand,
+                AdminCallback = adminCallback,
+                AdminPower = adminPower
+            };
 
             AdminCommands.Add(thisCommand);
+        }
+
+        public static void RegisterPlayerCommand(String playerCommand, HelperMethods.CommandCallback playerCallback, bool hideFromChat)
+        {
+            PlayerCommand thisCommand = new PlayerCommand
+            {
+                CommandName = playerCommand,
+                PlayerCommandCallback = playerCallback,
+                HideChatMessage = hideFromChat
+            };
+
+            PlayerCommands.Add(thisCommand);
         }
     }
 }

@@ -120,6 +120,12 @@ namespace SilicaAdminMod
             set => _text = value ?? throw new ArgumentNullException("Text cannot be empty.");
         }
 
+        public bool TeamOnly
+        {
+            get;
+            set;
+        }
+
         public bool Block
         {
             get;

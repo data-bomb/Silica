@@ -42,12 +42,14 @@ namespace SilicaAdminMod
                 return false;
             }
 
-            Admin admin = new Admin();
-            admin.Name = player.PlayerName;
-            admin.SteamId = playerSteamId;
-            admin.Level = level;
-            admin.Powers = HelperMethods.PowerTextToPower(powerText);
-            admin.CreatedOn = (int)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
+            Admin admin = new Admin
+            {
+                Name = player.PlayerName,
+                SteamId = playerSteamId,
+                Level = level,
+                Powers = HelperMethods.PowerTextToPower(powerText),
+                CreatedOn = (int)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds
+            };
             admin.LastModifiedOn = admin.CreatedOn;
 
             SiAdminMod.AdminList.Add(admin);

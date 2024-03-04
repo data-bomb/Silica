@@ -81,7 +81,7 @@ namespace SilicaAdminMod
                             }
 
                             MelonLogger.Msg("Firing OnRequestPlayerChatEvent for player: " + chatterPlayer.PlayerName);
-                            OnRequestPlayerChatArgs onRequestPlayerChatArgs = FireOnRequestPlayerChatEvent(chatterPlayer, chatText);
+                            OnRequestPlayerChatArgs onRequestPlayerChatArgs = FireOnRequestPlayerChatEvent(chatterPlayer, chatText, chatTeamOnly);
 
                             if (onRequestPlayerChatArgs.Block)
                             {
@@ -100,12 +100,13 @@ namespace SilicaAdminMod
             }
         }
 
-        public static OnRequestPlayerChatArgs FireOnRequestPlayerChatEvent(Player player, string message)
+        public static OnRequestPlayerChatArgs FireOnRequestPlayerChatEvent(Player player, string message, bool teamOnly)
         {
             OnRequestPlayerChatArgs onRequestPlayerChatArgs = new OnRequestPlayerChatArgs
             {
                 Player = player,
                 Text = message,
+                TeamOnly = teamOnly,
                 Block = false
             };
             OnRequestPlayerChat?.Invoke(null, onRequestPlayerChatArgs);
