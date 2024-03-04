@@ -1,6 +1,6 @@
 ﻿/*
 Silica Admin Mod
-Copyright (C) 2023 by databomb
+Copyright (C) 2023-2024 by databomb
 
 * License *
 This program is free software: you can redistribute it and/or modify
@@ -42,6 +42,11 @@ namespace SilicaAdminMod
         public static void RegisterAdminCommand(String adminCommand, CommandCallback adminCallback, Power adminPower)
         {
             SiAdminMod.RegisterAdminCommand(adminCommand, adminCallback, adminPower);
+        }
+
+        public static void RegisterPlayerCommand(String playerCommand, CommandCallback commandCallback, bool hideFromChat)
+        {
+            SiAdminMod.RegisterPlayerCommand(playerCommand, commandCallback, hideFromChat);
         }
 
         public static void ReplyToCommand(params string[] messages)
