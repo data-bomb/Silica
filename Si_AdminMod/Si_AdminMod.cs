@@ -72,6 +72,9 @@ namespace SilicaAdminMod
                     commandField.SetValue(null, s_Commands);
                 }
                 #endif
+
+                // subscribe to the OnRequestPlayerChat event
+                Event_Netcode.OnRequestPlayerChat += ClientChatHandler.OnRequestPlayerChat;
             }
             catch (Exception error)
             {

@@ -45,7 +45,6 @@ namespace Si_ChatSilence
 {
     public class ChatSilence : MelonMod
     {
-        static bool adminModAvailable = false;
         static List<CSteamID> silencedPlayers = null!;
 
         public override void OnInitializeMelon()
