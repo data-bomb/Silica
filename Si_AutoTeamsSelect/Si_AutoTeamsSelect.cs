@@ -95,6 +95,8 @@ namespace VersusTeamsAutoSelect
 
         public static void Command_ChangeNextMode(Player callerPlayer, String args)
         {
+            string commandName = args.Split(' ')[0];
+            
             // validate argument count
             int argumentCount = args.Split(' ').Count() - 1;
             if (argumentCount > 1)

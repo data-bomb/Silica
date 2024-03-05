@@ -68,6 +68,8 @@ namespace Si_ChatSilence
 
         public static void Command_Silence(Player callerPlayer, String args)
         {
+            string commandName = args.Split(' ')[0];
+            
             // validate argument count
             int argumentCount = args.Split(' ').Length - 1;
             if (argumentCount > 1)
@@ -111,6 +113,8 @@ namespace Si_ChatSilence
 
         public static void Command_UnSilence(Player callerPlayer, String args)
         {
+            string commandName = args.Split(' ')[0];
+            
             // validate argument count
             int argumentCount = args.Split(' ').Length - 1;
             if (argumentCount > 1)

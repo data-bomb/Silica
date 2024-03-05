@@ -150,7 +150,9 @@ namespace Si_BasicBanlist
                 MelonLogger.Msg("Ban list unavailable. Check json syntax.");
                 return;
             }
-
+            
+            string commandName = args.Split(' ')[0];
+            
             // validate argument count
             int argumentCount = args.Split(' ').Length - 1;
             if (argumentCount > 1)
@@ -207,7 +209,9 @@ namespace Si_BasicBanlist
                 MelonLogger.Msg("Ban list unavailable. Check json syntax.");
                 return;
             }
-
+            
+            string commandName = args.Split(' ')[0];
+            
             // validate argument count
             int argumentCount = args.Split(' ').Length - 1;
             if (argumentCount < 1)

@@ -122,6 +122,8 @@ namespace Si_AFKManager
 
         public static void Command_Kick(Player callerPlayer, String args)
         {
+            string commandName = args.Split(' ')[0];
+            
             // validate argument count
             int argumentCount = args.Split(' ').Length - 1;
             if (argumentCount > 1)
@@ -164,6 +166,8 @@ namespace Si_AFKManager
 
         public static void Command_AFK(Player callerPlayer, String args)
         {
+            string commandName = args.Split(' ')[0];
+            
             // validate argument count
             int argumentCount = args.Split(' ').Length - 1;
             if (argumentCount > 0)

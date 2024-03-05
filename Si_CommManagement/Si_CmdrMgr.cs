@@ -540,11 +540,13 @@ namespace Si_CommanderManagement
 
         public static void Command_CommanderDemote(Player callerPlayer, String args)
         {
+            string commandName = args.Split(' ')[0];
+            
             // count number of arguments
             int argumentCount = args.Split(' ').Length - 1;
             if (argumentCount > 1)
             {
-                HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Too many arguments");
+                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": Too many arguments");
                 return;
             }
 
@@ -561,7 +563,7 @@ namespace Si_CommanderManagement
                 }
                 else
                 {
-                    HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Too few arguments");
+                    HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": Too few arguments");
                     return;
                 }
             }
@@ -596,7 +598,7 @@ namespace Si_CommanderManagement
                 // check if we still don't have a valid target
                 if (targetTeamIndex < 0)
                 {
-                    HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Valid targets are Alien, Centauri, or Sol");
+                    HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": Valid targets are Alien, Centauri, or Sol");
                     return;
                 }
             }
@@ -637,17 +639,19 @@ namespace Si_CommanderManagement
             {
                 return;
             }
-
+            
+            string commandName = args.Split(' ')[0];
+            
             // count number of arguments
             int argumentCount = args.Split(' ').Length - 1;
             if (argumentCount > 1)
             {
-                HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Too many arguments");
+                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": Too many arguments");
                 return;
             }
             else if (argumentCount < 1)
             {
-                HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Too few arguments");
+                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": Too few arguments");
                 return;
             }
 
@@ -683,18 +687,20 @@ namespace Si_CommanderManagement
             if (MasterBanList == null)
             {
                 return;
-            }    
-
+            }
+            
+            string commandName = args.Split(' ')[0];
+            
             // count number of arguments
             int argumentCount = args.Split(' ').Length - 1;
             if (argumentCount > 1)
             {
-                HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Too many arguments");
+                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": Too many arguments");
                 return;
             }
             else if (argumentCount < 1)
             {
-                HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Too few arguments");
+                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": Too few arguments");
                 return;
             }
 
@@ -703,7 +709,7 @@ namespace Si_CommanderManagement
 
             if (playerToCmdrBan == null)
             {
-                HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Ambiguous or invalid target");
+                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": Ambiguous or invalid target");
                 return;
             }
 

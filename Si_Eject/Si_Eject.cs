@@ -45,16 +45,18 @@ namespace Si_Eject
         }
         public static void Command_Eject(Player callerPlayer, String args)
         {
+            string commandName = args.Split(' ')[0];
+            
             // validate argument count
             int argumentCount = args.Split(' ').Length - 1;
             if (argumentCount > 1)
             {
-                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, args.Split(' ')[0], ": Too many arguments");
+                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": Too many arguments");
                 return;
             }
             else if (argumentCount < 1)
             {
-                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, args.Split(' ')[0], ": Too few arguments");
+                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": Too few arguments");
                 return;
             }
 
@@ -64,7 +66,7 @@ namespace Si_Eject
 
             if (playerToEject == null)
             {
-                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, args.Split(' ')[0], ": Ambiguous or invalid target");
+                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": Ambiguous or invalid target");
                 return;
             }
 

@@ -207,6 +207,8 @@ namespace Si_SpawnConfigs
 
         public static void Command_UndoSpawn(Player callerPlayer, String args)
         {
+            String commandName = args.Split(' ')[0];
+            
             // validate argument count
             int argumentCount = args.Split(' ').Length - 1;
             if (argumentCount > 0)
@@ -231,6 +233,8 @@ namespace Si_SpawnConfigs
 
         public static void Command_Spawn(Player callerPlayer, String args)
         {
+            String commandName = args.Split(' ')[0];
+            
             // validate argument count
             int argumentCount = args.Split(' ').Length - 1;
             if (argumentCount > 1)
@@ -414,7 +418,7 @@ namespace Si_SpawnConfigs
 
                 if (!ExecuteBatchSpawn(spawnSetup))
                 {
-                    HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": bad name in config file")
+                    HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": bad name in config file");
                     return;
                 }
 

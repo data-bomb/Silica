@@ -58,6 +58,8 @@ namespace Si_Mapcycle
         }
         public static void Command_ChangeMap(Player callerPlayer, String args)
         {
+            string commandName = args.Split(' ')[0];
+            
             // validate argument count
             int argumentCount = args.Split(' ').Length - 1;
             if (argumentCount > 1)
