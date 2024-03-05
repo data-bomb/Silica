@@ -54,7 +54,7 @@ namespace Si_Mapcycle
         public override void OnLateInitializeMelon()
         {
             HelperMethods.CommandCallback mapCallback = Command_ChangeMap;
-            HelperMethods.RegisterAdminCommand("!map", mapCallback, Power.Map);
+            HelperMethods.RegisterAdminCommand("map", mapCallback, Power.Map);
         }
         public static void Command_ChangeMap(Player callerPlayer, String args)
         {

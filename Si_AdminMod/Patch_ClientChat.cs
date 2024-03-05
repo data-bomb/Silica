@@ -70,6 +70,9 @@ namespace SilicaAdminMod
 
                     // run the callback
                     adminCommand.AdminCallback(args.Player, args.Text);
+
+                    // block if it's a '/' but not a '!'
+                    args.Block = (args.Text[0] == '/');
                     return;
                 }
 
@@ -105,6 +108,8 @@ namespace SilicaAdminMod
         public static AdminCommand? GetAdminCommand(string commandString)
         {
             String thisCommandText = commandString.Split(' ')[0];
+            // trim first character
+            thisCommandText = thisCommandText[1..];
             return AdminMethods.FindAdminCommandFromString(thisCommandText);
         }
 

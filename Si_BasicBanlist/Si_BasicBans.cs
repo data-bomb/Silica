@@ -121,11 +121,11 @@ namespace Si_BasicBanlist
         public override void OnLateInitializeMelon()
         {
             HelperMethods.CommandCallback banCallback = Command_Ban;
-            HelperMethods.RegisterAdminCommand("!ban", banCallback, Power.Ban);
-            HelperMethods.RegisterAdminCommand("!kickban", banCallback, Power.Ban);
+            HelperMethods.RegisterAdminCommand("ban", banCallback, Power.Ban);
+            HelperMethods.RegisterAdminCommand("kickban", banCallback, Power.Ban);
 
             HelperMethods.CommandCallback unbanCallback = Command_Unban;
-            HelperMethods.RegisterAdminCommand("!unban", unbanCallback, Power.Unban);
+            HelperMethods.RegisterAdminCommand("unban", unbanCallback, Power.Unban);
 
             #if NET6_0
             bool QListLoaded = RegisteredMelons.Any(m => m.Info.Name == "QList");

@@ -56,10 +56,10 @@ namespace Si_ChatSilence
         {
             // register commands
             HelperMethods.CommandCallback silenceCallback = Command_Silence;
-            HelperMethods.RegisterAdminCommand("!silence", silenceCallback, Power.Mute);
+            HelperMethods.RegisterAdminCommand("silence", silenceCallback, Power.Mute);
 
             HelperMethods.CommandCallback unSilenceCallback = Command_UnSilence;
-            HelperMethods.RegisterAdminCommand("!unsilence", unSilenceCallback, Power.Mute);
+            HelperMethods.RegisterAdminCommand("unsilence", unSilenceCallback, Power.Mute);
 
 
             // subscribe to the OnRequestPlayerChat event

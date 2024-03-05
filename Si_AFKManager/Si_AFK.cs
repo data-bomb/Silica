@@ -84,8 +84,8 @@ namespace Si_AFKManager
 
             HelperMethods.CommandCallback kickCallback = Command_Kick;
             HelperMethods.CommandCallback afkCallback = Command_AFK;
-            HelperMethods.RegisterAdminCommand("!kick", kickCallback, Power.Kick);
-            HelperMethods.RegisterAdminCommand("!afk", afkCallback, Power.Kick);
+            HelperMethods.RegisterAdminCommand("kick", kickCallback, Power.Kick);
+            HelperMethods.RegisterAdminCommand("afk", afkCallback, Power.Kick);
 
             double interval = 60000.0f;
             afkTimer = new System.Timers.Timer(interval);

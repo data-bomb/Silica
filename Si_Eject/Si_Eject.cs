@@ -41,7 +41,7 @@ namespace Si_Eject
         public override void OnLateInitializeMelon()
         {
             HelperMethods.CommandCallback ejectCallback = Command_Eject;
-            HelperMethods.RegisterAdminCommand("!eject", ejectCallback, Power.Eject);
+            HelperMethods.RegisterAdminCommand("eject", ejectCallback, Power.Eject);
         }
         public static void Command_Eject(Player callerPlayer, String args)
         {

@@ -185,19 +185,19 @@ namespace Si_SpawnConfigs
             if (AdminModAvailable)
             {
                 HelperMethods.CommandCallback spawnCallback = Command_Spawn;
-                HelperMethods.RegisterAdminCommand("!spawn", spawnCallback, Power.Cheat);
+                HelperMethods.RegisterAdminCommand("spawn", spawnCallback, Power.Cheat);
 
                 HelperMethods.CommandCallback undoSpawnCallback = Command_UndoSpawn;
-                HelperMethods.RegisterAdminCommand("!undospawn", undoSpawnCallback, Power.Cheat);
+                HelperMethods.RegisterAdminCommand("undospawn", undoSpawnCallback, Power.Cheat);
 
                 HelperMethods.CommandCallback saveCallback = Command_SaveSetup;
-                HelperMethods.RegisterAdminCommand("!saveconfig", saveCallback, Power.Cheat);
+                HelperMethods.RegisterAdminCommand("saveconfig", saveCallback, Power.Cheat);
 
                 HelperMethods.CommandCallback loadCallback = Command_LoadSetup;
-                HelperMethods.RegisterAdminCommand("!loadconfig", loadCallback, Power.Cheat);
+                HelperMethods.RegisterAdminCommand("loadconfig", loadCallback, Power.Cheat);
 
                 HelperMethods.CommandCallback addCallback = Command_AddSetup;
-                HelperMethods.RegisterAdminCommand("!addconfig", addCallback, Power.Cheat);
+                HelperMethods.RegisterAdminCommand("addconfig", addCallback, Power.Cheat);
             }
             else
             {

@@ -1,6 +1,6 @@
 ﻿/*
  Silica Commander Management Mod
- Copyright (C) 2023-2024 by databomb
+ Copyright (C) 2024 by databomb
  
  * Description *
  For Silica servers, establishes a random selection for commander at the 
@@ -58,7 +58,7 @@ namespace Si_CommanderManagement
 
         public class BanEntry
         {
-            public ulong OffenderSteamId
+            public long OffenderSteamId
             {
                 get;
                 set;
@@ -170,19 +170,16 @@ namespace Si_CommanderManagement
         {
             // register commands
             HelperMethods.CommandCallback commanderBanCallback = Command_CommanderBan;
-            HelperMethods.RegisterAdminCommand("!cmdrban", commanderBanCallback, Power.Commander);
-            HelperMethods.RegisterAdminCommand("!commanderban", commanderBanCallback, Power.Commander);
-            HelperMethods.RegisterAdminCommand("!cban", commanderBanCallback, Power.Commander);
+            HelperMethods.RegisterAdminCommand("cmdrban", commanderBanCallback, Power.Commander);
+            HelperMethods.RegisterAdminCommand("commanderban", commanderBanCallback, Power.Commander);
+            HelperMethods.RegisterAdminCommand("cban", commanderBanCallback, Power.Commander);
 
             HelperMethods.CommandCallback commanderUnbanCallback = Command_CommanderUnban;
-            HelperMethods.RegisterAdminCommand("!removecommanderban", commanderUnbanCallback, Power.Commander);
-            HelperMethods.RegisterAdminCommand("!uncban", commanderUnbanCallback, Power.Commander);
+            HelperMethods.RegisterAdminCommand("removecommanderban", commanderUnbanCallback, Power.Commander);
+            HelperMethods.RegisterAdminCommand("uncban", commanderUnbanCallback, Power.Commander);
 
             HelperMethods.CommandCallback commanderDemoteCallback = Command_CommanderDemote;
-            HelperMethods.RegisterAdminCommand("!demote", commanderDemoteCallback, Power.Commander);
-
-            HelperMethods.CommandCallback commanderCommandCallback = Command_Commander;
-            HelperMethods.RegisterPlayerCommand("!commander", commanderCommandCallback, false);
+            HelperMethods.RegisterAdminCommand("demote", commanderDemoteCallback, Power.Commander);
 
             // subscribe to the OnRequestCommander event
             Event_Roles.OnRequestCommander += OnRequestCommander;
@@ -425,7 +422,7 @@ namespace Si_CommanderManagement
             }
 
             BanEntry? matchingCmdrBan;
-            matchingCmdrBan = MasterBanList.Find(i => i.OffenderSteamId == playerToCmdrUnban.PlayerID.m_SteamID);
+            matchingCmdrBan = MasterBanList.Find(i => i.OffenderSteamId == (long)playerToCmdrUnban.PlayerID.m_SteamID);
 
             if (matchingCmdrBan == null)
             {
@@ -450,7 +447,7 @@ namespace Si_CommanderManagement
             Player serverPlayer = NetworkGameServer.GetServerPlayer();
             BanEntry thisBan = new BanEntry()
             {
-                OffenderSteamId = playerToCmdrBan.PlayerID.m_SteamID,
+                OffenderSteamId = long.Parse(playerToCmdrBan.ToString().Split('_')[1]),
                 OffenderName = playerToCmdrBan.PlayerName,
                 UnixBanTime = (int)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds,
                 Comments = "banned from playing commander by " + serverPlayer.PlayerName
@@ -467,7 +464,7 @@ namespace Si_CommanderManagement
             }
 
             // are we already banned?
-            if (IsPlayerCommanderBanned(playerToCmdrBan))
+            if (MasterBanList.Find(i => i.OffenderSteamId == thisBan.OffenderSteamId) != null)
             {
                 MelonLogger.Warning("Player name (" + thisBan.OffenderName + ") SteamID (" + thisBan.OffenderSteamId.ToString() + ") already on commander banlist.");
             }
@@ -523,17 +520,17 @@ namespace Si_CommanderManagement
         {
             Player DemotedCommander = strategyInstance.GetCommanderForTeam(TargetTeam);
 
-            #if NET6_0
+#if NET6_0
             strategyInstance.SetCommander(TargetTeam, null);
             strategyInstance.RPC_SynchCommander(TargetTeam);
-            #else
+#else
             Type strategyType = typeof(MP_Strategy);
             MethodInfo setCommanderMethod = strategyType.GetMethod("SetCommander", BindingFlags.Instance | BindingFlags.NonPublic);
             setCommanderMethod.Invoke(strategyInstance, parameters: new object?[] { TargetTeam, null });
 
             MethodInfo synchCommanderMethod = strategyType.GetMethod("RPC_SynchCommander", BindingFlags.Instance | BindingFlags.NonPublic);
             synchCommanderMethod.Invoke(strategyInstance, new object[] { TargetTeam });
-            #endif
+#endif
 
             // need to get the player back to Infantry and not stuck in no-clip
             SendToRole(DemotedCommander, MP_Strategy.ETeamRole.INFANTRY);
@@ -721,6 +718,7 @@ namespace Si_CommanderManagement
             }
         }
 
+        #if false
         [HarmonyPatch(typeof(GameMode), nameof(GameMode.CreateRPCPacket))]
         private static class CommanderManager_Patch_GameMode_GameByteStreamWriter
         {
@@ -759,6 +757,7 @@ namespace Si_CommanderManagement
                 }
             }
         }
+        #endif
 
         [HarmonyPatch(typeof(GameMode), nameof(GameMode.OnPlayerLeftBase))]
         private static class CommanderManager_Patch_GameMode_OnPlayerLeftBase
@@ -846,59 +845,68 @@ namespace Si_CommanderManagement
             }
         }
 
-        public static void Command_Commander(Player callerPlayer, String args)
+        #if NET6_0
+        [HarmonyPatch(typeof(Il2CppSilica.UI.Chat), nameof(Il2CppSilica.UI.Chat.MessageReceived))]
+        #else
+        [HarmonyPatch(typeof(Silica.UI.Chat), "MessageReceived")]
+        #endif
+        private static class CommanderManager_Patch_Chat_MessageReceived
         {
-            try
+            #if NET6_0
+            public static void Postfix(Il2CppSilica.UI.Chat __instance, Player __0, string __1, bool __2)
+            #else
+            public static void Postfix(Silica.UI.Chat __instance, Player __0, string __1, bool __2)
+            #endif
             {
-                // count number of arguments
-                int argumentCount = args.Split(' ').Length - 1;
-                if (argumentCount > 0)
+                try
                 {
-                    HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Too many arguments");
-                    return;
-                }
-
-                if (commanderApplicants == null)
-                {
-                    return;
-                }
-
-                if (callerPlayer.Team == null)
-                {
-                    HelperMethods.ReplyToCommand_Player(callerPlayer, "is not on a valid team");
-                    return;
-                }
-
-                // check if they're trying to apply for commander before the 30 second countdown expires and the game begins
-                if (GameMode.CurrentGameMode.Started && !GameMode.CurrentGameMode.GameBegun)
-                {
-                    // check if we are already on the commander applicant list
-                    bool hasApplied = commanderApplicants[callerPlayer.Team.Index].Any(k => k == callerPlayer);
-
-                    if (hasApplied)
+                    if (commanderApplicants == null)
                     {
-                        commanderApplicants[callerPlayer.Team.Index].Remove(callerPlayer);
-                        HelperMethods.ReplyToCommand_Player(callerPlayer, "removed themselves from commander lottery");
                         return;
                     }
 
-                    if (IsPlayerCommanderBanned(callerPlayer))
+                    // each faction has its own chat manager but by looking at alien and only global messages this catches commands only once
+                    if (__instance.ToString().Contains("alien") && __2 == false)
                     {
-                        HelperMethods.ReplyToCommand_Player(callerPlayer, "cannot apply (restricted to infantry)");
-                        return;
-                    }
+                        bool isCommanderCommand = String.Equals(__1, "!commander", StringComparison.OrdinalIgnoreCase);
+                        if (isCommanderCommand)
+                        {
+                            if (__0.Team == null)
+                            {
+                                HelperMethods.ReplyToCommand_Player(__0, "is not on a valid team");
+                                return;
+                            }
 
-                    commanderApplicants[callerPlayer.Team.Index].Add(callerPlayer);
-                    HelperMethods.ReplyToCommand_Player(callerPlayer, "applied for commander");
+                            // check if they're trying to apply for commander before the 30 second countdown expires and the game begins
+                            if (GameMode.CurrentGameMode.Started && !GameMode.CurrentGameMode.GameBegun)
+                            {
+
+                                // check if we are already on the commander applicant list
+                                bool hasApplied = commanderApplicants[__0.Team.Index].Any(k => k == __0);
+
+                                if (!hasApplied)
+                                {
+
+                                    commanderApplicants[__0.Team.Index].Add(__0);
+                                    HelperMethods.ReplyToCommand_Player(__0, "applied for commander");
+                                }
+                                else
+                                {
+                                    commanderApplicants[__0.Team.Index].Remove(__0);
+                                    HelperMethods.ReplyToCommand_Player(__0, "removed themselves from commander lottery");
+                                }
+                            }
+                            else
+                            {
+                                HelperMethods.ReplyToCommand_Player(__0, "cannot apply for commander during the game");
+                            }
+                        }
+                    }
                 }
-                else
+                catch (Exception error)
                 {
-                    HelperMethods.ReplyToCommand_Player(callerPlayer, "cannot apply for commander during the game");
+                    HelperMethods.PrintError(error, "Failed to run Chat::MessageReceived");
                 }
-            }
-            catch (Exception error)
-            {
-                HelperMethods.PrintError(error, "Failed to run Command_Commander");
             }
         }
 
@@ -937,13 +945,12 @@ namespace Si_CommanderManagement
             }
 
             // check if player is allowed to be commander
-            BanEntry? banEntry = MasterBanList.Find(i => i.OffenderSteamId == args.Requester.PlayerID.m_SteamID);
+            long requestingPlayerSteamId = long.Parse(args.Requester.ToString().Split('_')[1]);
+            BanEntry? banEntry = MasterBanList.Find(i => i.OffenderSteamId == requestingPlayerSteamId);
             if (banEntry != null)
             {
                 MelonLogger.Msg("Preventing " + banEntry.OffenderName + " from playing as commander.");
                 args.Block = true;
-
-                return;
             }
 
             // check if they're trying to join before the 30 second countdown expires and the game begins
@@ -962,7 +969,7 @@ namespace Si_CommanderManagement
             }
         }
 
-        public static bool IsPlayerCommanderBanned(Player player)
+        public static bool IsCommanderBanned(Player player)
         {
             if (MasterBanList == null)
             {
@@ -970,7 +977,8 @@ namespace Si_CommanderManagement
             }
 
             // check if player is allowed to be commander
-            BanEntry? banEntry = MasterBanList.Find(i => i.OffenderSteamId == player.PlayerID.m_SteamID);
+            long playerSteamId = long.Parse(player.ToString().Split('_')[1]);
+            BanEntry? banEntry = MasterBanList.Find(i => i.OffenderSteamId == playerSteamId);
             if (banEntry != null)
             {
                 return true;
