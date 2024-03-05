@@ -72,12 +72,12 @@ namespace Si_ChatSilence
             int argumentCount = args.Split(' ').Length - 1;
             if (argumentCount > 1)
             {
-                HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Too many arguments");
+                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": Too many arguments");
                 return;
             }
             else if (argumentCount < 1)
             {
-                HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Too few arguments");
+                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": Too few arguments");
                 return;
             }
 
@@ -115,12 +115,12 @@ namespace Si_ChatSilence
             int argumentCount = args.Split(' ').Length - 1;
             if (argumentCount > 1)
             {
-                HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Too many arguments");
+                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": Too many arguments");
                 return;
             }
             else if (argumentCount < 1)
             {
-                HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Too few arguments");
+                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": Too few arguments");
                 return;
             }
 

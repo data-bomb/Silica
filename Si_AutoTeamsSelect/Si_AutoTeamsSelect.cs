@@ -99,12 +99,12 @@ namespace VersusTeamsAutoSelect
             int argumentCount = args.Split(' ').Count() - 1;
             if (argumentCount > 1)
             {
-                HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Too many arguments");
+                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": Too many arguments");
                 return;
             }
             else if (argumentCount < 1)
             {
-                HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Too few arguments");
+                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": Too few arguments");
                 return;
             }
 
@@ -127,7 +127,7 @@ namespace VersusTeamsAutoSelect
 
             if (desiredVersusMode == MP_Strategy.ETeamsVersus.NONE)
             {
-                HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Invalid next mode input");
+                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": Invalid next mode input");
                 return;
             }
 

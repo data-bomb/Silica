@@ -77,20 +77,20 @@ namespace Si_Eject
             Unit unitOfPlayer = playerToEject.ControlledUnit;
             if (unitOfPlayer == null)
             {
-                HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Player does not have a vehicle");
+                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": Player does not have a vehicle");
                 return;
             }
 
             UnitCompartment compartmentToEject = unitOfPlayer.DriverCompartment;
             if (compartmentToEject == null)
             {
-                HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Player is not inside the vehicle");
+                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": Player is not inside the vehicle");
                 return;
             }
 
             if (!compartmentToEject.IsDriver)
             {
-                HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Player is not driving the vehicle");
+                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": Player is not driving the vehicle");
                 return;
             }    
 

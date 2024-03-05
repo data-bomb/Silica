@@ -55,13 +55,13 @@ namespace Si_EndRound
             int argumentCount = args.Split(' ').Count() - 1;
             if (argumentCount > 0)
             {
-                HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Too many arguments");
+                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": Too many arguments");
                 return;
             }
 
             if (!GameMode.CurrentGameMode.GameOngoing)
             {
-                HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Cannot end round until round starts");
+                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": Cannot end round until round starts");
                 return;
             }
 

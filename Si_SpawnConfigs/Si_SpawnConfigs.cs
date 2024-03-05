@@ -211,13 +211,13 @@ namespace Si_SpawnConfigs
             int argumentCount = args.Split(' ').Length - 1;
             if (argumentCount > 0)
             {
-                HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Too many arguments");
+                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": Too many arguments");
                 return;
             }
 
             if (lastSpawnedObject == null)
             {
-                HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Nothing to undo");
+                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": Nothing to undo");
                 return;
             }
 
@@ -235,12 +235,12 @@ namespace Si_SpawnConfigs
             int argumentCount = args.Split(' ').Length - 1;
             if (argumentCount > 1)
             {
-                HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Too many arguments");
+                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": Too many arguments");
                 return;
             }
             else if (argumentCount < 1)
             {
-                HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Too few arguments");
+                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": Too few arguments");
                 return;
             }
 
@@ -252,7 +252,7 @@ namespace Si_SpawnConfigs
             GameObject? spawnedObject = HelperMethods.SpawnAtLocation(spawnName, playerPosition, playerRotation, teamIndex);
             if (spawnedObject == null)
             {
-                HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Failed to spawn");
+                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": Failed to spawn");
                 return;
             }
 
@@ -268,12 +268,12 @@ namespace Si_SpawnConfigs
             int argumentCount = args.Split(' ').Length - 1;
             if (argumentCount > 1)
             {
-                HelperMethods.ReplyToCommand(commandName + ": Too many arguments");
+                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": Too many arguments");
                 return;
             }
             else if (argumentCount < 1)
             {
-                HelperMethods.ReplyToCommand(commandName + ": Too few arguments");
+                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": Too few arguments");
                 return;
             }
 
@@ -292,7 +292,7 @@ namespace Si_SpawnConfigs
                 // check if file extension is valid
                 if (configFile.Contains('.') && !configFile.EndsWith("json"))
                 {
-                    HelperMethods.ReplyToCommand(commandName + ": Invalid save name (not .json)");
+                    HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": Invalid save name (not .json)");
                     return;
                 }
                 
@@ -305,7 +305,7 @@ namespace Si_SpawnConfigs
                 // final check on filename
                 if (configFile.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
                 {
-                    HelperMethods.ReplyToCommand(commandName + ": Cannot use input as filename");
+                    HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": Cannot use input as filename");
                     return;
                 }
 
@@ -313,14 +313,14 @@ namespace Si_SpawnConfigs
                 String configFileFullPath = Path.Combine(spawnConfigDir, configFile);
                 if (File.Exists(configFileFullPath))
                 {
-                    HelperMethods.ReplyToCommand(commandName + ": configuration already exists");
+                    HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": configuration already exists");
                     return;
                 }
 
                 // is there anything to save right now?
                 if (!GameMode.CurrentGameMode.GameOngoing)
                 {
-                    HelperMethods.ReplyToCommand(commandName + ": Nothing to save with current game state");
+                    HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": Nothing to save with current game state");
                     return;
                 }
 
@@ -347,12 +347,12 @@ namespace Si_SpawnConfigs
             int argumentCount = args.Split(' ').Length - 1;
             if (argumentCount > 1)
             {
-                HelperMethods.ReplyToCommand(commandName + ": Too many arguments");
+                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": Too many arguments");
                 return;
             }
             else if (argumentCount < 1)
             {
-                HelperMethods.ReplyToCommand(commandName + ": Too few arguments");
+                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": Too few arguments");
                 return;
             }
 
@@ -365,7 +365,7 @@ namespace Si_SpawnConfigs
                 // check if file extension is valid
                 if (configFile.Contains('.') && !configFile.EndsWith("json"))
                 {
-                    HelperMethods.ReplyToCommand(commandName + ": Invalid save name (not .json)");
+                    HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": Invalid save name (not .json)");
                     return;
                 }
 
@@ -378,7 +378,7 @@ namespace Si_SpawnConfigs
                 // final check on filename
                 if (configFile.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
                 {
-                    HelperMethods.ReplyToCommand(commandName + ": Cannot use input as filename");
+                    HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": Cannot use input as filename");
                     return;
                 }
 
@@ -386,7 +386,7 @@ namespace Si_SpawnConfigs
                 String configFileFullPath = System.IO.Path.Combine(spawnConfigDir, configFile);
                 if (!File.Exists(configFileFullPath))
                 {
-                    HelperMethods.ReplyToCommand(commandName + ": configuration not found");
+                    HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": configuration not found");
                     return;
                 }
 
@@ -395,26 +395,26 @@ namespace Si_SpawnConfigs
                 SpawnSetup? spawnSetup = JsonConvert.DeserializeObject<SpawnSetup>(JsonRaw);
                 if (spawnSetup == null) 
                 {
-                    HelperMethods.ReplyToCommand(commandName + ": json error in configuration file");
+                    HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": json error in configuration file");
                     return;
                 }
 
                 if (spawnSetup.Map != null && spawnSetup.Map != NetworkGameServer.GetServerMap())
                 {
-                    HelperMethods.ReplyToCommand(commandName + ": incompatible map specified");
+                    HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": incompatible map specified");
                     return;
                 }
 
                 MP_Strategy strategyInstance = GameObject.FindObjectOfType<MP_Strategy>();
                 if (spawnSetup.VersusMode != null && spawnSetup.VersusMode != strategyInstance.TeamsVersus.ToString())
                 {
-                    HelperMethods.ReplyToCommand(commandName + ": incompatible mode specified");
+                    HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": incompatible mode specified");
                     return;
                 }
 
                 if (!ExecuteBatchSpawn(spawnSetup))
                 {
-                    HelperMethods.ReplyToCommand(commandName + ": bad name in config file");
+                    HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": bad name in config file")
                     return;
                 }
 
@@ -434,12 +434,12 @@ namespace Si_SpawnConfigs
             int argumentCount = args.Split(' ').Length - 1;
             if (argumentCount > 1)
             {
-                HelperMethods.ReplyToCommand(commandName + ": Too many arguments");
+                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": Too many arguments");
                 return;
             }
             else if (argumentCount < 1)
             {
-                HelperMethods.ReplyToCommand(commandName + ": Too few arguments");
+                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": Too few arguments");
                 return;
             }
 
@@ -452,7 +452,7 @@ namespace Si_SpawnConfigs
                 // check if file extension is valid
                 if (configFile.Contains('.') && !configFile.EndsWith("json"))
                 {
-                    HelperMethods.ReplyToCommand(commandName + ": Invalid save name (not .json)");
+                    HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": Invalid save name (not .json)");
                     return;
                 }
 
@@ -465,7 +465,7 @@ namespace Si_SpawnConfigs
                 // final check on filename
                 if (configFile.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
                 {
-                    HelperMethods.ReplyToCommand(commandName + ": Cannot use input as filename");
+                    HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": Cannot use input as filename");
                     return;
                 }
 
@@ -473,7 +473,7 @@ namespace Si_SpawnConfigs
                 String configFileFullPath = System.IO.Path.Combine(spawnConfigDir, configFile);
                 if (!File.Exists(configFileFullPath))
                 {
-                    HelperMethods.ReplyToCommand(commandName + ": configuration not found");
+                    HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": configuration not found");
                     return;
                 }
 
@@ -482,20 +482,20 @@ namespace Si_SpawnConfigs
                 SpawnSetup? spawnSetup = JsonConvert.DeserializeObject<SpawnSetup>(JsonRaw);
                 if (spawnSetup == null)
                 {
-                    HelperMethods.ReplyToCommand(commandName + ": json error in configuration file");
+                    HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": json error in configuration file");
                     return;
                 }
 
                 if (spawnSetup.Map != null && spawnSetup.Map != NetworkGameServer.GetServerMap())
                 {
-                    HelperMethods.ReplyToCommand(commandName + ": incompatible map specified");
+                    HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": incompatible map specified");
                     return;
                 }
 
                 MP_Strategy strategyInstance = GameObject.FindObjectOfType<MP_Strategy>();
                 if (spawnSetup.VersusMode != null && spawnSetup.VersusMode != strategyInstance.TeamsVersus.ToString())
                 {
-                    HelperMethods.ReplyToCommand(commandName + ": incompatible mode specified");
+                    HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": incompatible mode specified");
                     return;
                 }
 
@@ -507,7 +507,7 @@ namespace Si_SpawnConfigs
                 // load structures so there is still an HQ/Nest
                 if (!LoadStructures(spawnSetup))
                 {
-                    HelperMethods.ReplyToCommand(commandName + ": invalid structure in config file");
+                    HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": invalid structure in config file");
                     return;
                 }
 
@@ -520,7 +520,7 @@ namespace Si_SpawnConfigs
                 // load new units
                 if (!LoadUnits(spawnSetup))
                 {
-                    HelperMethods.ReplyToCommand(commandName + ": invalid unit in config file");
+                    HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": invalid unit in config file");
                     return;
                 }
 

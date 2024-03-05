@@ -62,12 +62,12 @@ namespace Si_Mapcycle
             int argumentCount = args.Split(' ').Length - 1;
             if (argumentCount > 1)
             {
-                HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Too many arguments");
+                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": Too many arguments");
                 return;
             }
             else if (argumentCount < 1)
             {
-                HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Too few arguments");
+                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": Too few arguments");
                 return;
             }
 
@@ -81,7 +81,7 @@ namespace Si_Mapcycle
             bool validMap = sMapCycle.Any(k => k == targetMapName);
             if (!validMap)
             {
-                HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Invalid map name");
+                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": Invalid map name");
                 return;
             }
 
