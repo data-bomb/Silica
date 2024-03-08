@@ -1,6 +1,6 @@
 ﻿/*
 Silica Admin Mod
-Copyright (C) 2023 by databomb
+Copyright (C) 2023-2024 by databomb
 
 * License *
 This program is free software: you can redistribute it and/or modify
@@ -35,8 +35,20 @@ namespace SilicaAdminMod
                 }
 
                 // check if this even starts with a character that indicates it's a command
-                if (!IsValidCommandPrefix(args.Text))
+                if (!IsValidCommandPrefix(args.Text[0]))
                 {
+                    PlayerCommand? playerPhrase = GetPlayerPhrase(args.Text);
+                    if (playerPhrase == null)
+                    {
+                        return;
+                    }
+
+                    // run the callback
+                    playerPhrase.PlayerCommandCallback(args.Player, args.Text);
+
+                    // let the command registrant decide whether the chat goes through
+                    args.Block = playerPhrase.HideChatMessage;
+
                     return;
                 }
 
@@ -95,9 +107,9 @@ namespace SilicaAdminMod
             }
         }
 
-        public static bool IsValidCommandPrefix(string commandString)
+        public static bool IsValidCommandPrefix(char commandFirstCharacter)
         {
-            if (commandString[0] == '!' || commandString[0] == '/' || commandString[0] == '.')
+            if (commandFirstCharacter == '!' || commandFirstCharacter == '/' || commandFirstCharacter == '.')
             {
                 return true;
             }
@@ -116,20 +128,13 @@ namespace SilicaAdminMod
         public static PlayerCommand? GetPlayerCommand(string commandString)
         {
             String thisCommandText = commandString.Split(' ')[0];
-            return FindPlayerCommandFromString(thisCommandText);
+            return PlayerMethods.FindPlayerCommandFromString(thisCommandText);
         }
-
-        public static PlayerCommand? FindPlayerCommandFromString(String commandText)
+        public static PlayerCommand? GetPlayerPhrase(string phraseString)
         {
-            foreach (PlayerCommand command in SiAdminMod.PlayerCommands)
-            {
-                if (command.CommandName == commandText)
-                {
-                    return command;
-                }
-            }
-
-            return null;
+            String thisPhrase = phraseString.Split(' ')[0];
+            return PlayerMethods.FindPlayerPhraseFromString(thisPhrase);
         }
+
     }
 }

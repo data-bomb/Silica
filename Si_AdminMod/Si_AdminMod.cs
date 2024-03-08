@@ -45,15 +45,15 @@ namespace SilicaAdminMod
         public static MelonPreferences_Entry<bool> Pref_Admin_AcceptTeamChatCommands = null!;
 
         public static List<Admin> AdminList = null!;
-        public static List<AdminCommand> AdminCommands = null!;
-        public static List<PlayerCommand> PlayerCommands = null!;
 
         public override void OnInitializeMelon()
         {
             try
             {
-                AdminCommands = new List<AdminCommand>();
-                PlayerCommands = new List<PlayerCommand>();
+                AdminMethods.AdminCommands = new List<AdminCommand>();
+                PlayerMethods.PlayerCommands = new List<PlayerCommand>();
+                PlayerMethods.PlayerPhrases = new List<PlayerCommand>();
+
                 AdminList = AdminFile.Initialize();
 
                 _modCategory ??= MelonPreferences.CreateCategory("Silica");
@@ -80,30 +80,6 @@ namespace SilicaAdminMod
             {
                 HelperMethods.PrintError(error, "Failed to load admins");
             }
-        }
-
-        public static void RegisterAdminCommand(String adminCommand, HelperMethods.CommandCallback adminCallback, Power adminPower)
-        {
-            AdminCommand thisCommand = new AdminCommand
-            {
-                AdminCommandText = adminCommand,
-                AdminCallback = adminCallback,
-                AdminPower = adminPower
-            };
-
-            AdminCommands.Add(thisCommand);
-        }
-
-        public static void RegisterPlayerCommand(String playerCommand, HelperMethods.CommandCallback playerCallback, bool hideFromChat)
-        {
-            PlayerCommand thisCommand = new PlayerCommand
-            {
-                CommandName = playerCommand,
-                PlayerCommandCallback = playerCallback,
-                HideChatMessage = hideFromChat
-            };
-
-            PlayerCommands.Add(thisCommand);
         }
     }
 }

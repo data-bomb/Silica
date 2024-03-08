@@ -41,12 +41,31 @@ namespace SilicaAdminMod
 
         public static void RegisterAdminCommand(String adminCommand, CommandCallback adminCallback, Power adminPower)
         {
-            SiAdminMod.RegisterAdminCommand(adminCommand, adminCallback, adminPower);
+            AdminMethods.RegisterAdminCommand(adminCommand, adminCallback, adminPower);
         }
 
         public static void RegisterPlayerCommand(String playerCommand, CommandCallback commandCallback, bool hideFromChat)
         {
-            SiAdminMod.RegisterPlayerCommand(playerCommand, commandCallback, hideFromChat);
+            PlayerMethods.RegisterPlayerCommand(playerCommand, commandCallback, hideFromChat);
+        }
+        public static void RegisterPlayerPhrase(String playerCommand, CommandCallback commandCallback, bool hideFromChat)
+        {
+            PlayerMethods.RegisterPlayerPhrase(playerCommand, commandCallback, hideFromChat);
+        }
+
+        public static bool UnregisterAdminCommand(String adminCommand)
+        {
+            return AdminMethods.UnregisterAdminCommand(adminCommand);
+        }
+
+        public static bool UnregisterPlayerCommand(String playerCommand)
+        {
+            return PlayerMethods.UnregisterPlayerCommand(playerCommand);
+        }
+
+        public static bool UnregisterPlayerPhrase(String playerPhrase)
+        {
+            return PlayerMethods.UnregisterPlayerPhrase(playerPhrase);
         }
 
         public static void ReplyToCommand(params string[] messages)
@@ -121,11 +140,11 @@ namespace SilicaAdminMod
             int iTargetCount = 0;
 
             // loop through all players
-#if NET6_0
+            #if NET6_0
             Il2CppSystem.Collections.Generic.List<Player> players = Player.Players;
-#else
+            #else
             List<Player> players = Player.Players;
-#endif
+            #endif
 
             int iPlayerCount = players.Count;
 
@@ -323,13 +342,13 @@ namespace SilicaAdminMod
                 return false;
             }
 
-#if NET6_0
+            #if NET6_0
             Il2CppSteamworks.CSteamID serverSteam = NetworkGameServer.GetServerID();
             Il2CppSteamworks.CSteamID playerSteam = playerToKick.PlayerID;
-#else
+            #else
             Steamworks.CSteamID serverSteam = NetworkGameServer.GetServerID();
             Steamworks.CSteamID playerSteam = playerToKick.PlayerID;
-#endif
+            #endif
 
             int playerChannel = playerToKick.PlayerChannel;
 

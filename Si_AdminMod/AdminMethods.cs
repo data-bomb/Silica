@@ -1,6 +1,6 @@
 ﻿/*
 Silica Admin Mod
-Copyright (C) 2023 by databomb
+Copyright (C) 2023-2024 by databomb
 
 * License *
 This program is free software: you can redistribute it and/or modify
@@ -18,11 +18,37 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 using System;
+using System.Collections.Generic;
 
 namespace SilicaAdminMod
 {
     public class AdminMethods
     {
+        public static List<AdminCommand> AdminCommands = null!;
+
+        public static void RegisterAdminCommand(String adminCommand, HelperMethods.CommandCallback adminCallback, Power adminPower)
+        {
+            AdminCommand thisCommand = new AdminCommand
+            {
+                AdminCommandText = adminCommand,
+                AdminCallback = adminCallback,
+                AdminPower = adminPower
+            };
+
+            AdminCommands.Add(thisCommand);
+        }
+
+        public static bool UnregisterAdminCommand(String adminCommand)
+        {
+            AdminCommand? matchingCommand = AdminMethods.FindAdminCommandFromString(adminCommand);
+            if (matchingCommand == null)
+            {
+                return false;
+            }
+
+            return AdminCommands.Remove(matchingCommand);
+        }
+
         public static Admin? FindAdminFromSteamId(long steamId)
         {
             foreach (Admin admin in SiAdminMod.AdminList)
@@ -38,7 +64,7 @@ namespace SilicaAdminMod
 
         public static AdminCommand? FindAdminCommandFromString(String commandText)
         {
-            foreach (AdminCommand command in SiAdminMod.AdminCommands)
+            foreach (AdminCommand command in AdminCommands)
             {
                 if (command.AdminCommandText == commandText)
                 {

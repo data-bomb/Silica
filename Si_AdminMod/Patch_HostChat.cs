@@ -1,6 +1,6 @@
 ﻿/*
 Silica Admin Mod
-Copyright (C) 2023 by databomb
+Copyright (C) 2023-2024 by databomb
 
 * License *
 This program is free software: you can redistribute it and/or modify
@@ -35,6 +35,12 @@ namespace SilicaAdminMod
         {
             try
             {
+                // ignore team chat if preference is set
+                if (__1 && SiAdminMod.Pref_Admin_AcceptTeamChatCommands != null && !SiAdminMod.Pref_Admin_AcceptTeamChatCommands.Value)
+                {
+                    return true;
+                }
+
                 bool isAddAdminCommand = (String.Equals(__0.Split(' ')[0], "!addadmin", StringComparison.OrdinalIgnoreCase));
                 if (isAddAdminCommand)
                 {
