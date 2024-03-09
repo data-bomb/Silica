@@ -35,7 +35,7 @@ using System.Collections.Generic;
 using SilicaAdminMod;
 using System.Linq;
 
-[assembly: MelonInfo(typeof(MapCycleMod), "Mapcycle", "1.4.1", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(MapCycleMod), "Mapcycle", "1.4.2", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -45,15 +45,27 @@ namespace Si_Mapcycle
     {
         static String mapName = "";
         static bool bEndRound;
-        static bool bTimerExpired;
+        static bool endroundChangeLevelTimerExpired;
+        static bool rtvFinalChangeTimerExpired;
+        static bool rtvChangeLevelTimerExpired;
         static int iMapLoadCount;
+        static int roundsOnSameMap;
         static List<Player> rockers = null!;
         static string[]? sMapCycle;
+        static string rockthevoteWinningMap = "";
+
+        static MelonPreferences_Category _modCategory = null!;
+        public static MelonPreferences_Entry<int> Pref_Mapcycle_RoundsBeforeChange = null!;
+        public static MelonPreferences_Entry<int> Pref_Mapcycle_EndgameDelay = null!;
 
         private static System.Timers.Timer? DelayTimer;
 
         public override void OnInitializeMelon()
         {
+            _modCategory ??= MelonPreferences.CreateCategory("Silica");
+            Pref_Mapcycle_RoundsBeforeChange ??= _modCategory.CreateEntry<int>("Mapcycle_RoundsBeforeMapChange", 4);
+            Pref_Mapcycle_EndgameDelay ??= _modCategory.CreateEntry<int>("Mapcycle_DelayBeforeEndgameMapChange_Seconds", 7);
+
             String mapCycleFile = MelonEnvironment.UserDataDirectory + "\\mapcycle.txt";
 
             try
@@ -97,7 +109,10 @@ namespace Si_Mapcycle
             HelperMethods.RegisterPlayerPhrase("rockthevote", rockthevoteCallback, true);
 
             HelperMethods.CommandCallback currentmapCallback = Command_CurrentMap;
-            HelperMethods.RegisterPlayerPhrase("currentmap", currentmapCallback, false);
+            HelperMethods.RegisterPlayerPhrase("currentmap", currentmapCallback, true);
+
+            HelperMethods.CommandCallback nextmapCallback = Command_NextMap;
+            HelperMethods.RegisterPlayerPhrase("nextmap", nextmapCallback, true);
         }
 
         public static void Command_RockTheVote(Player callerPlayer, String args)
@@ -112,20 +127,20 @@ namespace Si_Mapcycle
             // did we already RTV
             if (rockers.Contains(callerPlayer))
             {
-                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, " Already rocked the vote. ", MoreRocksNeededForVote().ToString(), " more needed.");
+                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, " Already used rtv. ", MoreRocksNeededForVote().ToString(), " more needed.");
                 return;
             }
 
             rockers.Add(callerPlayer);
             if (rockers.Count() < RocksNeededForVote())
             {
-                HelperMethods.ReplyToCommand_Player(callerPlayer, "rocked the vote. ", MoreRocksNeededForVote().ToString(), " more needed.");
+                HelperMethods.ReplyToCommand_Player(callerPlayer, "wants to rock the vote. ", MoreRocksNeededForVote().ToString(), " more needed.");
                 return;
             }
             
             if (ChatVotes.IsVoteInProgress())
             {
-                HelperMethods.ReplyToCommand_Player(callerPlayer, "rocked the vote. Another vote in progress. ", MoreRocksNeededForVote().ToString(), " more needed later.");
+                HelperMethods.ReplyToCommand_Player(callerPlayer, "wants to rock the vote. Another vote in progress. ", MoreRocksNeededForVote().ToString(), " more needed later.");
                 return;
             }
 
@@ -136,6 +151,7 @@ namespace Si_Mapcycle
                 return;
             }
 
+            HelperMethods.ReplyToCommand_Player(callerPlayer, "rocked the vote.");
             ChatVotes.HoldVote(rtvBallot);
         }
 
@@ -173,33 +189,55 @@ namespace Si_Mapcycle
 
         public static void RockTheVote_Handler(ChatVoteResults results)
         {
-            try
+            MelonLogger.Msg("Reached vote handler for Rock the Vote. Winning result was: " + results.WinningCommand);
+            rockers.Clear();
+
+            if (sMapCycle == null)
             {
-                MelonLogger.Msg("Reached vote handler for Rock the Vote. Winning result was: " + results.WinningCommand);
-                if (sMapCycle == null)
-                {
-                    return;
-                }
-
-                HelperMethods.ReplyToCommand("rtv voting now closed");
-                int winningNumber = int.Parse(results.WinningCommand);
-                if (winningNumber == 4)
-                {
-                    HelperMethods.ReplyToCommand("Staying on current map.");
-                    return;
-                }
-
-                string winningMap = sMapCycle[(iMapLoadCount + winningNumber) % (sMapCycle.Length - 1)];
-                HelperMethods.ReplyToCommand("Switching to " + winningMap);
-
-                MelonLogger.Msg("Changing map to " + winningMap + "...");
-
-                NetworkGameServer.LoadLevel(winningMap, GameMode.CurrentGameMode.GameModeInfo);
+                MelonLogger.Error("mapcycle is null");
+                return;
             }
-            catch (Exception exception)
+
+            switch (results.WinningCommand)
             {
-                MelonLogger.Msg(exception.ToString());
+                case "1":
+                {
+                    rockthevoteWinningMap = sMapCycle[(iMapLoadCount + 1) % (sMapCycle.Length - 1)];
+                    break;
+                }
+                case "2":
+                {
+                    rockthevoteWinningMap = sMapCycle[(iMapLoadCount + 2) % (sMapCycle.Length - 1)];
+                    break;
+                }
+                case "3":
+                {
+                    rockthevoteWinningMap = sMapCycle[(iMapLoadCount + 3) % (sMapCycle.Length - 1)];
+                    break;
+                }
+                case "4":
+                {
+                    rockthevoteWinningMap = "";
+                    break;
+                }
+                default:
+                {
+                    rockthevoteWinningMap = "";
+                    MelonLogger.Warning("Reached invalid result");
+                    break;
+                }
             }
+
+
+            //HelperMethods.ReplyToCommand("Switching to " + winningMap);
+            double interval = 1000.0;
+            MapCycleMod.DelayTimer = new System.Timers.Timer(interval);
+            MapCycleMod.DelayTimer.Elapsed += new ElapsedEventHandler(HandleTimerRockTheVote);
+            MapCycleMod.DelayTimer.AutoReset = false;
+            MapCycleMod.DelayTimer.Enabled = true;
+
+
+            //NetworkGameServer.LoadLevel(winningMap, GameMode.CurrentGameMode.GameModeInfo);
         }
 
         public static int MoreRocksNeededForVote()
@@ -228,7 +266,7 @@ namespace Si_Mapcycle
 
         public static void Command_CurrentMap(Player callerPlayer, String args)
         {
-            HelperMethods.ReplyToCommand("Current map is " + mapName);
+            HelperMethods.ReplyToCommand_Player(callerPlayer, ": The current map is " + mapName);
         }
         
         public static void Command_NextMap(Player callerPlayer, String args)
@@ -238,7 +276,7 @@ namespace Si_Mapcycle
                 return;
             }
 
-            HelperMethods.ReplyToCommand("Next map is " + sMapCycle[(iMapLoadCount + 1) % (sMapCycle.Length - 1)]);
+            HelperMethods.ReplyToCommand_Player(callerPlayer, ": The next map is " + sMapCycle[(iMapLoadCount + 1) % (sMapCycle.Length - 1)]);
         }
 
         public static void Command_ChangeMap(Player callerPlayer, String args)
@@ -283,12 +321,23 @@ namespace Si_Mapcycle
         public override void OnSceneWasLoaded(int buildIndex, string sceneName)
         {
             rockers.Clear();
+            roundsOnSameMap = 0;
             mapName = sceneName;
         }
 
         private static void HandleTimerChangeLevel(object? source, ElapsedEventArgs e)
         {
-            MapCycleMod.bTimerExpired = true;
+            endroundChangeLevelTimerExpired = true;
+        }
+
+        private static void HandleTimerRockTheVote(object? source, ElapsedEventArgs e)
+        {
+            rtvChangeLevelTimerExpired = true;
+        }
+
+        private static void HandleTimerRockTheVoteFinal(object? source, ElapsedEventArgs e)
+        {
+            rtvFinalChangeTimerExpired = true;
         }
 
         #if NET6_0
@@ -300,8 +349,39 @@ namespace Si_Mapcycle
         {
             private static void Postfix(MusicJukeboxHandler __instance)
             {
-                // check if timer expired
-                if (MapCycleMod.bEndRound == true && MapCycleMod.bTimerExpired == true && sMapCycle != null)
+                // check if timers expired
+                if (rtvChangeLevelTimerExpired)
+                {
+                    rtvChangeLevelTimerExpired = false;
+
+                    HelperMethods.ReplyToCommand("Rock the vote finished.");
+                    if (rockthevoteWinningMap == "")
+                    {
+                        HelperMethods.ReplyToCommand("Staying on current map.");
+                        return;
+                    }
+
+                    HelperMethods.ReplyToCommand("Preparing to change map to " + rockthevoteWinningMap + "...");
+
+                    double interval = 6000.0;
+                    MapCycleMod.DelayTimer = new System.Timers.Timer(interval);
+                    MapCycleMod.DelayTimer.Elapsed += new ElapsedEventHandler(HandleTimerRockTheVoteFinal);
+                    MapCycleMod.DelayTimer.AutoReset = false;
+                    MapCycleMod.DelayTimer.Enabled = true;
+
+                    
+                    return;
+                }
+
+                if (rtvFinalChangeTimerExpired)
+                {
+                    rtvFinalChangeTimerExpired = false;
+                    MelonLogger.Msg("Changing map to " + rockthevoteWinningMap + "...");
+                    NetworkGameServer.LoadLevel(rockthevoteWinningMap, GameMode.CurrentGameMode.GameModeInfo);
+                    return;
+                }
+
+                if (MapCycleMod.bEndRound == true && endroundChangeLevelTimerExpired == true && sMapCycle != null)
                 {
                     MapCycleMod.bEndRound = false;
                     MapCycleMod.iMapLoadCount++;
@@ -310,6 +390,8 @@ namespace Si_Mapcycle
 
                     MelonLogger.Msg("Changing map to " + sNextMap + "...");
                     NetworkGameServer.LoadLevel(sNextMap, GameMode.CurrentGameMode.GameModeInfo);
+
+                    return;
                 }
             }
         }
@@ -319,14 +401,24 @@ namespace Si_Mapcycle
         {
             public static void Postfix(MusicJukeboxHandler __instance, GameMode __0, Team __1)
             {
-                if (sMapCycle != null)
+                if (sMapCycle == null)
                 {
-                    HelperMethods.ReplyToCommand("Preparing to change map to " + sMapCycle[(iMapLoadCount + 1) % (sMapCycle.Length - 1)] + "...");
+                    return;
                 }
-                MapCycleMod.bEndRound = true;
-                MapCycleMod.bTimerExpired = false;
 
-                double interval = 12000.0;
+                roundsOnSameMap++;
+                if (Pref_Mapcycle_RoundsBeforeChange.Value > roundsOnSameMap)
+                {
+                    int roundsLeft = Pref_Mapcycle_RoundsBeforeChange.Value - roundsOnSameMap;
+                    HelperMethods.ReplyToCommand("Current map will change after " + roundsLeft.ToString() + " more round" + (roundsLeft == 1 ? "." : "s."));
+                    return;
+                }
+
+                HelperMethods.ReplyToCommand("Preparing to change map to " + sMapCycle[(iMapLoadCount + 1) % (sMapCycle.Length - 1)] + "....");
+                bEndRound = true;
+                endroundChangeLevelTimerExpired = false;
+
+                double interval = Pref_Mapcycle_EndgameDelay.Value * 1000.0f;
                 MapCycleMod.DelayTimer = new System.Timers.Timer(interval);
                 MapCycleMod.DelayTimer.Elapsed += new ElapsedEventHandler(HandleTimerChangeLevel);
                 MapCycleMod.DelayTimer.AutoReset = false;
