@@ -35,7 +35,7 @@ using System.Collections.Generic;
 using SilicaAdminMod;
 using System.Linq;
 
-[assembly: MelonInfo(typeof(MapCycleMod), "Mapcycle", "1.4.0", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(MapCycleMod), "Mapcycle", "1.4.1", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -173,26 +173,33 @@ namespace Si_Mapcycle
 
         public static void RockTheVote_Handler(ChatVoteResults results)
         {
-            MelonLogger.Msg("Reached vote handler for Rock the Vote. Winning result was: " + results.WinningCommand);
-            if (sMapCycle == null)
+            try
             {
-                return;
-            }
+                MelonLogger.Msg("Reached vote handler for Rock the Vote. Winning result was: " + results.WinningCommand);
+                if (sMapCycle == null)
+                {
+                    return;
+                }
 
-            HelperMethods.ReplyToCommand("rtv voting now closed");
-            int winningNumber = int.Parse(results.WinningCommand);
-            if (winningNumber == 4)
+                HelperMethods.ReplyToCommand("rtv voting now closed");
+                int winningNumber = int.Parse(results.WinningCommand);
+                if (winningNumber == 4)
+                {
+                    HelperMethods.ReplyToCommand("Staying on current map.");
+                    return;
+                }
+
+                string winningMap = sMapCycle[(iMapLoadCount + winningNumber) % (sMapCycle.Length - 1)];
+                HelperMethods.ReplyToCommand("Switching to " + winningMap);
+
+                MelonLogger.Msg("Changing map to " + winningMap + "...");
+
+                NetworkGameServer.LoadLevel(winningMap, GameMode.CurrentGameMode.GameModeInfo);
+            }
+            catch (Exception exception)
             {
-                HelperMethods.ReplyToCommand("Staying on current map.");
-                return;
+                MelonLogger.Msg(exception.ToString());
             }
-
-            string winningMap = sMapCycle[(iMapLoadCount + winningNumber) % (sMapCycle.Length - 1)];
-            HelperMethods.ReplyToCommand("Switching to " + winningMap);
-
-            MelonLogger.Msg("Changing map to " + winningMap + "...");
-
-            NetworkGameServer.LoadLevel(winningMap, GameMode.CurrentGameMode.GameModeInfo);
         }
 
         public static int MoreRocksNeededForVote()
