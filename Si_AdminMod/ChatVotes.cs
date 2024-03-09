@@ -58,8 +58,8 @@ namespace SilicaAdminMod
             {
                 if (currentVoteResult.Command == args)
                 {
-                    MelonLogger.Msg("Vote cast for ", args);
                     currentVoteResult.Votes++;
+                    HelperMethods.SendChatMessageToPlayer(callerPlayer, "Vote cast for " + args);
                 }
             }
         }
