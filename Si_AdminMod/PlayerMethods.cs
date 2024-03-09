@@ -22,7 +22,7 @@ using System.Collections.Generic;
 
 namespace SilicaAdminMod
 {
-    public class PlayerMethods
+    public static class PlayerMethods
     {
         public static List<PlayerCommand> PlayerCommands = null!;
         public static List<PlayerCommand> PlayerPhrases = null!;

@@ -76,6 +76,9 @@ namespace SilicaAdminMod
                 throw new InvalidOperationException("Cannot start a new vote when one is in progress.");
             }
 
+            // display question to players
+            HelperMethods.ReplyToCommand(ballot.Question);
+
             // create the results we'll fill in as we go
             currentVoteResults = new ChatVoteResults();
             currentVoteResults.DetailedResults = new OptionVoteResult[ballot.Options.Length];
@@ -95,12 +98,10 @@ namespace SilicaAdminMod
                 index++;
 
                 PlayerMethods.RegisterPlayerPhrase(optionPair.Command, voteChatCallback, true);
+
+                // TODO: consider sending these at a slower pace than all at once
+                HelperMethods.ReplyToCommand(optionPair.Command, " ", optionPair.Description);
             }
-
-            // display message about vote to players
-
-            
-
 
             StartVoteDurationTimer();
         }
