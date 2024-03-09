@@ -49,13 +49,13 @@ namespace SilicaAdminMod
 
         public static void Command_VoteChat(Player callerPlayer, String args)
         {
-            if (currentVoteResults == null)
+            if (currentVoteResults == null || voters == null)
             {
                 MelonLogger.Warning("Current vote results unavailable.");
                 return;
             }
 
-            MelonLogger.Msg("Reached voteback callback for: " + args);
+            MelonLogger.Msg("Reached vote callback for: " + args);
 
             foreach (OptionVoteResult currentVoteResult in currentVoteResults.DetailedResults)
             {
@@ -67,9 +67,12 @@ namespace SilicaAdminMod
                         return;
                     }
 
-                    voters.Add(callerPlayer);
                     currentVoteResult.Votes++;
+                    voters.Add(callerPlayer);
+                    
                     HelperMethods.SendChatMessageToPlayer(callerPlayer, "Vote cast for " + args);
+
+                    break;
                 }
             }
         }
@@ -92,7 +95,7 @@ namespace SilicaAdminMod
 
             // create the results we'll fill in as we go
             currentVoteResults = new ChatVoteResults();
-            currentVoteResults.DetailedResults = new OptionVoteResult[ballot.Options.Length + 1];
+            currentVoteResults.DetailedResults = new OptionVoteResult[ballot.Options.Length];
             currentVoteResults.VoteHandler = ballot.VoteHandler;
 
             int index = 0;
@@ -108,6 +111,7 @@ namespace SilicaAdminMod
                 currentVoteResults.DetailedResults[index] = currentResult;
                 index++;
 
+                // listen to the option commands
                 PlayerMethods.RegisterPlayerPhrase(optionPair.Command, voteChatCallback, true);
 
                 // TODO: consider sending these at a slower pace than all at once
@@ -116,12 +120,11 @@ namespace SilicaAdminMod
 
             StartVoteDurationTimer();
         }
-
-        // listen to the option commands
-
+        
         private static void StartVoteDurationTimer()
         {
             double interval = SiAdminMod.Pre_Admin_VoteDuration.Value * 1000.0f;
+            MelonLogger.Msg("Starting vote timer with duration " + interval.ToString());
             Timer_VoteDuration = new Timer(interval);
             voteInProgress = true;
             Timer_VoteDuration.Elapsed += new ElapsedEventHandler(HandleVoteTimerExpired);
@@ -135,7 +138,7 @@ namespace SilicaAdminMod
 
             if (currentVoteResults == null)
             {
-                //MelonLogger.Warning("Current vote results unavailable for timer expiration.");
+                MelonLogger.Warning("Current vote results unavailable for timer expiration.");
                 voteInProgress = false;
                 return;
             }
@@ -154,6 +157,8 @@ namespace SilicaAdminMod
                     winningResult = currentVoteResult;
                 }
 
+                MelonLogger.Msg("Found command " + currentVoteResult.Command + " with votes " + currentVoteResult.Votes);
+
                 // unregister commands for current vote
                 PlayerMethods.UnregisterPlayerPhrase(currentVoteResult.Command);
             }
@@ -162,9 +167,8 @@ namespace SilicaAdminMod
             currentVoteResults.WinningCommand = winningResult.Command;
 
             // call the vote handler
-            currentVoteResults.VoteHandler(currentVoteResults);
-
             voteInProgress = false;
+            currentVoteResults.VoteHandler(currentVoteResults);
         }
     }
 }

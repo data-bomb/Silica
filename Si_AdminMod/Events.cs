@@ -103,7 +103,7 @@ namespace SilicaAdminMod
         }
     }
 
-    public class  OnRequestPlayerChatArgs : EventArgs
+    public class OnRequestPlayerChatArgs : EventArgs
     {
         private Player _player = null!;
         private string _text = null!;
