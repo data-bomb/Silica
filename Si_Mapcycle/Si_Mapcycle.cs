@@ -1,6 +1,6 @@
 ﻿/*
 Silica Map Cycle
-Copyright (C) 2024 by databomb
+Copyright (C) 2023-2024 by databomb
 
 * Description *
 Provides map management and cycles to a server.
@@ -35,7 +35,7 @@ using System.Collections.Generic;
 using SilicaAdminMod;
 using System.Linq;
 
-[assembly: MelonInfo(typeof(MapCycleMod), "Mapcycle", "1.3.1", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(MapCycleMod), "Mapcycle", "1.4.0", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -47,15 +47,193 @@ namespace Si_Mapcycle
         static bool bEndRound;
         static bool bTimerExpired;
         static int iMapLoadCount;
+        static List<Player> rockers = null!;
         static string[]? sMapCycle;
 
         private static System.Timers.Timer? DelayTimer;
+
+        public override void OnInitializeMelon()
+        {
+            String mapCycleFile = MelonEnvironment.UserDataDirectory + "\\mapcycle.txt";
+
+            try
+            {
+                rockers = new List<Player>();
+
+                if (!File.Exists(mapCycleFile))
+                {
+                    // Create simple mapcycle.txt file
+                    using (FileStream fs = File.Create(mapCycleFile))
+                    {
+                        fs.Close();
+                        System.IO.File.WriteAllText(mapCycleFile, "RiftBasin\nGreatErg\nBadlands\nNarakaCity\n");
+                    }
+                }
+
+                // Open the stream and read it back.
+                using StreamReader mapFileStream = File.OpenText(mapCycleFile);
+                List<string> sMapList = new List<string>();
+                string? sMap = "";
+
+                while ((sMap = mapFileStream.ReadLine()) != null)
+                {
+                    sMapList.Add(sMap);
+                }
+                sMapCycle = sMapList.ToArray();
+            }
+            catch (Exception exception)
+            {
+                MelonLogger.Msg(exception.ToString());
+            }
+        }
 
         public override void OnLateInitializeMelon()
         {
             HelperMethods.CommandCallback mapCallback = Command_ChangeMap;
             HelperMethods.RegisterAdminCommand("map", mapCallback, Power.Map);
+
+            HelperMethods.CommandCallback rockthevoteCallback = Command_RockTheVote;
+            HelperMethods.RegisterPlayerPhrase("rtv", rockthevoteCallback, true);
+            HelperMethods.RegisterPlayerPhrase("rockthevote", rockthevoteCallback, true);
+
+            HelperMethods.CommandCallback currentmapCallback = Command_CurrentMap;
+            HelperMethods.RegisterPlayerPhrase("currentmap", currentmapCallback, false);
         }
+
+        public static void Command_RockTheVote(Player callerPlayer, String args)
+        {
+            // check if game on-going
+            if (!GameMode.CurrentGameMode.GameOngoing)
+            {
+                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, " Can't rock the vote. Game not started.");
+                return;
+            }
+
+            // did we already RTV
+            if (rockers.Contains(callerPlayer))
+            {
+                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, " Already rocked the vote. ", MoreRocksNeededForVote().ToString(), " more needed.");
+                return;
+            }
+
+            rockers.Add(callerPlayer);
+            if (rockers.Count() < RocksNeededForVote())
+            {
+                HelperMethods.ReplyToCommand_Player(callerPlayer, "rocked the vote. ", MoreRocksNeededForVote().ToString(), " more needed.");
+                return;
+            }
+            
+            if (ChatVotes.IsVoteInProgress())
+            {
+                HelperMethods.ReplyToCommand_Player(callerPlayer, "rocked the vote. Another vote in progress. ", MoreRocksNeededForVote().ToString(), " more needed later.");
+                return;
+            }
+
+            ChatVoteBallot? rtvBallot = CreateRTVBallot();
+            if (rtvBallot == null)
+            {
+                HelperMethods.ReplyToCommand_Player(callerPlayer, "rocked the vote. Currently unavailable. ", MoreRocksNeededForVote().ToString(), " more needed later.");
+                return;
+            }
+
+            ChatVotes.HoldVote(rtvBallot);
+        }
+
+        public static ChatVoteBallot? CreateRTVBallot()
+        {
+            if (sMapCycle == null)
+            {
+                return null;
+            }
+
+            OptionPair[] rtvOptions = new OptionPair[4];
+            for (int i = 0; i < 3; i++)
+            {
+                rtvOptions[i] = new OptionPair();
+
+                rtvOptions[i].Command = (i+1).ToString();
+                rtvOptions[i].Description = sMapCycle[(iMapLoadCount + 1 + i) % (sMapCycle.Length - 1)];
+            }
+
+            rtvOptions[3] = new OptionPair
+            {
+                Command = "4",
+                Description = "Keep current map"
+            };
+
+            ChatVoteBallot rtvBallot = new ChatVoteBallot
+            {
+                Question = "Select the next map:",
+                VoteHandler = RockTheVote_Handler,
+                Options = rtvOptions
+            };
+
+            return rtvBallot;
+        }
+
+        public static void RockTheVote_Handler(ChatVoteResults results)
+        {
+            MelonLogger.Msg("Reached vote handler for Rock the Vote. Winning result was: " + results.WinningCommand);
+            if (sMapCycle == null)
+            {
+                return;
+            }
+
+            HelperMethods.ReplyToCommand("rtv voting now closed");
+            int winningNumber = int.Parse(results.WinningCommand);
+            if (winningNumber == 4)
+            {
+                HelperMethods.ReplyToCommand("Staying on current map.");
+                return;
+            }
+
+            string winningMap = sMapCycle[(iMapLoadCount + winningNumber) % (sMapCycle.Length - 1)];
+            HelperMethods.ReplyToCommand("Switching to " + winningMap);
+
+            MelonLogger.Msg("Changing map to " + winningMap + "...");
+
+            NetworkGameServer.LoadLevel(winningMap, GameMode.CurrentGameMode.GameModeInfo);
+        }
+
+        public static int MoreRocksNeededForVote()
+        {
+            int rocksNeeded = RocksNeededForVote();
+            int moreNeeded = rocksNeeded - rockers.Count();
+            if (moreNeeded < 1)
+            {
+                return 1;
+            }
+
+            return moreNeeded;
+        }
+
+        public static int RocksNeededForVote()
+        {
+            int totalPlayers = Player.Players.Count;
+            int rocksNeeded = (int)Math.Ceiling(totalPlayers * 0.31f);
+            if (rocksNeeded < 1)
+            {
+                return 1;
+            }
+
+            return rocksNeeded;
+        }
+
+        public static void Command_CurrentMap(Player callerPlayer, String args)
+        {
+            HelperMethods.ReplyToCommand("Current map is " + mapName);
+        }
+        
+        public static void Command_NextMap(Player callerPlayer, String args)
+        {
+            if (sMapCycle == null)
+            {
+                return;
+            }
+
+            HelperMethods.ReplyToCommand("Next map is " + sMapCycle[(iMapLoadCount + 1) % (sMapCycle.Length - 1)]);
+        }
+
         public static void Command_ChangeMap(Player callerPlayer, String args)
         {
             string commandName = args.Split(' ')[0];
@@ -88,89 +266,17 @@ namespace Si_Mapcycle
             }
 
             HelperMethods.AlertAdminAction(callerPlayer, "changing map to " + targetMapName + "...");
+
+
             MelonLogger.Msg("Changing map to " + targetMapName + "...");
 
             NetworkGameServer.LoadLevel(targetMapName, GameMode.CurrentGameMode.GameModeInfo);
         }
 
-        public override void OnInitializeMelon()
-        {
-            String mapCycleFile = MelonEnvironment.UserDataDirectory + "\\mapcycle.txt";
-
-            try
-            {
-                if (!File.Exists(mapCycleFile))
-                {
-                    // Create simple mapcycle.txt file
-                    using (FileStream fs = File.Create(mapCycleFile))
-                    {
-                        fs.Close();
-                        System.IO.File.WriteAllText(mapCycleFile, "RiftBasin\nGreatErg\nBadlands\nNarakaCity\n");
-                    }
-                }
-
-                // Open the stream and read it back.
-                using StreamReader mapFileStream = File.OpenText(mapCycleFile);
-                List<string> sMapList = new List<string>();
-                string? sMap = "";
-
-                while ((sMap = mapFileStream.ReadLine()) != null)
-                {
-                    sMapList.Add(sMap);
-                }
-                sMapCycle = sMapList.ToArray();
-            }
-            catch (Exception exception)
-            {
-                MelonLogger.Msg(exception.ToString());
-            }
-        }
-
         public override void OnSceneWasLoaded(int buildIndex, string sceneName)
         {
+            rockers.Clear();
             mapName = sceneName;
-        }
-
-        //TODO change to use the admin helper methods instead
-        #if NET6_0
-        [HarmonyPatch(typeof(Il2CppSilica.UI.Chat), nameof(Il2CppSilica.UI.Chat.MessageReceived))]
-        #else
-        [HarmonyPatch(typeof(Silica.UI.Chat), "MessageReceived")]
-        #endif
-        private static class ApplyChatReceiveCurrentMatchInfo
-        {
-            #if NET6_0
-            public static void Postfix(Il2CppSilica.UI.Chat __instance, Player __0, string __1, bool __2)
-            #else
-            public static void Postfix(Silica.UI.Chat __instance, Player __0, string __1, bool __2)
-            #endif
-            {
-                try
-                {
-                    if (!__instance.ToString().Contains("alien") || __2 == true || sMapCycle == null)
-                    {
-                        return;
-                    }
-
-                    bool isCurrMapCommand = String.Equals(__1, "currentmap", StringComparison.OrdinalIgnoreCase);
-                    if (isCurrMapCommand)
-                    {
-                        HelperMethods.ReplyToCommand("Current map is " + mapName);
-                        return;
-                    }
-
-                    bool isNextMapCommand = String.Equals(__1, "nextmap", StringComparison.OrdinalIgnoreCase);
-                    if (isNextMapCommand)
-                    {
-                        HelperMethods.ReplyToCommand("Next map is " + sMapCycle[(iMapLoadCount+1) % (sMapCycle.Length-1)]);
-                        return;
-                    }
-                }
-                catch (Exception exception)
-                {
-                    HelperMethods.PrintError(exception);
-                }
-            }
         }
 
         private static void HandleTimerChangeLevel(object? source, ElapsedEventArgs e)
