@@ -27,6 +27,7 @@ using Il2Cpp;
 
 using MelonLoader;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Timers;
 
@@ -44,6 +45,8 @@ namespace SilicaAdminMod
 
         static HelperMethods.CommandCallback voteChatCallback = Command_VoteChat;
 
+        static List<Player> voters = null!;
+
         public static void Command_VoteChat(Player callerPlayer, String args)
         {
             if (currentVoteResults == null)
@@ -58,6 +61,13 @@ namespace SilicaAdminMod
             {
                 if (currentVoteResult.Command == args)
                 {
+                    if (voters.Contains(callerPlayer))
+                    {
+                        HelperMethods.SendChatMessageToPlayer(callerPlayer, "Vote already cast.");
+                        return;
+                    }
+
+                    voters.Add(callerPlayer);
                     currentVoteResult.Votes++;
                     HelperMethods.SendChatMessageToPlayer(callerPlayer, "Vote cast for " + args);
                 }
@@ -78,6 +88,7 @@ namespace SilicaAdminMod
 
             // display question to players
             HelperMethods.ReplyToCommand(ballot.Question);
+            voters = new List<Player>();
 
             // create the results we'll fill in as we go
             currentVoteResults = new ChatVoteResults();
