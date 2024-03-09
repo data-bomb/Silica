@@ -146,6 +146,9 @@ namespace SilicaAdminMod
                 PlayerMethods.UnregisterPlayerPhrase(currentVoteResult.Command);
             }
 
+            // assign winner
+            currentVoteResults.WinningCommand = winningResult.Command;
+
             // call the vote handler
             currentVoteResults.VoteHandler(currentVoteResults);
 
