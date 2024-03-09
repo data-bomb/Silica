@@ -92,7 +92,7 @@ namespace SilicaAdminMod
 
             // create the results we'll fill in as we go
             currentVoteResults = new ChatVoteResults();
-            currentVoteResults.DetailedResults = new OptionVoteResult[ballot.Options.Length];
+            currentVoteResults.DetailedResults = new OptionVoteResult[ballot.Options.Length + 1];
             currentVoteResults.VoteHandler = ballot.VoteHandler;
 
             int index = 0;
@@ -111,7 +111,7 @@ namespace SilicaAdminMod
                 PlayerMethods.RegisterPlayerPhrase(optionPair.Command, voteChatCallback, true);
 
                 // TODO: consider sending these at a slower pace than all at once
-                HelperMethods.ReplyToCommand(optionPair.Command, " ", optionPair.Description);
+                HelperMethods.ReplyToCommand(optionPair.Command, " -- ", optionPair.Description);
             }
 
             StartVoteDurationTimer();
@@ -142,7 +142,8 @@ namespace SilicaAdminMod
             
             OptionVoteResult winningResult = new OptionVoteResult
             {
-                Votes = -1
+                Votes = -1,
+                Command = "invalid"
             };
 
             foreach (OptionVoteResult currentVoteResult in currentVoteResults.DetailedResults)
