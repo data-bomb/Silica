@@ -31,7 +31,7 @@ namespace SilicaAdminMod
         {
             foreach (PlayerCommand command in PlayerCommands)
             {
-                if (command.CommandName == commandText)
+                if (String.Equals(command.CommandName, commandText, StringComparison.OrdinalIgnoreCase))
                 {
                     return command;
                 }
@@ -44,7 +44,7 @@ namespace SilicaAdminMod
         {
             foreach (PlayerCommand phrase in PlayerPhrases)
             {
-                if (phrase.CommandName == phraseText)
+                if (String.Equals(phrase.CommandName, phraseText, StringComparison.OrdinalIgnoreCase))
                 {
                     return phrase;
                 }

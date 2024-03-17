@@ -66,7 +66,7 @@ namespace SilicaAdminMod
         {
             foreach (AdminCommand command in AdminCommands)
             {
-                if (command.AdminCommandText == commandText)
+                if (String.Equals(command.AdminCommandText, commandText, StringComparison.OrdinalIgnoreCase))
                 {
                     return command;
                 }
