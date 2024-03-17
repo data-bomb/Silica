@@ -34,7 +34,7 @@ using Si_AntiGrief;
 using SilicaAdminMod;
 using System.Linq;
 
-[assembly: MelonInfo(typeof(AntiGrief), "Anti-Grief", "1.1.5", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(AntiGrief), "Anti-Grief", "1.1.6", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -45,6 +45,7 @@ namespace Si_AntiGrief
         static MelonPreferences_Category _modCategory = null!;
         static MelonPreferences_Entry<int> _NegativeKillsThreshold = null!;
         static MelonPreferences_Entry<bool> _NegativeKills_Penalty_Ban = null!;
+        static MelonPreferences_Entry<bool> _StructureAntiGrief_IgnoreNodes = null!;
 
         private const string ModCategory = "Silica";
 
@@ -53,6 +54,7 @@ namespace Si_AntiGrief
             _modCategory ??= MelonPreferences.CreateCategory(ModCategory);
             _NegativeKillsThreshold ??= _modCategory.CreateEntry<int>("Grief_NegativeKills_Threshold", -125);
             _NegativeKills_Penalty_Ban ??= _modCategory.CreateEntry<bool>("Grief_NegativeKills_Penalty_Ban", true);
+            _StructureAntiGrief_IgnoreNodes ??= _modCategory.CreateEntry<bool>("Grief_IgnoreFriendlyNodesDestroyed", true);
         }
 
         #if NET6_0
@@ -217,16 +219,36 @@ namespace Si_AntiGrief
                         return;
                     }
 
-                    string structName = GetStructureDisplayName(__0.ToString());
+                    string structureName = GetStructureDisplayName(__0.ToString());
 
-                    MelonLogger.Msg(attackerPlayer.PlayerName + " team killed a structure " + structName);
-                    HelperMethods.ReplyToCommand_Player(attackerPlayer, "killed a friendly structure (" + HelperMethods.GetTeamColor(attackerPlayer) + structName + HelperMethods.defaultColor + ")");
+                    // should we ignore the message for this particular type of structure?
+                    if (!DisplayTeamKillForStructure(structureName))
+                    {
+                        return;
+                    }
+
+                    MelonLogger.Msg(attackerPlayer.PlayerName + " team killed a structure " + structureName);
+                    HelperMethods.ReplyToCommand_Player(attackerPlayer, "killed a friendly structure (" + HelperMethods.GetTeamColor(attackerPlayer) + structureName + HelperMethods.defaultColor + ")");
                 }
                 catch (Exception error)
                 {
                     HelperMethods.PrintError(error, "Failed to run MP_Strategy::OnStructureDestroyed");
                 }
             }
+        }
+
+        private static bool DisplayTeamKillForStructure(string structureName)
+        {
+            // has the server set it so Nodes should be ignored?
+            if (_StructureAntiGrief_IgnoreNodes.Value)
+            {
+                if (structureName == "Node")
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         private static string GetStructureDisplayName(string structureFullName)
