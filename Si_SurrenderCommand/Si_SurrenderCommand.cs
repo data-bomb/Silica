@@ -1,6 +1,6 @@
 ﻿/*
  Silica Surrender Command Mod
- Copyright (C) 2023 by databomb
+ Copyright (C) 2023-2024 by databomb
  
  * Description *
  For Silica listen servers, provides a command (!surrender) which
@@ -31,7 +31,7 @@ using SilicaAdminMod;
 using System;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(SurrenderCommand), "Surrender Command", "1.2.1", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(SurrenderCommand), "Surrender Command", "1.2.2", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -63,61 +63,39 @@ namespace Si_SurrenderCommand
             return false;
         }
 
-        #if NET6_0
-        [HarmonyPatch(typeof(Il2CppSilica.UI.Chat), nameof(Il2CppSilica.UI.Chat.MessageReceived))]
-        #else
-        [HarmonyPatch(typeof(Silica.UI.Chat), "MessageReceived")]
-        #endif
-        private static class ApplyChatReceiveSurrenderPatch
+        public override void OnLateInitializeMelon()
         {
-            #if NET6_0
-            public static void Postfix(Il2CppSilica.UI.Chat __instance, Player __0, string __1, bool __2)
-            #else
-            public static void Postfix(Silica.UI.Chat __instance, Player __0, string __1, bool __2)
-            #endif
+            HelperMethods.CommandCallback surrenderCallback = Command_Surrender;
+            HelperMethods.RegisterPlayerCommand("surrender", surrenderCallback, true);
+        }
+
+        public static void Command_Surrender(Player callerPlayer, String args)
+        {
+            // check if we are actually a commander
+            bool isCommander = IsCommander(callerPlayer);
+
+            if (!isCommander)
             {
-                try
-                {
-                    // each faction has its own chat manager but by looking at alien and only global messages this catches commands only once
-                    if (!__instance.ToString().Contains("alien") || __2 == true)
-                    {
-                        return;
-                    }
+                // notify player on invalid usage
+                HelperMethods.ReplyToCommand_Player(callerPlayer, ": only commanders can use !surrender");
+                return;
+            }
 
-                    bool isSurrenderCommand = String.Equals(__1, "!surrender", StringComparison.OrdinalIgnoreCase);
-                    if (!isSurrenderCommand)
-                    {
-                        return;
-                    }
+            // check if game on-going
+            if (!GameMode.CurrentGameMode.GameOngoing)
+            {
+                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, " Can't surrender. Game not started.");
+                return;
+            }
 
-                    // check if we are actually a commander
-                    bool isCommander = IsCommander(__0);
+            // notify all players
+            HelperMethods.ReplyToCommand_Player(callerPlayer, "used !surrender to end");
 
-                    if (!isCommander)
-                    {
-                        // notify player on invalid usage
-                        HelperMethods.ReplyToCommand_Player(__0, ": only commanders can use !surrender");
-                        return;
-                    }
-
-                    // is there a game currently started?
-                    if (GameMode.CurrentGameMode.GameOngoing)
-                    {
-                        // destroy all structures on team that's surrendering
-                        Team SurrenderTeam = __0.Team;
-                        for (int i = 0; i < SurrenderTeam.Structures.Count; i++)
-                        {
-                            SurrenderTeam.Structures[i].DamageManager.SetHealth01(0.0f);
-                        }
-
-                        // notify all players
-                        HelperMethods.ReplyToCommand_Player(__0, "used !surrender to end");
-                    }
-                }
-                catch (Exception error)
-                {
-                    HelperMethods.PrintError(error, "Failed to run Chat::MessageReceived");
-                }
+            // destroy all structures on team that's surrendering
+            Team SurrenderTeam = callerPlayer.Team;
+            for (int i = 0; i < SurrenderTeam.Structures.Count; i++)
+            {
+                SurrenderTeam.Structures[i].DamageManager.SetHealth01(0.0f);
             }
         }
     }
