@@ -64,6 +64,8 @@ namespace SilicaAdminMod
                 AdminCommand? adminCommand = GetAdminCommand(args.Text);
                 if (adminCommand != null)
                 {
+                    MelonLogger.Msg("Processing admin command: " + adminCommand.AdminCommandText);
+
                     // are they an admin?
                     if (!args.Player.IsAdmin())
                     {
@@ -94,6 +96,8 @@ namespace SilicaAdminMod
                 {
                     return;
                 }
+
+                MelonLogger.Msg("Processing player command: " + playerCommand.CommandName);
 
                 // run the callback
                 playerCommand.PlayerCommandCallback(args.Player, args.Text);
@@ -128,6 +132,8 @@ namespace SilicaAdminMod
         public static PlayerCommand? GetPlayerCommand(string commandString)
         {
             String thisCommandText = commandString.Split(' ')[0];
+            // trim first character
+            thisCommandText = thisCommandText[1..];
             return PlayerMethods.FindPlayerCommandFromString(thisCommandText);
         }
         public static PlayerCommand? GetPlayerPhrase(string phraseString)
