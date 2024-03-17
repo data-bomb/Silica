@@ -35,7 +35,7 @@ using System.Collections.Generic;
 using SilicaAdminMod;
 using System.Linq;
 
-[assembly: MelonInfo(typeof(MapCycleMod), "Mapcycle", "1.4.2", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(MapCycleMod), "Mapcycle", "1.4.3", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -106,6 +106,7 @@ namespace Si_Mapcycle
 
             HelperMethods.CommandCallback rockthevoteCallback = Command_RockTheVote;
             HelperMethods.RegisterPlayerPhrase("rtv", rockthevoteCallback, true);
+            HelperMethods.RegisterPlayerCommand("rtv", rockthevoteCallback, true);
             HelperMethods.RegisterPlayerPhrase("rockthevote", rockthevoteCallback, true);
 
             HelperMethods.CommandCallback currentmapCallback = Command_CurrentMap;
