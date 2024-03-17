@@ -35,7 +35,7 @@ using System.Collections.Generic;
 using SilicaAdminMod;
 using System.Linq;
 
-[assembly: MelonInfo(typeof(MapCycleMod), "Mapcycle", "1.4.5", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(MapCycleMod), "Mapcycle", "1.4.6", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -124,6 +124,13 @@ namespace Si_Mapcycle
             if (!GameMode.CurrentGameMode.GameOngoing)
             {
                 HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, " Can't rock the vote. Game not started.");
+                return;
+            }
+
+            // is the end-game timer already preparing to switch
+            if (EndRoundDelayTimer != null && EndRoundDelayTimer.Enabled)
+            {
+                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, " Can't rock the vote. Map change already in progress.");
                 return;
             }
 
