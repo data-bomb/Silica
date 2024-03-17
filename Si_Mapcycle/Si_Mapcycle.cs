@@ -35,8 +35,10 @@ using System.Collections.Generic;
 using SilicaAdminMod;
 using System.Linq;
 using UnityEngine;
+using static System.Net.Mime.MediaTypeNames;
+using System.Xml.Linq;
 
-[assembly: MelonInfo(typeof(MapCycleMod), "Mapcycle", "1.4.7", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(MapCycleMod), "Mapcycle", "1.4.8", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -332,7 +334,26 @@ namespace Si_Mapcycle
 
             MelonLogger.Msg("Changing map to " + targetMapName + "...");
 
-            NetworkGameServer.LoadLevel(targetMapName, GameMode.CurrentGameMode.GameModeInfo);
+            ChangeMap(targetMapName);
+        }
+
+        public static void ChangeMap(string mapName)
+        {
+            LevelInfo? levelInfo = GetLevelInfo(mapName);
+            if (levelInfo == null)
+            {
+                MelonLogger.Warning("Could not find LevelInfo for map name: " + mapName);
+                return;
+            }
+
+            GameModeInfo? gameModeInfo = GetGameModeInfo(levelInfo);
+            if (gameModeInfo == null)
+            {
+                MelonLogger.Warning("Could not find GameModeInfo for map name: " + mapName);
+                return;
+            }
+
+            NetworkGameServer.LoadLevel(levelInfo.FileName, gameModeInfo);
         }
 
         public override void OnSceneWasLoaded(int buildIndex, string sceneName)
@@ -395,8 +416,8 @@ namespace Si_Mapcycle
                     if (rtvFinalChangeTimerExpired)
                     {
                         rtvFinalChangeTimerExpired = false;
-                        MelonLogger.Msg("Changing map to " + rockthevoteWinningMap + "...");
-                        NetworkGameServer.LoadLevel(rockthevoteWinningMap, GameMode.CurrentGameMode.GameModeInfo);
+                        MelonLogger.Msg("Changing map to " + rockthevoteWinningMap + "....");
+                        ChangeMap(rockthevoteWinningMap);
                         return;
                     }
 
@@ -426,8 +447,8 @@ namespace Si_Mapcycle
 
                         String sNextMap = sMapCycle[iMapLoadCount % (sMapCycle.Length - 1)];
 
-                        MelonLogger.Msg("Changing map to " + sNextMap + "...");
-                        NetworkGameServer.LoadLevel(sNextMap, GameMode.CurrentGameMode.GameModeInfo);
+                        MelonLogger.Msg("Changing map to " + sNextMap + ".....");
+                        ChangeMap(sNextMap);
 
                         return;
                     }
@@ -526,6 +547,65 @@ namespace Si_Mapcycle
                     HelperMethods.PrintError(error, "Failed to run MusicJukeboxHandler::OnGameStarted");
                 }
             }
+        }
+
+        private static GameModeInfo? GetGameModeInfo(LevelInfo levelInfo)
+        {
+            foreach (GameModeInfo gameModeInfo in levelInfo.GameModes)
+            {
+                if (gameModeInfo == null)
+                {
+                    continue;
+                }
+
+                if (!gameModeInfo.Enabled)
+                {
+                    continue;
+                }
+
+                MelonLogger.Msg("Found gameModeInfo name: " + gameModeInfo.ObjectName);
+
+                if (String.Equals("MP_Strategy", gameModeInfo.ObjectName, StringComparison.OrdinalIgnoreCase))
+                {
+                    return gameModeInfo;
+                }
+            }
+
+            return null;
+        }
+
+        private static LevelInfo? GetLevelInfo(string mapName)
+        {
+            if (GameDatabase.Database == null || GameDatabase.Database.AllLevels == null)
+            {
+                MelonLogger.Warning("Found game database null.");
+                return null;
+            }
+
+            foreach (LevelInfo? levelInfo in GameDatabase.Database.AllLevels)
+            {
+                if (levelInfo == null)
+                {
+                    continue;
+                }
+
+                if (!levelInfo.Enabled)
+                {
+                    continue;
+                }
+
+                if (!levelInfo.IsMultiplayer)
+                {
+                    continue;
+                }
+
+                if (String.Equals(mapName, levelInfo.FileName, StringComparison.OrdinalIgnoreCase))
+                {
+                    return levelInfo;
+                }
+            }
+
+            return null;
         }
     }
 }
