@@ -37,16 +37,16 @@ namespace SilicaAdminMod
     public class CSAM_AddAdmin : DebugConsole.ICommand
     #endif
     {
-#if NET6_0
+        #if NET6_0
         public CSAM_AddAdmin(IntPtr pointer) : base(pointer)
         {
             return;
         }
-#endif
+        #endif
 
-#if NET6_0
+        #if NET6_0
         public override string Key
-#else
+        #else
         public string Key
         #endif
         {
@@ -56,9 +56,9 @@ namespace SilicaAdminMod
             }
         }
 
-#if NET6_0
+        #if NET6_0
         public override string Description
-#else
+        #else
         public string Description
         #endif
         {
@@ -68,9 +68,9 @@ namespace SilicaAdminMod
             }
         }
 
-#if NET6_0
+        #if NET6_0
         public override EAdminLevel RequiredAdminLevel
-#else
+        #else
         public EAdminLevel RequiredAdminLevel
         #endif
         {
@@ -80,9 +80,9 @@ namespace SilicaAdminMod
             }
         }
 
-#if NET6_0
+        #if NET6_0
         public override bool ServerSide
-#else
+        #else
         public bool ServerSide
         #endif
         {

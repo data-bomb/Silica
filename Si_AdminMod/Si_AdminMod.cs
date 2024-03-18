@@ -62,7 +62,7 @@ namespace SilicaAdminMod
                 Pre_Admin_VoteDuration ??= _modCategory.CreateEntry<int>("Admin_VoteDuration_Seconds", 30);
 
                 #if !NET6_0
-                MelonLogger.Msg("Registering console commands..");
+                MelonLogger.Msg("Registering host console commands...");
                 FieldInfo commandField = typeof(DebugConsole).GetField("s_Commands", BindingFlags.NonPublic | BindingFlags.Static);
 
                 DebugConsole.ICommand addAdminConsoleCmd = (DebugConsole.ICommand)Activator.CreateInstance(typeof(CSAM_AddAdmin));

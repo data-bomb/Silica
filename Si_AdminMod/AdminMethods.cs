@@ -17,8 +17,14 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#if !NET6_0
+using DebugTools;
+#endif
+
+using MelonLoader;
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 
 namespace SilicaAdminMod
 {
@@ -36,6 +42,20 @@ namespace SilicaAdminMod
             };
 
             AdminCommands.Add(thisCommand);
+
+            #if !NET6_0
+            FieldInfo commandField = typeof(DebugConsole).GetField("s_Commands", BindingFlags.NonPublic | BindingFlags.Static);
+            string consoleCommandText = "sam_" + thisCommand.AdminCommandText;
+
+            DebugConsole.ICommand addAdminConsoleCmd = (DebugConsole.ICommand)Activator.CreateInstance(typeof(CSAM_GenericCommand), consoleCommandText, ".");
+            if (addAdminConsoleCmd != null)
+            {
+                Dictionary<string, DebugConsole.ICommand> s_Commands = (Dictionary<string, DebugConsole.ICommand>)commandField.GetValue(null);
+                MelonLogger.Msg(addAdminConsoleCmd.Key.ToLower() + " console command registered.");
+                s_Commands.Add(addAdminConsoleCmd.Key.ToLower(), addAdminConsoleCmd);
+                commandField.SetValue(null, s_Commands);
+            }
+            #endif
         }
 
         public static bool UnregisterAdminCommand(String adminCommand)
