@@ -28,14 +28,14 @@ using Il2Cpp;
 using HarmonyLib;
 using MelonLoader;
 using Si_AFKManager;
-using System.Timers;
 using System.Collections.Generic;
 using System.Linq;
 using SilicaAdminMod;
 using System;
 using System.Collections;
+using UnityEngine;
 
-[assembly: MelonInfo(typeof(AwayFromKeyboard), "AFK Manager", "1.2.6", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(AwayFromKeyboard), "AFK Manager", "1.2.7", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -59,10 +59,9 @@ namespace Si_AFKManager
             }
         }
 
-        static Timer afkTimer = null!;
+        static float Timer_AFKCheck = HelperMethods.Timer_Inactive;
         static bool AdminModAvailable = false;
         static List<AFKCount> AFKTracker = null!;
-        static bool oneMinuteCheckTime;
         static bool skippedFirstCheck;
 
         static MelonPreferences_Category _modCategory = null!;
@@ -78,6 +77,8 @@ namespace Si_AFKManager
 
         public override void OnLateInitializeMelon()
         {
+            HelperMethods.StartTimer(Timer_AFKCheck);
+
             AdminModAvailable = RegisteredMelons.Any(m => m.Info.Name == "Admin Mod");
 
             AFKTracker = new List<AFKCount>();
@@ -86,12 +87,6 @@ namespace Si_AFKManager
             HelperMethods.CommandCallback afkCallback = Command_AFK;
             HelperMethods.RegisterAdminCommand("kick", kickCallback, Power.Kick);
             HelperMethods.RegisterAdminCommand("afk", afkCallback, Power.Kick);
-
-            double interval = 60000.0f;
-            afkTimer = new System.Timers.Timer(interval);
-            afkTimer.Elapsed += new ElapsedEventHandler(TimerCallbackOneMinute);
-            afkTimer.AutoReset = true;
-            afkTimer.Enabled = true;
 
             #if NET6_0
             bool QListLoaded = RegisteredMelons.Any(m => m.Info.Name == "QList");
@@ -234,11 +229,6 @@ namespace Si_AFKManager
             }
         }
 
-        private static void TimerCallbackOneMinute(object? source, ElapsedEventArgs e)
-        {
-            oneMinuteCheckTime = true;
-        }
-
         #if NET6_0
         [HarmonyPatch(typeof(MusicJukeboxHandler), nameof(MusicJukeboxHandler.Update))]
         #else
@@ -256,11 +246,22 @@ namespace Si_AFKManager
                     }
 
                     // check if timer expired while the game is in-progress
-                    if (GameMode.CurrentGameMode.GameOngoing == true && oneMinuteCheckTime == true && skippedFirstCheck == true)
+                    Timer_AFKCheck += Time.deltaTime;
+                    if (Timer_AFKCheck >= 60.0f)
                     {
-                        //MelonLogger.Msg("AFK Timer fired");
+                        Timer_AFKCheck = 0.0f;
 
-                        oneMinuteCheckTime = false;
+                        if (!GameMode.CurrentGameMode.GameOngoing)
+                        {
+                            return;
+                        }
+
+                        // skip the first timer expiration so we're at least a minute into the round
+                        if (!skippedFirstCheck)
+                        {
+                            skippedFirstCheck = true;
+                            return;
+                        }
 
                         // track if any players need to be removed from the AFKTracker list after we've finished iterating
                         // we can't kick inside the foreach Players iterator because it modifies the list
@@ -333,13 +334,6 @@ namespace Si_AFKManager
                             HelperMethods.ReplyToCommand_Player(AFKTracker[indexToKick].Player, "was kicked for being AFK");
                             AFKTracker.RemoveAt(indexToKick);
                         }
-                    }
-
-                    // skip the first timer expiration so we're at least a minute into the round
-                    if (GameMode.CurrentGameMode.GameOngoing == true && oneMinuteCheckTime == true && skippedFirstCheck == false)
-                    {
-                        oneMinuteCheckTime = false;
-                        skippedFirstCheck = true;
                     }
                 }
                 catch (Exception exception)
