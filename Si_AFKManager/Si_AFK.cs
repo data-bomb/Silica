@@ -35,7 +35,7 @@ using System;
 using System.Collections;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(AwayFromKeyboard), "AFK Manager", "1.2.7", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(AwayFromKeyboard), "AFK Manager", "1.2.8", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -77,7 +77,7 @@ namespace Si_AFKManager
 
         public override void OnLateInitializeMelon()
         {
-            HelperMethods.StartTimer(Timer_AFKCheck);
+            HelperMethods.StartTimer(ref Timer_AFKCheck);
 
             AdminModAvailable = RegisteredMelons.Any(m => m.Info.Name == "Admin Mod");
 
@@ -267,6 +267,7 @@ namespace Si_AFKManager
                         // we can't kick inside the foreach Players iterator because it modifies the list
                         List<int>? playerIndexesToKick = new List<int>();
 
+                        // remove players in a seperate loop
                         foreach (Player player in Player.Players)
                         {
                             if (player == null)
@@ -288,6 +289,16 @@ namespace Si_AFKManager
 
                                 continue;
                             }
+                        }
+
+                        foreach (Player player in Player.Players)
+                        {
+                            if (player == null)
+                            {
+                                continue;
+                            }
+
+                            int afkIndex = AFKTracker.FindIndex(p => p.Player == player);
 
                             Player serverPlayer = NetworkGameServer.GetServerPlayer();
                             if (player == serverPlayer)
