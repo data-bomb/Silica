@@ -127,7 +127,6 @@ jobs:
       uses: robinraju/release-downloader@v1.9
       with:
         repository: "dodad-2/QList"
-        latest: true
         fileName: "QList.dll"
         tarBall: false
         zipBall: false
