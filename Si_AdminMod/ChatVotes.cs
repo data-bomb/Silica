@@ -25,11 +25,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using Il2Cpp;
 #endif
 
+using HarmonyLib;
 using MelonLoader;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Timers;
+using UnityEngine;
 
 namespace SilicaAdminMod
 {
@@ -41,7 +42,7 @@ namespace SilicaAdminMod
 
         public delegate void VoteHandler(ChatVoteResults results);
 
-        private static Timer? Timer_VoteDuration;
+        private static float Timer_TallyVote;
 
         static HelperMethods.CommandCallback voteChatCallback = Command_VoteChat;
 
@@ -123,52 +124,74 @@ namespace SilicaAdminMod
         
         private static void StartVoteDurationTimer()
         {
-            double interval = SiAdminMod.Pre_Admin_VoteDuration.Value * 1000.0f;
-            MelonLogger.Msg("Starting vote timer with duration " + interval.ToString());
-            Timer_VoteDuration = new Timer(interval);
+            MelonLogger.Msg("Starting vote timer with duration " + SiAdminMod.Pre_Admin_VoteDuration.Value.ToString());
             voteInProgress = true;
-            Timer_VoteDuration.Elapsed += new ElapsedEventHandler(HandleVoteTimerExpired);
-            Timer_VoteDuration.AutoReset = false;
-            Timer_VoteDuration.Enabled = true;
+            HelperMethods.StartTimer(ref Timer_TallyVote);
         }
 
-        // don't access anything from melonloader inside the timer callback
-        private static void HandleVoteTimerExpired(object? source, ElapsedEventArgs e)
+#if NET6_0
+        [HarmonyPatch(typeof(MusicJukeboxHandler), nameof(MusicJukeboxHandler.Update))]
+#else
+        [HarmonyPatch(typeof(MusicJukeboxHandler), "Update")]
+#endif
+        private static class ApplyPatch_MusicJukeboxHandlerUpdate
         {
-
-            if (currentVoteResults == null)
+            private static void Postfix(MusicJukeboxHandler __instance)
             {
-                MelonLogger.Warning("Current vote results unavailable for timer expiration.");
-                voteInProgress = false;
-                return;
-            }
-            
-            OptionVoteResult winningResult = new OptionVoteResult
-            {
-                Votes = -1,
-                Command = "invalid"
-            };
-
-            foreach (OptionVoteResult currentVoteResult in currentVoteResults.DetailedResults)
-            {
-                // determine winner
-                if (currentVoteResult.Votes > winningResult.Votes)
+                try
                 {
-                    winningResult = currentVoteResult;
+
+                    // check if timer expired while the game is in-progress
+                    if (HelperMethods.IsTimerActive(Timer_TallyVote))
+                    {
+                        Timer_TallyVote += Time.deltaTime;
+
+                        if (Timer_TallyVote >= SiAdminMod.Pre_Admin_VoteDuration.Value)
+                        {
+                            Timer_TallyVote = HelperMethods.Timer_Inactive;
+
+                            if (currentVoteResults == null)
+                            {
+                                MelonLogger.Warning("Current vote results unavailable for timer expiration.");
+                                voteInProgress = false;
+                                return;
+                            }
+
+                            OptionVoteResult winningResult = new OptionVoteResult
+                            {
+                                Votes = -1,
+                                Command = "invalid"
+                            };
+
+                            foreach (OptionVoteResult currentVoteResult in currentVoteResults.DetailedResults)
+                            {
+                                // determine winner
+                                if (currentVoteResult.Votes > winningResult.Votes)
+                                {
+                                    winningResult = currentVoteResult;
+                                }
+
+                                MelonLogger.Msg("Found command " + currentVoteResult.Command + " with votes " + currentVoteResult.Votes);
+
+                                // unregister commands for current vote
+                                PlayerMethods.UnregisterPlayerPhrase(currentVoteResult.Command);
+                            }
+
+                            // assign winner
+                            currentVoteResults.WinningCommand = winningResult.Command;
+
+                            // call the vote handler
+                            voteInProgress = false;
+                            currentVoteResults.VoteHandler(currentVoteResults);
+                        }
+
+                    }
                 }
-
-                MelonLogger.Msg("Found command " + currentVoteResult.Command + " with votes " + currentVoteResult.Votes);
-
-                // unregister commands for current vote
-                PlayerMethods.UnregisterPlayerPhrase(currentVoteResult.Command);
+                catch (Exception exception)
+                {
+                    HelperMethods.PrintError(exception, "Failed in MusicJukeboxHandler::Update");
+                }
             }
-
-            // assign winner
-            currentVoteResults.WinningCommand = winningResult.Command;
-
-            // call the vote handler
-            voteInProgress = false;
-            currentVoteResults.VoteHandler(currentVoteResults);
         }
     }
 }

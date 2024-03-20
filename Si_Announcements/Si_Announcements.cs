@@ -29,14 +29,14 @@ using HarmonyLib;
 using MelonLoader;
 using MelonLoader.Utils;
 using Si_Announcements;
-using System.Timers;
 using System;
 using System.IO;
 using System.Collections.Generic;
 using SilicaAdminMod;
 using System.Linq;
+using UnityEngine;
 
-[assembly: MelonInfo(typeof(Announcements), "Server Announcements", "1.1.7", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(Announcements), "Server Announcements", "1.1.8", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -48,11 +48,12 @@ namespace Si_Announcements
         static MelonPreferences_Entry<int> _Announcements_SecondsBetweenMessages = null!;
         static MelonPreferences_Entry<bool> _Announcements_ShowIfLastChatWasAnnouncement = null!;
 
-        static Timer announcementTimer = null!;
+        static readonly float Timer_Inactive = -123.0f;
+
+        static float Timer_Announcement = Timer_Inactive;
         static int announcementCount;
         static string[]? announcementsText;
         static string? lastChatMessage;
-        static bool timerExpired;
 
         public override void OnInitializeMelon()
         {
@@ -89,13 +90,6 @@ namespace Si_Announcements
                 }
 
                 MelonLogger.Msg("Loaded announcements.txt file with " + announcementsText.Length + " announcements.");
-
-                double interval = _Announcements_SecondsBetweenMessages.Value * 1000.0f;
-                announcementTimer = new System.Timers.Timer(interval);
-                announcementTimer.Elapsed += new ElapsedEventHandler(TimerCallbackAnnouncement);
-                announcementTimer.AutoReset = true;
-                announcementTimer.Enabled = true;
-
             }
             catch (Exception exception)
             {
@@ -106,6 +100,8 @@ namespace Si_Announcements
         #if NET6_0
         public override void OnLateInitializeMelon()
         {
+            HelperMethods.StartTimer(ref Timer_Announcement);
+
             bool QListLoaded = RegisteredMelons.Any(m => m.Info.Name == "QList");
             if (!QListLoaded)
             {
@@ -122,11 +118,6 @@ namespace Si_Announcements
         }
         #endif
 
-        private static void TimerCallbackAnnouncement(object? source, ElapsedEventArgs e)
-        {
-            timerExpired = true;
-        }
-
         #if NET6_0
         [HarmonyPatch(typeof(MusicJukeboxHandler), nameof(MusicJukeboxHandler.Update))]
         #else
@@ -138,30 +129,42 @@ namespace Si_Announcements
             {
                 try
                 {
+
                     // check if timer expired while the game is in-progress
-                    if (GameMode.CurrentGameMode.GameOngoing == true && timerExpired == true)
+                    if (HelperMethods.IsTimerActive(Timer_Announcement))
                     {
-                        timerExpired = false;
+                        Timer_Announcement += Time.deltaTime;
 
-                        if (announcementsText == null)
+                        if (Timer_Announcement >= _Announcements_SecondsBetweenMessages.Value)
                         {
-                            return;
-                        }
+                            Timer_Announcement = Timer_Inactive;
 
-                        if (!_Announcements_ShowIfLastChatWasAnnouncement.Value)
-                        {
-                            // check if the last chat message was an announcement
-                            if (IsPreviousChatMessageAnnouncement(lastChatMessage))
+                            if (announcementsText == null)
                             {
-                                MelonLogger.Msg("Skipping Announcement - Repeated Message");
                                 return;
                             }
+
+                            // skip if game is not ongoign
+                            if (!GameMode.CurrentGameMode.GameOngoing)
+                            {
+                                return;
+                            }
+
+                            if (!_Announcements_ShowIfLastChatWasAnnouncement.Value)
+                            {
+                                // check if the last chat message was an announcement
+                                if (IsPreviousChatMessageAnnouncement(lastChatMessage))
+                                {
+                                    MelonLogger.Msg("Skipping Announcement - Repeated Message");
+                                    return;
+                                }
+                            }
+
+                            string nextAnnouncement = GetNextAnnouncement();
+
+                            Player broadcastPlayer = HelperMethods.FindBroadcastPlayer();
+                            broadcastPlayer.SendChatMessage(nextAnnouncement);
                         }
-
-                        string nextAnnouncement = GetNextAnnouncement();
-
-                        Player broadcastPlayer = HelperMethods.FindBroadcastPlayer();
-                        broadcastPlayer.SendChatMessage(nextAnnouncement);
                     }
                 }
                 catch (Exception exception)
