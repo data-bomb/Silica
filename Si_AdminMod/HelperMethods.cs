@@ -34,6 +34,7 @@ namespace SilicaAdminMod
 {
     public static class HelperMethods
     {
+        public static readonly float Timer_Inactive = -123.0f;
         public const string defaultColor = "<color=#DDE98C>";
         public const string chatPrefix = "<b>" + defaultColor + "[<color=#DFA725>SAM" + defaultColor + "]</b> ";
 
@@ -412,6 +413,21 @@ namespace SilicaAdminMod
             }
 
             return spawnedObject;
+        }
+
+        public static bool IsTimerActive(float time)
+        {
+            if (time >= 0.0f)
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        public static void StartTimer(ref float timer)
+        {
+            timer = 0.0f;
         }
     }
 }
