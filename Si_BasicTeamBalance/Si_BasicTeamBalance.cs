@@ -34,12 +34,11 @@ using HarmonyLib;
 using MelonLoader;
 using Si_BasicTeamBalance;
 using UnityEngine;
-using System.Timers;
 using System;
 using SilicaAdminMod;
 using System.Linq;
 
-[assembly: MelonInfo(typeof(BasicTeamBalance), "Basic Team Balance", "1.2.6", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(BasicTeamBalance), "Basic Team Balance", "1.2.7", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -57,7 +56,8 @@ namespace Si_BasicTeamBalance
 
         static Player? LastPlayerChatMessage;
         static bool preventTeamSwitches;
-        private static System.Timers.Timer? Timer_AllowTeamSwitches;
+
+        private static float Timer_AllowTeamSwitches = HelperMethods.Timer_Inactive;
 
         private const string ModCategory = "Silica";
 
@@ -376,13 +376,7 @@ namespace Si_BasicTeamBalance
                     {
                         preventTeamSwitches = true;
 
-                        // seconds * 1000 millieseconds/1second = # milliseconds for System.Timers.Timer
-                        double interval = _AllowTeamSwitchAfterTime.Value * 1000.0f;
-                        Timer_AllowTeamSwitches = new System.Timers.Timer(interval);
-                        Timer_AllowTeamSwitches.Elapsed += new ElapsedEventHandler(HandleTimerAllowTeamSwitching);
-                        Timer_AllowTeamSwitches.AutoReset = false;
-                        Timer_AllowTeamSwitches.Enabled = true;
-
+                        HelperMethods.StartTimer(ref Timer_AllowTeamSwitches);
                         MelonLogger.Msg("Early game team lock set for " + _AllowTeamSwitchAfterTime.Value.ToString() + " seconds.");
                     }
                 }
@@ -393,9 +387,34 @@ namespace Si_BasicTeamBalance
             }
         }
 
-        private static void HandleTimerAllowTeamSwitching(object? source, ElapsedEventArgs e)
+        #if NET6_0
+        [HarmonyPatch(typeof(MusicJukeboxHandler), nameof(MusicJukeboxHandler.Update))]
+        #else
+        [HarmonyPatch(typeof(MusicJukeboxHandler), "Update")]
+        #endif
+        private static class ApplyPatch_MusicJukeboxHandlerUpdate
         {
-            preventTeamSwitches = false;
+            private static void Postfix(MusicJukeboxHandler __instance)
+            {
+                try
+                {
+                    if (HelperMethods.IsTimerActive(Timer_AllowTeamSwitches))
+                    {
+                        Timer_AllowTeamSwitches += Time.deltaTime;
+
+                        if (Timer_AllowTeamSwitches >= _AllowTeamSwitchAfterTime.Value)
+                        {
+                            Timer_AllowTeamSwitches = HelperMethods.Timer_Inactive;
+
+                            preventTeamSwitches = false;
+                        }
+                    }
+                }
+                catch (Exception error)
+                {
+                    HelperMethods.PrintError(error, "Failed to run MusicJukeboxHandler::Update");
+                }
+            }
         }
 
         // account for if the game ends before the timer expires
@@ -406,14 +425,14 @@ namespace Si_BasicTeamBalance
             {
                 try
                 {
-                    if (!_PreventEarlyTeamSwitches.Value || Timer_AllowTeamSwitches == null)
+                    if (!_PreventEarlyTeamSwitches.Value)
                     {
                         return;
                     }
 
-                    if (Timer_AllowTeamSwitches.Enabled)
+                    if (HelperMethods.IsTimerActive(Timer_AllowTeamSwitches))
                     {
-                        Timer_AllowTeamSwitches.Stop();
+                        Timer_AllowTeamSwitches = HelperMethods.Timer_Inactive;
 
                         MelonLogger.Msg("Game ended before early game team lock expired. Forcing timer to expire.");
                     }
