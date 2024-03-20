@@ -1,6 +1,6 @@
 ﻿/*
  Silica Logging Mod
- Copyright (C) 2024 by databomb
+ Copyright (C) 2023-2024 by databomb
  
  * Description *
  For Silica listen servers, creates a log file with console replication
@@ -38,7 +38,7 @@ using SilicaAdminMod;
 using System.Collections.Generic;
 using System.Linq;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.1.5", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.1.6", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -688,11 +688,23 @@ namespace Si_Logging
                     {
                         firedRoundEndOnce = true;
 
-                        string VictoryLogLine = "Team \"" + __1.TeamShortName + "\" triggered \"Victory\"";
-                        PrintLogLine(VictoryLogLine);
-
                         MP_Strategy strategyInstance = GameObject.FindObjectOfType<MP_Strategy>();
                         MP_Strategy.ETeamsVersus versusMode = strategyInstance.TeamsVersus;
+
+                        if (strategyInstance == null)
+                        {
+                            return;
+                        }
+
+                        if (__1 == null)
+                        {
+                            string RoundWinLogEarlyLine = "World triggered \"Round_Win\" (gametype \"" + versusMode.ToString() + "\")";
+                            PrintLogLine(RoundWinLogEarlyLine);
+                            return;
+                        }
+
+                        string VictoryLogLine = "Team \"" + __1.TeamShortName + "\" triggered \"Victory\"";
+                        PrintLogLine(VictoryLogLine);
 
                         for (int i = 0; i < SiConstants.MaxPlayableTeams; i++)
                         {
