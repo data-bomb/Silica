@@ -29,12 +29,11 @@ using Il2Cpp;
 using HarmonyLib;
 using MelonLoader;
 using Si_HQlessHumansLose;
-using System.Timers;
 using UnityEngine;
 using System;
 using SilicaAdminMod;
 
-[assembly: MelonInfo(typeof(HQlessHumansLose), "HQless Humans Lose", "1.3.1", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HQlessHumansLose), "HQless Humans Lose", "1.3.2", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -42,10 +41,9 @@ namespace Si_HQlessHumansLose
 {
     public class HQlessHumansLose : MelonMod
     {
-        static bool lostMessageTimerExpired;
         static Team? losingTeam;
         static Player? destroyerOfWorlds;
-        static System.Timers.Timer? delayLostMessageTimer;
+        static float Timer_SendTeamLostMessage = HelperMethods.Timer_Inactive;
 
         public static void TeamLostMessage(Team team)
         {
@@ -69,11 +67,6 @@ namespace Si_HQlessHumansLose
         static String GetRootStructureFullName(Team team)
         {
             return team.TeamName.Contains("Human") ? "Headquarters" : "Nest";
-        }
-
-        static void HandleTimerSendLostMessage(object? source, ElapsedEventArgs e)
-        {
-            lostMessageTimerExpired = true;
         }
 
         public static bool OneFactionAlreadyEliminated()
@@ -148,14 +141,8 @@ namespace Si_HQlessHumansLose
         {
             MelonLogger.Msg("Starting delay lost timer for team " + team.TeamShortName);
 
-            lostMessageTimerExpired = false;
+            HelperMethods.StartTimer(ref Timer_SendTeamLostMessage);
             losingTeam = team;
-
-            double interval = 500.0;
-            delayLostMessageTimer = new System.Timers.Timer(interval);
-            delayLostMessageTimer.Elapsed += new ElapsedEventHandler(HandleTimerSendLostMessage);
-            delayLostMessageTimer.AutoReset = false;
-            delayLostMessageTimer.Enabled = true;
         }
 
         public static bool HasRootStructureRemaining(Team team, bool onDestroyedEventTrigger = true)
@@ -351,19 +338,24 @@ namespace Si_HQlessHumansLose
             {
                 try
                 {
-                    if (lostMessageTimerExpired)
+                    if (HelperMethods.IsTimerActive(Timer_SendTeamLostMessage))
                     {
-                        lostMessageTimerExpired = false;
+                        Timer_SendTeamLostMessage += Time.deltaTime;
 
-                        if (losingTeam != null)
+                        if (Timer_SendTeamLostMessage >= 1f)
                         {
-                            if (destroyerOfWorlds == null)
+                            Timer_SendTeamLostMessage = HelperMethods.Timer_Inactive;
+
+                            if (losingTeam != null)
                             {
-                                TeamLostMessage(losingTeam);
-                            }
-                            else
-                            {
-                                TeamLostByPlayerMessage(losingTeam, destroyerOfWorlds);
+                                if (destroyerOfWorlds == null)
+                                {
+                                    TeamLostMessage(losingTeam);
+                                }
+                                else
+                                {
+                                    TeamLostByPlayerMessage(losingTeam, destroyerOfWorlds);
+                                }
                             }
                         }
                     }
