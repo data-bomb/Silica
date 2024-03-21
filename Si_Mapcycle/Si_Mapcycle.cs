@@ -39,7 +39,7 @@ using System.Linq;
 using UnityEngine;
 using System.ComponentModel.Design;
 
-[assembly: MelonInfo(typeof(MapCycleMod), "Mapcycle", "1.5.2", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(MapCycleMod), "Mapcycle", "1.5.3", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -488,12 +488,6 @@ namespace Si_Mapcycle
             {
                 try
                 {
-                    // don't do anything timer related during a map change
-                    if (GameMode.CurrentGameMode == null || !GameMode.CurrentGameMode.GameOngoing)
-                    {
-                        return;
-                    }
-
                     if (HelperMethods.IsTimerActive(Timer_EndRoundDelay))
                     {
                         Timer_EndRoundDelay += Time.deltaTime;
@@ -533,6 +527,7 @@ namespace Si_Mapcycle
 
                             HelperMethods.ReplyToCommand("Preparing to change map to " + rockthevoteWinningMap + "...");
                             HelperMethods.StartTimer(ref Timer_FinalPostVoteDelay);
+                            return;
                         }
                     }
 
