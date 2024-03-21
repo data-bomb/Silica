@@ -42,7 +42,7 @@ namespace SilicaAdminMod
 
         public delegate void VoteHandler(ChatVoteResults results);
 
-        private static float Timer_TallyVote;
+        private static float Timer_TallyVote = HelperMethods.Timer_Inactive;
 
         static HelperMethods.CommandCallback voteChatCallback = Command_VoteChat;
 
@@ -129,11 +129,11 @@ namespace SilicaAdminMod
             HelperMethods.StartTimer(ref Timer_TallyVote);
         }
 
-#if NET6_0
+        #if NET6_0
         [HarmonyPatch(typeof(MusicJukeboxHandler), nameof(MusicJukeboxHandler.Update))]
-#else
+        #else
         [HarmonyPatch(typeof(MusicJukeboxHandler), "Update")]
-#endif
+        #endif
         private static class ApplyPatch_MusicJukeboxHandlerUpdate
         {
             private static void Postfix(MusicJukeboxHandler __instance)
