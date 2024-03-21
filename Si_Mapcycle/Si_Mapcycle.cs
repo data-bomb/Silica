@@ -39,7 +39,7 @@ using System.Linq;
 using UnityEngine;
 using System.ComponentModel.Design;
 
-[assembly: MelonInfo(typeof(MapCycleMod), "Mapcycle", "1.5.1", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(MapCycleMod), "Mapcycle", "1.5.2", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -60,11 +60,9 @@ namespace Si_Mapcycle
         static MelonPreferences_Entry<int> Pref_Mapcycle_RoundsBeforeChange = null!;
         static MelonPreferences_Entry<int> Pref_Mapcycle_EndgameDelay = null!;
 
-        static readonly float Timer_Inactive = -123.0f;
-
-        static float Timer_EndRoundDelay = Timer_Inactive;
-        static float Timer_InitialPostVoteDelay = Timer_Inactive;
-        static float Timer_FinalPostVoteDelay = Timer_Inactive;
+        static float Timer_EndRoundDelay = HelperMethods.Timer_Inactive;
+        static float Timer_InitialPostVoteDelay = HelperMethods.Timer_Inactive;
+        static float Timer_FinalPostVoteDelay = HelperMethods.Timer_Inactive;
 
         public override void OnInitializeMelon()
         {
@@ -150,7 +148,7 @@ namespace Si_Mapcycle
             }
 
             // is the end-game timer already preparing to switch
-            if (IsTimerActive(Timer_EndRoundDelay))
+            if (HelperMethods.IsTimerActive(Timer_EndRoundDelay))
             {
                 HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, " Can't rock the vote. Map change already in progress.");
                 return;
@@ -245,7 +243,7 @@ namespace Si_Mapcycle
             rockers.Clear();
 
             // should we continue or has the game already ended or is in the progress of ending?
-            if (!GameMode.CurrentGameMode.GameOngoing || IsTimerActive(Timer_EndRoundDelay))
+            if (!GameMode.CurrentGameMode.GameOngoing || HelperMethods.IsTimerActive(Timer_EndRoundDelay))
             {
                 mapNominations.Clear();
                 MelonLogger.Warning("Cancelling Rock the Vote handling. Round is not currently active.");
@@ -279,7 +277,7 @@ namespace Si_Mapcycle
             mapNominations.Clear();
             MelonLogger.Msg("Winning map name: " + rockthevoteWinningMap);
 
-            StartTimer(ref Timer_InitialPostVoteDelay);
+            HelperMethods.StartTimer(ref Timer_InitialPostVoteDelay);
         }
 
         public static int MoreRocksNeededForVote()
@@ -414,15 +412,15 @@ namespace Si_Mapcycle
             }
 
             // if any rock-the-vote actions are pending then they should be cancelled
-            if (IsTimerActive(Timer_FinalPostVoteDelay))
+            if (HelperMethods.IsTimerActive(Timer_FinalPostVoteDelay))
             {
-                Timer_FinalPostVoteDelay = Timer_Inactive;
+                Timer_FinalPostVoteDelay = HelperMethods.Timer_Inactive;
                 MelonLogger.Warning("Admin changed map while final RTV timer was in progress. Forcing timer to expire.");
             }
 
-            if (IsTimerActive(Timer_InitialPostVoteDelay))
+            if (HelperMethods.IsTimerActive(Timer_InitialPostVoteDelay))
             {
-                Timer_InitialPostVoteDelay = Timer_Inactive;
+                Timer_InitialPostVoteDelay = HelperMethods.Timer_Inactive;
                 MelonLogger.Warning("Admin changed map while initial RTV timer was in progress. Forcing timer to expire.");
             }
 
@@ -490,14 +488,19 @@ namespace Si_Mapcycle
             {
                 try
                 {
+                    // don't do anything timer related during a map change
+                    if (GameMode.CurrentGameMode == null || !GameMode.CurrentGameMode.GameOngoing)
+                    {
+                        return;
+                    }
 
-                    if (IsTimerActive(Timer_EndRoundDelay))
+                    if (HelperMethods.IsTimerActive(Timer_EndRoundDelay))
                     {
                         Timer_EndRoundDelay += Time.deltaTime;
 
                         if (Timer_EndRoundDelay > Pref_Mapcycle_EndgameDelay.Value)
                         {
-                            Timer_EndRoundDelay = Timer_Inactive;
+                            Timer_EndRoundDelay = HelperMethods.Timer_Inactive;
 
                             if (sMapCycle == null)
                             {
@@ -508,16 +511,17 @@ namespace Si_Mapcycle
 
                             MelonLogger.Msg("Changing map to " + sNextMap + ".....");
                             ChangeMap(sNextMap);
+                            return;
                         }
                     }
 
-                    if (IsTimerActive(Timer_InitialPostVoteDelay))
+                    if (HelperMethods.IsTimerActive(Timer_InitialPostVoteDelay))
                     {
                         Timer_InitialPostVoteDelay += Time.deltaTime;
 
                         if (Timer_InitialPostVoteDelay > 2.0f)
                         {
-                            Timer_InitialPostVoteDelay = Timer_Inactive;
+                            Timer_InitialPostVoteDelay = HelperMethods.Timer_Inactive;
 
                             HelperMethods.ReplyToCommand("Rock the vote finished.");
 
@@ -528,20 +532,21 @@ namespace Si_Mapcycle
                             }
 
                             HelperMethods.ReplyToCommand("Preparing to change map to " + rockthevoteWinningMap + "...");
-                            StartTimer(ref Timer_FinalPostVoteDelay);
+                            HelperMethods.StartTimer(ref Timer_FinalPostVoteDelay);
                         }
                     }
 
-                    if (IsTimerActive(Timer_FinalPostVoteDelay))
+                    if (HelperMethods.IsTimerActive(Timer_FinalPostVoteDelay))
                     {
                         Timer_FinalPostVoteDelay += Time.deltaTime;
 
                         if (Timer_FinalPostVoteDelay > 6.0f)
                         {
-                            Timer_FinalPostVoteDelay = Timer_Inactive;
+                            Timer_FinalPostVoteDelay = HelperMethods.Timer_Inactive;
 
                             MelonLogger.Msg("Changing map to " + rockthevoteWinningMap + "....");
                             ChangeMap(rockthevoteWinningMap);
+                            return;
                         }
                     }
                 }
@@ -580,27 +585,27 @@ namespace Si_Mapcycle
                         return;
                     }
 
-                    if (IsTimerActive(Timer_EndRoundDelay))
+                    if (HelperMethods.IsTimerActive(Timer_EndRoundDelay))
                     {
                         MelonLogger.Warning("End round delay timer already started.");
                         return;
                     }
 
                     // if any rock-the-vote actions are pending then they should be cancelled
-                    if (IsTimerActive(Timer_FinalPostVoteDelay))
+                    if (HelperMethods.IsTimerActive(Timer_FinalPostVoteDelay))
                     {
-                        Timer_FinalPostVoteDelay = Timer_Inactive;
+                        Timer_FinalPostVoteDelay = HelperMethods.Timer_Inactive;
                         MelonLogger.Warning("Game ended while final RTV timer was in progress. Forcing timer to expire.");
                     }
 
-                    if (IsTimerActive(Timer_InitialPostVoteDelay))
+                    if (HelperMethods.IsTimerActive(Timer_InitialPostVoteDelay))
                     {
-                        Timer_InitialPostVoteDelay = Timer_Inactive;
+                        Timer_InitialPostVoteDelay = HelperMethods.Timer_Inactive;
                         MelonLogger.Warning("Game ended while initial RTV timer was in progress. Forcing timer to expire.");
                     }
 
                     HelperMethods.ReplyToCommand("Preparing to change map to " + sMapCycle[(iMapLoadCount + 1) % (sMapCycle.Length - 1)] + "....");
-                    StartTimer(ref Timer_EndRoundDelay);
+                    HelperMethods.StartTimer(ref Timer_EndRoundDelay);
                 }
                 catch (Exception error)
                 {
@@ -692,21 +697,6 @@ namespace Si_Mapcycle
             }
 
             return null;
-        }
-
-        private static bool IsTimerActive(float time)
-        {
-            if (time >= 0.0f)
-            {
-                return true;
-            }
-
-            return false;
-        }
-
-        private static void StartTimer(ref float timer)
-        {
-            timer = 0.0f;
         }
 
         private static void IndexToMapInCycle(string mapName)
