@@ -35,7 +35,7 @@ using System;
 using System.Collections;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(AwayFromKeyboard), "AFK Manager", "1.2.9", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(AwayFromKeyboard), "AFK Manager", "1.3.0", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -141,27 +141,20 @@ namespace Si_AFKManager
                 HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Ambiguous or invalid target");
                 return;
             }
-			
-			if (callerPlayer == null)
-			{
-				HelperMethods.AlertAdminActivity(callerPlayer, playerToKick, "kicked");
-				return;
-			}
 
-            if (callerPlayer.CanAdminTarget(playerToKick))
+            if (callerPlayer != null && !callerPlayer.CanAdminTarget(playerToKick))
             {
-                if (HelperMethods.KickPlayer(playerToKick))
-                {
-                    HelperMethods.AlertAdminActivity(callerPlayer, playerToKick, "kicked");
-                }
-                else
-                {
-                    HelperMethods.ReplyToCommand_Player(playerToKick, "is the host and cannot be targeted");
-                }
+                HelperMethods.ReplyToCommand_Player(playerToKick, "is immune due to level");
+                return;
+            }
+
+            if (HelperMethods.KickPlayer(playerToKick))
+            {
+                HelperMethods.AlertAdminActivity(callerPlayer, playerToKick, "kicked");
             }
             else
             {
-                HelperMethods.ReplyToCommand_Player(playerToKick, "is immune due to level");
+                HelperMethods.ReplyToCommand_Player(playerToKick, "is the host and cannot be targeted");
             }
         }
 
