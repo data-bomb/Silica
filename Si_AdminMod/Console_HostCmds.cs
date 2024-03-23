@@ -165,7 +165,7 @@ namespace SilicaAdminMod
                 return;
             }
 
-            HelperMethods.AlertAdminAction(null, String.Concat(parameters));
+            HelperMethods.AlertAdminAction(null, String.Join(" ", parameters));
         }
     }
     #endif
