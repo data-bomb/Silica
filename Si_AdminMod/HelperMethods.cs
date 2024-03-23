@@ -43,9 +43,9 @@ namespace SilicaAdminMod
 
         public delegate void CommandCallback(Player? callerPlayer, String args);
 
-        public static void RegisterAdminCommand(String adminCommand, CommandCallback adminCallback, Power adminPower)
+        public static void RegisterAdminCommand(String adminCommand, CommandCallback adminCallback, Power adminPower, String? adminDescription = null)
         {
-            AdminMethods.RegisterAdminCommand(adminCommand, adminCallback, adminPower);
+            AdminMethods.RegisterAdminCommand(adminCommand, adminCallback, adminPower, adminDescription);
         }
 
         public static void RegisterPlayerCommand(String playerCommand, CommandCallback commandCallback, bool hideFromChat)
