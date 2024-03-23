@@ -28,6 +28,7 @@ using Il2CppSteamworks;
 using Steamworks;
 #endif
 
+using System.Threading;
 using HarmonyLib;
 using MelonLoader;
 using MelonLoader.Utils;
@@ -37,8 +38,11 @@ using System;
 using SilicaAdminMod;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
+using System.Diagnostics;
+using System.IO;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.1.6", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.2.0", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -53,6 +57,18 @@ namespace Si_Logging
         static MelonPreferences_Category _modCategory = null!;
         static MelonPreferences_Entry<bool> Pref_Log_Damage = null!;
         static MelonPreferences_Entry<bool> Pref_Log_Kills_Include_AI_vs_Player = null!;
+        static MelonPreferences_Entry<string> Pref_Log_ParserFile = null!;
+        static MelonPreferences_Entry<string> Pref_Log_ParserArgs = null!;
+
+        public static bool ParserFilePresent()
+        {
+            return System.IO.File.Exists(GetParserPath());
+        }
+
+        public static string GetParserPath()
+        {
+            return System.IO.Path.Combine(MelonEnvironment.UserDataDirectory, Pref_Log_ParserFile.Value);
+        }
 
         public static void PrintLogLine(string LogMessage, bool suppressConsoleOutput = false)
         {
@@ -126,6 +142,8 @@ namespace Si_Logging
                 _modCategory ??= MelonPreferences.CreateCategory("Silica");
                 Pref_Log_Damage ??= _modCategory.CreateEntry<bool>("Logging_LogDamage", false);
                 Pref_Log_Kills_Include_AI_vs_Player ??= _modCategory.CreateEntry<bool>("Logging_LogKills_IncludeAIvsPlayer", true);
+                Pref_Log_ParserFile ??= _modCategory.CreateEntry<string>("Logging_LogParserPath", "parser_ranked.py");
+                Pref_Log_ParserArgs ??= _modCategory.CreateEntry<string>("Logging_LogParserArgs", "credentials.env");
 
                 if (!System.IO.Directory.Exists(GetLogFileDirectory()))
                 {
@@ -189,7 +207,7 @@ namespace Si_Logging
         }
 
         // 050. Connection
-#if NET6_0
+        #if NET6_0
         [HarmonyPatch(typeof(NetworkGameServer), nameof(NetworkGameServer.OnP2PSessionRequest))]
         #else
         [HarmonyPatch(typeof(NetworkGameServer), "OnP2PSessionRequest")]
@@ -747,6 +765,22 @@ namespace Si_Logging
 
                         string RoundWinLogLine = "World triggered \"Round_Win\" (gametype \"" + versusMode.ToString() + "\")";
                         PrintLogLine(RoundWinLogLine);
+
+                        // call parser
+                        if (!ParserFilePresent())
+                        {
+                            MelonLogger.Msg("Parser file not present.");
+                            return;
+                        }
+
+                        // launch parser
+                        MelonLogger.Msg("Launching parser.");
+                        ProcessStartInfo start = new ProcessStartInfo();
+                        start.FileName = "python.exe";
+                        start.Arguments = string.Format("{0} {1}", Pref_Log_ParserFile.Value, Pref_Log_ParserArgs.Value);
+                        start.UseShellExecute = false;
+                        start.RedirectStandardOutput = false;
+                        using Process? process = Process.Start(start);
                     }
                 }
                 catch (Exception error)
