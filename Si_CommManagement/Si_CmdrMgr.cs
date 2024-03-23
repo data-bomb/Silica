@@ -40,7 +40,7 @@ using System.Collections.Generic;
 using SilicaAdminMod;
 using System.Linq;
 
-[assembly: MelonInfo(typeof(CommanderManager), "Commander Management", "1.5.2", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(CommanderManager), "Commander Management", "1.5.3", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -601,40 +601,30 @@ namespace Si_CommanderManagement
             }
 
             Team targetTeam = Team.GetTeamByIndex(targetTeamIndex);
-            if (targetTeam != null)
-            {
-                // check if they have a commander to demote
-                Player? targetPlayer = strategyInstance.GetCommanderForTeam(targetTeam);
-
-                // team has a commander if targetPlayer isn't null
-                if (targetPlayer != null)
-                {
-					if (callerPlayer == null)
-					{
-                        DemoteTeamsCommander(strategyInstance, targetTeam);
-                        HelperMethods.AlertAdminActivity(callerPlayer, targetPlayer, "demoted");
-						return;
-					}
-					
-                    if (callerPlayer.CanAdminTarget(targetPlayer))
-                    {
-                        DemoteTeamsCommander(strategyInstance, targetTeam);
-                        HelperMethods.AlertAdminActivity(callerPlayer, targetPlayer, "demoted");
-                    }
-                    else
-                    {
-                        HelperMethods.ReplyToCommand_Player(targetPlayer, "is immune due to level");
-                    }
-                }
-                else
-                {
-                    HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": No commander found on specified team");
-                }
-            }
-            else
+            if (targetTeam == null)
             {
                 HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": No valid team found");
+                return;
             }
+
+            // check if they have a commander to demote
+            Player? targetPlayer = strategyInstance.GetCommanderForTeam(targetTeam);
+
+            // team has a commander if targetPlayer isn't null
+            if (targetPlayer == null)
+            {
+                HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": No commander found on specified team");
+                return;
+            }
+
+            if (callerPlayer != null && !callerPlayer.CanAdminTarget(targetPlayer))
+            {
+                HelperMethods.ReplyToCommand_Player(targetPlayer, "is immune due to level");
+                return;
+            }
+
+            DemoteTeamsCommander(strategyInstance, targetTeam);
+            HelperMethods.AlertAdminActivity(callerPlayer, targetPlayer, "demoted");
         }
 
         public static void Command_CommanderUnban(Player? callerPlayer, String args)
@@ -667,36 +657,22 @@ namespace Si_CommanderManagement
                 HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Ambiguous or invalid target");
                 return;
             }
-			
-			if (callerPlayer == null)
-			{
-				bool removed = RemoveCommanderBan(playerToUnCmdrBan);
-                if (removed)
-                {
-                    HelperMethods.AlertAdminAction(callerPlayer, "permitted " + HelperMethods.GetTeamColor(playerToUnCmdrBan) + playerToUnCmdrBan.PlayerName + HelperMethods.defaultColor + " to play as commander");
-                }
-                else
-                {
-                    HelperMethods.ReplyToCommand_Player(playerToUnCmdrBan, "not commander banned");
-                }
-				return;
-			}
 
-            if (callerPlayer.CanAdminTarget(playerToUnCmdrBan))
+
+            if (callerPlayer != null && !callerPlayer.CanAdminTarget(playerToUnCmdrBan))
             {
-                bool removed = RemoveCommanderBan(playerToUnCmdrBan);
-                if (removed)
-                {
-                    HelperMethods.AlertAdminAction(callerPlayer, "permitted " + HelperMethods.GetTeamColor(playerToUnCmdrBan) + playerToUnCmdrBan.PlayerName + HelperMethods.defaultColor + " to play as commander");
-                }
-                else
-                {
-                    HelperMethods.ReplyToCommand_Player(playerToUnCmdrBan, "not commander banned");
-                }
+                HelperMethods.ReplyToCommand_Player(playerToUnCmdrBan, "is immune due to level");
+                return;
+            }
+
+            bool removed = RemoveCommanderBan(playerToUnCmdrBan);
+            if (removed)
+            {
+                HelperMethods.AlertAdminAction(callerPlayer, "permitted " + HelperMethods.GetTeamColor(playerToUnCmdrBan) + playerToUnCmdrBan.PlayerName + HelperMethods.defaultColor + " to play as commander");
             }
             else
             {
-                HelperMethods.ReplyToCommand_Player(playerToUnCmdrBan, "is immune due to level");
+                HelperMethods.ReplyToCommand_Player(playerToUnCmdrBan, "not commander banned");
             }
         }
 
