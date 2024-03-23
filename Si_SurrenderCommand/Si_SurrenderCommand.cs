@@ -31,7 +31,7 @@ using SilicaAdminMod;
 using System;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(SurrenderCommand), "Surrender Command", "1.2.2", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(SurrenderCommand), "Surrender Command", "1.2.3", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -97,8 +97,24 @@ namespace Si_SurrenderCommand
             // notify all players
             HelperMethods.ReplyToCommand_Player(callerPlayer, "used !surrender to end");
 
-            // destroy all structures on team that's surrendering
             Team SurrenderTeam = callerPlayer.Team;
+            // destroy all construction sites on team that's surrendering
+            foreach (ConstructionSite constructionSite in ConstructionSite.ConstructionSites)
+            {
+                if (constructionSite == null || constructionSite.Team == null)
+                {
+                    continue;
+                }
+
+                if (constructionSite.Team != SurrenderTeam)
+                {
+                    continue;
+                }
+
+                constructionSite.Deinit(false);
+            }
+
+            // destroy all structures on team that's surrendering
             for (int i = 0; i < SurrenderTeam.Structures.Count; i++)
             {
                 SurrenderTeam.Structures[i].DamageManager.SetHealth01(0.0f);
