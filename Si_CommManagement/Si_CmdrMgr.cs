@@ -739,15 +739,14 @@ namespace Si_CommanderManagement
                 return;
             }
 
-            if (callerPlayer.CanAdminTarget(playerToCmdrBan))
-            {
-                AddCommanderBan(playerToCmdrBan);
-                HelperMethods.AlertAdminAction(callerPlayer, "restricted " + playerToCmdrBan.PlayerName + " to play as infantry only");
-            }
-            else
+            if (callerPlayer != null && !callerPlayer.CanAdminTarget(playerToCmdrBan))
             {
                 HelperMethods.ReplyToCommand_Player(playerToCmdrBan, "is immune due to level");
+                return;
             }
+
+            AddCommanderBan(playerToCmdrBan);
+            HelperMethods.AlertAdminAction(callerPlayer, "restricted " + playerToCmdrBan.PlayerName + " to play as infantry only");
         }
 
         #if false

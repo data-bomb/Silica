@@ -84,24 +84,18 @@ namespace SilicaAdminMod
             broadcastPlayer.SendChatMessage(chatPrefix + GetTeamColor(player) + player.PlayerName + defaultColor + " " + String.Concat(messages), false);
         }
 
-        public static void AlertAdminActivity(Player adminPlayer, Player targetPlayer, string action)
+        public static void AlertAdminActivity(Player? adminPlayer, Player targetPlayer, string action)
         {
             Player broadcastPlayer = FindBroadcastPlayer();
-            broadcastPlayer.SendChatMessage(chatPrefix + GetAdminColor() + adminPlayer.PlayerName + defaultColor + " " + action + " " + GetTeamColor(targetPlayer) + targetPlayer.PlayerName, false);
+            string adminName = (adminPlayer == null) ? "SERVER CONSOLE" : adminPlayer.PlayerName;
+            broadcastPlayer.SendChatMessage(chatPrefix + GetAdminColor() + adminName + defaultColor + " " + action + " " + GetTeamColor(targetPlayer) + targetPlayer.PlayerName, false);
         }
 
         public static void AlertAdminAction(Player? adminPlayer, string action)
         {
             Player broadcastPlayer = FindBroadcastPlayer();
-
-            if (adminPlayer == null)
-            {
-                broadcastPlayer.SendChatMessage(chatPrefix + GetAdminColor() + "SERVER CONSOLE" + defaultColor + " " + action, false);
-            }
-            else
-            {
-                broadcastPlayer.SendChatMessage(chatPrefix + GetAdminColor() + adminPlayer.PlayerName + defaultColor + " " + action, false);
-            }
+            string adminName = (adminPlayer == null) ? "SERVER CONSOLE" : adminPlayer.PlayerName;
+            broadcastPlayer.SendChatMessage(chatPrefix + GetAdminColor() + adminName + defaultColor + " " + action, false);
         }
 
         public static void SendChatMessageToPlayer(Player? player, params string[] messages)
