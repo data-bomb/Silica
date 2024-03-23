@@ -35,7 +35,7 @@ using System;
 using System.Collections;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(AwayFromKeyboard), "AFK Manager", "1.2.8", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(AwayFromKeyboard), "AFK Manager", "1.2.9", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -275,25 +275,30 @@ namespace Si_AFKManager
                                 continue;
                             }
 
-                            int afkIndex = AFKTracker.FindIndex(p => p.Player == player);
-
                             // for now, we'll only care about people who idle and don't join a team
-                            if (player.Team != null)
+                            if (player.Team == null)
                             {
-                                // if they've joined a team then remove them from the AFK tracker
-                                if (afkIndex >= 0)
-                                {
-                                    MelonLogger.Msg("Removing " + player.PlayerName + " from AFK list for being on a team.");
-                                    AFKTracker.RemoveAt(afkIndex);
-                                }
-
                                 continue;
+                            }
+
+                            int afkIndex = AFKTracker.FindIndex(p => p.Player == player);
+                            // if they've joined a team then remove them from the AFK tracker
+                            if (afkIndex >= 0)
+                            {
+                                MelonLogger.Msg("Removing " + player.PlayerName + " from AFK list for being on a team.");
+                                AFKTracker.RemoveAt(afkIndex);
                             }
                         }
 
                         foreach (Player player in Player.Players)
                         {
                             if (player == null)
+                            {
+                                continue;
+                            }
+
+                            // for now, we'll only care about people who idle and don't join a team
+                            if (player.Team != null)
                             {
                                 continue;
                             }
