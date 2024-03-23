@@ -63,14 +63,21 @@ namespace SilicaAdminMod
 
                 #if !NET6_0
                 MelonLogger.Msg("Registering host console commands...");
+
                 FieldInfo commandField = typeof(DebugConsole).GetField("s_Commands", BindingFlags.NonPublic | BindingFlags.Static);
 
                 DebugConsole.ICommand addAdminConsoleCmd = (DebugConsole.ICommand)Activator.CreateInstance(typeof(CSAM_AddAdmin));
-                if (addAdminConsoleCmd != null)
+                DebugConsole.ICommand addSayConsoleCmd = (DebugConsole.ICommand)Activator.CreateInstance(typeof(CSAM_Say));
+                if (addAdminConsoleCmd != null && addSayConsoleCmd != null)
                 {
                     Dictionary<string, DebugConsole.ICommand> s_Commands = (Dictionary<string, DebugConsole.ICommand>)commandField.GetValue(null);
+
                     MelonLogger.Msg(addAdminConsoleCmd.Key.ToLower() + " registered.");
                     s_Commands.Add(addAdminConsoleCmd.Key.ToLower(), addAdminConsoleCmd);
+
+                    MelonLogger.Msg(addSayConsoleCmd.Key.ToLower() + " registered.");
+                    s_Commands.Add(addSayConsoleCmd.Key.ToLower(), addSayConsoleCmd);
+
                     commandField.SetValue(null, s_Commands);
                 }
                 #endif
