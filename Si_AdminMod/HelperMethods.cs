@@ -20,12 +20,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using MelonLoader;
 using System;
 using UnityEngine;
-using DebugTools;
+
 
 #if NET6_0
 using Il2Cpp;
 using Il2CppSteamworks;
+using Il2CppDebugTools;
 #else
+using DebugTools;
 using System.Collections.Generic;
 using Steamworks;
 using System.Reflection;
