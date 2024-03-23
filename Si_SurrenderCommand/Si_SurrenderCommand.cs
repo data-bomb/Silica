@@ -30,8 +30,9 @@ using Si_SurrenderCommand;
 using SilicaAdminMod;
 using System;
 using UnityEngine;
+using System.Collections.Generic;
 
-[assembly: MelonInfo(typeof(SurrenderCommand), "Surrender Command", "1.2.3", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(SurrenderCommand), "Surrender Command", "1.2.4", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -98,7 +99,9 @@ namespace Si_SurrenderCommand
             HelperMethods.ReplyToCommand_Player(callerPlayer, "used !surrender to end");
 
             Team SurrenderTeam = callerPlayer.Team;
-            // destroy all construction sites on team that's surrendering
+            List<ConstructionSite> sitesToDestroy = new List<ConstructionSite>();
+
+            // find all construction sites we should destroy form the team that's surrendering
             foreach (ConstructionSite constructionSite in ConstructionSite.ConstructionSites)
             {
                 if (constructionSite == null || constructionSite.Team == null)
@@ -111,6 +114,11 @@ namespace Si_SurrenderCommand
                     continue;
                 }
 
+                sitesToDestroy.Add(constructionSite);
+            }
+
+            foreach (ConstructionSite constructionSite in sitesToDestroy)
+            {
                 constructionSite.Deinit(false);
             }
 
