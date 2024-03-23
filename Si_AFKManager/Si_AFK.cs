@@ -85,8 +85,8 @@ namespace Si_AFKManager
 
             HelperMethods.CommandCallback kickCallback = Command_Kick;
             HelperMethods.CommandCallback afkCallback = Command_AFK;
-            HelperMethods.RegisterAdminCommand("kick", kickCallback, Power.Kick);
-            HelperMethods.RegisterAdminCommand("afk", afkCallback, Power.Kick);
+            HelperMethods.RegisterAdminCommand("kick", kickCallback, Power.Kick, "Kicks target player. Usage: !kick <player>");
+            HelperMethods.RegisterAdminCommand("afk", afkCallback, Power.Kick, "Kicks any AFK players immediately. Usage: !afk");
 
             #if NET6_0
             bool QListLoaded = RegisteredMelons.Any(m => m.Info.Name == "QList");

@@ -170,16 +170,16 @@ namespace Si_CommanderManagement
         {
             // register commands
             HelperMethods.CommandCallback commanderBanCallback = Command_CommanderBan;
-            HelperMethods.RegisterAdminCommand("cmdrban", commanderBanCallback, Power.Commander);
-            HelperMethods.RegisterAdminCommand("commanderban", commanderBanCallback, Power.Commander);
-            HelperMethods.RegisterAdminCommand("cban", commanderBanCallback, Power.Commander);
+            HelperMethods.RegisterAdminCommand("cmdrban", commanderBanCallback, Power.Commander, "Prevents target player from applying or playing as a Commander. Usage: !cmdrban <player>");
+            HelperMethods.RegisterAdminCommand("commanderban", commanderBanCallback, Power.Commander, "Prevents target player from applying or playing as a Commander. Usage: !commanderban <player>");
+            HelperMethods.RegisterAdminCommand("cban", commanderBanCallback, Power.Commander, "Prevents target player from applying or playing as a Commander. Usage: !cban <player>");
 
             HelperMethods.CommandCallback commanderUnbanCallback = Command_CommanderUnban;
-            HelperMethods.RegisterAdminCommand("removecommanderban", commanderUnbanCallback, Power.Commander);
-            HelperMethods.RegisterAdminCommand("uncban", commanderUnbanCallback, Power.Commander);
+            HelperMethods.RegisterAdminCommand("removecommanderban", commanderUnbanCallback, Power.Commander, "Allows target player to apply or play as a Commander. Usage: !removecommanderban <player>");
+            HelperMethods.RegisterAdminCommand("uncban", commanderUnbanCallback, Power.Commander, "Allows target player to apply or play as a Commander. Usage: !uncban <player>");
 
             HelperMethods.CommandCallback commanderDemoteCallback = Command_CommanderDemote;
-            HelperMethods.RegisterAdminCommand("demote", commanderDemoteCallback, Power.Commander);
+            HelperMethods.RegisterAdminCommand("demote", commanderDemoteCallback, Power.Commander, "Demotes target player from their current Commander role. Usage: !demote <player>");
 
             // subscribe to the OnRequestCommander event
             Event_Roles.OnRequestCommander += OnRequestCommander;

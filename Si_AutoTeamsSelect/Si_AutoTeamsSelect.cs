@@ -76,7 +76,7 @@ namespace VersusTeamsAutoSelect
         public override void OnLateInitializeMelon()
         {
             HelperMethods.CommandCallback changeNextModeCallback = Command_ChangeNextMode;
-            HelperMethods.RegisterAdminCommand("nextmode", changeNextModeCallback, Power.Map);
+            HelperMethods.RegisterAdminCommand("nextmode", changeNextModeCallback, Power.Map, "Changes the versus mode for the next round. Usage: !nextmode [HvH, HvA, HvHvA]");
 
             #if NET6_0
             bool QListLoaded = RegisteredMelons.Any(m => m.Info.Name == "QList");

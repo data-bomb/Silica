@@ -45,8 +45,8 @@ namespace Si_EndRound
         public override void OnLateInitializeMelon()
         {
             HelperMethods.CommandCallback roundEndCallback = Command_EndRound;
-            HelperMethods.RegisterAdminCommand("endround", roundEndCallback, Power.End);
-            HelperMethods.RegisterAdminCommand("endgame", roundEndCallback, Power.End);
+            HelperMethods.RegisterAdminCommand("endround", roundEndCallback, Power.End, "Ends the current round of the game. Usage: !endround");
+            HelperMethods.RegisterAdminCommand("endgame", roundEndCallback, Power.End, "Ends the current round of the game. Usage: !endgame");
         }
 
         public static void Command_EndRound(Player callerPlayer, String args)

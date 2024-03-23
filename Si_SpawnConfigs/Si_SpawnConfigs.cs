@@ -185,19 +185,19 @@ namespace Si_SpawnConfigs
             if (AdminModAvailable)
             {
                 HelperMethods.CommandCallback spawnCallback = Command_Spawn;
-                HelperMethods.RegisterAdminCommand("spawn", spawnCallback, Power.Cheat);
+                HelperMethods.RegisterAdminCommand("spawn", spawnCallback, Power.Cheat, "Spawns an object. Usage: !spawn <objectname>");
 
                 HelperMethods.CommandCallback undoSpawnCallback = Command_UndoSpawn;
-                HelperMethods.RegisterAdminCommand("undospawn", undoSpawnCallback, Power.Cheat);
+                HelperMethods.RegisterAdminCommand("undospawn", undoSpawnCallback, Power.Cheat, "Removes last spawned object. Usage !undospawn");
 
                 HelperMethods.CommandCallback saveCallback = Command_SaveSetup;
-                HelperMethods.RegisterAdminCommand("saveconfig", saveCallback, Power.Cheat);
+                HelperMethods.RegisterAdminCommand("saveconfig", saveCallback, Power.Cheat, "Saves all current objects to a file. Usage: !saveconfig <filename>");
 
                 HelperMethods.CommandCallback loadCallback = Command_LoadSetup;
-                HelperMethods.RegisterAdminCommand("loadconfig", loadCallback, Power.Cheat);
+                HelperMethods.RegisterAdminCommand("loadconfig", loadCallback, Power.Cheat, "Removes all current objects and loads set objects from file. Usage !loadconfig <filename>");
 
                 HelperMethods.CommandCallback addCallback = Command_AddSetup;
-                HelperMethods.RegisterAdminCommand("addconfig", addCallback, Power.Cheat);
+                HelperMethods.RegisterAdminCommand("addconfig", addCallback, Power.Cheat, "Keeps all current objects and adds set objects from file. Usage !addconfig <filename>");
             }
             else
             {
