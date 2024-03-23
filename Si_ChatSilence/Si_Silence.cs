@@ -37,7 +37,7 @@ using System;
 using System.Linq;
 
 
-[assembly: MelonInfo(typeof(ChatSilence), "Silence Admin Command", "1.2.1", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(ChatSilence), "Silence Admin Command", "1.2.2", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -92,37 +92,21 @@ namespace Si_ChatSilence
                 HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Ambiguous or invalid target");
                 return;
             }
-			
-			if (callerPlayer == null)
-			{
-				if (IsPlayerSilenced(playerTarget))
-                {
-                    HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Target player already silenced");
-                }
-                else
-                {
-                    SilencePlayer(playerTarget);
-                    HelperMethods.AlertAdminActivity(callerPlayer, playerTarget, "silenced");
-                }
-				
-				return;
-			}
 
-            if (callerPlayer.CanAdminTarget(playerTarget))
+            if (callerPlayer != null && !callerPlayer.CanAdminTarget(playerTarget))
             {
-                if (IsPlayerSilenced(playerTarget))
-                {
-                    HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Target player already silenced");
-                }
-                else
-                {
-                    SilencePlayer(playerTarget);
-                    HelperMethods.AlertAdminActivity(callerPlayer, playerTarget, "silenced");
-                }
+                HelperMethods.ReplyToCommand_Player(playerTarget, "is immune due to level");
+                return;
+            }
+
+            if (IsPlayerSilenced(playerTarget))
+            {
+                HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Target player already silenced");
             }
             else
             {
-                HelperMethods.ReplyToCommand_Player(playerTarget, "is immune due to level");
+                SilencePlayer(playerTarget);
+                HelperMethods.AlertAdminActivity(callerPlayer, playerTarget, "silenced");
             }
         }
 
@@ -152,37 +136,21 @@ namespace Si_ChatSilence
                 HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Ambiguous or invalid target");
                 return;
             }
-			
-			if (callerPlayer == null)
-			{
-                if (IsPlayerSilenced(playerTarget))
-                {
-                    UnSilencePlayer(playerTarget);
-                    HelperMethods.AlertAdminActivity(callerPlayer, playerTarget, "unsilenced");
-                }
-                else
-                {
-                    HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Target player not silenced");
-                }
-				
-				return;
-			}
 
-            if (callerPlayer.CanAdminTarget(playerTarget))
+            if (callerPlayer != null && !callerPlayer.CanAdminTarget(playerTarget))
             {
-                if (IsPlayerSilenced(playerTarget))
-                {
-                    UnSilencePlayer(playerTarget);
-                    HelperMethods.AlertAdminActivity(callerPlayer, playerTarget, "unsilenced");
-                }
-                else
-                {
-                    HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Target player not silenced");
-                }
+                HelperMethods.ReplyToCommand_Player(playerTarget, "is immune due to level");
+                return;
+            }
+
+            if (IsPlayerSilenced(playerTarget))
+            {
+                UnSilencePlayer(playerTarget);
+                HelperMethods.AlertAdminActivity(callerPlayer, playerTarget, "unsilenced");
             }
             else
             {
-                HelperMethods.ReplyToCommand_Player(playerTarget, "is immune due to level");
+                HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Target player not silenced");
             }
         }
 
