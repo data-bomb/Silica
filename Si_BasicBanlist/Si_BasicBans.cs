@@ -35,7 +35,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-[assembly: MelonInfo(typeof(BasicBanlist), "Basic Banlist", "1.3.4", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(BasicBanlist), "Basic Banlist", "1.4.0", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -124,6 +124,9 @@ namespace Si_BasicBanlist
             HelperMethods.RegisterAdminCommand("ban", banCallback, Power.Ban, "Bans target player. Usage: !ban <player>");
             HelperMethods.RegisterAdminCommand("kickban", banCallback, Power.Ban, "Bans target player. Usage: !kickban <player>");
 
+            HelperMethods.CommandCallback offlineBanCallback = Command_OfflineBan;
+            HelperMethods.RegisterAdminCommand("banid", offlineBanCallback, Power.Rcon, "Bans target player by SteamID. Usage !ban <Steam64ID> <player name>");
+
             HelperMethods.CommandCallback unbanCallback = Command_Unban;
             HelperMethods.RegisterAdminCommand("unban", unbanCallback, Power.Unban, "Unbans target player. Usage: !unban <playername | Steam64ID>");
 
@@ -140,6 +143,67 @@ namespace Si_BasicBanlist
 
             QList.Options.AddOption(kickEqualsPermaBan);
             #endif
+        }
+
+        public static void Command_OfflineBan(Player? callerPlayer, String args)
+        {
+            // validate banlist is available
+            if (MasterBanList == null)
+            {
+                MelonLogger.Msg("Ban list unavailable. Check json syntax.");
+                return;
+            }
+
+            string commandName = args.Split(' ')[0];
+
+            // validate argument count
+            int argumentCount = args.Split(' ').Length - 1;
+            if (argumentCount < 2)
+            {
+                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": Too few arguments");
+                return;
+            }
+
+            // validate argument contents
+            string targetID = args.Split(' ')[1];
+            string targetName = args.Split(' ', 2)[2];
+            bool isNumber = long.TryParse(targetID, out long steamid);
+            if (!isNumber)
+            {
+                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": Not a valid SteamID64");
+                return;
+            }
+
+            BanEntry? matchingBan = MasterBanList.Find(i => i.OffenderSteamId == steamid);
+
+            // did we find someone we could ban?
+            if (matchingBan != null)
+            {
+                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": SteamID64 already found in the banlist");
+                return;
+            }
+
+            BanEntry thisBan = new BanEntry()
+            {
+                OffenderSteamId = steamid,
+                OffenderName = targetName,
+                UnixBanTime = (int)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds
+            };
+
+            if (callerPlayer == null)
+            {
+                thisBan.Comments = "banned by SERVER CONSOLE";
+            }
+            else
+            {
+                thisBan.Comments = "banned by " + callerPlayer.PlayerName;
+            }
+
+            MelonLogger.Msg("Added player name (" + thisBan.OffenderName + ") SteamID (" + thisBan.OffenderSteamId.ToString() + ") to the banlist.");
+            MasterBanList.Add(thisBan);
+            UpdateBanFile();
+
+            HelperMethods.AlertAdminAction(callerPlayer, "banned " + thisBan.OffenderName);
         }
 
         public static void Command_Ban(Player? callerPlayer, String args)
