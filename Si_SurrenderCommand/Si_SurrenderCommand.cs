@@ -69,8 +69,14 @@ namespace Si_SurrenderCommand
             HelperMethods.RegisterPlayerCommand("surrender", surrenderCallback, true);
         }
 
-        public static void Command_Surrender(Player callerPlayer, String args)
+        public static void Command_Surrender(Player? callerPlayer, String args)
         {
+			if (callerPlayer == null)
+			{
+				HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, " Console not supported.");
+				return;
+			}
+			
             // check if we are actually a commander
             bool isCommander = IsCommander(callerPlayer);
 

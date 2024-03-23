@@ -115,7 +115,7 @@ namespace Si_AFKManager
             return false;
         }
 
-        public static void Command_Kick(Player callerPlayer, String args)
+        public static void Command_Kick(Player? callerPlayer, String args)
         {
             string commandName = args.Split(' ')[0];
             
@@ -141,6 +141,12 @@ namespace Si_AFKManager
                 HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Ambiguous or invalid target");
                 return;
             }
+			
+			if (callerPlayer == null)
+			{
+				HelperMethods.AlertAdminActivity(callerPlayer, playerToKick, "kicked");
+				return;
+			}
 
             if (callerPlayer.CanAdminTarget(playerToKick))
             {
@@ -159,7 +165,7 @@ namespace Si_AFKManager
             }
         }
 
-        public static void Command_AFK(Player callerPlayer, String args)
+        public static void Command_AFK(Player? callerPlayer, String args)
         {
             string commandName = args.Split(' ')[0];
             

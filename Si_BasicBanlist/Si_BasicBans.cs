@@ -1,6 +1,6 @@
 ﻿/*
  Silica Basic Banlist Mod
- Copyright (C) 2024 by databomb
+ Copyright (C) 2023-2024 by databomb
  
  * Description *
  For Silica listen servers, retains history of kicked players across
@@ -142,7 +142,7 @@ namespace Si_BasicBanlist
             #endif
         }
 
-        public static void Command_Ban(Player callerPlayer, String args)
+        public static void Command_Ban(Player? callerPlayer, String args)
         {
             // validate banlist is available
             if (MasterBanList == null)
@@ -175,25 +175,16 @@ namespace Si_BasicBanlist
                 HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Ambiguous or invalid target");
                 return;
             }
+			
+			if (callerPlayer == null)
+			{
+                BanPlayer(playerToBan, null);
+                return;
+			}
 
             if (callerPlayer.CanAdminTarget(playerToBan))
             {
-                BanEntry thisBan = GenerateBanEntry(playerToBan, callerPlayer);
-
-                // are we already banned?
-                if (MasterBanList.Find(i => i.OffenderSteamId == thisBan.OffenderSteamId) != null)
-                {
-                    MelonLogger.Msg("Player name (" + thisBan.OffenderName + ") SteamID (" + thisBan.OffenderSteamId.ToString() + ") already on banlist.");
-                }
-                else
-                {
-                    MelonLogger.Msg("Added player name (" + thisBan.OffenderName + ") SteamID (" + thisBan.OffenderSteamId.ToString() + ") to the banlist.");
-                    MasterBanList.Add(thisBan);
-                    UpdateBanFile();
-                }
-
-                NetworkGameServer.KickPlayer(playerToBan);
-                HelperMethods.AlertAdminActivity(callerPlayer, playerToBan, "banned");
+                BanPlayer(playerToBan, callerPlayer);
             }
             else
             {
@@ -201,7 +192,7 @@ namespace Si_BasicBanlist
             }
         }
 
-        public static void Command_Unban(Player callerPlayer, String args)
+        public static void Command_Unban(Player? callerPlayer, String args)
         {
             // validate banlist is available
             if (MasterBanList == null)
@@ -253,15 +244,43 @@ namespace Si_BasicBanlist
             HelperMethods.AlertAdminAction(callerPlayer, "unbanned " + matchingBan.OffenderName);
         }
 
-            public static BanEntry GenerateBanEntry(Player player, Player admin)
+        public static void BanPlayer(Player playerToBan, Player? adminPlayer)
+        {
+            BanEntry thisBan = GenerateBanEntry(playerToBan, adminPlayer);
+
+            // are we already banned?
+            if (MasterBanList.Find(i => i.OffenderSteamId == thisBan.OffenderSteamId) != null)
+            {
+                MelonLogger.Msg("Player name (" + thisBan.OffenderName + ") SteamID (" + thisBan.OffenderSteamId.ToString() + ") already on banlist.");
+            }
+            else
+            {
+                MelonLogger.Msg("Added player name (" + thisBan.OffenderName + ") SteamID (" + thisBan.OffenderSteamId.ToString() + ") to the banlist.");
+                MasterBanList.Add(thisBan);
+                UpdateBanFile();
+            }
+
+            NetworkGameServer.KickPlayer(playerToBan);
+            HelperMethods.AlertAdminActivity(adminPlayer, playerToBan, "banned");
+        }
+
+        public static BanEntry GenerateBanEntry(Player player, Player? admin)
         {
             BanEntry thisBan = new BanEntry()
             {
                 OffenderSteamId = long.Parse(player.ToString().Split('_')[1]),
                 OffenderName = player.PlayerName,
-                UnixBanTime = (int)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds,
-                Comments = "banned by " + admin.PlayerName
+                UnixBanTime = (int)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds
             };
+			
+			if (admin == null)
+			{
+				thisBan.Comments = "banned by SERVER CONSOLE";
+			}
+			else
+			{
+				thisBan.Comments = "banned by " + admin.PlayerName;
+			}
 
             return thisBan;
         }

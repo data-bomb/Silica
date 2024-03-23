@@ -43,7 +43,7 @@ namespace Si_Eject
             HelperMethods.CommandCallback ejectCallback = Command_Eject;
             HelperMethods.RegisterAdminCommand("eject", ejectCallback, Power.Eject, "Ejects target player from their vehicle. Usage: !eject <player>"););
         }
-        public static void Command_Eject(Player callerPlayer, String args)
+        public static void Command_Eject(Player? callerPlayer, String args)
         {
             string commandName = args.Split(' ')[0];
             
@@ -70,7 +70,7 @@ namespace Si_Eject
                 return;
             }
 
-            if (!callerPlayer.CanAdminTarget(playerToEject))
+            if (callerPlayer != null && !callerPlayer.CanAdminTarget(playerToEject))
             {
                 HelperMethods.ReplyToCommand_Player(playerToEject, "is immune due to level");
                 return;

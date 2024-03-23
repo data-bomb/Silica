@@ -205,8 +205,14 @@ namespace Si_SpawnConfigs
             }
         }
 
-        public static void Command_UndoSpawn(Player callerPlayer, String args)
+        public static void Command_UndoSpawn(Player? callerPlayer, String args)
         {
+			if (callerPlayer == null)
+			{
+				HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, " Console not supported.");
+				return;
+			}
+			
             String commandName = args.Split(' ')[0];
             
             // validate argument count
@@ -231,8 +237,14 @@ namespace Si_SpawnConfigs
             HelperMethods.AlertAdminAction(callerPlayer, "destroyed last spawned item (" + name + ")");
         }
 
-        public static void Command_Spawn(Player callerPlayer, String args)
+        public static void Command_Spawn(Player? callerPlayer, String args)
         {
+			if (callerPlayer == null)
+			{
+				HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, " Console not supported.");
+				return;
+			}
+			
             String commandName = args.Split(' ')[0];
             
             // validate argument count
@@ -264,7 +276,7 @@ namespace Si_SpawnConfigs
         }
 
 
-        public static void Command_SaveSetup(Player callerPlayer, String args)
+        public static void Command_SaveSetup(Player? callerPlayer, String args)
         {
             String commandName = args.Split(' ')[0];
 
@@ -343,7 +355,7 @@ namespace Si_SpawnConfigs
             }
         }
 
-        public static void Command_AddSetup(Player callerPlayer, String args)
+        public static void Command_AddSetup(Player? callerPlayer, String args)
         {
             String commandName = args.Split(' ')[0];
 
@@ -430,7 +442,7 @@ namespace Si_SpawnConfigs
             }
         }
 
-        public static void Command_LoadSetup(Player callerPlayer, String args)
+        public static void Command_LoadSetup(Player? callerPlayer, String args)
         {
             String commandName = args.Split(' ')[0];
 

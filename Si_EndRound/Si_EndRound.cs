@@ -49,7 +49,7 @@ namespace Si_EndRound
             HelperMethods.RegisterAdminCommand("endgame", roundEndCallback, Power.End, "Ends the current round of the game. Usage: !endgame");
         }
 
-        public static void Command_EndRound(Player callerPlayer, String args)
+        public static void Command_EndRound(Player? callerPlayer, String args)
         {
             string commandName = args.Split(' ')[0];
             

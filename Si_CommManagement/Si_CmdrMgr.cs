@@ -538,7 +538,7 @@ namespace Si_CommanderManagement
             GameMode.CurrentGameMode.SpawnUnitForPlayer(DemotedCommander, TargetTeam);
         }
 
-        public static void Command_CommanderDemote(Player callerPlayer, String args)
+        public static void Command_CommanderDemote(Player? callerPlayer, String args)
         {
             string commandName = args.Split(' ')[0];
             
@@ -556,7 +556,12 @@ namespace Si_CommanderManagement
             // if no team was specified then try and use current team of the admin
             if (argumentCount == 0)
             {
-                Team? callerTeam = callerPlayer.Team;
+				Team? callerTeam = null;
+				if (callerPlayer != null)
+				{
+					callerTeam = callerPlayer.Team;
+				}
+                
                 if (callerTeam != null)
                 {
                     targetTeamIndex = callerPlayer.Team.Index;
@@ -612,6 +617,13 @@ namespace Si_CommanderManagement
                 // team has a commander if targetPlayer isn't null
                 if (targetPlayer != null)
                 {
+					if (callerPlayer == null)
+					{
+                        DemoteTeamsCommander(strategyInstance, targetTeam);
+                        HelperMethods.AlertAdminActivity(callerPlayer, targetPlayer, "demoted");
+						return;
+					}
+					
                     if (callerPlayer.CanAdminTarget(targetPlayer))
                     {
                         DemoteTeamsCommander(strategyInstance, targetTeam);
@@ -633,7 +645,7 @@ namespace Si_CommanderManagement
             }
         }
 
-        public static void Command_CommanderUnban(Player callerPlayer, String args)
+        public static void Command_CommanderUnban(Player? callerPlayer, String args)
         {
             if (MasterBanList == null)
             {
@@ -663,6 +675,20 @@ namespace Si_CommanderManagement
                 HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Ambiguous or invalid target");
                 return;
             }
+			
+			if (callerPlayer == null)
+			{
+				bool removed = RemoveCommanderBan(playerToUnCmdrBan);
+                if (removed)
+                {
+                    HelperMethods.AlertAdminAction(callerPlayer, "permitted " + HelperMethods.GetTeamColor(playerToUnCmdrBan) + playerToUnCmdrBan.PlayerName + HelperMethods.defaultColor + " to play as commander");
+                }
+                else
+                {
+                    HelperMethods.ReplyToCommand_Player(playerToUnCmdrBan, "not commander banned");
+                }
+				return;
+			}
 
             if (callerPlayer.CanAdminTarget(playerToUnCmdrBan))
             {

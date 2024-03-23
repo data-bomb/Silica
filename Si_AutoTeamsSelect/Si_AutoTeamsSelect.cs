@@ -93,7 +93,7 @@ namespace VersusTeamsAutoSelect
             #endif
         }
 
-        public static void Command_ChangeNextMode(Player callerPlayer, String args)
+        public static void Command_ChangeNextMode(Player? callerPlayer, String args)
         {
             string commandName = args.Split(' ')[0];
             

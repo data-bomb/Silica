@@ -138,8 +138,14 @@ namespace Si_Mapcycle
             }
         }
 
-        public static void Command_RockTheVote(Player callerPlayer, String args)
+        public static void Command_RockTheVote(Player? callerPlayer, String args)
         {
+			if (callerPlayer == null)
+			{
+				HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, " Console not supported.");
+				return;
+			}
+			
             // check if game on-going
             if (!GameMode.CurrentGameMode.GameOngoing)
             {
@@ -304,8 +310,14 @@ namespace Si_Mapcycle
             return rocksNeeded;
         }
 
-        public static void Command_Nominate(Player callerPlayer, String args)
+        public static void Command_Nominate(Player? callerPlayer, String args)
         {
+			if (callerPlayer == null)
+			{
+				HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, " Console not supported.");
+				return;
+			}
+			
             string commandName = args.Split(' ')[0];
 
             // validate argument count
@@ -364,13 +376,25 @@ namespace Si_Mapcycle
             mapNominations.Add(targetMapName);
         }
 
-        public static void Command_CurrentMap(Player callerPlayer, String args)
+        public static void Command_CurrentMap(Player? callerPlayer, String args)
         {
+			if (callerPlayer == null)
+			{
+				HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, " Console not supported.");
+				return;
+			}
+			
             HelperMethods.ReplyToCommand_Player(callerPlayer, ": The current map is " + mapName);
         }
         
-        public static void Command_NextMap(Player callerPlayer, String args)
+        public static void Command_NextMap(Player? callerPlayer, String args)
         {
+			if (callerPlayer == null)
+			{
+				HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, " Console not supported.");
+				return;
+			}
+			
             if (sMapCycle == null)
             {
                 MelonLogger.Warning("sMapCycle is null. Skipping nextmap handling.");
@@ -381,7 +405,7 @@ namespace Si_Mapcycle
             HelperMethods.ReplyToCommand_Player(callerPlayer, ": The next map is " + sMapCycle[(iMapLoadCount + 1) % (sMapCycle.Length - 1)] + ". " + roundsLeft.ToString() + " more round" + (roundsLeft == 1 ? "" : "s") + " before map changes.");
         }
 
-        public static void Command_ChangeMap(Player callerPlayer, String args)
+        public static void Command_ChangeMap(Player? callerPlayer, String args)
         {
             string commandName = args.Split(' ')[0];
             

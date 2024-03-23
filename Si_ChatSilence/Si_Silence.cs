@@ -66,7 +66,7 @@ namespace Si_ChatSilence
             Event_Netcode.OnRequestPlayerChat += OnRequestPlayerChat;
         }
 
-        public static void Command_Silence(Player callerPlayer, String args)
+        public static void Command_Silence(Player? callerPlayer, String args)
         {
             string commandName = args.Split(' ')[0];
             
@@ -92,6 +92,21 @@ namespace Si_ChatSilence
                 HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Ambiguous or invalid target");
                 return;
             }
+			
+			if (callerPlayer == null)
+			{
+				if (IsPlayerSilenced(playerTarget))
+                {
+                    HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Target player already silenced");
+                }
+                else
+                {
+                    SilencePlayer(playerTarget);
+                    HelperMethods.AlertAdminActivity(callerPlayer, playerTarget, "silenced");
+                }
+				
+				return;
+			}
 
             if (callerPlayer.CanAdminTarget(playerTarget))
             {
@@ -111,7 +126,7 @@ namespace Si_ChatSilence
             }
         }
 
-        public static void Command_UnSilence(Player callerPlayer, String args)
+        public static void Command_UnSilence(Player? callerPlayer, String args)
         {
             string commandName = args.Split(' ')[0];
             
@@ -137,6 +152,21 @@ namespace Si_ChatSilence
                 HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Ambiguous or invalid target");
                 return;
             }
+			
+			if (callerPlayer == null)
+			{
+                if (IsPlayerSilenced(playerTarget))
+                {
+                    UnSilencePlayer(playerTarget);
+                    HelperMethods.AlertAdminActivity(callerPlayer, playerTarget, "unsilenced");
+                }
+                else
+                {
+                    HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Target player not silenced");
+                }
+				
+				return;
+			}
 
             if (callerPlayer.CanAdminTarget(playerTarget))
             {
