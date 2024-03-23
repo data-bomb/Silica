@@ -35,7 +35,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-[assembly: MelonInfo(typeof(BasicBanlist), "Basic Banlist", "1.3.3", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(BasicBanlist), "Basic Banlist", "1.3.4", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -175,21 +175,14 @@ namespace Si_BasicBanlist
                 HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Ambiguous or invalid target");
                 return;
             }
-			
-			if (callerPlayer == null)
-			{
-                BanPlayer(playerToBan, null);
-                return;
-			}
 
-            if (callerPlayer.CanAdminTarget(playerToBan))
-            {
-                BanPlayer(playerToBan, callerPlayer);
-            }
-            else
+            if (callerPlayer != null && !callerPlayer.CanAdminTarget(playerToBan))
             {
                 HelperMethods.ReplyToCommand_Player(playerToBan, "is immune due to level");
+                return;
             }
+
+            BanPlayer(playerToBan, callerPlayer);
         }
 
         public static void Command_Unban(Player? callerPlayer, String args)
