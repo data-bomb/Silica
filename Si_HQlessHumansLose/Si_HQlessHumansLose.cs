@@ -33,7 +33,7 @@ using UnityEngine;
 using System;
 using SilicaAdminMod;
 
-[assembly: MelonInfo(typeof(HQlessHumansLose), "HQless Humans Lose", "1.3.2", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HQlessHumansLose), "HQless Humans Lose", "1.3.3", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -122,7 +122,7 @@ namespace Si_HQlessHumansLose
                 HelperMethods.DestroyAllStructures(team);
             }
 
-            DelayTeamLostMessage(team);
+            TeamLostMessage(team);
         }
 
         private static void DestroyAllUnits(Team team)
@@ -262,46 +262,81 @@ namespace Si_HQlessHumansLose
         #else
         [HarmonyPatch(typeof(Team), "UpdateMajorStructuresCount")]
         #endif
-        public static class ApplyPatch_UpdateMajorStructuresCount
+        public static class ApplyPatch_Team_UpdateMajorStructuresCount
         {
-            public static void Postfix(Team __instance)
+            public static bool Prefix(Team __instance)
             {
                 if (__instance == null)
                 {
-                    return;
+                    MelonLogger.Error("Team is null for UpdateMajorStructuresCount.");
+                    return false;
                 }
 
-                // only spend the CPU if the team is about to lose
-                if (__instance.NumMajorStructures == 0 && GameMode.CurrentGameMode.GameOngoing)
+                int numMajorStructures = 0;
+
+                foreach (Structure structure in __instance.Structures)
+                {
+                    if (structure == null)
+                    {
+                        Debug.LogError("UpdateMajorStructuresCount: A structure is NULL for team '" + __instance.TeamShortName + "', skipping it...");
+                        continue;
+                    }
+
+                    if (!structure.IsDestroyed && structure.ObjectInfo && structure.ObjectInfo.StructureMajor)
+                    {
+                        numMajorStructures++;
+                    }
+                }
+
+                if (numMajorStructures == 0)
                 {
                     if (HasRootStructureUnderConstruction(__instance))
                     {
                         MelonLogger.Msg("Found Major Structure under Construction. Adjusting count.");
                         __instance.NumMajorStructures = 1;
+                        return false;
                     }
                 }
+
+                __instance.NumMajorStructures = numMajorStructures;
+                return false;
             }
         }
 
         // don't count it as a loss if HQ/Nest is under construction
         #if NET6_0
-        [HarmonyPatch(typeof(StrategyTeamSetup), nameof(StrategyTeamSetup.GetHasLost))]
+        [HarmonyPatch(typeof(Team), nameof(Team.GetHasAnyMajorStructures))]
         #else
-        [HarmonyPatch(typeof(StrategyTeamSetup), "GetHasLost")]
+        [HarmonyPatch(typeof(Team), "GetHasAnyMajorStructures")]
         #endif
-        public static class ApplyPatch_GetHasLost
+        public static class ApplyPatch_Team_GetHasAnyMajorStructures
         {
-            public static void Postfix(StrategyTeamSetup __instance, ref bool __result)
+            public static bool Prefix(Team __instance, ref bool __result)
             {
-                // only spend the CPU if the team is about to lose
-                if (__result == true && GameMode.CurrentGameMode.GameOngoing)
+                foreach (Structure structure in __instance.Structures)
                 {
-                    if (HasRootStructureUnderConstruction(__instance.Team))
+                    if (structure == null)
                     {
-                        MelonLogger.Msg("Found Major Structure under Construction. Preventing loss.");
-                        __result = false;
+                        Debug.LogError("GetHasAnyMajorStructures: A structure is NULL for team '" + __instance.TeamShortName + "', skipping it...");
+                        continue;
+                    }
+
+                    if (structure.ObjectInfo && structure.ObjectInfo.StructureMajor && !structure.IsDestroyed)
+                    {
+                        __result = true;
+                        return false;
                     }
                 }
+
+                if (HasRootStructureUnderConstruction(__instance))
+                {
+                    MelonLogger.Msg("Found Major Structure under Construction. Preventing loss.");
+                    __result = true;
+                    return false;
+                }
+
+                __result = false;
+                return false;
             }
         }
 
