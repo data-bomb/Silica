@@ -36,7 +36,7 @@ using Si_RepairFacility;
 using System.Collections.Generic;
 using System.Text;
 
-[assembly: MelonInfo(typeof(RepairFacility), "Repair Facility", "0.9.0", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(RepairFacility), "Repair Facility", "0.9.1", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -46,12 +46,17 @@ namespace Si_RepairFacility
     {
         static List<DamageManager> vehiclesAtRepairShop = null!;
         static float Timer_HealVehicles = 0f;
+        static MelonPreferences_Category _modCategory = null!;
+        static MelonPreferences_Entry<float> _Pref_Humans_Vehicle_HealRate = null!;
+
+
 
         public override void OnInitializeMelon()
         {
+            _modCategory ??= MelonPreferences.CreateCategory("Silica");
+            _Pref_Humans_Vehicle_HealRate ??= _modCategory.CreateEntry<float>("RepairFacility_HumanVehicle_HealRate", 0.035f);
 
             vehiclesAtRepairShop = new List<DamageManager>();
-
         }
 
         #if NET6_0
@@ -78,7 +83,7 @@ namespace Si_RepairFacility
                                 continue;
                             }
 
-                            float healAmount = vehicleDamageManager.MaxHealth * 0.035f;
+                            float healAmount = vehicleDamageManager.MaxHealth * _Pref_Humans_Vehicle_HealRate.Value;
                             float newHealth = Mathf.Clamp(vehicleDamageManager.Health + healAmount, 0.0f, vehicleDamageManager.MaxHealth);
                             vehicleDamageManager.SetHealth(newHealth);
                         }

@@ -40,7 +40,7 @@ using System.Collections.Generic;
 using SilicaAdminMod;
 using System.Linq;
 
-[assembly: MelonInfo(typeof(CommanderManager), "Commander Management", "1.5.1", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(CommanderManager), "Commander Management", "1.5.2", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -556,21 +556,13 @@ namespace Si_CommanderManagement
             // if no team was specified then try and use current team of the admin
             if (argumentCount == 0)
             {
-				Team? callerTeam = null;
-				if (callerPlayer != null)
-				{
-					callerTeam = callerPlayer.Team;
-				}
-                
-                if (callerTeam != null)
-                {
-                    targetTeamIndex = callerPlayer.Team.Index;
-                }
-                else
+                if (callerPlayer == null || callerPlayer.Team == null)
                 {
                     HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": Too few arguments");
                     return;
                 }
+
+				targetTeamIndex = callerPlayer.Team.Index;
             }
             // argument is present and targets team where current commander needs to get demoted
             else
