@@ -211,6 +211,9 @@ jobs:
           # FriendlyFireLimits is disabled by default
           mv release/dedi/Mods/Si_FriendlyFireLimits.dll release/dedi/Mods/disabled
           mv release/listen/Mods/Si_FriendlyFireLimits.dll release/listen/Mods/disabled
+          # Tech Glitch is disabled because the discrepancy is happening on the server side (not client side)
+          mv release/dedi/Mods/Si_TechGlitch.dll release/dedi/Mods/disabled
+          mv release/listen/Mods/Si_TechGlitch.dll release/listen/Mods/disabled
 
       - name: Zip Builds
         run: |
