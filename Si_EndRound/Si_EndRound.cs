@@ -34,7 +34,7 @@ using System;
 using System.Linq;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(EndRound), "End Round", "1.0.2", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(EndRound), "End Round", "1.0.3", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -52,14 +52,6 @@ namespace Si_EndRound
         public static void Command_EndRound(Player? callerPlayer, String args)
         {
             string commandName = args.Split(' ')[0];
-            
-            // validate argument count
-            int argumentCount = args.Split(' ').Count() - 1;
-            if (argumentCount > 0)
-            {
-                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": Too many arguments");
-                return;
-            }
 
             if (!GameMode.CurrentGameMode.GameOngoing)
             {
