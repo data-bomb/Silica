@@ -40,7 +40,7 @@ using System.Collections.Generic;
 using SilicaAdminMod;
 using System.Linq;
 
-[assembly: MelonInfo(typeof(CommanderManager), "Commander Management", "1.5.4", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(CommanderManager), "Commander Management", "1.5.5", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -714,7 +714,7 @@ namespace Si_CommanderManagement
             }
 
             AddCommanderBan(playerToCmdrBan);
-            HelperMethods.AlertAdminAction(callerPlayer, "restricted " + playerToCmdrBan.PlayerName + " to play as infantry only");
+            HelperMethods.AlertAdminAction(callerPlayer, "restricted " + HelperMethods.GetTeamColor(playerToCmdrBan) + playerToCmdrBan.PlayerName + HelperMethods.defaultColor + " to play as infantry only");
         }
 
         [HarmonyPatch(typeof(GameMode), nameof(GameMode.CreateRPCPacket))]
