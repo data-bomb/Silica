@@ -41,7 +41,7 @@ namespace SilicaAdminMod
         private string _description = null!;
         private EAdminLevel? _level = null!;
 
-        public CSAM_ConsoleCommand(string keyName, string description, EAdminLevel? level)
+        public CSAM_ConsoleCommand(string keyName, string description, EAdminLevel level)
         {
             _key = keyName;
             _description = description;

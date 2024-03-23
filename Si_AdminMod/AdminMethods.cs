@@ -53,7 +53,7 @@ namespace SilicaAdminMod
             string consoleCommandText = "sam_" + thisCommand.AdminCommandText;
 
             // TODO: Convert AdminPower to server admin system
-            DebugConsole.ICommand addAdminConsoleCmd = (DebugConsole.ICommand)Activator.CreateInstance(typeof(CSAM_ConsoleCommand), consoleCommandText, thisCommand.AdminCommandDescription);
+            DebugConsole.ICommand addAdminConsoleCmd = (DebugConsole.ICommand)Activator.CreateInstance(typeof(CSAM_ConsoleCommand), consoleCommandText, thisCommand.AdminCommandDescription, EAdminLevel.STANDARD);
             if (addAdminConsoleCmd != null)
             {
                 Dictionary<string, DebugConsole.ICommand> s_Commands = (Dictionary<string, DebugConsole.ICommand>)commandField.GetValue(null);
