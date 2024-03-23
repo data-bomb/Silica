@@ -1,6 +1,6 @@
 ﻿/*
 Silica Admin Mod
-Copyright (C) 2023 by databomb
+Copyright (C) 2023-2024 by databomb
 
 * License *
 This program is free software: you can redistribute it and/or modify
@@ -31,24 +31,10 @@ using DebugTools;
 
 namespace SilicaAdminMod
 {
-    #if NET6_0
-    public class CSAM_AddAdmin :Il2CppDebugTools.DebugConsole.ICommand
-    #else
+    #if !NET6_0
     public class CSAM_AddAdmin : DebugConsole.ICommand
-    #endif
     {
-        #if NET6_0
-        public CSAM_AddAdmin(IntPtr pointer) : base(pointer)
-        {
-            return;
-        }
-        #endif
-
-        #if NET6_0
-        public override string Key
-        #else
         public string Key
-        #endif
         {
             get
             {
@@ -56,11 +42,7 @@ namespace SilicaAdminMod
             }
         }
 
-        #if NET6_0
-        public override string Description
-        #else
         public string Description
-        #endif
         {
             get
             {
@@ -68,11 +50,7 @@ namespace SilicaAdminMod
             }
         }
 
-        #if NET6_0
-        public override EAdminLevel RequiredAdminLevel
-        #else
         public EAdminLevel RequiredAdminLevel
-        #endif
         {
             get
             {
@@ -80,11 +58,7 @@ namespace SilicaAdminMod
             }
         }
 
-        #if NET6_0
-        public override bool ServerSide
-        #else
         public bool ServerSide
-        #endif
         {
             get
             {
@@ -92,11 +66,7 @@ namespace SilicaAdminMod
             }
         }
 
-        #if NET6_0
-        public override void Execute(params string[] parameters)
-        #else
         public void Execute(params string[] parameters)
-        #endif
         {
             if (parameters == null || parameters.Length < 3)
             {
@@ -151,4 +121,52 @@ namespace SilicaAdminMod
             DebugConsole.Log("", DebugConsole.LogLevel.Log);
         }
     }
+
+    public class CSAM_Say : DebugConsole.ICommand
+    {
+        public string Key
+        {
+            get
+            {
+                return "sam_say";
+            }
+        }
+
+        public string Description
+        {
+            get
+            {
+                return "Allows a host to send a SAM message from server console";
+            }
+        }
+
+        public EAdminLevel RequiredAdminLevel
+        {
+            get
+            {
+                return EAdminLevel.HOST;
+            }
+        }
+
+        public bool ServerSide
+        {
+            get
+            {
+                return true;
+            }
+        }
+
+        public void Execute(params string[] parameters)
+        {
+            if (parameters == null)
+            {
+                DebugConsole.Log(this.Key + " usage: <message>", DebugConsole.LogLevel.Log);
+                DebugConsole.Log("", DebugConsole.LogLevel.Log);
+                return;
+            }
+
+            HelperMethods.AlertAdminAction(null, String.Concat(parameters));
+        }
+    }
+    #endif
 }
