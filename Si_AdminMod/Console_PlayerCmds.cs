@@ -26,6 +26,7 @@ using DebugTools;
 
 using HarmonyLib;
 using MelonLoader;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -34,17 +35,19 @@ using static System.Net.Mime.MediaTypeNames;
 namespace SilicaAdminMod
 {
     #if !NET6_0
-    public class CSAM_GenericCommand : DebugConsole.ICommand
+    public class CSAM_ConsoleCommand : DebugConsole.ICommand
     {
         private string _key = null!;
         private string _description = null!;
+        private EAdminLevel? _level = null!;
 
-        public CSAM_GenericCommand(string keyName, string description)
+        public CSAM_ConsoleCommand(string keyName, string description, EAdminLevel? level)
         {
             _key = keyName;
             _description = description;
+            _level = level;
         }
-
+        
         public string Key
         {
             get
@@ -65,7 +68,12 @@ namespace SilicaAdminMod
         {
             get
             {
-                return EAdminLevel.STANDARD;
+                if (_level == null)
+                {
+                    return EAdminLevel.STANDARD;
+                }
+
+                return (EAdminLevel)_level;
             }
         }
 
@@ -89,7 +97,8 @@ namespace SilicaAdminMod
             AdminCommand? adminCommand = AdminMethods.FindAdminCommandFromString(commandText);
             if (adminCommand != null)
             {
-                DebugConsole.Log("Valid admin command found.", DebugConsole.LogLevel.Log);
+                DebugConsole.Log("Valid admin command found. Running callback.", DebugConsole.LogLevel.Log);
+                adminCommand.AdminCallback(null, fullCommand);
             }
 
             DebugConsole.Log("", DebugConsole.LogLevel.Log);
@@ -157,17 +166,21 @@ namespace SilicaAdminMod
         static void SendNetworkResponseWarning(Player callerPlayer, string responseLine)
         {
             DebugConsole.Log(responseLine, DebugConsole.LogLevel.Warning);
-            #if NET6_0
+#if NET6_0
             Il2CppSystem.Collections.Generic.List<string> responseText = new Il2CppSystem.Collections.Generic.List<string>();
             responseText.Add(responseLine);
             Il2CppSystem.Collections.Generic.List<DebugConsole.LogLevel> responseLevel = new Il2CppSystem.Collections.Generic.List<DebugConsole.LogLevel>();
             responseLevel.Add(DebugConsole.LogLevel.Warning);
             NetworkLayer.SendRemoteCommandResult(callerPlayer, responseText, responseLevel);
-            #else
-            List<string> responseText = new List<string>();
-            responseText.Add(responseLine);
-            List<DebugConsole.LogLevel> responseLevel = new List<DebugConsole.LogLevel>();
-            responseLevel.Add(DebugConsole.LogLevel.Warning);
+#else
+            List<string> responseText = new List<string>
+            {
+                responseLine
+            };
+            List<DebugConsole.LogLevel> responseLevel = new List<DebugConsole.LogLevel>
+            {
+                DebugConsole.LogLevel.Warning
+            };
             NetworkLayer.SendRemoteCommandResult(callerPlayer, responseText, responseLevel);
             #endif
         }

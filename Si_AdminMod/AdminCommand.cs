@@ -24,6 +24,7 @@ namespace SilicaAdminMod
     public class AdminCommand
     {
         private string _admincommandtext = null!;
+        private string _admindescriptiontext = null!;
 
         public String AdminCommandText
         {
@@ -43,6 +44,12 @@ namespace SilicaAdminMod
         {
             get;
             set;
+        }
+
+        public String AdminCommandDescription
+        {
+            get => _admindescriptiontext;
+            set => _admindescriptiontext = value ?? "No description provided.";
         }
     }
 }

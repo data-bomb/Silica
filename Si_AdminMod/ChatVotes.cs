@@ -48,11 +48,17 @@ namespace SilicaAdminMod
 
         static List<Player> voters = null!;
 
-        public static void Command_VoteChat(Player callerPlayer, String args)
+        public static void Command_VoteChat(Player? callerPlayer, String args)
         {
             if (currentVoteResults == null || voters == null)
             {
                 MelonLogger.Warning("Current vote results unavailable.");
+                return;
+            }
+
+            if (callerPlayer == null)
+            {
+                MelonLogger.Warning("Console not supported.");
                 return;
             }
 
@@ -95,9 +101,11 @@ namespace SilicaAdminMod
             voters = new List<Player>();
 
             // create the results we'll fill in as we go
-            currentVoteResults = new ChatVoteResults();
-            currentVoteResults.DetailedResults = new OptionVoteResult[ballot.Options.Length];
-            currentVoteResults.VoteHandler = ballot.VoteHandler;
+            currentVoteResults = new ChatVoteResults
+            {
+                DetailedResults = new OptionVoteResult[ballot.Options.Length],
+                VoteHandler = ballot.VoteHandler
+            };
 
             int index = 0;
             // register the commands we need to but just while the vote is active
@@ -134,13 +142,12 @@ namespace SilicaAdminMod
         #else
         [HarmonyPatch(typeof(MusicJukeboxHandler), "Update")]
         #endif
-        private static class ApplyPatch_MusicJukeboxHandlerUpdate
+        public static class ApplyPatch_MusicJukeboxHandlerUpdate
         {
-            private static void Postfix(MusicJukeboxHandler __instance)
+            public static void Postfix(MusicJukeboxHandler __instance)
             {
                 try
                 {
-
                     // check if timer expired while the game is in-progress
                     if (HelperMethods.IsTimerActive(Timer_TallyVote))
                     {

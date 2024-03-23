@@ -38,7 +38,7 @@ namespace SilicaAdminMod
         public const string defaultColor = "<color=#DDE98C>";
         public const string chatPrefix = "<b>" + defaultColor + "[<color=#DFA725>SAM" + defaultColor + "]</b> ";
 
-        public delegate void CommandCallback(Player callerPlayer, String args);
+        public delegate void CommandCallback(Player? callerPlayer, String args);
 
         public static void RegisterAdminCommand(String adminCommand, CommandCallback adminCallback, Power adminPower)
         {

@@ -32,7 +32,7 @@ namespace SilicaAdminMod
     {
         public static List<AdminCommand> AdminCommands = null!;
 
-        public static void RegisterAdminCommand(String adminCommand, HelperMethods.CommandCallback adminCallback, Power adminPower)
+        public static void RegisterAdminCommand(String adminCommand, HelperMethods.CommandCallback adminCallback, Power adminPower, String? adminDescription = null)
         {
             AdminCommand thisCommand = new AdminCommand
             {
@@ -41,13 +41,19 @@ namespace SilicaAdminMod
                 AdminPower = adminPower
             };
 
+            if (adminDescription != null)
+            {
+                thisCommand.AdminCommandDescription = adminDescription;
+            }
+
             AdminCommands.Add(thisCommand);
 
             #if !NET6_0
             FieldInfo commandField = typeof(DebugConsole).GetField("s_Commands", BindingFlags.NonPublic | BindingFlags.Static);
             string consoleCommandText = "sam_" + thisCommand.AdminCommandText;
 
-            DebugConsole.ICommand addAdminConsoleCmd = (DebugConsole.ICommand)Activator.CreateInstance(typeof(CSAM_GenericCommand), consoleCommandText, ".");
+            // TODO: Convert AdminPower to server admin system
+            DebugConsole.ICommand addAdminConsoleCmd = (DebugConsole.ICommand)Activator.CreateInstance(typeof(CSAM_ConsoleCommand), consoleCommandText, thisCommand.AdminCommandDescription);
             if (addAdminConsoleCmd != null)
             {
                 Dictionary<string, DebugConsole.ICommand> s_Commands = (Dictionary<string, DebugConsole.ICommand>)commandField.GetValue(null);
