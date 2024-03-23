@@ -1,6 +1,6 @@
 ﻿/*
  Silica Commander Management Mod
- Copyright (C) 2024 by databomb
+ Copyright (C) 2023-2024 by databomb
  
  * Description *
  For Silica servers, establishes a random selection for commander at the 
@@ -40,7 +40,7 @@ using System.Collections.Generic;
 using SilicaAdminMod;
 using System.Linq;
 
-[assembly: MelonInfo(typeof(CommanderManager), "Commander Management", "1.5.3", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(CommanderManager), "Commander Management", "1.5.4", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -717,7 +717,6 @@ namespace Si_CommanderManagement
             HelperMethods.AlertAdminAction(callerPlayer, "restricted " + playerToCmdrBan.PlayerName + " to play as infantry only");
         }
 
-        #if false
         [HarmonyPatch(typeof(GameMode), nameof(GameMode.CreateRPCPacket))]
         private static class CommanderManager_Patch_GameMode_GameByteStreamWriter
         {
@@ -756,7 +755,6 @@ namespace Si_CommanderManagement
                 }
             }
         }
-        #endif
 
         [HarmonyPatch(typeof(GameMode), nameof(GameMode.OnPlayerLeftBase))]
         private static class CommanderManager_Patch_GameMode_OnPlayerLeftBase
