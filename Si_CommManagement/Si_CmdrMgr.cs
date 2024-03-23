@@ -708,7 +708,7 @@ namespace Si_CommanderManagement
             }
         }
 
-        public static void Command_CommanderBan(Player callerPlayer, String args)
+        public static void Command_CommanderBan(Player? callerPlayer, String args)
         {
             if (MasterBanList == null)
             {

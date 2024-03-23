@@ -90,7 +90,7 @@ namespace SilicaAdminMod
             broadcastPlayer.SendChatMessage(chatPrefix + GetAdminColor() + adminPlayer.PlayerName + defaultColor + " " + action + " " + GetTeamColor(targetPlayer) + targetPlayer.PlayerName, false);
         }
 
-        public static void AlertAdminAction(Player adminPlayer, string action)
+        public static void AlertAdminAction(Player? adminPlayer, string action)
         {
             Player broadcastPlayer = FindBroadcastPlayer();
 
