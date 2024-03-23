@@ -166,13 +166,13 @@ namespace SilicaAdminMod
         static void SendNetworkResponseWarning(Player callerPlayer, string responseLine)
         {
             DebugConsole.Log(responseLine, DebugConsole.LogLevel.Warning);
-#if NET6_0
+            #if NET6_0
             Il2CppSystem.Collections.Generic.List<string> responseText = new Il2CppSystem.Collections.Generic.List<string>();
             responseText.Add(responseLine);
             Il2CppSystem.Collections.Generic.List<DebugConsole.LogLevel> responseLevel = new Il2CppSystem.Collections.Generic.List<DebugConsole.LogLevel>();
             responseLevel.Add(DebugConsole.LogLevel.Warning);
             NetworkLayer.SendRemoteCommandResult(callerPlayer, responseText, responseLevel);
-#else
+            #else
             List<string> responseText = new List<string>
             {
                 responseLine

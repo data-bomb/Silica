@@ -20,6 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using MelonLoader;
 using System;
 using UnityEngine;
+using DebugTools;
 
 #if NET6_0
 using Il2Cpp;
@@ -90,11 +91,27 @@ namespace SilicaAdminMod
         public static void AlertAdminAction(Player adminPlayer, string action)
         {
             Player broadcastPlayer = FindBroadcastPlayer();
-            broadcastPlayer.SendChatMessage(chatPrefix + GetAdminColor() + adminPlayer.PlayerName + defaultColor + " " + action, false);
+
+            if (adminPlayer == null)
+            {
+                broadcastPlayer.SendChatMessage(chatPrefix + GetAdminColor() + "SERVER CONSOLE" + defaultColor + " " + action, false);
+            }
+            else
+            {
+                broadcastPlayer.SendChatMessage(chatPrefix + GetAdminColor() + adminPlayer.PlayerName + defaultColor + " " + action, false);
+            }
         }
 
-        public static void SendChatMessageToPlayer(Player player, params string[] messages)
+        public static void SendChatMessageToPlayer(Player? player, params string[] messages)
         {
+            // send to server console if null
+            if (player == null)
+            {
+                DebugConsole.Log(String.Concat(messages), DebugConsole.LogLevel.Log);
+                DebugConsole.Log("", DebugConsole.LogLevel.Log);
+                return;
+            }
+
             Player broadcastPlayer = FindBroadcastPlayer();
 
             GameByteStreamWriter gameByteStreamWriter = GameByteStreamWriter.GetGameByteStreamWriter(true);
