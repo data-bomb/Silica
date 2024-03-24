@@ -42,7 +42,7 @@ using System.Threading.Tasks;
 using System.Diagnostics;
 using System.IO;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.2.0", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.2.1", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -58,7 +58,6 @@ namespace Si_Logging
         static MelonPreferences_Entry<bool> Pref_Log_Damage = null!;
         static MelonPreferences_Entry<bool> Pref_Log_Kills_Include_AI_vs_Player = null!;
         static MelonPreferences_Entry<string> Pref_Log_ParserFile = null!;
-        static MelonPreferences_Entry<string> Pref_Log_ParserArgs = null!;
 
         public static bool ParserFilePresent()
         {
@@ -143,7 +142,6 @@ namespace Si_Logging
                 Pref_Log_Damage ??= _modCategory.CreateEntry<bool>("Logging_LogDamage", false);
                 Pref_Log_Kills_Include_AI_vs_Player ??= _modCategory.CreateEntry<bool>("Logging_LogKills_IncludeAIvsPlayer", true);
                 Pref_Log_ParserFile ??= _modCategory.CreateEntry<string>("Logging_LogParserPath", "parser_ranked.py");
-                Pref_Log_ParserArgs ??= _modCategory.CreateEntry<string>("Logging_LogParserArgs", "credentials.env");
 
                 if (!System.IO.Directory.Exists(GetLogFileDirectory()))
                 {
@@ -777,7 +775,9 @@ namespace Si_Logging
                         MelonLogger.Msg("Launching parser.");
                         ProcessStartInfo start = new ProcessStartInfo();
                         start.FileName = "python.exe";
-                        start.Arguments = string.Format("{0} {1}", Pref_Log_ParserFile.Value, Pref_Log_ParserArgs.Value);
+                        string arguments = string.Format("{0} {1}", GetParserPath(), GetLogName());
+                        MelonLogger.Msg("Using parser arguments: ", arguments);
+                        start.Arguments = arguments;
                         start.UseShellExecute = false;
                         start.RedirectStandardOutput = false;
                         using Process? process = Process.Start(start);
