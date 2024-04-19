@@ -25,6 +25,7 @@ using Il2Cpp;
 using Il2CppDebugTools;
 #else
 using DebugTools;
+using System.Reflection;
 #endif
 
 using HarmonyLib;
@@ -37,9 +38,8 @@ using System.Collections.Generic;
 using SilicaAdminMod;
 using System.Linq;
 using UnityEngine;
-using System.ComponentModel.Design;
 
-[assembly: MelonInfo(typeof(MapCycleMod), "Mapcycle", "1.5.3", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(MapCycleMod), "Mapcycle", "1.5.4", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -451,38 +451,41 @@ namespace Si_Mapcycle
             HelperMethods.AlertAdminAction(callerPlayer, "changing map to " + targetMapName + "...");
             MelonLogger.Msg("Changing map to " + targetMapName + "...");
 
-            ChangeMap(targetMapName);
+            QueueChangeMap(targetMapName);
         }
 
-        public static void ChangeMap(string mapName)
+        public static void QueueChangeMap(string mapName)
         {
-            iMapLoadCount++;
-            string mapChangeCommand = "map " + mapName + " MP_Strategy";
-            MelonLogger.Msg("Sending command to server console: " + mapChangeCommand);
-
-            #if NET6_0
-            Il2CppDebugTools.DebugConsole.TryExecuteCommand(mapChangeCommand, false, null);
-            #else
-            DebugTools.DebugConsole.TryExecuteCommand(mapChangeCommand, false, null);
-            #endif
-
-            /*
             LevelInfo? levelInfo = GetLevelInfo(mapName);
             if (levelInfo == null)
             {
-                MelonLogger.Warning("Could not find LevelInfo for map name: " + mapName);
+                MelonLogger.Error("Could not find LevelInfo for map name: " + mapName);
                 return;
             }
 
             GameModeInfo? gameModeInfo = GetGameModeInfo(levelInfo);
             if (gameModeInfo == null)
             {
-                MelonLogger.Warning("Could not find GameModeInfo for map name: " + mapName);
+                MelonLogger.Error("Could not find GameModeInfo for map name: " + mapName);
                 return;
             }
 
-            NetworkGameServer.LoadLevel(levelInfo.FileName, gameModeInfo);
-            */
+            #if NET6_0
+            NetworkGameServer.Instance.m_QueueGameMode = gameModeInfo;
+            NetworkGameServer.Instance.m_QueueMap = levelInfo.FileName;
+            #else
+            FieldInfo serverInstanceField = typeof(NetworkGameServer).GetField("Instance", BindingFlags.NonPublic | BindingFlags.Static);
+            NetworkGameServer serverInstance = (NetworkGameServer)serverInstanceField.GetValue(null);
+
+            FieldInfo queueMapField = typeof(NetworkGameServer).GetField("m_QueueMap", BindingFlags.NonPublic | BindingFlags.Instance);
+            FieldInfo queueGameModeInfoField = typeof(NetworkGameServer).GetField("m_QueueGameMode", BindingFlags.NonPublic | BindingFlags.Instance);
+
+            queueGameModeInfoField.SetValue(serverInstance, gameModeInfo);
+            queueMapField.SetValue(serverInstance, levelInfo.FileName);
+            #endif
+
+            iMapLoadCount++;
+            MelonLogger.Msg("Queueing up next map: " + mapName);
         }
 
         public override void OnSceneWasLoaded(int buildIndex, string sceneName)
@@ -501,11 +504,11 @@ namespace Si_Mapcycle
             IndexToMapInCycle(sceneName);
         }
 
-        #if NET6_0
+#if NET6_0
         [HarmonyPatch(typeof(MusicJukeboxHandler), nameof(MusicJukeboxHandler.Update))]
-        #else
+#else
         [HarmonyPatch(typeof(MusicJukeboxHandler), "Update")]
-        #endif
+#endif
         private static class ApplyPatch_MusicJukeboxHandlerUpdate
         {
             private static void Postfix(MusicJukeboxHandler __instance)
@@ -528,7 +531,7 @@ namespace Si_Mapcycle
                             String sNextMap = sMapCycle[iMapLoadCount % (sMapCycle.Length - 1)];
 
                             MelonLogger.Msg("Changing map to " + sNextMap + ".....");
-                            ChangeMap(sNextMap);
+                            QueueChangeMap(sNextMap);
                             return;
                         }
                     }
@@ -564,7 +567,7 @@ namespace Si_Mapcycle
                             Timer_FinalPostVoteDelay = HelperMethods.Timer_Inactive;
 
                             MelonLogger.Msg("Changing map to " + rockthevoteWinningMap + "....");
-                            ChangeMap(rockthevoteWinningMap);
+                            QueueChangeMap(rockthevoteWinningMap);
                             return;
                         }
                     }
