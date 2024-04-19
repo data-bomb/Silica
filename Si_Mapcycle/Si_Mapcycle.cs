@@ -39,7 +39,7 @@ using SilicaAdminMod;
 using System.Linq;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(MapCycleMod), "Mapcycle", "1.5.4", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(MapCycleMod), "Mapcycle", "1.5.5", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -402,7 +402,17 @@ namespace Si_Mapcycle
             }
 
             int roundsLeft = Pref_Mapcycle_RoundsBeforeChange.Value - roundsOnSameMap;
-            HelperMethods.ReplyToCommand_Player(callerPlayer, ": The next map is " + sMapCycle[(iMapLoadCount + 1) % (sMapCycle.Length - 1)] + ". " + roundsLeft.ToString() + " more round" + (roundsLeft == 1 ? "" : "s") + " before map changes.");
+            HelperMethods.ReplyToCommand_Player(callerPlayer, ": The next map is " + GetNextMap() + ". " + roundsLeft.ToString() + " more round" + (roundsLeft == 1 ? "" : "s") + " before map changes.");
+        }
+
+        public static string GetNextMap()
+        {
+            if (sMapCycle == null)
+            {
+                return string.Empty;
+            }
+
+            return sMapCycle[(iMapLoadCount + 1) % (sMapCycle.Length - 1)];
         }
 
         public static void Command_ChangeMap(Player? callerPlayer, String args)
@@ -528,10 +538,10 @@ namespace Si_Mapcycle
                                 return;
                             }
 
-                            String sNextMap = sMapCycle[iMapLoadCount % (sMapCycle.Length - 1)];
+                            string nextMap = GetNextMap();
 
-                            MelonLogger.Msg("Changing map to " + sNextMap + ".....");
-                            QueueChangeMap(sNextMap);
+                            MelonLogger.Msg("Changing map to " + nextMap + ".....");
+                            QueueChangeMap(nextMap);
                             return;
                         }
                     }
