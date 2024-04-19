@@ -39,7 +39,7 @@ using SilicaAdminMod;
 using System.Linq;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(MapCycleMod), "Mapcycle", "1.5.5", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(MapCycleMod), "Mapcycle", "1.5.6", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -636,7 +636,7 @@ namespace Si_Mapcycle
                         MelonLogger.Warning("Game ended while initial RTV timer was in progress. Forcing timer to expire.");
                     }
 
-                    HelperMethods.ReplyToCommand("Preparing to change map to " + sMapCycle[(iMapLoadCount + 1) % (sMapCycle.Length - 1)] + "....");
+                    HelperMethods.ReplyToCommand("Preparing to change map to " + GetNextMap() + "....");
                     HelperMethods.StartTimer(ref Timer_EndRoundDelay);
                 }
                 catch (Exception error)
