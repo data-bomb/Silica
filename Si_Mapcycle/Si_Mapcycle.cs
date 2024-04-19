@@ -223,7 +223,7 @@ namespace Si_Mapcycle
                 rtvOptions[i] = new OptionPair
                 {
                     Command = (i + 1).ToString(),
-                    Description = sMapCycle[(iMapLoadCount + 1 + i) % (sMapCycle.Length - 1)]
+                    Description = sMapCycle[(iMapLoadCount + 1 + i) % (sMapCycle.Length)]
                 };
             }
 
@@ -277,7 +277,7 @@ namespace Si_Mapcycle
             else
             {
                 // winning map wasn't a nomination or "Keep" option
-                rockthevoteWinningMap = sMapCycle[(iMapLoadCount + winningIndex) % (sMapCycle.Length - 1)];
+                rockthevoteWinningMap = sMapCycle[(iMapLoadCount + winningIndex) % (sMapCycle.Length)];
             }
 
             mapNominations.Clear();
@@ -412,7 +412,7 @@ namespace Si_Mapcycle
                 return string.Empty;
             }
 
-            return sMapCycle[(iMapLoadCount + 1) % (sMapCycle.Length - 1)];
+            return sMapCycle[(iMapLoadCount + 1) % (sMapCycle.Length)];
         }
 
         public static void Command_ChangeMap(Player? callerPlayer, String args)
@@ -746,7 +746,7 @@ namespace Si_Mapcycle
             }
 
             // increase iMapLoadCount by the amount needed to reach the current array index of the current map
-            int currentArrayIndex = iMapLoadCount % (sMapCycle.Length - 1);
+            int currentArrayIndex = iMapLoadCount % (sMapCycle.Length);
             if (matchIndex > currentArrayIndex)
             {
                 iMapLoadCount += (matchIndex - currentArrayIndex);
