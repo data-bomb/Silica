@@ -42,7 +42,7 @@ using System.Threading.Tasks;
 using System.Diagnostics;
 using System.IO;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.2.1", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.2.3", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -58,6 +58,7 @@ namespace Si_Logging
         static MelonPreferences_Entry<bool> Pref_Log_Damage = null!;
         static MelonPreferences_Entry<bool> Pref_Log_Kills_Include_AI_vs_Player = null!;
         static MelonPreferences_Entry<string> Pref_Log_ParserFile = null!;
+        static MelonPreferences_Entry<string> Pref_Log_PythonExe = null!;
 
         public static bool ParserFilePresent()
         {
@@ -141,7 +142,8 @@ namespace Si_Logging
                 _modCategory ??= MelonPreferences.CreateCategory("Silica");
                 Pref_Log_Damage ??= _modCategory.CreateEntry<bool>("Logging_LogDamage", false);
                 Pref_Log_Kills_Include_AI_vs_Player ??= _modCategory.CreateEntry<bool>("Logging_LogKills_IncludeAIvsPlayer", true);
-                Pref_Log_ParserFile ??= _modCategory.CreateEntry<string>("Logging_LogParserPath", "parser_ranked.py");
+                Pref_Log_ParserFile ??= _modCategory.CreateEntry<string>("Logging_LogParserPath", "inserting_info.py");
+                Pref_Log_PythonExe ??= _modCategory.CreateEntry<string>("Logging_PythonExePath", "C:\\Users\\A\\Mods\\Silica\\ranked\\venv\\Scripts\\python.exe");
 
                 if (!System.IO.Directory.Exists(GetLogFileDirectory()))
                 {
@@ -774,9 +776,8 @@ namespace Si_Logging
                         // launch parser
                         MelonLogger.Msg("Launching parser.");
                         ProcessStartInfo start = new ProcessStartInfo();
-                        start.FileName = "python.exe";
-                        string arguments = string.Format("{0} {1}", GetParserPath(), GetLogName());
-                        MelonLogger.Msg("Using parser arguments: ", arguments);
+                        start.FileName = Pref_Log_PythonExe.Value;
+                        string arguments = string.Format("\"{0}\" \"{1}\"", GetParserPath(), GetLogFilePath());
                         start.Arguments = arguments;
                         start.UseShellExecute = false;
                         start.RedirectStandardOutput = false;
