@@ -39,7 +39,7 @@ using SilicaAdminMod;
 using System.Linq;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(MapCycleMod), "Mapcycle", "1.5.6", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(MapCycleMod), "Mapcycle", "1.5.7", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -470,8 +470,30 @@ namespace Si_Mapcycle
             QueueChangeMap(targetMapName);
         }
 
+        public static void ResetPlayerTeams()
+        {
+            foreach (Player player in Player.Players)
+            {
+                if (player == null)
+                {
+                    continue;
+                }
+
+                if (player.Team == null)
+                {
+                    continue;
+                }
+
+                player.Team = null;
+                NetworkLayer.SendPlayerSelectTeam(player, null);
+            }
+        }
+
         public static void QueueChangeMap(string mapName)
         {
+            // clear all team info from players
+            ResetPlayerTeams();
+
             LevelInfo? levelInfo = GetLevelInfo(mapName);
             if (levelInfo == null)
             {
