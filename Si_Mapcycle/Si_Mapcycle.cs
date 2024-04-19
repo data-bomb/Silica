@@ -96,6 +96,12 @@ namespace Si_Mapcycle
                 }
 
                 sMapCycle = sMapList.ToArray();
+                
+                for (int i = 0; i < sMapCycle.Length; i++)
+                {
+                    MelonLogger.Msg("Added map to mapcycle: " + sMapCycle[i]);
+                }
+
             }
             catch (Exception exception)
             {
