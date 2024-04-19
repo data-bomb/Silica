@@ -69,8 +69,8 @@ namespace Si_Mapcycle
             try
             {
                 _modCategory ??= MelonPreferences.CreateCategory("Silica");
-                Pref_Mapcycle_RoundsBeforeChange ??= _modCategory.CreateEntry<int>("Mapcycle_RoundsBeforeMapChange", 4);
-                Pref_Mapcycle_EndgameDelay ??= _modCategory.CreateEntry<int>("Mapcycle_DelayBeforeEndgameMapChange_Seconds", 33);
+                Pref_Mapcycle_RoundsBeforeChange ??= _modCategory.CreateEntry<int>("Mapcycle_RoundsBeforeMapChange", 2);
+                Pref_Mapcycle_EndgameDelay ??= _modCategory.CreateEntry<int>("Mapcycle_DelayBeforeEndgameMapChange_Seconds", 9);
 
                 String mapCycleFile = MelonEnvironment.UserDataDirectory + "\\mapcycle.txt";
 
