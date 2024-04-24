@@ -28,6 +28,7 @@ using System.Runtime.CompilerServices;
 using System.Reflection;
 using System.Data;
 using static MelonLoader.MelonLogger;
+using System.Reflection.Metadata.Ecma335;
 
 #if NET6_0
 using Il2Cpp;
@@ -53,6 +54,14 @@ namespace SilicaAdminMod
             {
                 try
                 {
+                    // size should be at least:
+                    // 1 (Byte) + 8 (UInt64) + 1 (Byte) + 1 (Bool) + 1 (Minimum string size)
+                    if (__1 < 12)
+                    {
+                        //MelonLogger.Warning("Size of GameByteStreamReader too small");
+                        return;
+                    }
+
                     GameByteStreamReader tempReader = new GameByteStreamReader();
 
                     #if NET6_0
@@ -80,7 +89,7 @@ namespace SilicaAdminMod
                                 return;
                             }
 
-                            MelonLogger.Msg("Firing OnRequestPlayerChatEvent for player: " + chatterPlayer.PlayerName);
+                            MelonLogger.Msg("Firing OnRequestPlayerChatEvent for player (size=" + __1.ToString() + "): " + chatterPlayer.PlayerName);
                             OnRequestPlayerChatArgs onRequestPlayerChatArgs = FireOnRequestPlayerChatEvent(chatterPlayer, chatText, chatTeamOnly);
 
                             if (onRequestPlayerChatArgs.Block)
