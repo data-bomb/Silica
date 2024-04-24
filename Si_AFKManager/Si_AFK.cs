@@ -35,7 +35,7 @@ using System;
 using System.Collections;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(AwayFromKeyboard), "AFK Manager", "1.3.0", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(AwayFromKeyboard), "AFK Manager", "1.3.1", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -180,7 +180,7 @@ namespace Si_AFKManager
             {
                 // track if any players need to be removed from the AFKTracker list after we've finished iterating
                 // we can't kick inside the foreach Players iterator because it modifies the list
-                List<int>? playerIndexesToKick = new List<int>();
+                List<Player>? playersToKick = new List<Player>();
 
                 foreach (Player player in Player.Players)
                 {
@@ -203,22 +203,31 @@ namespace Si_AFKManager
                         if (AFKTracker[afkIndex].Minutes >= Pref_AFK_MinutesBeforeKick.Value)
                         {
                             // kick immediately
-                            playerIndexesToKick.Add(afkIndex);
+                            playersToKick.Add(player);
                         }
                     }
                 }
 
-                if(playerIndexesToKick.Count <= 0)
+                if(playersToKick.Count <= 0)
                 {
                     HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": no players were AFK for too long");
                 }
                 else
                 {
-                    foreach (int indexToKick in playerIndexesToKick)
+                    foreach (Player playerToKick in playersToKick)
                     {
-                        HelperMethods.KickPlayer(AFKTracker[indexToKick].Player);
-                        HelperMethods.ReplyToCommand_Player(AFKTracker[indexToKick].Player, "was kicked for being AFK");
-                        AFKTracker.RemoveAt(indexToKick);
+                        if (playerToKick == null)
+                        {
+                            continue;
+                        }
+
+                        HelperMethods.KickPlayer(playerToKick);
+                        HelperMethods.ReplyToCommand_Player(playerToKick, "was kicked for being AFK");
+                        int afkIndexToRemove = AFKTracker.FindIndex(p => p.Player == playerToKick);
+                        if (afkIndexToRemove >= 0)
+                        {
+                            AFKTracker.RemoveAt(afkIndexToRemove);
+                        }
                     }
                 }
             }
@@ -264,7 +273,7 @@ namespace Si_AFKManager
 
                         // track if any players need to be removed from the AFKTracker list after we've finished iterating
                         // we can't kick inside the foreach Players iterator because it modifies the list
-                        List<int>? playerIndexesToKick = new List<int>();
+                        List<Player>? playersToKick = new List<Player>();
 
                         // remove players in a seperate loop
                         foreach (Player player in Player.Players)
@@ -320,14 +329,14 @@ namespace Si_AFKManager
                                     // kick immediately
                                     if (Pref_AFK_KickIfServerNotFull.Value)
                                     {
-                                        playerIndexesToKick.Add(afkIndex);
+                                        playersToKick.Add(player);
                                     }
                                     // only kick if server is almost full
                                     else
                                     {
                                         if (ServerAlmostFull())
                                         {
-                                            playerIndexesToKick.Add(afkIndex);
+                                            playersToKick.Add(player);
                                         }
                                     }
                                 }
@@ -343,11 +352,20 @@ namespace Si_AFKManager
                             }
                         }
 
-                        foreach (int indexToKick in playerIndexesToKick)
+                        foreach (Player playerToKick in playersToKick)
                         {
-                            HelperMethods.KickPlayer(AFKTracker[indexToKick].Player);
-                            HelperMethods.ReplyToCommand_Player(AFKTracker[indexToKick].Player, "was kicked for being AFK");
-                            AFKTracker.RemoveAt(indexToKick);
+                            if (playerToKick == null)
+                            {
+                                continue;
+                            }
+
+                            HelperMethods.KickPlayer(playerToKick);
+                            HelperMethods.ReplyToCommand_Player(playerToKick, "was kicked for being AFK");
+                            int afkIndexToRemove = AFKTracker.FindIndex(p => p.Player == playerToKick);
+                            if (afkIndexToRemove >= 0)
+                            {
+                                AFKTracker.RemoveAt(afkIndexToRemove);
+                            }
                         }
                     }
                 }
