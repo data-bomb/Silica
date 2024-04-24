@@ -28,7 +28,6 @@ using System.Runtime.CompilerServices;
 using System.Reflection;
 using System.Data;
 using static MelonLoader.MelonLogger;
-using System.Reflection.Metadata.Ecma335;
 
 #if NET6_0
 using Il2Cpp;
