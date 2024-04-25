@@ -42,7 +42,7 @@ using System.Threading.Tasks;
 using System.Diagnostics;
 using System.IO;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.2.3", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.2.4", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -807,7 +807,7 @@ namespace Si_Logging
 
         public static void initializeTiers(ref Dictionary<string, int> tiers)
         {
-            for (int i = 0; i < SiConstants.MaxPlayableTeams; i++)
+            for (int i = 0; i < Team.NumTeams; i++)
             {
                 tiers[Team.Teams[i].name] = 0;
             }
