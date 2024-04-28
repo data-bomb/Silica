@@ -23,8 +23,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #if NET6_0
 using Il2Cpp;
+using Il2CppSilica.AI;
 #else
 using System.Reflection;
+using Silica.AI;
 #endif
 
 using HarmonyLib;
@@ -34,7 +36,8 @@ using System;
 using UnityEngine;
 using Si_WormBounty;
 
-[assembly: MelonInfo(typeof(WormBounty), "Worm Bounty", "0.9.0", "databomb", "https://github.com/data-bomb/Silica")]
+
+[assembly: MelonInfo(typeof(WormBounty), "Worm Bounty", "0.9.1", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -95,25 +98,29 @@ namespace Si_WormBounty
             // do the devouring
             AmbientLife wildLifeInstance = GameObject.FindObjectOfType<AmbientLife>();
             Vector3 targetPosition = targetPlayer.ControlledUnit.WorldPhysicalCenter;
+            Quaternion rotatedQuaternion = GameMath.GetRotatedQuaternion(Quaternion.identity, Vector3.up * UnityEngine.Random.Range(-180f, 180f));
+            Target target = Target.GetTargetByNetID(targetPlayer.ControlledUnit.NetworkComponent.NetID);
 
+            Vector3 spawnVector = targetPosition + rotatedQuaternion * Vector3.forward * UnityEngine.Random.Range(10f, 25f);
+            GameObject greatWormObject = Game.SpawnPrefab(wildLifeInstance.Boss.Prefab, null, wildLifeInstance.Team, targetPosition, rotatedQuaternion, true, true);
+            Unit? greatWormUnit = greatWormObject.GetBaseGameObject() as Unit;
+            if (greatWormUnit == null)
+            {
+                return;
+            }
 
-            #if NET6_0
-            wildLifeInstance.SpawnBoss(targetPosition, null);
-            #else
-            Type ambientLifeType = typeof(AmbientLife);
-            MethodInfo spawnBossMethod = ambientLifeType.GetMethod("SpawnBoss", BindingFlags.Instance | BindingFlags.NonPublic);
-            spawnBossMethod.Invoke(wildLifeInstance, parameters: new object?[] { targetPosition, null });
-            #endif
+            greatWormUnit.OnAttackOrder(target, target.transform.position, AgentMoveSpeed.Fast, true);
+            greatWormUnit.OnMoveOrder(targetPosition, AgentMoveSpeed.Fast, true);
 
             MelonLogger.Msg("Spawning Great Worm to devour player (" + targetPlayer.PlayerName + ")");
             HelperMethods.AlertAdminActivity(callerPlayer, targetPlayer, "devoured");
         }
 
-#if NET6_0
+        #if NET6_0
         [HarmonyPatch(typeof(AmbientLife), nameof(AmbientLife.OnEnable))]
-#else
+        #else
         [HarmonyPatch(typeof(AmbientLife), "OnEnable")]
-#endif
+        #endif
         private static class WormBounty_Patch_AmbientLife_OnEnable
         {
             public static void Postfix(AmbientLife __instance)
@@ -130,11 +137,11 @@ namespace Si_WormBounty
             }
         }
 
-#if NET6_0
+        #if NET6_0
         [HarmonyPatch(typeof(AmbientLife), nameof(AmbientLife.OnUnitDestroyed))]
-#else
+        #else
         [HarmonyPatch(typeof(AmbientLife), "OnUnitDestroyed")]
-#endif
+        #endif
         private static class WormBounty_Patch_AmbientLife_OnUnitDestroyed
         {
             public static void Prefix(AmbientLife __instance, Unit __0, EDamageType __1, GameObject __2)
