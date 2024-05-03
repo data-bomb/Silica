@@ -42,7 +42,7 @@ using System.Threading.Tasks;
 using System.Diagnostics;
 using System.IO;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.2.4", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.2.5", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -52,6 +52,7 @@ namespace Si_Logging
     public class HL_Logging : MelonMod
     {
         const int MaxTeams = 3;
+        static int[] teamResourcesCollected = new int[Team.NumTeams];
         static Player?[]? lastCommander;
 
         static MelonPreferences_Category _modCategory = null!;
@@ -688,6 +689,34 @@ namespace Si_Logging
         // TODO: 060. Player Objectives/Actions
         // Ideas: Enter/exit vehicle. Take control of bug.
 
+        // Round-End Scoring based on Resources Collected
+
+        [HarmonyPatch(typeof(Team), nameof(Team.StoreResource))]
+        private static class ApplyPatchStoreResource
+        {
+            public static void Postfix(Team __instance, int __result, int __0)
+            {
+                try
+                {
+                    if (__instance == null)
+                    {
+                        return;
+                    }
+
+                    if (__0 <= 0)
+                    {
+                        return;
+                    }
+
+                    teamResourcesCollected[__instance.Index] += __0;
+                }
+                catch (Exception error)
+                {
+                    HelperMethods.PrintError(error, "Failed to run StoreResource");
+                }
+            }
+        }
+
         // 061. Team Objectives/Actions - Victory
         // 062. World Objectives/Actions - Round_Win
         // 065. Round-End Team Score Report
@@ -735,9 +764,8 @@ namespace Si_Logging
                             {
                                 continue;
                             }
-
-                            // TODO: Investigate what else to use for team score. Add up all player scores? For now resources is used but it's not using Total acculumated resources so need to find something else.
-                            string TeamLogLine = "Team \"" + thisTeam.TeamShortName + "\" scored \"" + thisTeam.TotalResources.ToString() + "\" with \"" + thisTeam.GetNumPlayers().ToString() + "\" players";
+                            
+                            string TeamLogLine = "Team \"" + thisTeam.TeamShortName + "\" scored \"" + teamResourcesCollected[thisTeam.Index].ToString() + "\" with \"" + thisTeam.GetNumPlayers().ToString() + "\" players";
                             PrintLogLine(TeamLogLine);
                         }
 
@@ -791,7 +819,6 @@ namespace Si_Logging
             }
         }
 
-
         // 061. Team Objectives/Actions - Research Tier
         public static Dictionary<string, int> currTiers = new Dictionary<string, int>();
         public static int getHighestTechTier(Team team)
@@ -801,19 +828,18 @@ namespace Si_Logging
                 int count = team.GetTechnologyTierStructureCount(i);
                 if (count > 0) { return i; }
             }
-            return 0;
 
+            return 0;
         }
 
-        public static void initializeTiers(ref Dictionary<string, int> tiers)
+        public static void initializeRound(ref Dictionary<string, int> tiers)
         {
             for (int i = 0; i < Team.NumTeams; i++)
             {
                 tiers[Team.Teams[i].name] = 0;
+                teamResourcesCollected[i] = 0;
             }
-
         }
-
 
         #if NET6_0
         [HarmonyPatch(typeof(BarksHandler), nameof(BarksHandler.OnConstructionCompleted))]
@@ -848,7 +874,6 @@ namespace Si_Logging
         {
                 string LogLine = "Team \"" + team.TeamShortName + "\" triggered \"technology_change\" (tier \"" + tier.ToString() + "\")";
                 PrintLogLine(LogLine);
-
         }
         
         // 062. World Objectives/Actions - Round_Start
@@ -864,7 +889,7 @@ namespace Si_Logging
 
                     string RoundStartLogLine = "World triggered \"Round_Start\" (gametype \"" + versusMode.ToString() + "\")";
                     PrintLogLine(RoundStartLogLine);
-                    initializeTiers(ref currTiers);
+                    initializeRound(ref currTiers);
 
                     firedRoundEndOnce = false;
                 }
