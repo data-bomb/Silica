@@ -42,7 +42,7 @@ using System.Threading.Tasks;
 using System.Diagnostics;
 using System.IO;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.2.5", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.2.6", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -51,8 +51,8 @@ namespace Si_Logging
     // https://developer.valvesoftware.com/wiki/HL_Log_Standard
     public class HL_Logging : MelonMod
     {
-        const int MaxTeams = 3;
-        static int[] teamResourcesCollected = new int[Team.NumTeams];
+        const int MaxPlayableTeams = 3;
+        static int[] teamResourcesCollected = new int[MaxPlayableTeams + 1];
         static Player?[]? lastCommander;
 
         static MelonPreferences_Category _modCategory = null!;
@@ -157,8 +157,8 @@ namespace Si_Logging
                     AddFirstLogLine();
                 }
 
-                lastCommander = new Player?[MaxTeams];
-                for (int i = 0; i < MaxTeams; i++)
+                lastCommander = new Player?[MaxPlayableTeams];
+                for (int i = 0; i < MaxPlayableTeams; i++)
                 {
                     lastCommander[i] = null;
                 }
