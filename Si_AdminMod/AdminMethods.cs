@@ -19,6 +19,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #if !NET6_0
 using DebugTools;
+#else
+using Il2Cpp;
 #endif
 
 using MelonLoader;
@@ -77,12 +79,38 @@ namespace SilicaAdminMod
 
         public static Admin? FindAdminFromSteamId(long steamId)
         {
-            foreach (Admin admin in SiAdminMod.AdminList)
+            // check the mod admin list first
+            foreach (Admin modAdmin in SiAdminMod.AdminList)
             {
-                if (admin.SteamId == steamId)
+                if (modAdmin.SteamId == steamId)
                 {
-                    return admin;
+                    return modAdmin;
                 }
+            }
+
+            // grant some default powers if they are on the game's admin list but missing from the mod admin list
+            NetworkAdminPlayer gameAdmin = NetworkServerSettings.GetPlayerAdmin((ulong)steamId);
+            if (gameAdmin != null)
+            {
+                Admin gameModAdminConversion = new Admin
+                {
+                    SteamId = steamId,
+                    Level = (gameAdmin.m_Root ? (byte)100 : (byte)10),
+                    Name = gameAdmin.m_Name,
+                    CreatedOn = (int)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds,
+                    LastModifiedOn = (int)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds,
+                    Powers = (gameAdmin.m_Root ? Power.Root : (Power.Kick
+                                                             | Power.Slay
+                                                             | Power.Map
+                                                             | Power.Commander
+                                                             | Power.End
+                                                             | Power.Eject
+                                                             | Power.Mute
+                                                             | Power.Generic
+                                                             | Power.Teams))
+                };
+
+                return gameModAdminConversion;
             }
 
             return null;
