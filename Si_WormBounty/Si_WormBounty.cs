@@ -37,7 +37,7 @@ using UnityEngine;
 using Si_WormBounty;
 
 
-[assembly: MelonInfo(typeof(WormBounty), "Worm Bounty", "0.9.1", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(WormBounty), "Worm Bounty", "0.9.2", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -48,11 +48,18 @@ namespace Si_WormBounty
         static MelonPreferences_Category _modCategory = null!;
         static MelonPreferences_Entry<int> _Pref_GreatWorms_MaxNumber = null!;
         static MelonPreferences_Entry<float> _Pref_GreatWorms_SpawnChance = null!;
+        static MelonPreferences_Entry<int> _Pref_GreatWorms_Bounty_BaseAmount = null!;
+        static MelonPreferences_Entry<int> _Pref_GreatWorms_Bounty_NonExplosionBonus = null!;
+        static MelonPreferences_Entry<int> _Pref_GreatWorms_Bounty_RandomBonusMax = null!;
+
 
         public override void OnInitializeMelon()
         {
             _modCategory ??= MelonPreferences.CreateCategory("Silica");
             _Pref_GreatWorms_MaxNumber ??= _modCategory.CreateEntry<int>("GreatWorms_MaxNumber", 2);
+            _Pref_GreatWorms_Bounty_BaseAmount ??= _modCategory.CreateEntry<int>("GreatWorms_Bounty_BaseAmount", 500);
+            _Pref_GreatWorms_Bounty_NonExplosionBonus ??= _modCategory.CreateEntry<int>("GreatWorms_Bounty_Bonus_NonExplosion", 500);
+            _Pref_GreatWorms_Bounty_RandomBonusMax ??= _modCategory.CreateEntry<int>("GreatWorms_Bounty_Bonus_RandomMax", 750);
             _Pref_GreatWorms_SpawnChance ??= _modCategory.CreateEntry<float>("GreatWorms_SpawnChance", 0.25f);
         }
 
@@ -199,14 +206,18 @@ namespace Si_WormBounty
         private static int FindBounty(EDamageType damageType)
         {
             // explosion kills earn a bit less
-            int baseAmount = (damageType == EDamageType.Explosion) ? 500 : 1000;
+            int baseAmount = (damageType == EDamageType.Explosion) ? _Pref_GreatWorms_Bounty_BaseAmount.Value : (_Pref_GreatWorms_Bounty_BaseAmount.Value + _Pref_GreatWorms_Bounty_NonExplosionBonus.Value);
 
             // give a little more, perhaps
-            System.Random randomIndex = new System.Random();
-            int varyingAmount = randomIndex.Next(0, 750);
+            int varyingAmount = 0;
+            if (_Pref_GreatWorms_Bounty_RandomBonusMax.Value > 0)
+            {
+                System.Random randomIndex = new System.Random();
+                varyingAmount = randomIndex.Next(0, _Pref_GreatWorms_Bounty_RandomBonusMax.Value);
 
-            // round down to nearest ten
-            varyingAmount = (int)Math.Round(varyingAmount / 10.0) * 10;
+                // round down to nearest ten
+                varyingAmount = (int)Math.Round(varyingAmount / 10.0) * 10;
+            }
 
             return baseAmount + varyingAmount;
         }
