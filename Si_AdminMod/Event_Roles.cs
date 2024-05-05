@@ -45,7 +45,7 @@ namespace SilicaAdminMod
         [HarmonyPatch(typeof(MP_Strategy), nameof(MP_Strategy.ProcessNetRPC))]
         static class ApplyPatch_MPStrategy_RequestRole
         {
-            public static bool Prefix(MP_Strategy __instance, GameByteStreamReader __0, byte __1)
+            public static bool Prefix(MP_Strategy __instance, ref GameByteStreamReader __0, byte __1)
             {
                 try
                 {
@@ -61,18 +61,18 @@ namespace SilicaAdminMod
                     }
 
                     Player requestingPlayer = Player.FindPlayer((CSteamID)__0.ReadUInt64(), (int)__0.ReadByte());
+                    MP_Strategy.ETeamRole eRole = (MP_Strategy.ETeamRole)__0.ReadByte();
+
                     if (requestingPlayer == null)
                     {
                         MelonLogger.Warning("Cannot find player in role request.");
                         return false;
                     }
 
-                    MP_Strategy.ETeamRole eRole = (MP_Strategy.ETeamRole)__0.ReadByte();
-
                     // would the game code treat it as an infantry/no role request?
                     if (eRole != MP_Strategy.ETeamRole.COMMANDER || __instance.GetCommanderForTeam(requestingPlayer.Team))
                     {
-                        RestoreRPC_RequestRoleReader(requestingPlayer, eRole);
+                        __0 = RestoreRPC_RequestRoleReader(requestingPlayer, eRole);
                         FireOnRoleChangedEvent(requestingPlayer, eRole);
                         return true;
                     }
@@ -127,10 +127,17 @@ namespace SilicaAdminMod
         public static GameByteStreamReader RestoreRPC_RequestRoleReader(Player requestingPlayer, MP_Strategy.ETeamRole role)
         {
             GameByteStreamWriter gameByteStreamWriter = GameByteStreamWriter.GetGameByteStreamWriter(true);
+            gameByteStreamWriter.WriteByte(20);
+            gameByteStreamWriter.WriteByte(0);
+            gameByteStreamWriter.WriteByte((byte)MP_Strategy.ERPCs.REQUEST_ROLE);
             gameByteStreamWriter.WriteUInt64((ulong)requestingPlayer.PlayerID);
             gameByteStreamWriter.WriteByte((byte)requestingPlayer.PlayerChannel);
             gameByteStreamWriter.WriteByte((byte)role);
-            return GameByteStreamReader.GetGameByteStreamReader(gameByteStreamWriter.GetByteData(), gameByteStreamWriter.GetByteDataSize(), true);
+            GameByteStreamReader gameByteStreamReader = GameByteStreamReader.GetGameByteStreamReader(gameByteStreamWriter.GetByteData(), gameByteStreamWriter.GetByteDataSize(), true);
+            gameByteStreamReader.ReadByte();
+            gameByteStreamReader.ReadByte();
+            gameByteStreamReader.ReadByte();
+            return gameByteStreamReader;
         }
 
         public static void FireOnRoleChangedEvent(Player player, MP_Strategy.ETeamRole role)
