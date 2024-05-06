@@ -35,7 +35,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-[assembly: MelonInfo(typeof(BasicBanlist), "Basic Banlist", "1.4.0", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(BasicBanlist), "Basic Banlist", "1.5.0", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -45,7 +45,7 @@ namespace Si_BasicBanlist
     {
         public class BanEntry
         {
-            public long OffenderSteamId
+            public ulong OffenderSteamId
             {
                 get;
                 set;
@@ -107,8 +107,8 @@ namespace Si_BasicBanlist
                 }
                 else
                 {
-                    MelonLogger.Msg("Did not find banned_users.json file. No banlist entries loaded.");
-                    MasterBanList = new List<BanEntry>();
+                    MelonLogger.Msg("Did not find banned_users.json file. Will use ServerSettings.xml file.");
+                    MasterBanList = null;
                 }
             }
             catch (Exception error)
@@ -125,7 +125,7 @@ namespace Si_BasicBanlist
             HelperMethods.RegisterAdminCommand("kickban", banCallback, Power.Ban, "Bans target player. Usage: !kickban <player>");
 
             HelperMethods.CommandCallback offlineBanCallback = Command_OfflineBan;
-            HelperMethods.RegisterAdminCommand("banid", offlineBanCallback, Power.Rcon, "Bans target player by SteamID. Usage !ban <Steam64ID> <player name>");
+            HelperMethods.RegisterAdminCommand("banid", offlineBanCallback, Power.Rcon, "Bans target player by SteamID. Usage !banid <Steam64ID> <player name>");
 
             HelperMethods.CommandCallback unbanCallback = Command_Unban;
             HelperMethods.RegisterAdminCommand("unban", unbanCallback, Power.Unban, "Unbans target player. Usage: !unban <playername | Steam64ID>");
@@ -145,15 +145,48 @@ namespace Si_BasicBanlist
             #endif
         }
 
-        public static void Command_OfflineBan(Player? callerPlayer, String args)
+        public static bool IsPlayerBanned(string name)
         {
-            // validate banlist is available
-            if (MasterBanList == null)
+            // using banned_users.json
+            if (MasterBanList != null)
             {
-                MelonLogger.Msg("Ban list unavailable. Check json syntax.");
-                return;
+                BanEntry? matchingBan = MasterBanList.Find(i => i.OffenderName == name);
+                if (matchingBan != null)
+                {
+                    return true;
+                }
+            }
+            // using game XML
+            else
+            {
+                return NetworkServerSettings.PlayerIsBanned(name);
             }
 
+            return false;
+        }
+
+        public static bool IsPlayerBanned(ulong steamID)
+        {
+            // using banned_users.json
+            if (MasterBanList != null)
+            {
+                BanEntry? matchingBan = MasterBanList.Find(i => i.OffenderSteamId == steamID);
+                if (matchingBan != null)
+                {
+                    return true;
+                }
+            }
+            // using game XML
+            else
+            {
+                return NetworkServerSettings.PlayerIsBanned(steamID);
+            }
+
+            return false;
+        }
+
+        public static void Command_OfflineBan(Player? callerPlayer, String args)
+        {
             string commandName = args.Split(' ')[0];
 
             // validate argument count
@@ -167,54 +200,44 @@ namespace Si_BasicBanlist
             // validate argument contents
             string targetID = args.Split(' ')[1];
             string targetName = args.Split(' ', 2)[2];
-            bool isNumber = long.TryParse(targetID, out long steamid);
+            bool isNumber = ulong.TryParse(targetID, out ulong steamid);
             if (!isNumber)
             {
                 HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": Not a valid SteamID64");
                 return;
             }
 
-            BanEntry? matchingBan = MasterBanList.Find(i => i.OffenderSteamId == steamid);
-
             // did we find someone we could ban?
-            if (matchingBan != null)
+            if (IsPlayerBanned(steamid))
             {
                 HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": SteamID64 already found in the banlist");
                 return;
             }
 
-            BanEntry thisBan = new BanEntry()
+            if (MasterBanList == null)
             {
-                OffenderSteamId = steamid,
-                OffenderName = targetName,
-                UnixBanTime = (int)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds
-            };
-
-            if (callerPlayer == null)
-            {
-                thisBan.Comments = "banned by SERVER CONSOLE";
+                NetworkServerSettings.PlayerAddBan(steamid, targetName, 0, callerPlayer == null ? "offline banned by SERVER CONSOLE" : "offline banned by " + callerPlayer.PlayerName);
             }
             else
             {
-                thisBan.Comments = "banned by " + callerPlayer.PlayerName;
+                BanEntry thisBan = new BanEntry()
+                {
+                    OffenderSteamId = steamid,
+                    OffenderName = targetName,
+                    UnixBanTime = (int)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds,
+                    Comments = (callerPlayer == null) ? "offline banned by SERVER CONSOLE" : "offline banned by " + callerPlayer.PlayerName
+                };
+
+                MasterBanList.Add(thisBan);
+                UpdateBanFile();
             }
 
-            MelonLogger.Msg("Added player name (" + thisBan.OffenderName + ") SteamID (" + thisBan.OffenderSteamId.ToString() + ") to the banlist.");
-            MasterBanList.Add(thisBan);
-            UpdateBanFile();
-
-            HelperMethods.AlertAdminAction(callerPlayer, "banned " + thisBan.OffenderName);
+            MelonLogger.Msg("Added player name (" + targetName + ") SteamID (" + steamid + ") to the banlist (offline).");
+            HelperMethods.AlertAdminAction(callerPlayer, "offline banned " + targetName);
         }
 
         public static void Command_Ban(Player? callerPlayer, String args)
         {
-            // validate banlist is available
-            if (MasterBanList == null)
-            {
-                MelonLogger.Msg("Ban list unavailable. Check json syntax.");
-                return;
-            }
-            
             string commandName = args.Split(' ')[0];
             
             // validate argument count
@@ -251,13 +274,6 @@ namespace Si_BasicBanlist
 
         public static void Command_Unban(Player? callerPlayer, String args)
         {
-            // validate banlist is available
-            if (MasterBanList == null)
-            {
-                MelonLogger.Msg("Ban list unavailable. Check json syntax.");
-                return;
-            }
-            
             string commandName = args.Split(' ')[0];
             
             // validate argument count
@@ -269,59 +285,70 @@ namespace Si_BasicBanlist
             }
 
             // grab everything after !unban for the target string
-            String sTarget = args.Split(' ', 2)[1];
+            String unbanTarget = args.Split(' ', 2)[1];
 
-            // accept target of either steamid64 or name
-            bool isNumber = long.TryParse(sTarget, out long steamid);
-
-            BanEntry? matchingBan;
-            // assume it's a steamid64
-            if (isNumber)
+            if (!UnbanPlayer(unbanTarget, callerPlayer))
             {
-                matchingBan = MasterBanList.Find(i => i.OffenderSteamId == steamid);
-            }
-            // assume it's a name
-            else
-            {
-                matchingBan = MasterBanList.Find(i => i.OffenderName == sTarget);
-            }
-
-            // did we find someone we could unban?
-            if (matchingBan == null)
-            {
-                String targetType = isNumber ? "steamid" : "name";
-                HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Unable to find " + targetType + " on banlist");
+                HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Unable to find " + unbanTarget + " on banlist");
                 return;
             }
+        }
 
-            MelonLogger.Msg("Removed player name (" + matchingBan.OffenderName + ") SteamID (" + matchingBan.OffenderSteamId.ToString() + ") from the banlist.");
-            MasterBanList.Remove(matchingBan);
-            UpdateBanFile();
+        public static bool UnbanPlayer(String target, Player? adminPlayer)
+        {
+            // accept target of either steamid64 or name
+            bool isNumber = ulong.TryParse(target, out ulong steamid);
 
-            HelperMethods.AlertAdminAction(callerPlayer, "unbanned " + matchingBan.OffenderName);
+            if (MasterBanList == null)
+            {
+                NetworkBannedPlayer? bannedPlayer = isNumber ? NetworkServerSettings.GetPlayerBan(steamid) : NetworkServerSettings.GetPlayerBan(target);
+                if (bannedPlayer == null)
+                {
+                    return false;
+                }
+
+                NetworkServerSettings.PlayerRemoveBan(bannedPlayer.m_ID);
+                MelonLogger.Msg("Removed player name (" + bannedPlayer.m_Name + ") SteamID (" + bannedPlayer.m_ID.ToString() + ") from the banlist.");
+                HelperMethods.AlertAdminAction(adminPlayer, "unbanned " + bannedPlayer.m_Name);
+                return true;
+            }
+            else
+            {
+                BanEntry? bannedPlayer = isNumber ? MasterBanList.Find(i => i.OffenderSteamId == steamid) : MasterBanList.Find(i => i.OffenderName == target);
+                if (bannedPlayer == null)
+                {
+                    return false;
+                }
+
+                MasterBanList.Remove(bannedPlayer);
+                UpdateBanFile();
+                MelonLogger.Msg("Removed player name (" + bannedPlayer.OffenderName + ") SteamID (" + bannedPlayer.OffenderSteamId.ToString() + ") from the banlist.");
+                HelperMethods.AlertAdminAction(adminPlayer, "unbanned " + bannedPlayer.OffenderName);
+                return true;
+            }
         }
 
         public static void BanPlayer(Player playerToBan, Player? adminPlayer)
         {
-            if (MasterBanList == null)
+            // are we already banned?
+            if (IsPlayerBanned(playerToBan.PlayerID.m_SteamID))
             {
+                MelonLogger.Warning("Player name (" + playerToBan.PlayerName + ") SteamID (" + playerToBan.PlayerID.m_SteamID.ToString() + ") already on banlist.");
                 return;
             }
 
-            BanEntry thisBan = GenerateBanEntry(playerToBan, adminPlayer);
-
-            // are we already banned?
-            if (MasterBanList.Find(i => i.OffenderSteamId == thisBan.OffenderSteamId) != null)
+            if (MasterBanList == null)
             {
-                MelonLogger.Msg("Player name (" + thisBan.OffenderName + ") SteamID (" + thisBan.OffenderSteamId.ToString() + ") already on banlist.");
+                NetworkServerSettings.PlayerAddBan(playerToBan.PlayerID.m_SteamID, playerToBan.PlayerName, 0, adminPlayer == null ? "banned by SERVER CONSOLE" : "banned by " + adminPlayer.PlayerName);
             }
             else
             {
-                MelonLogger.Msg("Added player name (" + thisBan.OffenderName + ") SteamID (" + thisBan.OffenderSteamId.ToString() + ") to the banlist.");
+                BanEntry thisBan = GenerateBanEntry(playerToBan, adminPlayer);
                 MasterBanList.Add(thisBan);
                 UpdateBanFile();
             }
 
+            MelonLogger.Msg("Added player name (" + playerToBan.PlayerName + ") SteamID (" + playerToBan.PlayerID.m_SteamID.ToString() + ") to the banlist.");
             NetworkGameServer.KickPlayer(playerToBan);
             HelperMethods.AlertAdminActivity(adminPlayer, playerToBan, "banned");
         }
@@ -330,7 +357,7 @@ namespace Si_BasicBanlist
         {
             BanEntry thisBan = new BanEntry()
             {
-                OffenderSteamId = long.Parse(player.ToString().Split('_')[1]),
+                OffenderSteamId = ulong.Parse(player.ToString().Split('_')[1]),
                 OffenderName = player.PlayerName,
                 UnixBanTime = (int)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds
             };
@@ -403,7 +430,7 @@ namespace Si_BasicBanlist
                     if (__0 != null)
                     {
                         // check if player was previously banned
-                        long JoiningPlayerSteamId = long.Parse(__0.ToString().Split('_')[1]);
+                        ulong JoiningPlayerSteamId = ulong.Parse(__0.ToString().Split('_')[1]);
                         if (MasterBanList.Find(i => i.OffenderSteamId == JoiningPlayerSteamId) != null)
                         {
                             MelonLogger.Msg("Kicking " + __0.ToString() + " for matching an entry in the banlist.");
