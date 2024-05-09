@@ -33,7 +33,7 @@ using UnityEngine;
 using System;
 using SilicaAdminMod;
 
-[assembly: MelonInfo(typeof(HQlessHumansLose), "HQless Humans Lose", "1.3.3", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HQlessHumansLose), "HQless Humans Lose", "1.3.4", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -257,6 +257,8 @@ namespace Si_HQlessHumansLose
         }
 
         // don't let the structure count reach 0 if HQ/Nest is under construction
+        // disabled for now because the game clients independently calculate the end of game conditions (not just the server) :(
+        #if false
         #if NET6_0
         [HarmonyPatch(typeof(Team), nameof(Team.UpdateMajorStructuresCount))]
         #else
@@ -360,7 +362,7 @@ namespace Si_HQlessHumansLose
                 }
             }
         }
-
+        #endif
 
         #if NET6_0
         [HarmonyPatch(typeof(ConstructionSite), nameof(ConstructionSite.Update))]
