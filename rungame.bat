@@ -6,7 +6,7 @@ SET "MELON_ARGS=--melonloader.hideconsole --melonloader.disablestartscreen"
 :RESTART_LOOP
 start "" /B /HIGH /AFFINITY 0x0000000000000FFF %EXE_PATH% %MELON_ARGS% %ADDITIONAL_ARGS%
 @ECHO OFF
-timeout /t 86400
+timeout /t 86400 /nobreak > NUL
 taskkill /IM "Silica.exe" /F
 goto RESTART_LOOP
 ENDLOCAL
