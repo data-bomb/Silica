@@ -41,8 +41,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Diagnostics;
 using System.IO;
+using System.Text;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.2.6", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.2.7", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -690,11 +691,10 @@ namespace Si_Logging
         // Ideas: Enter/exit vehicle. Take control of bug.
 
         // Round-End Scoring based on Resources Collected
-
-        [HarmonyPatch(typeof(Team), nameof(Team.StoreResource))]
-        private static class ApplyPatchStoreResource
+        [HarmonyPatch(typeof(Team), nameof(Team.OnResourcesChanged))]
+        private static class ApplyPatchOnResourcesChanged
         {
-            public static void Postfix(Team __instance, int __result, int __0)
+            public static void Postfix(Team __instance, Structure __0, ResourceHolder __1, int __2)
             {
                 try
                 {
@@ -703,16 +703,16 @@ namespace Si_Logging
                         return;
                     }
 
-                    if (__0 <= 0)
+                    if (__2 <= 0)
                     {
                         return;
                     }
 
-                    teamResourcesCollected[__instance.Index] += __0;
+                    teamResourcesCollected[__instance.Index] += __2;
                 }
                 catch (Exception error)
                 {
-                    HelperMethods.PrintError(error, "Failed to run StoreResource");
+                    HelperMethods.PrintError(error, "Failed to run OnResourcesChanged");
                 }
             }
         }
