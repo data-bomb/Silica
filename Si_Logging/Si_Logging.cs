@@ -181,13 +181,13 @@ namespace Si_Logging
                 return;
             }
 
-            //QList.Options.RegisterMod(this);
-//
-            //QList.OptionTypes.BoolOption logDamage = new(Pref_Log_Damage, Pref_Log_Damage.Value);
-            //QList.OptionTypes.BoolOption logAllKills = new(Pref_Log_Kills_Include_AI_vs_Player, Pref_Log_Kills_Include_AI_vs_Player.Value);
-//
-            //QList.Options.AddOption(logDamage);
-            //QList.Options.AddOption(logAllKills);
+            QList.Options.RegisterMod(this);
+
+            QList.OptionTypes.BoolOption logDamage = new(Pref_Log_Damage, Pref_Log_Damage.Value);
+            QList.OptionTypes.BoolOption logAllKills = new(Pref_Log_Kills_Include_AI_vs_Player, Pref_Log_Kills_Include_AI_vs_Player.Value);
+            QList.Options.AddOption(logDamage);
+
+            QList.Options.AddOption(logAllKills);
 #endif
         }
 
