@@ -43,7 +43,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Text;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.2.7", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.2.8", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -170,24 +170,26 @@ namespace Si_Logging
             }
         }
 
-        #if NET6_0
         public override void OnLateInitializeMelon()
         {
+            //subscribing to the event
+            Event_Roles.OnRoleChanged += OnRoleChanged;
+#if NET6_0
             bool QListLoaded = RegisteredMelons.Any(m => m.Info.Name == "QList");
             if (!QListLoaded)
             {
                 return;
             }
 
-            QList.Options.RegisterMod(this);
-
-            QList.OptionTypes.BoolOption logDamage = new(Pref_Log_Damage, Pref_Log_Damage.Value);
-            QList.OptionTypes.BoolOption logAllKills = new(Pref_Log_Kills_Include_AI_vs_Player, Pref_Log_Kills_Include_AI_vs_Player.Value);
-
-            QList.Options.AddOption(logDamage);
-            QList.Options.AddOption(logAllKills);
+            //QList.Options.RegisterMod(this);
+//
+            //QList.OptionTypes.BoolOption logDamage = new(Pref_Log_Damage, Pref_Log_Damage.Value);
+            //QList.OptionTypes.BoolOption logAllKills = new(Pref_Log_Kills_Include_AI_vs_Player, Pref_Log_Kills_Include_AI_vs_Player.Value);
+//
+            //QList.Options.AddOption(logDamage);
+            //QList.Options.AddOption(logAllKills);
+#endif
         }
-        #endif
 
         // 003. Change Map
         public override void OnSceneWasLoaded(int buildIndex, string sceneName)
@@ -441,69 +443,38 @@ namespace Si_Logging
         }
 
         // 055. Role Selection - Commander Change
-        #if NET6_0
-        [HarmonyPatch(typeof(MP_Strategy), nameof(MP_Strategy.SetCommander))]
-        #else
-        [HarmonyPatch(typeof(MP_Strategy), "SetCommander")]
-        #endif
-        private static class ApplyPatch_MP_Strategy_SetCommander
+        public void OnRoleChanged(object? sender, OnRoleChangedArgs args)
         {
-            public static void Postfix(MP_Strategy __instance, Team __0, Player __1)
+            try
             {
-                try
+                if (args == null) return;
+
+                Player player = args.Player;
+                
+                if (player == null || player.Team == null) return;
+                int userID = Math.Abs(player.GetInstanceID());
+                string role;
+
+                if (args.Role == MP_Strategy.ETeamRole.COMMANDER)
                 {
-                    if (__0 == null || lastCommander == null)
-                    {
-                        return;
-                    }
-
-                    #pragma warning disable CS8602, CS8604 // Dereference of a possibly null reference.
-                    if (__1 != null)
-                    {
-                        // is it the same as what we already captured?
-                        if (__1 == lastCommander[__0.Index])
-                        {
-                            return;
-                        }
-
-                        // a change occurred and this player was promoted
-                        int commanderUserID = Math.Abs(__1.GetInstanceID());
-                        string LogLine = "\"" + __1.PlayerName + "<" + commanderUserID + "><" + GetPlayerID(__1) + "><" + __0.TeamShortName + ">\" changed role to \"Commander\"";
-                        PrintLogLine(LogLine);
-
-                        // check if another player was demoted
-                        if (lastCommander[__0.Index] != null)
-                        {
-                            // this player is no longer commander
-                            int prevCommanderUserID = Math.Abs(lastCommander[__0.Index].GetInstanceID());
-                            LogLine = "\"" + lastCommander[__0.Index].PlayerName + "<" + prevCommanderUserID + "><" + GetPlayerID(lastCommander[__0.Index]) + "><" + __0.TeamShortName + ">\" changed role to \"Infantry\"";
-                            PrintLogLine(LogLine);
-                        }
-
-                        lastCommander[__0.Index] = __1;
-                    }
-                    else
-                    {
-                        // is it the same as what we already captured?
-                        if (lastCommander[__0.Index] == null)
-                        {
-                            return;
-                        }
-
-                        // a change occurred and this player is no longer commander
-                        int prevCommanderUserID = Math.Abs(lastCommander[__0.Index].GetInstanceID());
-                        string LogLine = "\"" + lastCommander[__0.Index].PlayerName + "<" + prevCommanderUserID + "><" + GetPlayerID(lastCommander[__0.Index]) + "><" + __0.TeamShortName + ">\" changed role to \"Infantry\"";
-                        PrintLogLine(LogLine);
-
-                        lastCommander[__0.Index] = null;
-                    }
-                    #pragma warning restore CS8602, CS8604 // Dereference of a possibly null reference.
+                    role = "Commander";
                 }
-                catch (Exception error)
+                else if (args.Role == MP_Strategy.ETeamRole.INFANTRY)
                 {
-                    HelperMethods.PrintError(error, "Failed to run MP_Strategy::SetCommander");
+                    role = "Infantry";
+                } else
+                {
+                    role = "None";
                 }
+
+                string LogLine = "\"" + player.PlayerName + "<" + userID + "><" + GetPlayerID(player) + "><" + player.Team.TeamShortName + ">\" changed role to \"" + role + "\"";
+                PrintLogLine(LogLine);
             }
+            catch (Exception error)
+            {
+                HelperMethods.PrintError(error, "Failed to run OnRoleChanged");
+            }
+
         }
 
         // 056. Change Name
