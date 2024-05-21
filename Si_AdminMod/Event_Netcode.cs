@@ -46,9 +46,9 @@ namespace SilicaAdminMod
         static class ApplyPatch_GameByteStreamReader_Events
         {
             #if NET6_0
-            static void Prefix(GameByteStreamReader __result, ref Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppStructArray<byte> __0, int __1, bool __2)
+            static void Prefix(GameByteStreamReader __result, ref Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppStructArray<byte> __0, int __1, uint __2, string __3, bool __4)
             #else
-            static void Prefix(GameByteStreamReader __result, ref byte[] __0, int __1, bool __2)
+            static void Prefix(GameByteStreamReader __result, ref byte[] __0, int __1, uint __2, string __3, bool __4)
             #endif
             {
                 try
@@ -64,10 +64,10 @@ namespace SilicaAdminMod
                     GameByteStreamReader tempReader = new GameByteStreamReader();
 
                     #if NET6_0
-                    tempReader.m_ReadDebug = __2;
+                    tempReader.m_ReadDebug = __4;
                     #else
                     FieldInfo readDebugField = typeof(GameByteStreamReader).GetField("m_ReadDebug", BindingFlags.NonPublic | BindingFlags.Instance);
-                    readDebugField.SetValue(tempReader, __2);
+                    readDebugField.SetValue(tempReader, __4);
                     #endif
                     tempReader.Reset(__0, __1);
 
