@@ -33,7 +33,7 @@ using UnityEngine;
 using System;
 using SilicaAdminMod;
 
-[assembly: MelonInfo(typeof(HQlessHumansLose), "HQless Humans Lose", "1.3.4", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HQlessHumansLose), "HQless Humans Lose", "1.3.5", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -71,18 +71,22 @@ namespace Si_HQlessHumansLose
 
         public static bool OneFactionAlreadyEliminated()
         {
-            int TeamsWithMajorStructures = 0;
+            int TeamsWithCriticalObjects = 0;
             for (int i = 0; i < SiConstants.MaxPlayableTeams; i++)
             {
                 Team? thisTeam = Team.Teams[i];
-                int thisTeamMajorStructures = thisTeam.NumMajorStructures;
-                if (thisTeamMajorStructures > 0)
+                if (thisTeam == null)
                 {
-                    TeamsWithMajorStructures++;
+                    continue;
+                }
+
+                if (thisTeam.GetHasAnyCritical())
+                {
+                    TeamsWithCriticalObjects++;
                 }
             }
 
-            if (TeamsWithMajorStructures < 2)
+            if (TeamsWithCriticalObjects < 2)
             {
                 MelonLogger.Msg("OneFactionAlreadyEliminated: true");
                 return true;
