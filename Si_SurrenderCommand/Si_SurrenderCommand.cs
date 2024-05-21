@@ -32,7 +32,7 @@ using System;
 using UnityEngine;
 using System.Collections.Generic;
 
-[assembly: MelonInfo(typeof(SurrenderCommand), "Surrender Command", "1.2.5", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(SurrenderCommand), "Surrender Command", "1.2.6", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -140,6 +140,11 @@ namespace Si_SurrenderCommand
                 if (SurrenderTeam.Units[i] == null)
                 {
                     MelonLogger.Warning("Found null unit during surrender command.");
+                    continue;
+                }
+
+                if (SurrenderTeam.Units[i].IsDestroyed)
+                {
                     continue;
                 }
 
