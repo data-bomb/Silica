@@ -43,7 +43,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Text;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.2.7", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.2.8", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -194,7 +194,7 @@ namespace Si_Logging
         {
             try
             {
-                if (sceneName == "Intro" || sceneName == "MainMenu")
+                if (sceneName == "Intro" || sceneName == "MainMenu" || sceneName == "Loading")
                 {
                     return;
                 }
