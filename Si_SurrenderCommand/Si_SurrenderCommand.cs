@@ -32,7 +32,7 @@ using System;
 using UnityEngine;
 using System.Collections.Generic;
 
-[assembly: MelonInfo(typeof(SurrenderCommand), "Surrender Command", "1.2.4", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(SurrenderCommand), "Surrender Command", "1.2.5", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -125,7 +125,25 @@ namespace Si_SurrenderCommand
             // destroy all structures on team that's surrendering
             for (int i = 0; i < SurrenderTeam.Structures.Count; i++)
             {
+                if (SurrenderTeam.Structures[i] == null)
+                {
+                    MelonLogger.Warning("Found null structure during surrender command.");
+                    continue;
+                }
+
                 SurrenderTeam.Structures[i].DamageManager.SetHealth01(0.0f);
+            }
+
+            // and destroy all units (especially the queen)
+            for (int i = 0; i < SurrenderTeam.Units.Count; i++)
+            {
+                if (SurrenderTeam.Units[i] == null)
+                {
+                    MelonLogger.Warning("Found null unit during surrender command.");
+                    continue;
+                }
+
+                SurrenderTeam.Units[i].DamageManager.SetHealth01(0.0f);
             }
         }
     }
