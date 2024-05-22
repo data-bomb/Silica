@@ -34,7 +34,7 @@ using System;
 using System.Linq;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(EndRound), "End Round", "1.0.3", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(EndRound), "End Round", "1.0.4", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -65,12 +65,23 @@ namespace Si_EndRound
 
         public static void Force_EndRound()
         {
-            // destroy all structures on all teams
+            // destroy all structures and units on all teams
             for (int i = 0; i < SiConstants.MaxPlayableTeams; i++)
             {
                 for (int j = 0; j < Team.Teams[i].Structures.Count; j++)
                 {
-                    Team.Teams[i].Structures[j].DamageManager.SetHealth01(0.0f);
+                    if (!Team.Teams[i].Structures[j].IsDestroyed)
+                    {
+                        Team.Teams[i].Structures[j].DamageManager.SetHealth01(0.0f);
+                    }
+                }
+
+                for (int k = 0; k < Team.Teams[i].Units.Count; k++)
+                {
+                    if (!Team.Teams[i].Units[k].IsDestroyed)
+                    {
+                        Team.Teams[i].Units[k].DamageManager.SetHealth01(0.0f);
+                    }
                 }
             }
         }
