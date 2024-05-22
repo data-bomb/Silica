@@ -33,7 +33,7 @@ using UnityEngine;
 using System;
 using SilicaAdminMod;
 
-[assembly: MelonInfo(typeof(HQlessHumansLose), "HQless Humans Lose", "1.3.5", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HQlessHumansLose), "HQless Humans Lose", "1.3.6", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -48,25 +48,25 @@ namespace Si_HQlessHumansLose
         public static void TeamLostMessage(Team team)
         {
             Player broadcastPlayer = HelperMethods.FindBroadcastPlayer();
-            String rootStructureName = GetRootStructureFullName(team);
-            broadcastPlayer.SendChatMessage(HelperMethods.chatPrefix + HelperMethods.GetTeamColor(team) + team.TeamShortName + HelperMethods.defaultColor + " lost their last " + rootStructureName, false);
+            String rootStructureName = GetRootCriticalFullName(team);
+            broadcastPlayer.SendChatMessage(HelperMethods.chatPrefix + HelperMethods.GetTeamColor(team) + team.TeamShortName + HelperMethods.defaultColor + " lost their " + rootStructureName, false);
         }
 
         public static void TeamLostByPlayerMessage(Team team, Player player)
         {
             Player broadcastPlayer = HelperMethods.FindBroadcastPlayer();
-            String rootStructureName = GetRootStructureFullName(team);
-            broadcastPlayer.SendChatMessage(HelperMethods.chatPrefix + HelperMethods.GetTeamColor(player) + player.PlayerName + HelperMethods.defaultColor + " destroyed " + HelperMethods.GetTeamColor(team) + team.TeamShortName + "'s last " + rootStructureName, false);
+            String rootStructureName = GetRootCriticalFullName(team);
+            broadcastPlayer.SendChatMessage(HelperMethods.chatPrefix + HelperMethods.GetTeamColor(player) + player.PlayerName + HelperMethods.defaultColor + " destroyed " + HelperMethods.GetTeamColor(team) + team.TeamShortName + "'s " + rootStructureName, false);
         }
 
-        static String GetRootStructurePrefix(Team team)
+        static String GetRootCriticalPrefix(Team team)
         {
-            return team.TeamName.Contains("Human") ? "Headq" : "Nes";
+            return team.TeamName.Contains("Human") ? "Headq" : "Que";
         }
 
-        static String GetRootStructureFullName(Team team)
+        static String GetRootCriticalFullName(Team team)
         {
-            return team.TeamName.Contains("Human") ? "Headquarters" : "Nest";
+            return team.TeamName.Contains("Human") ? "Headquarters" : "Queen";
         }
 
         public static bool OneFactionAlreadyEliminated()
@@ -149,8 +149,10 @@ namespace Si_HQlessHumansLose
             losingTeam = team;
         }
 
-        public static bool HasRootStructureRemaining(Team team, bool onDestroyedEventTrigger = true)
+        public static bool HasRootCriticalsRemaining(Team team, bool onDestroyedEventTrigger = true)
         {
+            return team.GetHasAnyCritical();
+            #if false
             int iRootStructures;
             if (onDestroyedEventTrigger)
             {
@@ -177,11 +179,12 @@ namespace Si_HQlessHumansLose
             }
 
             return true;
+            #endif
         }
 
         public static bool HasRootStructureUnderConstruction(Team team)
         {
-            String rootStructureMatchText = GetRootStructurePrefix(team);
+            String rootStructureMatchText = GetRootCriticalPrefix(team);
             
             int iRootStructuresUnderConstruction = 0;
             for (int i = 0; i < ConstructionSite.ConstructionSites.Count; i++)
@@ -234,13 +237,13 @@ namespace Si_HQlessHumansLose
                     MelonLogger.Msg("Structure construction destroyed: " + __instance.name);
 
                     Team constructionSiteTeam = __instance.Team;
-                    String rootStructureMatchText = GetRootStructurePrefix(constructionSiteTeam);
+                    String rootStructureMatchText = GetRootCriticalPrefix(constructionSiteTeam);
                     if (!__instance.ToString().Contains(rootStructureMatchText))
                     {
                         return;
                     }
 
-                    if (HasRootStructureRemaining(constructionSiteTeam, false))
+                    if (HasRootCriticalsRemaining(constructionSiteTeam, false))
                     {
                         return;
                     }
@@ -433,13 +436,13 @@ namespace Si_HQlessHumansLose
                         return;
                     }
                     
-                    String rootStructureMatchText = GetRootStructurePrefix(structureTeam);
-                    if (!__0.ToString().Contains(rootStructureMatchText))
+                    String rootCriticalMatchText = GetRootCriticalPrefix(structureTeam);
+                    if (!__0.ToString().Contains(rootCriticalMatchText))
                     {
                         return;
                     }
 
-                    if (HasRootStructureRemaining(structureTeam, true))
+                    if (HasRootCriticalsRemaining(structureTeam, true))
                     {
                         return;
                     }
@@ -470,6 +473,67 @@ namespace Si_HQlessHumansLose
                 catch (Exception error)
                 {
                     HelperMethods.PrintError(error, "Failed to run MP_Strategy::OnStructureDestroyed");
+                }
+            }
+        }
+
+        [HarmonyPatch(typeof(StrategyMode), nameof(StrategyMode.OnUnitDestroyed))]
+        private static class ApplyPatch_StrategyMode_OnUnitDestroyed
+        {
+            public static void Postfix(StrategyMode __instance, Unit __0, EDamageType __1, UnityEngine.GameObject __2)
+            {
+                try
+                {
+                    if (GameMode.CurrentGameMode == null)
+                    {
+                        return;
+                    }
+
+                    if (!GameMode.CurrentGameMode.GameOngoing || (__0 == null))
+                    {
+                        return;
+                    }
+
+                    MelonLogger.Msg("Unit destroyed: " + __0.name);
+
+                    Team unitTeam = __0.Team;
+                    if (unitTeam == null)
+                    {
+                        return;
+                    }
+
+                    String rootCriticalMatchText = GetRootCriticalPrefix(unitTeam);
+                    if (!__0.ToString().Contains(rootCriticalMatchText))
+                    {
+                        return;
+                    }
+
+                    if (HasRootCriticalsRemaining(unitTeam, true))
+                    {
+                        return;
+                    }
+
+                    // was a human-controlled player responsible for the destruction?
+                    destroyerOfWorlds = null;
+                    if (__2 != null)
+                    {
+                        BaseGameObject attackerBase = GameFuncs.GetBaseGameObject(__2);
+                        if (attackerBase != null)
+                        {
+                            NetworkComponent attackerNetComp = attackerBase.NetworkComponent;
+                            if (attackerNetComp != null && attackerNetComp.OwnerPlayer != null)
+                            {
+                                destroyerOfWorlds = attackerNetComp.OwnerPlayer;
+                            }
+                        }
+                    }
+
+                    // no HQ/nests left or being constructed
+                    EliminateTeam(unitTeam);
+                }
+                catch (Exception error)
+                {
+                    HelperMethods.PrintError(error, "Failed to run StrategyMode::OnUnitDestroyed");
                 }
             }
         }
