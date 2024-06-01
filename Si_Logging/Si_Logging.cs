@@ -55,6 +55,7 @@ namespace Si_Logging
         const int MaxPlayableTeams = 3;
         static int[] teamResourcesCollected = new int[MaxPlayableTeams + 1];
         static Player?[]? lastCommander;
+        static string current_map = "";
 
         static MelonPreferences_Category _modCategory = null!;
         static MelonPreferences_Entry<bool> Pref_Log_Damage = null!;
@@ -200,6 +201,7 @@ namespace Si_Logging
                 }
 
                 string LogLine = "Loading map \"" + sceneName + "\"";
+                current_map = sceneName;
                 PrintLogLine(LogLine);
             }
             catch (Exception error)
@@ -887,7 +889,8 @@ namespace Si_Logging
                     MP_Strategy strategyInstance = GameObject.FindObjectOfType<MP_Strategy>();
                     MP_Strategy.ETeamsVersus versusMode = strategyInstance.TeamsVersus;
 
-                    string RoundStartLogLine = "World triggered \"Round_Start\" (gametype \"" + versusMode.ToString() + "\")";
+                    string RoundStartLogLine = "World triggered \"Round_Start\" (gametype \"" + versusMode.ToString() + "\") " +
+                        "(map \"" + current_map + "\")";
                     PrintLogLine(RoundStartLogLine);
                     initializeRound(ref currTiers);
 
