@@ -35,7 +35,7 @@ using System;
 using System.Collections;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(AwayFromKeyboard), "AFK Manager", "1.3.1", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(AwayFromKeyboard), "AFK Manager", "1.3.2", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -107,7 +107,7 @@ namespace Si_AFKManager
 
         public static bool ServerAlmostFull()
         {
-            if (NetworkGameServer.GetPlayersNum() + 2 >= NetworkGameServer.GetPlayersMax())
+            if (Player.Players.Count + 2 >= NetworkGameServer.GetPlayersMax())
             {
                 return true;
             }
