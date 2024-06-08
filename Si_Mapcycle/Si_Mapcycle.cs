@@ -39,7 +39,7 @@ using SilicaAdminMod;
 using System.Linq;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(MapCycleMod), "Mapcycle", "1.5.9", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(MapCycleMod), "Mapcycle", "1.6.0", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -358,7 +358,7 @@ namespace Si_Mapcycle
                 return;
             }
 
-            bool alreadyNominated = mapNominations.Any(k => k == targetMapName);
+            bool alreadyNominated = mapNominations.Any(mapName => mapName.Equals(targetMapName, StringComparison.OrdinalIgnoreCase));
             if (alreadyNominated)
             {
                 HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": Map already nominated");
