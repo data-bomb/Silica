@@ -39,7 +39,7 @@ using SilicaAdminMod;
 using System.Linq;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(MapCycleMod), "Mapcycle", "1.5.8", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(MapCycleMod), "Mapcycle", "1.5.9", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -102,6 +102,11 @@ namespace Si_Mapcycle
                     MelonLogger.Msg("Added map to mapcycle: " + sMapCycle[i]);
                 }
 
+                // check for empty mapcycle
+                if (sMapCycle.Length <= 0)
+                {
+                    MelonLogger.Error("Mapcycle Mod has empty mapcycle file.");
+                }
             }
             catch (Exception exception)
             {
@@ -199,7 +204,7 @@ namespace Si_Mapcycle
 
         public static ChatVoteBallot? CreateRTVBallot()
         {
-            if (sMapCycle == null)
+            if (sMapCycle == null || sMapCycle.Length <= 0)
             {
                 return null;
             }
@@ -262,7 +267,7 @@ namespace Si_Mapcycle
                 return;
             }
 
-            if (sMapCycle == null)
+            if (sMapCycle == null || sMapCycle.Length <= 0)
             {
                 mapNominations.Clear();
                 MelonLogger.Error("mapcycle is null");
@@ -340,8 +345,9 @@ namespace Si_Mapcycle
             }
 
             // validate argument
-            if (sMapCycle == null)
+            if (sMapCycle == null || sMapCycle.Length <= 0)
             {
+                MelonLogger.Warning("mapcycle invalid");
                 return;
             }
 
@@ -415,6 +421,13 @@ namespace Si_Mapcycle
         {
             if (sMapCycle == null)
             {
+                return string.Empty;
+            }
+
+            // check for empty mapcycle
+            if (sMapCycle.Length <= 0)
+            {
+                MelonLogger.Warning("Mapcycle Mod has empty mapcycle file.");
                 return string.Empty;
             }
 
@@ -561,7 +574,7 @@ namespace Si_Mapcycle
                         {
                             Timer_EndRoundDelay = HelperMethods.Timer_Inactive;
 
-                            if (sMapCycle == null)
+                            if (sMapCycle == null || sMapCycle.Length <= 0)
                             {
                                 return;
                             }
