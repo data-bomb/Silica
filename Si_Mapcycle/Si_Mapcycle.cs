@@ -39,7 +39,7 @@ using SilicaAdminMod;
 using System.Linq;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(MapCycleMod), "Mapcycle", "1.6.0", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(MapCycleMod), "Mapcycle", "1.6.1", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -525,14 +525,11 @@ namespace Si_Mapcycle
             NetworkGameServer.Instance.m_QueueGameMode = gameModeInfo;
             NetworkGameServer.Instance.m_QueueMap = levelInfo.FileName;
             #else
-            FieldInfo serverInstanceField = typeof(NetworkGameServer).GetField("Instance", BindingFlags.NonPublic | BindingFlags.Static);
-            NetworkGameServer serverInstance = (NetworkGameServer)serverInstanceField.GetValue(null);
-
             FieldInfo queueMapField = typeof(NetworkGameServer).GetField("m_QueueMap", BindingFlags.NonPublic | BindingFlags.Instance);
             FieldInfo queueGameModeInfoField = typeof(NetworkGameServer).GetField("m_QueueGameMode", BindingFlags.NonPublic | BindingFlags.Instance);
-
-            queueGameModeInfoField.SetValue(serverInstance, gameModeInfo);
-            queueMapField.SetValue(serverInstance, levelInfo.FileName);
+            
+            queueGameModeInfoField.SetValue(NetworkGameServer.Instance, gameModeInfo);
+            queueMapField.SetValue(NetworkGameServer.Instance, levelInfo.FileName);
             #endif
 
             iMapLoadCount++;
