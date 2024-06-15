@@ -29,12 +29,10 @@ using HarmonyLib;
 using MelonLoader;
 using Si_BetterSpawns;
 using SilicaAdminMod;
-using Steamworks;
 using System;
 using System.Collections.Generic;
-using System.Numerics;
 
-[assembly: MelonInfo(typeof(BetterSpawns), "Better Spawns", "1.0.2", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(BetterSpawns), "Better Spawns", "1.0.3", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
