@@ -32,7 +32,7 @@ using SilicaAdminMod;
 using System;
 using System.Collections.Generic;
 
-[assembly: MelonInfo(typeof(BetterSpawns), "Better Spawns", "0.9.5", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(BetterSpawns), "Better Spawns", "0.9.6", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -40,14 +40,19 @@ namespace Si_BetterSpawns
 {
     public class BetterSpawns : MelonMod
     {
+        static MelonPreferences_Category _modCategory = null!;
+        public static MelonPreferences_Entry<bool> Pref_BetterSpawns_Human_ReselectSpawn_Enabled = null!;
+        public static MelonPreferences_Entry<bool> Pref_BetterSpawns_Human_InitialSpawn_Enabled = null!;
+        public static MelonPreferences_Entry<bool> Pref_BetterSpawns_Alien_ReselectSpawn_Enabled = null!;
+        public static MelonPreferences_Entry<bool> Pref_BetterSpawns_Alien_InitialSpawn_Enabled = null!;
+
         public override void OnInitializeMelon()
         {
-
-        }
-
-        public override void OnLateInitializeMelon()
-        {
-
+            _modCategory ??= MelonPreferences.CreateCategory("Silica");
+            Pref_BetterSpawns_Human_ReselectSpawn_Enabled ??= _modCategory.CreateEntry<bool>("BetterSpawns_Humans_SetReselectSpawns", true);
+            Pref_BetterSpawns_Human_InitialSpawn_Enabled ??= _modCategory.CreateEntry<bool>("BetterSpawns_Humans_SetInitialSpawns", true);
+            Pref_BetterSpawns_Alien_ReselectSpawn_Enabled ??= _modCategory.CreateEntry<bool>("BetterSpawns_Aliens_SetReselectSpawns", true);
+            Pref_BetterSpawns_Alien_InitialSpawn_Enabled ??= _modCategory.CreateEntry<bool>("BetterSpawns_Aliens_SetInitialSpawns", true);
         }
 
         // override GetSafeSpawnPoint to say nothing is ever safe, so revert to the random method to find the best spawn point instead
