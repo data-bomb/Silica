@@ -33,7 +33,7 @@ using Steamworks;
 using System;
 using System.Collections.Generic;
 
-[assembly: MelonInfo(typeof(BetterSpawns), "Better Spawns", "0.9.8", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(BetterSpawns), "Better Spawns", "0.9.9", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -64,6 +64,29 @@ namespace Si_BetterSpawns
             {
                 try
                 {
+                    // check if we're supposed to change the game code or not for the given team
+                    // alien team
+                    if (__0.Index == 0)
+                    {
+                        if (!Pref_BetterSpawns_Alien_ReselectSpawn_Enabled.Value)
+                        {
+                            return true;
+                        }
+                    }
+                    // human teams
+                    else if (__0.Index == 1 || __0.Index == 2)
+                    {
+                        if (!Pref_BetterSpawns_Human_ReselectSpawn_Enabled.Value)
+                        {
+                            return true;
+                        }
+                    }
+                    // ignore for non-playable teams
+                    else if (__0.Index > 2)
+                    {
+                        return true;
+                    }
+
                     // suppress compiler warning since changing the prototype is less ideal
                     #pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
                     __result = null;
@@ -112,12 +135,6 @@ namespace Si_BetterSpawns
                     // for human teams
                     if (__0.Index == 1 || __0.Index == 2)
                     {
-                        // check if we're supposed to make a change or allow default game code to run
-                        if (!Pref_BetterSpawns_Human_ReselectSpawn_Enabled.Value)
-                        {
-                            return true;
-                        }
-
                         SpawnPoint? spawnPointRandomBarracks = FindRandomHumanBarracksSpawn(__0);
                         if (spawnPointRandomBarracks == null)
                         {
