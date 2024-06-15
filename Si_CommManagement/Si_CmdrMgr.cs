@@ -40,7 +40,7 @@ using System.Collections.Generic;
 using SilicaAdminMod;
 using System.Linq;
 
-[assembly: MelonInfo(typeof(CommanderManager), "Commander Management", "1.5.5", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(CommanderManager), "Commander Management", "1.5.6", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -502,35 +502,37 @@ namespace Si_CommanderManagement
             MelonLogger.Msg("Trying to promote " + CommanderPlayer.PlayerName + " on team " + CommanderPlayer.Team.TeamShortName);
 
             
-#if NET6_0
+            #if NET6_0
             strategyInstance.SetCommander(strategyTeamInstance.Team, CommanderPlayer);
             strategyInstance.RPC_SynchCommander(strategyTeamInstance.Team);
-#else
+            #else
             Type strategyType = typeof(MP_Strategy);
             MethodInfo setCommanderMethod = strategyType.GetMethod("SetCommander", BindingFlags.Instance | BindingFlags.NonPublic);
             setCommanderMethod.Invoke(strategyInstance, parameters: new object?[] { strategyTeamInstance.Team, CommanderPlayer });
 
             MethodInfo synchCommanderMethod = strategyType.GetMethod("RPC_SynchCommander", BindingFlags.Instance | BindingFlags.NonPublic);
             synchCommanderMethod.Invoke(strategyInstance, new object[] { strategyTeamInstance.Team });
-#endif
-            
+            #endif
+
+            // make a log entry of this role change
+            Event_Roles.FireOnRoleChangedEvent(CommanderPlayer, MP_Strategy.ETeamRole.COMMANDER);
         }
 
         public static void DemoteTeamsCommander(MP_Strategy strategyInstance, Team TargetTeam)
         {
             Player DemotedCommander = strategyInstance.GetCommanderForTeam(TargetTeam);
 
-#if NET6_0
+            #if NET6_0
             strategyInstance.SetCommander(TargetTeam, null);
             strategyInstance.RPC_SynchCommander(TargetTeam);
-#else
+            #else
             Type strategyType = typeof(MP_Strategy);
             MethodInfo setCommanderMethod = strategyType.GetMethod("SetCommander", BindingFlags.Instance | BindingFlags.NonPublic);
             setCommanderMethod.Invoke(strategyInstance, parameters: new object?[] { TargetTeam, null });
 
             MethodInfo synchCommanderMethod = strategyType.GetMethod("RPC_SynchCommander", BindingFlags.Instance | BindingFlags.NonPublic);
             synchCommanderMethod.Invoke(strategyInstance, new object[] { TargetTeam });
-#endif
+            #endif
 
             // need to get the player back to Infantry and not stuck in no-clip
             SendToRole(DemotedCommander, MP_Strategy.ETeamRole.INFANTRY);
