@@ -33,7 +33,7 @@ using Steamworks;
 using System;
 using System.Collections.Generic;
 
-[assembly: MelonInfo(typeof(BetterSpawns), "Better Spawns", "0.9.9", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(BetterSpawns), "Better Spawns", "1.0.0", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -96,6 +96,52 @@ namespace Si_BetterSpawns
                 catch (Exception error)
                 {
                     HelperMethods.PrintError(error, "Failed to run SpawnPoint::GetSafeSpawnPoint");
+                }
+
+                return true;
+            }
+        }
+
+        [HarmonyPatch(typeof(Structure), nameof(Structure.GetClosestStructureForRespawn))]
+        private static class ApplyPatch_Structure_GetClosestStructureForRespawn
+        {
+            public static bool Prefix(Structure __result, Team __0, UnityEngine.Vector3 __1)
+            {
+                try
+                {
+                    if (__0 == null)
+                    {
+                        return true;
+                    }
+
+                    // check if we're supposed to change the game code or not for the given team
+                    // alien team
+                    if (__0.Index == 0)
+                    {
+                        if (!Pref_BetterSpawns_Alien_InitialSpawn_Enabled.Value)
+                        {
+                            return true;
+                        }
+                    }
+                    // human teams
+                    else if (__0.Index == 1 || __0.Index == 2)
+                    {
+                        if (!Pref_BetterSpawns_Human_InitialSpawn_Enabled.Value)
+                        {
+                            return true;
+                        }
+                    }
+                    // ignore for non-playable teams
+                    else if (__0.Index > 2)
+                    {
+                        return true;
+                    }
+
+                    // TODO
+                }
+                catch (Exception error)
+                {
+                    HelperMethods.PrintError(error, "Failed to run Structure::GetClosestStructureForRespawn");
                 }
 
                 return true;
@@ -203,5 +249,6 @@ namespace Si_BetterSpawns
             // select random spawn point at barracks
             return team.Structures[randomBarracks].SpawnPoints[randomIndex.Next(0, spawnPointsAtRandomBarracks)];
         }
+
     }
 }
