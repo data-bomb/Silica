@@ -33,7 +33,7 @@ using Steamworks;
 using System;
 using System.Collections.Generic;
 
-[assembly: MelonInfo(typeof(BetterSpawns), "Better Spawns", "1.0.0", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(BetterSpawns), "Better Spawns", "1.0.1", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -130,6 +130,16 @@ namespace Si_BetterSpawns
                         {
                             return true;
                         }
+
+                        List<int> spawnableBarracks = FindAllSpawnableBarracks(__0);
+
+                        // at the beginning of the game, use the game's default code to find a random spawn point at the HQ
+                        if (spawnableBarracks.Count <= 0)
+                        {
+                            return true;
+                        }
+
+                        // TODO
                     }
                     // ignore for non-playable teams
                     else if (__0.Index > 2)
@@ -211,24 +221,7 @@ namespace Si_BetterSpawns
 
         private static SpawnPoint? FindRandomHumanBarracksSpawn(Team team)
         {
-            List<int> spawnableBarracks = new List<int>();
-            for (int i = 0; i < team.Structures.Count; i++)
-            {
-                if (team.Structures[i].ToString().StartsWith("Barracks"))
-                {
-                    if (team.Structures[i].DamageManager.IsDestroyed)
-                    {
-                        continue;
-                    }
-
-                    if (!team.Structures[i].HasSpawnPoints)
-                    {
-                        continue;
-                    }
-
-                    spawnableBarracks.Add(i);
-                }
-            }
+            List<int> spawnableBarracks = FindAllSpawnableBarracks(team);
 
             // at the beginning of the game, use the game's default code to find a random spawn point at the HQ
             if (spawnableBarracks.Count <= 0)
@@ -250,5 +243,29 @@ namespace Si_BetterSpawns
             return team.Structures[randomBarracks].SpawnPoints[randomIndex.Next(0, spawnPointsAtRandomBarracks)];
         }
 
+        private static List<int> FindAllSpawnableBarracks(Team team)
+        {
+            List<int> spawnableBarracks = new List<int>();
+
+            for (int i = 0; i < team.Structures.Count; i++)
+            {
+                if (team.Structures[i].ToString().StartsWith("Barracks"))
+                {
+                    if (team.Structures[i].DamageManager.IsDestroyed)
+                    {
+                        continue;
+                    }
+
+                    if (!team.Structures[i].HasSpawnPoints)
+                    {
+                        continue;
+                    }
+
+                    spawnableBarracks.Add(i);
+                }
+            }
+
+            return spawnableBarracks;
+        }
     }
 }
