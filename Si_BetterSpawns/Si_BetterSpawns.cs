@@ -32,8 +32,9 @@ using SilicaAdminMod;
 using Steamworks;
 using System;
 using System.Collections.Generic;
+using System.Numerics;
 
-[assembly: MelonInfo(typeof(BetterSpawns), "Better Spawns", "1.0.1", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(BetterSpawns), "Better Spawns", "1.0.2", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -102,10 +103,11 @@ namespace Si_BetterSpawns
             }
         }
 
+        // this method is used for initial spawning only
         [HarmonyPatch(typeof(Structure), nameof(Structure.GetClosestStructureForRespawn))]
         private static class ApplyPatch_Structure_GetClosestStructureForRespawn
         {
-            public static bool Prefix(Structure __result, Team __0, UnityEngine.Vector3 __1)
+            public static bool Prefix(ref Structure __result, Team __0, UnityEngine.Vector3 __1)
             {
                 try
                 {
@@ -122,6 +124,8 @@ namespace Si_BetterSpawns
                         {
                             return true;
                         }
+
+                        // TODO
                     }
                     // human teams
                     else if (__0.Index == 1 || __0.Index == 2)
@@ -139,7 +143,33 @@ namespace Si_BetterSpawns
                             return true;
                         }
 
-                        // TODO
+                        // if the position is invalid then fallback to selecting a random barracks instead
+                        if (__1 == UnityEngine.Vector3.zero)
+                        {
+                            System.Random randomIndex = new System.Random();
+                            int randomBarracks = spawnableBarracks[randomIndex.Next(0, spawnableBarracks.Count)];
+
+                            int spawnPointsAtRandomBarracks = __0.Structures[randomBarracks].SpawnPoints.Count;
+                            if (spawnPointsAtRandomBarracks <= 0)
+                            {
+                                return true;
+                            }
+
+                            __result = __0.Structures[randomBarracks];
+                            return false;
+                        }
+
+                        Structure? closestBarracks = GetClosestBarracks(__0, __1);
+                        if (closestBarracks == null)
+                        {
+                            return true;
+                        }
+
+                        // select to spawn at the closest barracks
+                        __result = closestBarracks;
+
+                        // if we got to this point then don't run the game code as we trust this structure is valid
+                        return false;
                     }
                     // ignore for non-playable teams
                     else if (__0.Index > 2)
@@ -266,6 +296,40 @@ namespace Si_BetterSpawns
             }
 
             return spawnableBarracks;
+        }
+
+        private static Structure? GetClosestBarracks(Team team, UnityEngine.Vector3 location)
+        {
+            Structure? closestBarracks = null;
+            float lowestDistance = 99999f;
+
+            foreach (Structure structure in team.Structures)
+            {
+                if (structure == null)
+                {
+                    continue;
+                }
+
+                if (structure.IsDestroyed || !structure.HasSpawnPoints)
+                {
+                    continue;
+                }
+
+                // ignore HQs, which have 16 spawn points
+                if (structure.SpawnPoints.Count >= 15)
+                {
+                    continue;
+                }
+
+                float distanceToBarracks = GameMath.DistanceSq(location, structure.transform.position);
+                if (distanceToBarracks < lowestDistance)
+                {
+                    closestBarracks = structure;
+                    lowestDistance = distanceToBarracks;
+                }
+            }
+
+            return closestBarracks;
         }
     }
 }
