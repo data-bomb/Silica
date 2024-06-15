@@ -33,7 +33,7 @@ using Steamworks;
 using System;
 using System.Collections.Generic;
 
-[assembly: MelonInfo(typeof(BetterSpawns), "Better Spawns", "0.9.7", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(BetterSpawns), "Better Spawns", "0.9.8", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -112,6 +112,12 @@ namespace Si_BetterSpawns
                     // for human teams
                     if (__0.Index == 1 || __0.Index == 2)
                     {
+                        // check if we're supposed to make a change or allow default game code to run
+                        if (!Pref_BetterSpawns_Human_ReselectSpawn_Enabled.Value)
+                        {
+                            return true;
+                        }
+
                         SpawnPoint? spawnPointRandomBarracks = FindRandomHumanBarracksSpawn(__0);
                         if (spawnPointRandomBarracks == null)
                         {
