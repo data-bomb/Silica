@@ -29,10 +29,11 @@ using HarmonyLib;
 using MelonLoader;
 using Si_BetterSpawns;
 using SilicaAdminMod;
+using Steamworks;
 using System;
 using System.Collections.Generic;
 
-[assembly: MelonInfo(typeof(BetterSpawns), "Better Spawns", "0.9.6", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(BetterSpawns), "Better Spawns", "0.9.7", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -90,8 +91,8 @@ namespace Si_BetterSpawns
                         return true;
                     }
 
-                    // only do something for human teams for now
-                    if (__0.Index == 0 || __0.Index > 2)
+                    // only do something for playable teams for now
+                    if (__0.Index > 2)
                     {
                         return true;
                     }
@@ -108,52 +109,27 @@ namespace Si_BetterSpawns
                         return true;
                     }
 
-                    List<int> spawnableBarracks = new List<int>();
-                    for (int i = 0; i < __0.Structures.Count; i++)
+                    // for human teams
+                    if (__0.Index == 1 || __0.Index == 2)
                     {
-                        if (__0.Structures[i].ToString().StartsWith("Barracks"))
+                        SpawnPoint? spawnPointRandomBarracks = FindRandomHumanBarracksSpawn(__0);
+                        if (spawnPointRandomBarracks == null)
                         {
-                            if (__0.Structures[i].DamageManager.IsDestroyed)
-                            {
-                                continue;
-                            }
-
-                            if (!__0.Structures[i].HasSpawnPoints)
-                            {
-                                continue;
-                            }
-
-                            spawnableBarracks.Add(i);
+                            return true;
                         }
-                    }
 
-                    // at the beginning of the game, use the game's default code to find a random spawn point at the HQ
-                    if (spawnableBarracks.Count <= 0)
+                        // select random spawn point at barracks
+                        __result = spawnPointRandomBarracks;
+
+                        // if we got to this point then don't run the game code as we trust this spawn point is valid
+                        return false;
+                    }
+                    // for alien team
+                    else if (__0.Index == 0)
                     {
+                        // placeholder
                         return true;
                     }
-
-                    // select random barracks
-                    System.Random randomIndex = new System.Random();
-                    int randomBarracks = spawnableBarracks[randomIndex.Next(0, spawnableBarracks.Count)];
-
-                    //MelonLogger.Msg("Selected random barracks with structure index: " + randomBarracks.ToString() + " from a total barracks count of " + spawnableBarracks.Count.ToString());
-
-                    int spawnPointsAtRandomBarracks = __0.Structures[randomBarracks].SpawnPoints.Count;
-                    if (spawnPointsAtRandomBarracks <= 0)
-                    {
-                        return true;
-                    }
-
-                    // select random spawn point at barracks
-                    __result = __0.Structures[randomBarracks].SpawnPoints[randomIndex.Next(0, spawnPointsAtRandomBarracks)];
-                    if (__result == null)
-                    {
-                        return true;
-                    }
-
-                    // if we got to this point then don't run the game code as we trust this spawn point is valid
-                    return false;
                 }
                 catch (Exception error)
                 {
@@ -162,6 +138,47 @@ namespace Si_BetterSpawns
 
                 return true;
             }
+        }
+
+        private static SpawnPoint? FindRandomHumanBarracksSpawn(Team team)
+        {
+            List<int> spawnableBarracks = new List<int>();
+            for (int i = 0; i < team.Structures.Count; i++)
+            {
+                if (team.Structures[i].ToString().StartsWith("Barracks"))
+                {
+                    if (team.Structures[i].DamageManager.IsDestroyed)
+                    {
+                        continue;
+                    }
+
+                    if (!team.Structures[i].HasSpawnPoints)
+                    {
+                        continue;
+                    }
+
+                    spawnableBarracks.Add(i);
+                }
+            }
+
+            // at the beginning of the game, use the game's default code to find a random spawn point at the HQ
+            if (spawnableBarracks.Count <= 0)
+            {
+                return null;
+            }
+
+            // select random barracks
+            System.Random randomIndex = new System.Random();
+            int randomBarracks = spawnableBarracks[randomIndex.Next(0, spawnableBarracks.Count)];
+
+            int spawnPointsAtRandomBarracks = team.Structures[randomBarracks].SpawnPoints.Count;
+            if (spawnPointsAtRandomBarracks <= 0)
+            {
+                return null;
+            }
+
+            // select random spawn point at barracks
+            return team.Structures[randomBarracks].SpawnPoints[randomIndex.Next(0, spawnPointsAtRandomBarracks)];
         }
     }
 }
