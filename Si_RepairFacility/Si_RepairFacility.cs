@@ -36,7 +36,7 @@ using Si_RepairFacility;
 using System.Collections.Generic;
 using System.Text;
 
-[assembly: MelonInfo(typeof(RepairFacility), "Repair Facility", "0.9.2", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(RepairFacility), "Repair Facility", "0.9.3", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -199,7 +199,7 @@ namespace Si_RepairFacility
         {
             public static void Postfix(AutoHeal __instance)
             {
-                __instance.HealAmountPct = _Pref_Aliens_HealRate.Value;
+                __instance.Data.HealAmountPct = _Pref_Aliens_HealRate.Value;
             }
         }
     }

@@ -126,14 +126,14 @@ namespace SilicaAdminMod
 
         public static GameByteStreamReader RestoreRPC_RequestRoleReader(Player requestingPlayer, MP_Strategy.ETeamRole role)
         {
-            GameByteStreamWriter gameByteStreamWriter = GameByteStreamWriter.GetGameByteStreamWriter(true);
-            gameByteStreamWriter.WriteByte(20);
+            GameByteStreamWriter gameByteStreamWriter = GameByteStreamWriter.GetGameByteStreamWriter(0U, "Si_AdminMod::RestoreRPC_RequestRoleReader", true);
+            gameByteStreamWriter.WriteByte((byte)ENetworkPacketType.GameModeRPC);
             gameByteStreamWriter.WriteByte(0);
             gameByteStreamWriter.WriteByte((byte)MP_Strategy.ERPCs.REQUEST_ROLE);
             gameByteStreamWriter.WriteUInt64((ulong)requestingPlayer.PlayerID);
             gameByteStreamWriter.WriteByte((byte)requestingPlayer.PlayerChannel);
             gameByteStreamWriter.WriteByte((byte)role);
-            GameByteStreamReader gameByteStreamReader = GameByteStreamReader.GetGameByteStreamReader(gameByteStreamWriter.GetByteData(), gameByteStreamWriter.GetByteDataSize(), true);
+            GameByteStreamReader gameByteStreamReader = GameByteStreamReader.GetGameByteStreamReader(gameByteStreamWriter.GetByteData(), gameByteStreamWriter.GetByteDataSize(), 0U, "Si_AdminMod::RestoreRPC_RequestRoleReader", true);
             gameByteStreamReader.ReadByte();
             gameByteStreamReader.ReadByte();
             gameByteStreamReader.ReadByte();

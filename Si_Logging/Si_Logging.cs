@@ -196,7 +196,7 @@ namespace Si_Logging
         {
             try
             {
-                if (sceneName == "Intro" || sceneName == "MainMenu")
+                if (sceneName == "Intro" || sceneName == "MainMenu" || sceneName == "Loading")
                 {
                     return;
                 }

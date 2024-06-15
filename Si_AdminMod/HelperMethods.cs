@@ -110,7 +110,7 @@ namespace SilicaAdminMod
 
             Player broadcastPlayer = FindBroadcastPlayer();
 
-            GameByteStreamWriter gameByteStreamWriter = GameByteStreamWriter.GetGameByteStreamWriter(true);
+            GameByteStreamWriter gameByteStreamWriter = GameByteStreamWriter.GetGameByteStreamWriter(0U, "Si_AdminMod::SendChatMessageToPlayer", true);
             gameByteStreamWriter.WriteByte((byte)ENetworkPacketType.ChatMessage);
             gameByteStreamWriter.WriteUInt64((ulong)broadcastPlayer.PlayerID);
             gameByteStreamWriter.WriteByte((byte)broadcastPlayer.PlayerChannel);
