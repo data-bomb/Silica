@@ -32,7 +32,7 @@ using SilicaAdminMod;
 using System;
 using System.Collections.Generic;
 
-[assembly: MelonInfo(typeof(BetterSpawns), "Better Spawns", "1.0.3", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(BetterSpawns), "Better Spawns", "1.0.4", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -294,6 +294,12 @@ namespace Si_BetterSpawns
             }
 
             return spawnableBarracks;
+        }
+
+        private static Structure? GetClosestAlienBaseSpawn(Team team, UnityEngine.Vector3 location)
+        {
+            Structure? closestBaseSpawn = null;
+            return closestBaseSpawn;
         }
 
         private static Structure? GetClosestBarracks(Team team, UnityEngine.Vector3 location)
