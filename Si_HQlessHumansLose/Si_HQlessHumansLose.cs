@@ -33,7 +33,7 @@ using UnityEngine;
 using System;
 using SilicaAdminMod;
 
-[assembly: MelonInfo(typeof(HQlessHumansLose), "HQless Humans Lose", "1.3.6", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HQlessHumansLose), "HQless Humans Lose", "1.3.7", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -41,9 +41,18 @@ namespace Si_HQlessHumansLose
 {
     public class HQlessHumansLose : MelonMod
     {
+        static MelonPreferences_Category _modCategory = null!;
+        public static MelonPreferences_Entry<bool> Pref_HQ_RemoveStructuresOnElimination = null!;
+
         static Team? losingTeam;
         static Player? destroyerOfWorlds;
         static float Timer_SendTeamLostMessage = HelperMethods.Timer_Inactive;
+
+        public override void OnInitializeMelon()
+        {
+            _modCategory ??= MelonPreferences.CreateCategory("Silica");
+            Pref_HQ_RemoveStructuresOnElimination ??= _modCategory.CreateEntry<bool>("HQ_RemoveStructuresOnElimination", false);
+        }
 
         public static void TeamLostMessage(Team team)
         {
@@ -106,18 +115,21 @@ namespace Si_HQlessHumansLose
             // are there still two remaining factions after this one is eliminated?
             if (versusMode == MP_Strategy.ETeamsVersus.HUMANS_VS_HUMANS_VS_ALIENS && !OneFactionAlreadyEliminated())
             {
-                // destroy structures
-                for (int i = 0; i < team.Structures.Count; i++)
+                // check if we should destroy all structures
+                if (Pref_HQ_RemoveStructuresOnElimination.Value)
                 {
-                    // but don't destroy bunkers if there's still 2 teams left
-                    if (team.Structures[i].ToString().StartsWith("Bunk"))
+                    for (int i = 0; i < team.Structures.Count; i++)
                     {
-                        continue;
+                        // but don't destroy bunkers if there's still 2 teams left
+                        if (team.Structures[i].ToString().StartsWith("Bunk"))
+                        {
+                            continue;
+                        }
+
+                        team.Structures[i].DamageManager.SetHealth01(0.0f);
                     }
-
-                    team.Structures[i].DamageManager.SetHealth01(0.0f);
                 }
-
+                
                 // destroy units (otherwise AI will roam around doing odd things)
                 DestroyAllUnits(team);
             }
