@@ -140,7 +140,7 @@ namespace SilicaAdminMod
             return gameByteStreamReader;
         }
 
-        public static OnRoleChangedArgs FireOnRoleChangedEvent(Player player, MP_Strategy.ETeamRole role)
+        public static void FireOnRoleChangedEvent(Player player, MP_Strategy.ETeamRole role)
         {
             MelonLogger.Msg("Firing Role Change Event for " + player.PlayerName + " to role " + role.ToString());
 
@@ -149,9 +149,7 @@ namespace SilicaAdminMod
                 Player = player,
                 Role = role
             };
-
             OnRoleChanged?.Invoke(null, onRoleChangedArgs);
-            return onRoleChangedArgs;
         }
 
         public static OnRequestCommanderArgs FireOnRequestCommanderEvent(Player player)
