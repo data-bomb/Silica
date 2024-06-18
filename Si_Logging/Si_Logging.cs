@@ -43,7 +43,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Text;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.2.9", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.2.10", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -776,7 +776,7 @@ namespace Si_Logging
                         MelonLogger.Msg("Launching parser.");
                         ProcessStartInfo start = new ProcessStartInfo();
                         start.FileName = Pref_Log_PythonExe.Value;
-                        string arguments = string.Format("\"{0}\" \"{1}\"", GetParserPath(), GetLogFilePath());
+                        string arguments = string.Format("\"{0}\" \"{1}\"", GetParserPath(), GetLogFileDirectory());
                         start.Arguments = arguments;
                         start.UseShellExecute = false;
                         start.RedirectStandardOutput = false;
