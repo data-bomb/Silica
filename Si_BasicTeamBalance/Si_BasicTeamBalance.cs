@@ -38,7 +38,7 @@ using System;
 using SilicaAdminMod;
 using System.Linq;
 
-[assembly: MelonInfo(typeof(BasicTeamBalance), "Basic Team Balance", "1.2.8", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(BasicTeamBalance), "Basic Team Balance", "1.3.0", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -74,9 +74,13 @@ namespace Si_BasicTeamBalance
             preventTeamSwitches = false;
         }
 
-        #if NET6_0
+        
         public override void OnLateInitializeMelon()
         {
+            HelperMethods.CommandCallback teamCallback = Command_Team;
+            HelperMethods.RegisterAdminCommand("team", teamCallback, Power.Teams, "Moves target player to target team. Usage: !team [optional:<player>] <teamname>");
+
+            #if NET6_0
             bool QListLoaded = RegisteredMelons.Any(m => m.Info.Name == "QList");
             if (!QListLoaded)
             {
@@ -98,8 +102,9 @@ namespace Si_BasicTeamBalance
             QList.Options.AddOption(threeTeamAddend);
             QList.Options.AddOption(preventEarlyTeamSwitches);
             QList.Options.AddOption(preventEarlyTeamSwitchDuration);
+            #endif
         }
-        #endif
+
 
         public static void SendClearRequest(ulong thisPlayerSteam64, int thisPlayerChannel)
         {
@@ -248,6 +253,64 @@ namespace Si_BasicTeamBalance
             }
 
             return false;
+        }
+
+        public static void Command_Team(Player? callerPlayer, String args)
+        {
+            string commandName = args.Split(' ')[0];
+
+            // validate argument count
+            int argumentCount = args.Split(' ').Length - 1;
+            if (argumentCount > 2)
+            {
+                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": Too many arguments");
+                return;
+            }
+            else if (argumentCount < 1)
+            {
+                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": Too few arguments");
+                return;
+            }
+
+            // validate argument contents
+            string teamTarget = args.Split(' ')[(argumentCount == 1 ? 1 : 2)];
+            Team team = Team.GetTeamByName(teamTarget, false);
+            if (team == null)
+            {
+                HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Ambiguous or invalid team name");
+                return;
+            }
+
+            Player? player = null;
+            if (argumentCount > 1)
+            {
+                string playerTarget = args.Split(' ')[1];
+                player = HelperMethods.FindTargetPlayer(playerTarget);
+            }
+            else
+            {
+                player = callerPlayer;
+            }
+
+            if (player == null)
+            {
+                HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Ambiguous or invalid player");
+                return;
+            }
+
+            if (callerPlayer != null && !callerPlayer.CanAdminTarget(player))
+            {
+                HelperMethods.ReplyToCommand_Player(player, "is immune due to level");
+                return;
+            }
+
+            SwapTeam(player, team);
+        }
+
+        public static void SwapTeam(Player player, Team team)
+        {
+            player.Team = team;
+            NetworkLayer.SendPlayerSelectTeam(player, team);
         }
 
         [HarmonyPatch(typeof(MP_Strategy), nameof(MP_Strategy.ProcessNetRPC))]
