@@ -38,7 +38,7 @@ using System;
 using SilicaAdminMod;
 using System.Linq;
 
-[assembly: MelonInfo(typeof(BasicTeamBalance), "Basic Team Balance", "1.3.0", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(BasicTeamBalance), "Basic Team Balance", "1.3.1", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -277,7 +277,7 @@ namespace Si_BasicTeamBalance
             Team team = Team.GetTeamByName(teamTarget, false);
             if (team == null)
             {
-                HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Ambiguous or invalid team name");
+                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": Ambiguous or invalid team name");
                 return;
             }
 
@@ -294,7 +294,7 @@ namespace Si_BasicTeamBalance
 
             if (player == null)
             {
-                HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Ambiguous or invalid player");
+                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": Ambiguous or invalid target");
                 return;
             }
 
@@ -305,10 +305,13 @@ namespace Si_BasicTeamBalance
             }
 
             SwapTeam(player, team);
+            HelperMethods.AlertAdminAction(callerPlayer, "swapped " + player.PlayerName + " to " + HelperMethods.GetTeamColor(player) + team.TeamShortName);
         }
 
         public static void SwapTeam(Player player, Team team)
         {
+            MelonLogger.Msg("Swapping player (" + player.PlayerName + ") to team: " + team.TeamShortName);
+
             player.Team = team;
             NetworkLayer.SendPlayerSelectTeam(player, team);
         }
