@@ -120,15 +120,6 @@ namespace SilicaAdminMod
 
                 MelonLogger.Msg("Received remote command string: " + __0 + " from " + __2.PlayerName);
 
-                // is an admin trying to enable/disable cheats?
-                if (String.Equals(__0, "cheats", StringComparison.OrdinalIgnoreCase))
-                {
-                    if (__2.AdminLevel >= EAdminLevel.STANDARD)
-                    {
-                        HelperMethods.AlertAdminAction(null, (Game.CheatsEnabled ? "disabled cheats" : "ENABLED CHEATS"));
-                    }
-                }
-
                 // are they trying to run a command registered by SAM?
                 if (IsValidConsoleCommand(__0))
                 {
