@@ -389,43 +389,40 @@ namespace SilicaAdminMod
                 return null;
             }
 
-            Unit testUnit = spawnedObject.GetComponent<Unit>();
+            Unit thisUnit = spawnedObject.GetComponent<Unit>();
             // unit
-            if (testUnit != null)
+            if (thisUnit != null)
             {
                 position.y += 3f;
                 spawnedObject.transform.position = position;
                 spawnedObject.transform.rotation = rotation;
 
                 spawnedObject.transform.GetBaseGameObject().Teleport(position, rotation);
+
+                if (teamIndex > -1)
+                {
+                    thisUnit.Team = Team.Teams[teamIndex];
+                }
+
+                return spawnedObject;
             }
+
+            Structure thisStructure = spawnedObject.GetComponent<Structure>();
             // structure
-            else
+            if (thisStructure != null)
             {
                 spawnedObject.transform.position = position;
                 spawnedObject.transform.rotation = rotation;
-            }
 
-            if (teamIndex > -1)
-            {
-                // set team information
-                BaseGameObject baseObject = spawnedObject.GetBaseGameObject();
-                if (baseObject.Team.Index != teamIndex)
+                if (teamIndex > -1)
                 {
-                    baseObject.Team = Team.Teams[teamIndex];
-                    //baseObject.m_Team = Team.Teams[teamIndex];
-                    #if NET6_0
-                    baseObject.UpdateToCurrentTeam();
-                    #else
-                    Type baseOjbectType = typeof(BaseGameObject);
-                    MethodInfo updateToCurrentTeamMethod = baseOjbectType.GetMethod("UpdateToCurrentTeam");
-
-                    updateToCurrentTeamMethod.Invoke(baseObject, null);
-                #endif
+                    thisStructure.Team = Team.Teams[teamIndex];
                 }
+
+                return spawnedObject;
             }
 
-            return spawnedObject;
+            return null;
         }
 
         public static bool IsTimerActive(float time)
