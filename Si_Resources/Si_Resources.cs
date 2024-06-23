@@ -32,7 +32,7 @@ using SilicaAdminMod;
 using System;
 using System.Linq;
 
-[assembly: MelonInfo(typeof(ResourceConfig), "Resource Configuration", "1.0.6", "databomb")]
+[assembly: MelonInfo(typeof(ResourceConfig), "Resource Configuration", "1.1.0", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -51,9 +51,13 @@ namespace Si_Resources
             Pref_Resources_Aliens_StartingAmount ??= _modCategory.CreateEntry<int>("Resources_Aliens_StartingAmount", 9000);
         }
 
-        #if NET6_0
+       
         public override void OnLateInitializeMelon()
         {
+            HelperMethods.CommandCallback resourcesCallback = Command_Resources;
+            HelperMethods.RegisterAdminCommand("resources", resourcesCallback, Power.Cheat, "Provides resources to a team. Usage: !resources <amount> [optional:<teamname>]");
+
+            #if NET6_0
             bool QListLoaded = RegisteredMelons.Any(m => m.Info.Name == "QList");
             if (!QListLoaded)
             {
@@ -67,8 +71,82 @@ namespace Si_Resources
 
             QList.Options.AddOption(humanStartingRes);
             QList.Options.AddOption(alienStartingRes);
+            #endif
         }
-        #endif
+
+        public static void Command_Resources(Player? callerPlayer, String args)
+        {
+            string commandName = args.Split(' ')[0];
+
+            // validate argument count
+            int argumentCount = args.Split(' ').Length - 1;
+            if (argumentCount > 2)
+            {
+                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": Too many arguments");
+                return;
+            }
+            else if (argumentCount < 1)
+            {
+                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": Too few arguments");
+                return;
+            }
+
+            // validate argument contents
+            Team? team = null;
+            if (argumentCount == 1)
+            {
+                if (callerPlayer != null)
+                {
+                    team = callerPlayer.Team;
+                }
+            }
+            else
+            {
+                string teamTarget = args.Split(' ')[2];
+                team = Team.GetTeamByName(teamTarget, false);
+            }
+
+            if (team == null)
+            {
+                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": Ambiguous or invalid team name");
+                return;
+            }
+
+            string amountText = args.Split(' ')[1];
+            int amount = 0;
+            if (!int.TryParse(amountText, out amount))
+            {
+                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": Invalid amount specified");
+                return;
+            }
+            else if (amount == 0)
+            {
+                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": No amount specified");
+                return;
+            }
+            else if (amount > team.RemainingResourceCapacity)
+            {
+                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": Amount specified is higher than team resource capacity");
+                return;
+            }
+            else if (amount + team.StoredResources < 0)
+            {
+                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": Amount specified would give team negative resources");
+                return;
+            }
+
+            // change resource amount and notify players
+            if (amount >= 0)
+            {
+                team.StoreResource(amount);
+                HelperMethods.AlertAdminAction(callerPlayer, "granted " + amountText + " resources to " + HelperMethods.GetTeamColor(team) + team.TeamShortName);
+            }
+            else
+            {
+                team.RetrieveResource(-amount);
+                HelperMethods.AlertAdminAction(callerPlayer, "took " + amountText + " resources from " + HelperMethods.GetTeamColor(team) + team.TeamShortName);
+            }
+        }
 
         [HarmonyPatch(typeof(MP_Strategy), nameof(MP_Strategy.SetTeamVersusMode))]
         private static class Resources_Patch_MPStrategy_SetTeamVersusMode
