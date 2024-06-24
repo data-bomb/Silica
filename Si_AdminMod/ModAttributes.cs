@@ -21,7 +21,7 @@ using MelonLoader;
 using SilicaAdminMod;
 using System.Drawing;
 
-[assembly: MelonInfo(typeof(SiAdminMod), "Admin Mod", "2.0.823", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(SiAdminMod), "Admin Mod", "2.0.824", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 // Color.Cyan
@@ -29,7 +29,7 @@ using System.Drawing;
 // Color.Green
 [assembly: MelonAuthorColor(255, 0, 128, 0)]
 
-// Instruct MelonLoader to loazd SAM before other mods
+// Instruct MelonLoader to load SAM before other mods
 [assembly: MelonPriority(-100)]
 
 [assembly: MelonPlatform(MelonPlatformAttribute.CompatiblePlatforms.WINDOWS_X64)]

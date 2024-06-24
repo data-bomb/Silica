@@ -140,6 +140,14 @@ namespace SilicaAdminMod
             gameByteStreamWriter.WriteString(String.Concat(messages));
             gameByteStreamWriter.WriteBool(false);
 
+            #if NET6_0
+            NetworkLayer.NetBitsSent += (uint)gameByteStreamWriter.GetByteDataSize() * 8U;
+            #else
+            FieldInfo netBitsSendField = typeof(NetworkLayer).GetField("NetBitsSend", BindingFlags.NonPublic | BindingFlags.Static);
+            uint bitsSent = (uint)netBitsSendField.GetValue(null);
+            bitsSent += (uint)gameByteStreamWriter.GetByteDataSize() * 8U;
+            netBitsSendField.SetValue(null, bitsSent);
+            #endif
             SteamGameServerNetworking.SendP2PPacket(recipient.PlayerID, gameByteStreamWriter.GetByteData(), (uint)gameByteStreamWriter.GetByteDataSize(), EP2PSend.k_EP2PSendReliable, recipient.PlayerChannel);
         }
 
@@ -404,13 +412,13 @@ namespace SilicaAdminMod
                 return false;
             }
 
-            #if NET6_0
+#if NET6_0
             Il2CppSteamworks.CSteamID serverSteam = NetworkGameServer.GetServerID();
             Il2CppSteamworks.CSteamID playerSteam = playerToKick.PlayerID;
-            #else
+#else
             Steamworks.CSteamID serverSteam = NetworkGameServer.GetServerID();
             Steamworks.CSteamID playerSteam = playerToKick.PlayerID;
-            #endif
+#endif
 
             int playerChannel = playerToKick.PlayerChannel;
 
