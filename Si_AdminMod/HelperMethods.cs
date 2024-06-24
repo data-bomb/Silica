@@ -98,6 +98,25 @@ namespace SilicaAdminMod
             broadcastPlayer.SendChatMessage(chatPrefix + GetAdminColor() + adminName + defaultColor + " " + action, false);
         }
 
+        public static void SendChatMessageToTeam(Team team, params string[] messages)
+        {
+            Player broadcastPlayer = FindBroadcastPlayer(team);
+
+            for (int i = 0; i < Player.Players.Count; i++)
+            {
+                Player? player = Player.Players[i];
+                if (player == null)
+                {
+                    continue;
+                }
+
+                if (player.Team == team)
+                {
+                    NetworkSendChat(player, broadcastPlayer, messages);
+                }
+            }
+        }
+
         public static void SendChatMessageToPlayer(Player? player, params string[] messages)
         {
             // send to server console if null
@@ -109,15 +128,19 @@ namespace SilicaAdminMod
             }
 
             Player broadcastPlayer = FindBroadcastPlayer();
-
-            GameByteStreamWriter gameByteStreamWriter = GameByteStreamWriter.GetGameByteStreamWriter(0U, "Si_AdminMod::SendChatMessageToPlayer", true);
+            NetworkSendChat(player, broadcastPlayer, messages);
+        }
+        
+        public static void NetworkSendChat(Player recipient, Player sender, params string[] messages)
+        {
+            GameByteStreamWriter gameByteStreamWriter = GameByteStreamWriter.GetGameByteStreamWriter(0U, "Si_AdminMod::NetworkSendChat", true);
             gameByteStreamWriter.WriteByte((byte)ENetworkPacketType.ChatMessage);
-            gameByteStreamWriter.WriteUInt64((ulong)broadcastPlayer.PlayerID);
-            gameByteStreamWriter.WriteByte((byte)broadcastPlayer.PlayerChannel);
+            gameByteStreamWriter.WriteUInt64((ulong)sender.PlayerID);
+            gameByteStreamWriter.WriteByte((byte)sender.PlayerChannel);
             gameByteStreamWriter.WriteString(String.Concat(messages));
             gameByteStreamWriter.WriteBool(false);
 
-            SteamGameServerNetworking.SendP2PPacket(player.PlayerID, gameByteStreamWriter.GetByteData(), (uint)gameByteStreamWriter.GetByteDataSize(), EP2PSend.k_EP2PSendReliable, player.PlayerChannel);
+            SteamGameServerNetworking.SendP2PPacket(recipient.PlayerID, gameByteStreamWriter.GetByteData(), (uint)gameByteStreamWriter.GetByteDataSize(), EP2PSend.k_EP2PSendReliable, recipient.PlayerChannel);
         }
 
         public static Player FindBroadcastPlayer()
@@ -131,6 +154,31 @@ namespace SilicaAdminMod
             if (Player.Players.Count > 0)
             {
                 return Player.Players[0];
+            }
+
+            return NetworkGameServer.GetServerPlayer();
+        }
+
+        public static Player FindBroadcastPlayer(Team team)
+        {
+            if (!NetworkGameServer.GetServerDedicated())
+            {
+                return NetworkGameServer.GetServerPlayer();
+            }
+
+            // not ideal but funnel messages through the first player on the team for now
+            for (int i = 0; i < Player.Players.Count; i++)
+            {
+                Player? player = Player.Players[i];
+                if (player == null)
+                {
+                    continue;
+                }
+
+                if (player.Team == team)
+                {
+                    return player;
+                }
             }
 
             return NetworkGameServer.GetServerPlayer();
