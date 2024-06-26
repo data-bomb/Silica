@@ -27,12 +27,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageReference Include="Silica-MelonLoader-Dependencies" Version="*" />
+    <PackageReference Include="Newtonsoft.Json" Version="*" />
+    <PackageReference Include="LavaGang.MelonLoader" Version="0.6.3" />
   </ItemGroup>
-
-  <ItemGroup Condition="'$(TargetFramework)' == 'net6.0'">
-    <PackageReference Include="LavaGang.MelonLoader" Version="0.6.1" />
-  </ItemGroup>
-
+  
+  <Import Project="..\include\net6.csproj" Condition="'$(TargetFramework)' == 'net6.0'"/>
+  <Import Project="..\include\netstandard21.csproj" Condition="'$(TargetFramework)' == 'netstandard2.1'"/>
 </Project>

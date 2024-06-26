@@ -2,3 +2,6 @@
 **/bin/Debug/
 **/bin/Release/
 **/.vs/
+**/net6.0/
+**/netstandard2.1/
+QList.dll
