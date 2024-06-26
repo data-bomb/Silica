@@ -64,7 +64,10 @@ jobs:
         with:
           repository: ${{ secrets.PRIV_R }}
           token: ${{ secrets.FGAT_PRIV_R }}
-          path: include
+          path: references
+      - name: Copy References
+        run: |
+          cp -r references/. include
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v4
         with:
@@ -134,7 +137,11 @@ jobs:
       with:
         repository: ${{ secrets.PRIV_R }}
         token: ${{ secrets.FGAT_PRIV_R }}
-        path: include
+        path: references
+        
+    - name: Copy References
+      run: |
+        cp -r references/. include
         
     - name: Download QList
       uses: robinraju/release-downloader@v1.9
