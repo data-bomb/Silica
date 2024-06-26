@@ -7,7 +7,6 @@
 
   <ItemGroup>
     <PackageReference Include="Silica-MelonLoader-AdminMod" Version="*" />
-    <PackageReference Include="LavaGang.MelonLoader" Version="0.6.3" />
   </ItemGroup>
   
   <Import Project="..\include\net6.csproj" Condition="'$(TargetFramework)' == 'net6.0'"/>

@@ -24,5 +24,8 @@
     <Reference Include="UnityEngine.PhysicsModule">
       <HintPath>..\include\netstandard2.1\UnityEngine.PhysicsModule.dll</HintPath>
     </Reference>
+    <Reference Include="MelonLoader">
+      <HintPath>..\include\netstandard2.1\MelonLoader.dll</HintPath>
+    </Reference>
   </ItemGroup>
 </Project>
