@@ -130,8 +130,8 @@ jobs:
     - uses: actions/checkout@v4
     
     - name: References
-        uses: actions/checkout@v4
-        with:
+      uses: actions/checkout@v4
+      with:
         repository: ${{ secrets.PRIV_R }}
         token: ${{ secrets.FGAT_PRIV_R }}
         path: include
