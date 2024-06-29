@@ -40,7 +40,7 @@ using System.Collections.Generic;
 using SilicaAdminMod;
 using System.Linq;
 
-[assembly: MelonInfo(typeof(CommanderManager), "Commander Management", "1.5.6", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(CommanderManager), "Commander Management", "1.5.7", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -180,6 +180,9 @@ namespace Si_CommanderManagement
 
             HelperMethods.CommandCallback commanderDemoteCallback = Command_CommanderDemote;
             HelperMethods.RegisterAdminCommand("demote", commanderDemoteCallback, Power.Commander, "Demotes target player from their current Commander role. Usage: !demote <player>");
+
+            HelperMethods.CommandCallback commanderCallback = Command_Commander;
+            HelperMethods.RegisterPlayerCommand("commander", commanderCallback, true);
 
             // subscribe to the OnRequestCommander event
             Event_Roles.OnRequestCommander += OnRequestCommander;
@@ -844,68 +847,45 @@ namespace Si_CommanderManagement
             }
         }
 
-        #if NET6_0
-        [HarmonyPatch(typeof(Il2CppSilica.UI.Chat), nameof(Il2CppSilica.UI.Chat.MessageReceived))]
-        #else
-        [HarmonyPatch(typeof(Silica.UI.Chat), "MessageReceived")]
-        #endif
-        private static class CommanderManager_Patch_Chat_MessageReceived
+        public static void Command_Commander(Player? callerPlayer, String args)
         {
-            #if NET6_0
-            public static void Postfix(Il2CppSilica.UI.Chat __instance, Player __0, string __1, bool __2)
-            #else
-            public static void Postfix(Silica.UI.Chat __instance, Player __0, string __1, bool __2)
-            #endif
+            if (callerPlayer == null)
             {
-                try
-                {
-                    if (commanderApplicants == null)
-                    {
-                        return;
-                    }
+                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, " Console not supported.");
+                return;
+            }
 
-                    // each faction has its own chat manager but by looking at alien and only global messages this catches commands only once
-                    if (__instance.ToString().Contains("alien") && __2 == false)
-                    {
-                        bool isCommanderCommand = String.Equals(__1, "!commander", StringComparison.OrdinalIgnoreCase);
-                        if (isCommanderCommand)
-                        {
-                            if (__0.Team == null)
-                            {
-                                HelperMethods.ReplyToCommand_Player(__0, "is not on a valid team");
-                                return;
-                            }
+            if (commanderApplicants == null)
+            {
+                MelonLogger.Warning("Commander applicant pool missing.");
+                return;
+            }
 
-                            // check if they're trying to apply for commander before the 30 second countdown expires and the game begins
-                            if (GameMode.CurrentGameMode.Started && !GameMode.CurrentGameMode.GameBegun)
-                            {
+            if (callerPlayer.Team == null)
+            {
+                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, " On invalid team.");
+                return;
+            }
 
-                                // check if we are already on the commander applicant list
-                                bool hasApplied = commanderApplicants[__0.Team.Index].Any(k => k == __0);
+            if (!GameMode.CurrentGameMode.Started || GameMode.CurrentGameMode.GameBegun)
+            {
+                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, " Cannot apply for commander during the game.");
+                return;
+            }
 
-                                if (!hasApplied)
-                                {
+            // check if they are already on the commander applicant list
+            bool hasApplied = commanderApplicants[callerPlayer.Team.Index].Any(k => k == callerPlayer);
 
-                                    commanderApplicants[__0.Team.Index].Add(__0);
-                                    HelperMethods.ReplyToCommand_Player(__0, "applied for commander");
-                                }
-                                else
-                                {
-                                    commanderApplicants[__0.Team.Index].Remove(__0);
-                                    HelperMethods.ReplyToCommand_Player(__0, "removed themselves from commander lottery");
-                                }
-                            }
-                            else
-                            {
-                                HelperMethods.ReplyToCommand_Player(__0, "cannot apply for commander during the game");
-                            }
-                        }
-                    }
-                }
-                catch (Exception error)
-                {
-                    HelperMethods.PrintError(error, "Failed to run Chat::MessageReceived");
-                }
+            if (!hasApplied)
+            {
+
+                commanderApplicants[callerPlayer.Team.Index].Add(callerPlayer);
+                HelperMethods.ReplyToCommand_Player(callerPlayer, "applied for commander");
+            }
+            else
+            {
+                commanderApplicants[callerPlayer.Team.Index].Remove(callerPlayer);
+                HelperMethods.ReplyToCommand_Player(callerPlayer, "removed themselves from commander lottery");
             }
         }
 
