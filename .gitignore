@@ -1,7 +1,13 @@
+# ignore build files
 **/obj/
 **/bin/Debug/
 **/bin/Release/
 **/.vs/
 **/net6.0/
 **/netstandard2.1/
+# ignore external dependencies
 QList.dll
+# ignore macos hidden files
+.DS_Store
+# ignore VSCode environment
+.vscode/*
