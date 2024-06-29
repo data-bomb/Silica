@@ -27,8 +27,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Newtonsoft.Json" Version="*" />
-    <PackageReference Include="LavaGang.MelonLoader" Version="0.6.3" />
+    <PackageReference Include="Newtonsoft.Json" Version="*"/>
   </ItemGroup>
   
   <Import Project="..\include\net6.csproj" Condition="'$(TargetFramework)' == 'net6.0'"/>
