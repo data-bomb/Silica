@@ -101,11 +101,8 @@ namespace Si_CommanderManagement
             {
                 commanderApplicants[callerPlayer.Team.Index].Remove(callerPlayer);
 
-                // spawn a unit for them if they don't already have one
-                if (!callerPlayer.ControlledUnit)
-                {
-                    CommanderPrimitives.SendToRole(callerPlayer, MP_Strategy.ETeamRole.INFANTRY);
-                }
+                // spawn a unit for them
+                GameMode.CurrentGameMode.SpawnUnitForPlayer(callerPlayer, callerPlayer.Team);
 
                 HelperMethods.ReplyToCommand_Player(callerPlayer, "removed themselves from commander lottery");
             }
