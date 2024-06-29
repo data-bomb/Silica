@@ -179,7 +179,7 @@ jobs:
     - uses: actions/upload-artifact@v4
       with:
         name: dedicated-server-${{ matrix.path }}-build-${{ env.GITHUB_SHA_SHORT }}
-        path: ${{ matrix.path }}/bin/${{env.BUILD_TYPE}}/netstandard2.1/*.dll
+        path: ${{ matrix.path }}/bin/${{env.BUILD_TYPE}}/netstandard2.1/${{ matrix.path }}.dll
         
     - uses: actions/upload-artifact@v4
       with:
