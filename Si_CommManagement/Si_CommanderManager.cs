@@ -33,7 +33,7 @@ using System;
 using SilicaAdminMod;
 using System.Linq;
 
-[assembly: MelonInfo(typeof(CommanderManager), "Commander Management", "1.6.0", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(CommanderManager), "Commander Management", "1.6.1", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -43,11 +43,13 @@ namespace Si_CommanderManagement
     {
         static MelonPreferences_Category _modCategory = null!;
         public static MelonPreferences_Entry<bool> _BlockRoundStartUntilEnoughApplicants = null!;
+        public static MelonPreferences_Entry<bool> _TeamOnlyResponses = null!;
 
         public override void OnInitializeMelon()
         {
             _modCategory ??= MelonPreferences.CreateCategory("Silica");
             _BlockRoundStartUntilEnoughApplicants ??= _modCategory.CreateEntry<bool>("BlockRoundStartUntilCommandersApplied", true);
+            _TeamOnlyResponses ??= _modCategory.CreateEntry<bool>("CmdrMgr_CommanderResponses_TeamOnly", false);
 
             try
             {
@@ -115,7 +117,15 @@ namespace Si_CommanderManagement
                 // check if player is already an applicant
                 if (!CommanderApplications.IsApplicant(args.Requester))
                 {
-                    HelperMethods.ReplyToCommand_Player(args.Requester, "has applied for commander");
+                    if (_TeamOnlyResponses.Value)
+                    {
+                        HelperMethods.SendChatMessageToTeam(args.Requester.Team, HelperMethods.chatPrefix, HelperMethods.GetTeamColor(args.Requester.Team), args.Requester.PlayerName, HelperMethods.defaultColor, " has applied for commander.");
+                    }
+                    else
+                    {
+                        HelperMethods.ReplyToCommand_Player(args.Requester, "has applied for commander");
+                    }
+                    
                     CommanderApplications.commanderApplicants[args.Requester.Team.Index].Add(args.Requester);
                 }
 

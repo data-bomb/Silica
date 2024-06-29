@@ -69,7 +69,15 @@ namespace Si_CommanderManagement
                                 return;
                             }
 
-                            HelperMethods.ReplyToCommand_Player(__0, "left commander position vacant for " + HelperMethods.GetTeamColor(departingTeam) + departingTeam.TeamShortName + HelperMethods.defaultColor + " by switching to infantry");
+                            if (CommanderManager._TeamOnlyResponses.Value)
+                            {
+                                HelperMethods.SendChatMessageToTeam(__0.Team, HelperMethods.chatPrefix, HelperMethods.GetTeamColor(__0.Team), __0.PlayerName, HelperMethods.defaultColor, " left commander position vacant for " + HelperMethods.GetTeamColor(departingTeam) + departingTeam.TeamShortName + HelperMethods.defaultColor + " by switching to infantry");
+                            }
+                            else
+                            {
+                                HelperMethods.ReplyToCommand_Player(__0, "left commander position vacant for " + HelperMethods.GetTeamColor(departingTeam) + departingTeam.TeamShortName + HelperMethods.defaultColor + " by switching to infantry");
+                            }
+                            
                         }
                     }
                 }
@@ -99,7 +107,14 @@ namespace Si_CommanderManagement
                         if (hasApplied)
                         {
                             CommanderApplications.commanderApplicants[__0.Team.Index].Remove(__0);
-                            HelperMethods.ReplyToCommand_Player(__0, "was removed from consideration due to disconnect");
+                            if (CommanderManager._TeamOnlyResponses.Value)
+                            {
+                                HelperMethods.SendChatMessageToTeam(__0.Team, HelperMethods.chatPrefix, HelperMethods.GetTeamColor(__0.Team), __0.PlayerName, HelperMethods.defaultColor, " was removed from consideration due to disconnect");
+                            }
+                            else
+                            {
+                                HelperMethods.ReplyToCommand_Player(__0, "was removed from consideration due to disconnect");
+                            }
                         }
                     }
 
@@ -108,7 +123,14 @@ namespace Si_CommanderManagement
                         // don't display message if the team has since been eliminated
                         if (__0.IsCommander && __0.Team.NumMajorStructures > 0)
                         {
-                            HelperMethods.ReplyToCommand_Player(__0, "left commander position vacant by disconnecting");
+                            if (CommanderManager._TeamOnlyResponses.Value)
+                            {
+                                HelperMethods.SendChatMessageToTeam(__0.Team, HelperMethods.chatPrefix, HelperMethods.GetTeamColor(__0.Team), __0.PlayerName, HelperMethods.defaultColor, " left commander position vacant by disconnecting");
+                            }
+                            else
+                            {
+                                HelperMethods.ReplyToCommand_Player(__0, "left commander position vacant by disconnecting");
+                            }
                         }
                     }
                 }
@@ -171,7 +193,14 @@ namespace Si_CommanderManagement
                                 if (CommanderApplications.teamswapCommanderChecks[__0.Index] != __1 && CommanderApplications.promotedCommanders[__0.Index] != __1)
                                 {
                                     CommanderApplications.promotedCommanders[__0.Index] = __1;
-                                    HelperMethods.ReplyToCommand_Player(__1, "has taken command of " + HelperMethods.GetTeamColor(__0) + __0.TeamShortName);
+                                    if (CommanderManager._TeamOnlyResponses.Value)
+                                    {
+                                        HelperMethods.SendChatMessageToTeam(__1.Team, HelperMethods.chatPrefix, HelperMethods.GetTeamColor(__1.Team), __1.PlayerName, HelperMethods.defaultColor, " has taken command of " + HelperMethods.GetTeamColor(__0) + __0.TeamShortName);
+                                    }
+                                    else
+                                    {
+                                        HelperMethods.ReplyToCommand_Player(__1, "has taken command of " + HelperMethods.GetTeamColor(__0) + __0.TeamShortName);
+                                    }
                                 }
                             }
                         }
