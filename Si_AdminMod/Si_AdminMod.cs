@@ -45,6 +45,7 @@ namespace SilicaAdminMod
         public static MelonPreferences_Entry<bool> Pref_Admin_AcceptTeamChatCommands = null!;
         public static MelonPreferences_Entry<int> Pre_Admin_VoteDuration = null!;
         public static MelonPreferences_Entry<bool> Pref_Admin_StopNonAdminCheats = null!;
+        public static MelonPreferences_Entry<bool> Pref_Admin_ReplicateCheatsForPasswordedServers = null!;
 
         public static List<Admin> AdminList = null!;
 
@@ -62,6 +63,7 @@ namespace SilicaAdminMod
                 Pref_Admin_AcceptTeamChatCommands ??= _modCategory.CreateEntry<bool>("Admin_AllowTeamChatCommands", false);
                 Pre_Admin_VoteDuration ??= _modCategory.CreateEntry<int>("Admin_VoteDuration_Seconds", 30);
                 Pref_Admin_StopNonAdminCheats ??= _modCategory.CreateEntry<bool>("Admin_PreventNonAdminCheats", false);
+                Pref_Admin_ReplicateCheatsForPasswordedServers ??= _modCategory.CreateEntry<bool>("Admin_ReplicateCheatsForPrivateServers", true);
 
                 #if !NET6_0
                 MelonLogger.Msg("Registering host console commands...");

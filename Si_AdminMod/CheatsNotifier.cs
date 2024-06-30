@@ -42,6 +42,12 @@ namespace SilicaAdminMod
             {
                 try
                 {
+                    // check if this is password protected and server host does not want to replicate cheats status change to all clients
+                    if (NetworkGameServer.GetServerPasswordProtected() && !SiAdminMod.Pref_Admin_ReplicateCheatsForPasswordedServers.Value)
+                    {
+                        return;
+                    }
+
                     HelperMethods.AlertAdminAction(null, (Game.CheatsEnabled ? "ENABLED CHEATS" : "disabled cheats") + ((Game.CheatsEnabled && SiAdminMod.Pref_Admin_StopNonAdminCheats.Value) ? " (admins only)" : ""));
                 }
                 catch (Exception error)
