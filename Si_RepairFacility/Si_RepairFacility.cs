@@ -1,10 +1,10 @@
 ﻿/*
-Silica End Round
+Silica Repair Facility
 Copyright (C) 2024 by databomb
 
 * Description *
 Allows vehicles to repair themselves at a friendly Light Vehicle
-Factory.
+Factory and allows modifying the default heal rates in the game.
 
 * License *
 This program is free software: you can redistribute it and/or modify
@@ -36,7 +36,7 @@ using Si_RepairFacility;
 using System.Collections.Generic;
 using System.Text;
 
-[assembly: MelonInfo(typeof(RepairFacility), "Repair Facility", "0.9.3", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(RepairFacility), "Repair Facility", "1.0.0", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -48,22 +48,34 @@ namespace Si_RepairFacility
         static float Timer_HealVehicles = 0f;
         static MelonPreferences_Category _modCategory = null!;
         static MelonPreferences_Entry<float> _Pref_Humans_Vehicle_HealRate = null!;
-        static MelonPreferences_Entry<float> _Pref_Aliens_HealRate = null!;
+        static MelonPreferences_Entry<float> _Pref_Aliens_SmallUnit_HealRate = null!;
+        static MelonPreferences_Entry<float> _Pref_Aliens_MediumUnit_HealRate = null!;
+        static MelonPreferences_Entry<float> _Pref_Aliens_LargeUnit_HealRate = null!;
+        static MelonPreferences_Entry<float> _Pref_Aliens_Structure_HealRate = null!;
+        static MelonPreferences_Entry<float> _Pref_Aliens_Queen_HealRate = null!;
+        static MelonPreferences_Entry<float> _Pref_Humans_Infantry_HealRate = null!;
 
         public override void OnInitializeMelon()
         {
             _modCategory ??= MelonPreferences.CreateCategory("Silica");
             _Pref_Humans_Vehicle_HealRate ??= _modCategory.CreateEntry<float>("RepairFacility_HumanVehicle_HealRate", 0.035f);
-            _Pref_Aliens_HealRate ??= _modCategory.CreateEntry<float>("RepairFacility_Alien_HealRate", 0.015f);
+            _Pref_Humans_Infantry_HealRate ??= _modCategory.CreateEntry<float>("RepairFacility_HumanInfantry_HealRate", 0.015f);
+
+            _Pref_Aliens_SmallUnit_HealRate ??= _modCategory.CreateEntry<float>("RepairFacility_Alien_SmallUnit_HealRate", 0.02f);
+            _Pref_Aliens_MediumUnit_HealRate ??= _modCategory.CreateEntry<float>("RepairFacility_Alien_MediumUnit_HealRate", 0.012f);
+            _Pref_Aliens_LargeUnit_HealRate ??= _modCategory.CreateEntry<float>("RepairFacility_Alien_LargeUnit_HealRate", 0.01f);
+            _Pref_Aliens_Queen_HealRate ??= _modCategory.CreateEntry<float>("RepairFacility_Alien_Queen_HealRate", 0.01f);
+
+            _Pref_Aliens_Structure_HealRate ??= _modCategory.CreateEntry<float>("RepairFacility_Alien_Structure_HealRate", 0.01f);
 
             vehiclesAtRepairShop = new List<DamageManager>();
         }
 
-#if NET6_0
+        #if NET6_0
         [HarmonyPatch(typeof(MusicJukeboxHandler), nameof(MusicJukeboxHandler.Update))]
-#else
+        #else
         [HarmonyPatch(typeof(MusicJukeboxHandler), "Update")]
-#endif
+        #endif
         private static class ApplyPatch_MusicJukeboxHandlerUpdate
         {
             private static void Postfix(MusicJukeboxHandler __instance)
@@ -96,11 +108,11 @@ namespace Si_RepairFacility
             }
         }
 
-#if NET6_0
+        #if NET6_0
         [HarmonyPatch(typeof(OpenableBase), nameof(OpenableBase.OnUnitEnterZone))]
-#else
+        #else
         [HarmonyPatch(typeof(OpenableBase), "OnUnitEnterZone")]
-#endif
+        #endif
         private static class RepairFacility_Patch_OpenableBase_OnUnitEnterZone
         {
             public static void Postfix(OpenableBase __instance, Zone __0, Unit __1)
@@ -199,7 +211,39 @@ namespace Si_RepairFacility
         {
             public static void Postfix(AutoHeal __instance)
             {
-                __instance.Data.HealAmountPct = _Pref_Aliens_HealRate.Value;
+                if (__instance == null || __instance.Data == null)
+                {
+                    return;
+                }
+
+                string healDataType = __instance.Data.name;
+                healDataType = healDataType.Substring(healDataType.LastIndexOf("_") + 1);
+
+                switch (healDataType)
+                {
+                    case "Infantry":
+                        __instance.Data.HealAmountPct = _Pref_Humans_Infantry_HealRate.Value;
+                        break;
+                    case "AlienSmall":
+                        __instance.Data.HealAmountPct = _Pref_Aliens_SmallUnit_HealRate.Value;
+                        break;
+                    case "AlienStructure":
+                        __instance.Data.HealAmountPct = _Pref_Aliens_Structure_HealRate.Value;
+                        break;
+                    case "AlienMedium":
+                        __instance.Data.HealAmountPct = _Pref_Aliens_MediumUnit_HealRate.Value;
+                        break;
+                    case "AlienLarge":
+                        __instance.Data.HealAmountPct = _Pref_Aliens_LargeUnit_HealRate.Value;
+                        break;
+                    case "Queen":
+                        __instance.Data.HealAmountPct = _Pref_Aliens_Queen_HealRate.Value;
+                        break;
+                    default:
+                        MelonLogger.Warning("Received unknown AutoHealData type: " + __instance.name);
+                        __instance.Data.HealAmountPct = _Pref_Aliens_LargeUnit_HealRate.Value;
+                        break;
+                }
             }
         }
     }
