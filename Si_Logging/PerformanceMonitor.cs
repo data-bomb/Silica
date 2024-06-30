@@ -49,6 +49,12 @@ namespace Si_Logging
             {
                 try
                 {
+                    // is the feature enabled?
+                    if (!HL_Logging.Pref_Log_PerfMonitor_Enable.Value)
+                    {
+                        return;
+                    }
+
                     // check if timer expired while the game is in-progress
                     Timer_PerfMonitorLog += Time.deltaTime;
                     if (Timer_PerfMonitorLog >= HL_Logging.Pref_Log_PerfMonitor_Interval.Value)
