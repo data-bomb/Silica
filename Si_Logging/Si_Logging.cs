@@ -3,7 +3,7 @@
  Copyright (C) 2023-2024 by databomb
  
  * Description *
- For Silica listen servers, creates a log file with console replication
+ For Silica servers, creates a log file with console replication
  in the Half-Life log standard format.
 
  * License *
@@ -43,7 +43,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Text;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.2.10", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.3.0", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -61,6 +61,7 @@ namespace Si_Logging
         static MelonPreferences_Entry<bool> Pref_Log_Kills_Include_AI_vs_Player = null!;
         static MelonPreferences_Entry<string> Pref_Log_ParserFile = null!;
         static MelonPreferences_Entry<string> Pref_Log_PythonExe = null!;
+        public static MelonPreferences_Entry<float> Pref_Log_PerfMonitor_Interval = null!;
 
         public static bool ParserFilePresent()
         {
@@ -146,6 +147,7 @@ namespace Si_Logging
                 Pref_Log_Kills_Include_AI_vs_Player ??= _modCategory.CreateEntry<bool>("Logging_LogKills_IncludeAIvsPlayer", true);
                 Pref_Log_ParserFile ??= _modCategory.CreateEntry<string>("Logging_LogParserPath", "inserting_info.py");
                 Pref_Log_PythonExe ??= _modCategory.CreateEntry<string>("Logging_PythonExePath", "C:\\Users\\A\\Mods\\Silica\\ranked\\venv\\Scripts\\python.exe");
+                Pref_Log_PerfMonitor_Interval ??= _modCategory.CreateEntry<float>("Logging_PerfMonitor_LogInterval", 60f);
 
                 if (!System.IO.Directory.Exists(GetLogFileDirectory()))
                 {
@@ -172,9 +174,11 @@ namespace Si_Logging
 
         public override void OnLateInitializeMelon()
         {
+            HelperMethods.StartTimer(ref ServerPerfLogger.Timer_PerfMonitorLog);
+
             //subscribing to the event
             Event_Roles.OnRoleChanged += OnRoleChanged;
-#if NET6_0
+            #if NET6_0
             bool QListLoaded = RegisteredMelons.Any(m => m.Info.Name == "QList");
             if (!QListLoaded)
             {
@@ -188,7 +192,7 @@ namespace Si_Logging
             QList.Options.AddOption(logDamage);
 
             QList.Options.AddOption(logAllKills);
-#endif
+            #endif
         }
 
         // 003. Change Map
