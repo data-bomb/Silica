@@ -173,8 +173,8 @@ namespace Si_Logging
                 $"{dataPoint.ConstructionSites}," +
                 $"{dataPoint.NetworkComponents}," +
                 $"{dataPoint.Units}," +
-                $"{dataPoint.LightsOn}" +
-                $"{dataPoint.UploadRate}" +
+                $"{dataPoint.LightsOn}," +
+                $"{dataPoint.UploadRate}," +
                 $"{dataPoint.DownloadRate}";
 
             System.IO.File.AppendAllText(perfMonitorLogFile, performanceEntryLine + Environment.NewLine);
