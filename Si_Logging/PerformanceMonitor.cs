@@ -49,6 +49,11 @@ namespace Si_Logging
                 get;
                 set;
             }
+            public int Players
+            {
+                get;
+                set;
+            }
             public int Structures
             {
                 get;
@@ -89,6 +94,7 @@ namespace Si_Logging
             {
                 UnixTime = (int)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
                 ServerFPS = Game.FPS;
+                Players = (Player.Players != null ? Player.Players.Count : -1);
                 Structures = (Structure.Structures != null ? Structure.Structures.Count : -1);
                 ConstructionSites = (ConstructionSite.ConstructionSites != null ? ConstructionSite.ConstructionSites.Count : -1);
                 NetworkComponents = (NetworkComponent.NetworkComponents != null ? NetworkComponent.NetworkComponents.Count : -1);
@@ -174,7 +180,7 @@ namespace Si_Logging
 
         public static void AddColumnInfo()
         {
-            string columnLine = "Unix Time,Server FPS,Structures,Construction Sites,Network Components,Units,Lights On,Upload Rate,Download Rate";
+            string columnLine = "Unix Time,Server FPS,Players,Structures,Construction Sites,Network Components,Units,Lights On,Upload Rate,Download Rate";
             System.IO.File.AppendAllText(perfMonitorLogFile, columnLine + Environment.NewLine);
         }
 
@@ -183,6 +189,7 @@ namespace Si_Logging
             PerfMonitorData dataPoint = new PerfMonitorData();
             string performanceEntryLine = $"{dataPoint.UnixTime}," +
                 $"{dataPoint.ServerFPS}," +
+                $"{dataPoint.Players}," +
                 $"{dataPoint.Structures}," +
                 $"{dataPoint.ConstructionSites}," +
                 $"{dataPoint.NetworkComponents}," +
