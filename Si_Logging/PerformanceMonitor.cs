@@ -150,7 +150,34 @@ namespace Si_Logging
 
         public static void CapturePerformancePoint()
         {
+            if (!System.IO.File.Exists(perfMonitorLogFile))
+            {
+                AddColumnInfo();
+            }
 
+            AddPerformanceEntry();
+        }
+
+        public static void AddColumnInfo()
+        {
+            string columnLine = "Unix Time,Server FPS,Structures,Construction Sites,Network Components,Units,Lights On,Upload Rate,Download Rate";
+            System.IO.File.AppendAllText(perfMonitorLogFile, columnLine + Environment.NewLine);
+        }
+
+        public static void AddPerformanceEntry()
+        {
+            PerfMonitorData dataPoint = new PerfMonitorData();
+            string performanceEntryLine = $"{dataPoint.UnixTime}," +
+                $"{dataPoint.ServerFPS}," +
+                $"{dataPoint.Structures}," +
+                $"{dataPoint.ConstructionSites}," +
+                $"{dataPoint.NetworkComponents}," +
+                $"{dataPoint.Units}," +
+                $"{dataPoint.LightsOn}" +
+                $"{dataPoint.UploadRate}" +
+                $"{dataPoint.DownloadRate}";
+
+            System.IO.File.AppendAllText(perfMonitorLogFile, performanceEntryLine + Environment.NewLine);
         }
     }
 }
