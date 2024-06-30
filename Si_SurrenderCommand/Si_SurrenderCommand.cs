@@ -32,7 +32,7 @@ using System;
 using UnityEngine;
 using System.Collections.Generic;
 
-[assembly: MelonInfo(typeof(SurrenderCommand), "Surrender Command", "1.2.6", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(SurrenderCommand), "Surrender Command", "1.2.7", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -77,7 +77,14 @@ namespace Si_SurrenderCommand
 				HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, " Console not supported.");
 				return;
 			}
-			
+
+            // check if game on-going
+            if (!GameMode.CurrentGameMode.GameOngoing)
+            {
+                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, " Can't surrender. Game not started.");
+                return;
+            }
+
             // check if we are actually a commander
             bool isCommander = IsCommander(callerPlayer);
 
@@ -88,20 +95,30 @@ namespace Si_SurrenderCommand
                 return;
             }
 
-            // check if game on-going
-            if (!GameMode.CurrentGameMode.GameOngoing)
-            {
-                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, " Can't surrender. Game not started.");
-                return;
-            }
+            // if they're a commander then immediately take action
+            Team surrenderTeam = callerPlayer.Team;
+            Surrender(surrenderTeam, callerPlayer);
+        }
 
+        public static void Surrender(Team team, Player player)
+        {
             // notify all players
-            HelperMethods.ReplyToCommand_Player(callerPlayer, "used !surrender to end");
-
-            Team SurrenderTeam = callerPlayer.Team;
-            List<ConstructionSite> sitesToDestroy = new List<ConstructionSite>();
+            HelperMethods.ReplyToCommand_Player(player, "used !surrender to end");
 
             // find all construction sites we should destroy form the team that's surrendering
+            RemoveConstructionSites(team);
+
+            // destroy all structures on team that's surrendering
+            RemoveStructures(team);
+
+            // and destroy all units (especially the queen)
+            RemoveUnits(team);
+        }
+
+        public static void RemoveConstructionSites(Team team)
+        {
+            List<ConstructionSite> sitesToDestroy = new List<ConstructionSite>();
+
             foreach (ConstructionSite constructionSite in ConstructionSite.ConstructionSites)
             {
                 if (constructionSite == null || constructionSite.Team == null)
@@ -109,7 +126,7 @@ namespace Si_SurrenderCommand
                     continue;
                 }
 
-                if (constructionSite.Team != SurrenderTeam)
+                if (constructionSite.Team != team)
                 {
                     continue;
                 }
@@ -121,34 +138,38 @@ namespace Si_SurrenderCommand
             {
                 constructionSite.Deinit(false);
             }
+        }
 
-            // destroy all structures on team that's surrendering
-            for (int i = 0; i < SurrenderTeam.Structures.Count; i++)
+        public static void RemoveStructures(Team team)
+        {
+            for (int i = 0; i < team.Structures.Count; i++)
             {
-                if (SurrenderTeam.Structures[i] == null)
+                if (team.Structures[i] == null)
                 {
                     MelonLogger.Warning("Found null structure during surrender command.");
                     continue;
                 }
 
-                SurrenderTeam.Structures[i].DamageManager.SetHealth01(0.0f);
+                team.Structures[i].DamageManager.SetHealth01(0.0f);
             }
+        }
 
-            // and destroy all units (especially the queen)
-            for (int i = 0; i < SurrenderTeam.Units.Count; i++)
+        public static void RemoveUnits(Team team)
+        {
+            for (int i = 0; i < team.Units.Count; i++)
             {
-                if (SurrenderTeam.Units[i] == null)
+                if (team.Units[i] == null)
                 {
                     MelonLogger.Warning("Found null unit during surrender command.");
                     continue;
                 }
 
-                if (SurrenderTeam.Units[i].IsDestroyed)
+                if (team.Units[i].IsDestroyed)
                 {
                     continue;
                 }
 
-                SurrenderTeam.Units[i].DamageManager.SetHealth01(0.0f);
+                team.Units[i].DamageManager.SetHealth01(0.0f);
             }
         }
     }
