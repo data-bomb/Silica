@@ -61,6 +61,7 @@ namespace Si_Logging
         static MelonPreferences_Entry<string> Pref_Log_ParserFile = null!;
         static MelonPreferences_Entry<string> Pref_Log_PythonExe = null!;
         public static MelonPreferences_Entry<float> Pref_Log_PerfMonitor_Interval = null!;
+        public static MelonPreferences_Entry<bool> Pref_Log_PerfMonitor_Enable = null!;
 
         public static bool ParserFilePresent()
         {
@@ -147,6 +148,7 @@ namespace Si_Logging
                 Pref_Log_ParserFile ??= _modCategory.CreateEntry<string>("Logging_LogParserPath", "inserting_info.py");
                 Pref_Log_PythonExe ??= _modCategory.CreateEntry<string>("Logging_PythonExePath", "C:\\Users\\A\\Mods\\Silica\\ranked\\venv\\Scripts\\python.exe");
                 Pref_Log_PerfMonitor_Interval ??= _modCategory.CreateEntry<float>("Logging_PerfMonitor_LogInterval", 60f);
+                Pref_Log_PerfMonitor_Enable ??= _modCategory.CreateEntry<bool>("Logging_PerfMonitor_Enable", true);
 
                 if (!System.IO.Directory.Exists(GetLogFileDirectory()))
                 {
@@ -159,8 +161,8 @@ namespace Si_Logging
                     AddFirstLogLine();
                 }
 
-                lastCommander = new Player?[MaxPlayableTeams];
-                for (int i = 0; i < MaxPlayableTeams; i++)
+                lastCommander = new Player?[SiConstants.MaxPlayableTeams];
+                for (int i = 0; i < SiConstants.MaxPlayableTeams; i++)
                 {
                     lastCommander[i] = null;
                 }

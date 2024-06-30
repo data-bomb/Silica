@@ -31,12 +31,83 @@ using System.Collections.Generic;
 using System;
 using UnityEngine;
 using HarmonyLib;
+using MelonLoader.Utils;
 
 namespace Si_Logging
 {
     public class ServerPerfLogger
     {
+        public class PerfMonitorData
+        {
+            public int UnixTime
+            { 
+                get; 
+                set;
+            }
+            public int ServerFPS
+            {
+                get;
+                set;
+            }
+            public int Structures
+            {
+                get;
+                set;
+            }
+            public int ConstructionSites
+            {
+                get;
+                set;
+            }
+            public int NetworkComponents
+            {
+                get;
+                set;
+            }
+            public int Units
+            {
+                get;
+                set;
+            }
+            public int LightsOn
+            {
+                get;
+                set;
+            }
+            public float UploadRate
+            {
+                get;
+                set;
+            }
+            public float DownloadRate
+            {
+                get;
+                set;
+            }
+
+            public PerfMonitorData()
+            {
+                UnixTime = (int)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
+                ServerFPS = Game.FPS;
+                Structures = Structure.Structures.Count;
+                ConstructionSites = ConstructionSite.ConstructionSites.Count;
+                NetworkComponents = NetworkComponent.NetworkComponents.Count;
+                Units = Unit.Units.Count;
+                LightsOn = 0;
+                foreach (Unit unit in Unit.Units)
+                {
+                    if (unit.UnitLights.LightsOn)
+                    {
+                        LightsOn++;
+                    }
+                }
+                UploadRate = (float)Mathf.RoundToInt(NetworkLayer.NetBitsAvgUpload * 1E-05f) * 0.1f;
+                DownloadRate = (float)Mathf.RoundToInt(NetworkLayer.NetBitsAvgDownload * 1E-05f) * 0.1f;
+            }
+        }
+
         public static float Timer_PerfMonitorLog = HelperMethods.Timer_Inactive;
+        static readonly string perfMonitorLogFile = System.IO.Path.Combine(MelonEnvironment.UserDataDirectory, "PerfMonitorData.csv");
 
         #if NET6_0
         [HarmonyPatch(typeof(MusicJukeboxHandler), nameof(MusicJukeboxHandler.Update))]
@@ -54,7 +125,7 @@ namespace Si_Logging
                     {
                         return;
                     }
-
+                    
                     // check if timer expired while the game is in-progress
                     Timer_PerfMonitorLog += Time.deltaTime;
                     if (Timer_PerfMonitorLog >= HL_Logging.Pref_Log_PerfMonitor_Interval.Value)
