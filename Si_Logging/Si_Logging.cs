@@ -52,8 +52,7 @@ namespace Si_Logging
     // https://developer.valvesoftware.com/wiki/HL_Log_Standard
     public class HL_Logging : MelonMod
     {
-        const int MaxPlayableTeams = 3;
-        static int[] teamResourcesCollected = new int[MaxPlayableTeams + 1];
+        static int[] teamResourcesCollected = new int[SiConstants.MaxPlayableTeams + 1];
         static Player?[]? lastCommander;
 
         static MelonPreferences_Category _modCategory = null!;
