@@ -43,7 +43,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Text;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.3.2", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.3.3", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 

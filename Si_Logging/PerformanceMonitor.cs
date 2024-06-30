@@ -121,8 +121,8 @@ namespace Si_Logging
                     Units = -1;
                 }
 
-                UploadRate = (float)Mathf.RoundToInt(NetworkLayer.NetBitsAvgUpload * 1E-05f) * 0.1f;
-                DownloadRate = (float)Mathf.RoundToInt(NetworkLayer.NetBitsAvgDownload * 1E-05f) * 0.1f;
+                UploadRate = (float)Mathf.RoundToInt(NetworkLayer.NetBitsAvgUpload * 0.01f) * 0.1f;
+                DownloadRate = (float)Mathf.RoundToInt(NetworkLayer.NetBitsAvgDownload * 0.01f) * 0.1f;
             }
         }
 
