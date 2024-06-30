@@ -143,10 +143,10 @@ namespace SilicaAdminMod
             #if NET6_0
             NetworkLayer.NetBitsSent += (uint)gameByteStreamWriter.GetByteDataSize() * 8U;
             #else
-            FieldInfo netBitsSendField = typeof(NetworkLayer).GetField("NetBitsSend", BindingFlags.NonPublic | BindingFlags.Static);
-            uint bitsSent = (uint)netBitsSendField.GetValue(null);
+            FieldInfo netBitsSentField = typeof(NetworkLayer).GetField("NetBitsSent", BindingFlags.NonPublic | BindingFlags.Static);
+            uint bitsSent = (uint)netBitsSentField.GetValue(null);
             bitsSent += (uint)gameByteStreamWriter.GetByteDataSize() * 8U;
-            netBitsSendField.SetValue(null, bitsSent);
+            netBitsSentField.SetValue(null, bitsSent);
             #endif
             SteamGameServerNetworking.SendP2PPacket(recipient.PlayerID, gameByteStreamWriter.GetByteData(), (uint)gameByteStreamWriter.GetByteDataSize(), EP2PSend.k_EP2PSendReliable, recipient.PlayerChannel);
         }

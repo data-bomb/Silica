@@ -42,7 +42,7 @@ namespace SilicaAdminMod
             {
                 try
                 {
-                    HelperMethods.AlertAdminAction(null, (Game.CheatsEnabled ? "ENABLED CHEATS" : "disabled cheats"));
+                    HelperMethods.AlertAdminAction(null, (Game.CheatsEnabled ? "ENABLED CHEATS" : "disabled cheats") + ((Game.CheatsEnabled && SiAdminMod.Pref_Admin_StopNonAdminCheats.Value) ? " (admins only)" : ""));
                 }
                 catch (Exception error)
                 {
