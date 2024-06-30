@@ -89,18 +89,32 @@ namespace Si_Logging
             {
                 UnixTime = (int)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
                 ServerFPS = Game.FPS;
-                Structures = Structure.Structures.Count;
-                ConstructionSites = ConstructionSite.ConstructionSites.Count;
-                NetworkComponents = NetworkComponent.NetworkComponents.Count;
-                Units = Unit.Units.Count;
+                Structures = (Structure.Structures != null ? Structure.Structures.Count : -1);
+                ConstructionSites = (ConstructionSite.ConstructionSites != null ? ConstructionSite.ConstructionSites.Count : -1);
+                NetworkComponents = (NetworkComponent.NetworkComponents != null ? NetworkComponent.NetworkComponents.Count : -1);
                 LightsOn = 0;
-                foreach (Unit unit in Unit.Units)
+                if (Unit.Units != null)
                 {
-                    if (unit.UnitLights.LightsOn)
+                    Units = Unit.Units.Count;
+                    
+                    foreach (Unit unit in Unit.Units)
                     {
-                        LightsOn++;
+                        if (unit.UnitLights == null)
+                        {
+                            continue;
+                        }
+
+                        if (unit.UnitLights.LightsOn)
+                        {
+                            LightsOn++;
+                        }
                     }
                 }
+                else
+                {
+                    Units = -1;
+                }
+
                 UploadRate = (float)Mathf.RoundToInt(NetworkLayer.NetBitsAvgUpload * 1E-05f) * 0.1f;
                 DownloadRate = (float)Mathf.RoundToInt(NetworkLayer.NetBitsAvgDownload * 1E-05f) * 0.1f;
             }
