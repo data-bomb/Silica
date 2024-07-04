@@ -1,6 +1,6 @@
 ﻿/*
  Silica Anti-Grief Mod
- Copyright (C) 2024 by databomb
+ Copyright (C) 2023-2024 by databomb
  
  * Description *
  For Silica servers, automatically identifies players who fall below a 
@@ -33,8 +33,9 @@ using MelonLoader;
 using Si_AntiGrief;
 using SilicaAdminMod;
 using System.Linq;
+using UnityEngine;
 
-[assembly: MelonInfo(typeof(AntiGrief), "Anti-Grief", "1.1.6", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(AntiGrief), "Anti-Grief", "1.2.0", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -57,9 +58,13 @@ namespace Si_AntiGrief
             _StructureAntiGrief_IgnoreNodes ??= _modCategory.CreateEntry<bool>("Grief_IgnoreFriendlyNodesDestroyed", true);
         }
 
-        #if NET6_0
+
         public override void OnLateInitializeMelon()
         {
+            //subscribing to the event
+            Event_Roles.OnRoleChanged += OnRoleChanged;
+
+            #if NET6_0
             bool QListLoaded = RegisteredMelons.Any(m => m.Info.Name == "QList");
             if (!QListLoaded)
             {
@@ -73,8 +78,9 @@ namespace Si_AntiGrief
 
             QList.Options.AddOption(negativeThreshold);
             QList.Options.AddOption(banGriefers);
+            #endif
         }
-        #endif
+
 
         [HarmonyPatch(typeof(StrategyMode), nameof(StrategyMode.OnUnitDestroyed))]
         private static class ApplyPatch_StrategyMode_OnUnitDestroyed
@@ -219,7 +225,7 @@ namespace Si_AntiGrief
                         return;
                     }
 
-                    string structureName = GetStructureDisplayName(__0.ToString());
+                    string structureName = GetDisplayName(__0.ToString());
 
                     // should we ignore the message for this particular type of structure?
                     if (!DisplayTeamKillForStructure(structureName))
@@ -237,6 +243,84 @@ namespace Si_AntiGrief
             }
         }
 
+        // hook DestroyAllUnitsForPlayer pre and override game code to prevent aliens from dying
+        public void OnRoleChanged(object? sender, OnRoleChangedArgs args)
+        {
+            try
+            {
+                if (args == null)
+                {
+                    return;
+                }
+
+                Player player = args.Player;
+
+                if (player == null || player.Team == null)
+                {
+                    return;
+                }
+
+                // if the player isn't on the alien team, we can skip this check
+                if (player.Team.Index != 0)
+                {
+                    return;
+                }
+
+                // if a player switches to non-infantry it will despawn their alien unit
+                if (args.Role == MP_Strategy.ETeamRole.INFANTRY)
+                {
+                    return;
+                }
+
+                Unit unit = player.ControlledUnit;
+                if (unit == null)
+                {
+                    return;
+                }
+
+                // if this is a low tier unit then we don't care if it disappears
+                if (!IsHighValueAlienUnit(unit))
+                {
+                    return;
+                }
+
+                string unitName = GetDisplayName(unit.name);
+
+                MelonLogger.Msg(player.PlayerName + " tried to despawn a non-trivial Alien unit (" + unitName + ")");
+                HelperMethods.ReplyToCommand_Player(player, "tried to despawn a unit (" + HelperMethods.GetTeamColor(player) + unitName + HelperMethods.defaultColor + ")");
+
+                // work-around to spawn a temp replacement before all the player's units are taken by DestroyAllUnitsForPlayer
+                GameMode.CurrentGameMode.SpawnUnitForPlayer(player, player.Team);
+            }
+            catch (Exception error)
+            {
+                HelperMethods.PrintError(error, "Failed to run OnRoleChanged");
+            }
+
+        }
+
+        public static bool IsHighValueAlienUnit(Unit unit)
+        {
+            BaseGameObject? unitBase = GameFuncs.GetBaseGameObject(unit.gameObject);
+            if (unitBase == null)
+            {
+                return false;
+            }
+
+            ConstructionData? unitConstructionData = unitBase.ConstructionData;
+            if (unitConstructionData == null)
+            {
+                return false;
+            }
+
+            if (unitConstructionData.ResourceCost >= 500)
+            {
+                return true;
+            }
+
+            return false;
+        }
+
         private static bool DisplayTeamKillForStructure(string structureName)
         {
             // has the server set it so Nodes should be ignored?
@@ -251,18 +335,18 @@ namespace Si_AntiGrief
             return true;
         }
 
-        private static string GetStructureDisplayName(string structureFullName)
+        private static string GetDisplayName(string fullName)
         {
-            if (structureFullName.Contains('_'))
+            if (fullName.Contains('_'))
             {
-                return structureFullName.Split('_')[0];
+                return fullName.Split('_')[0];
             }
-            else if (structureFullName.Contains('('))
+            else if (fullName.Contains('('))
             {
-                return structureFullName.Split('(')[0];
+                return fullName.Split('(')[0];
             }
             
-            return structureFullName;
+            return fullName;
         }
     }
 }
