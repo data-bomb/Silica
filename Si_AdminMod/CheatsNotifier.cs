@@ -23,6 +23,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #if NET6_0
 using Il2Cpp;
+using Il2CppSystem.Diagnostics;
+#else
+using System.Diagnostics;
 #endif
 
 using HarmonyLib;
@@ -44,6 +47,14 @@ namespace SilicaAdminMod
                 {
                     // check if this is password protected and server host does not want to replicate cheats status change to all clients
                     if (NetworkGameServer.GetServerPasswordProtected() && !SiAdminMod.Pref_Admin_ReplicateCheatsForPasswordedServers.Value)
+                    {
+                        return;
+                    }
+                    
+                    // for routine map restarts cheats is disabled through the Game.ClearAll() or OnEnable methods
+                    // if that's how cheats is getting disabled then no need to replicate that message here
+                    string callingMethod = new StackFrame(2, true).GetMethod().Name;
+                    if (string.Equals(callingMethod, "OnEnable") || string.Equals(callingMethod, "ClearAll"))
                     {
                         return;
                     }
