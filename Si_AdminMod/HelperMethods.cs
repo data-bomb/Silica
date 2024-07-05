@@ -117,6 +117,37 @@ namespace SilicaAdminMod
             }
         }
 
+        public static void SendConsoleMessage(params string[] messages)
+        {
+            for (int i = 0; i < Player.Players.Count; i++)
+            {
+                Player? player = Player.Players[i];
+                if (player == null)
+                {
+                    continue;
+                }
+
+                NetworkSendConsole(player, messages);
+            }
+        }
+
+        public static void SendConsoleMessageToTeam(Team team, params string[] messages)
+        {
+            for (int i = 0; i < Player.Players.Count; i++)
+            {
+                Player? player = Player.Players[i];
+                if (player == null)
+                {
+                    continue;
+                }
+
+                if (player.Team == team)
+                {
+                    NetworkSendConsole(player, messages);
+                }
+            }
+        }
+
         public static void SendChatMessageToPlayer(Player? player, params string[] messages)
         {
             // send to server console if null
