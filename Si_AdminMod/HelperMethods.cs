@@ -130,8 +130,20 @@ namespace SilicaAdminMod
             Player broadcastPlayer = FindBroadcastPlayer();
             NetworkSendChat(player, broadcastPlayer, messages);
         }
+        public static void SendConsoleMessageToPlayer(Player? player, params string[] messages)
+        {
+            // send to server console if null
+            if (player == null)
+            {
+                DebugConsole.Log(String.Concat(messages), DebugConsole.LogLevel.Log);
+                DebugConsole.Log("", DebugConsole.LogLevel.Log);
+                return;
+            }
+
+            NetworkSendConsole(player, messages);
+        }
         
-        public static void NetworkSendChat(Player recipient, Player sender, params string[] messages)
+        private static void NetworkSendChat(Player recipient, Player sender, params string[] messages)
         {
             GameByteStreamWriter gameByteStreamWriter = GameByteStreamWriter.GetGameByteStreamWriter(0U, "Si_AdminMod::NetworkSendChat", true);
             gameByteStreamWriter.WriteByte((byte)ENetworkPacketType.ChatMessage);
@@ -140,15 +152,43 @@ namespace SilicaAdminMod
             gameByteStreamWriter.WriteString(String.Concat(messages));
             gameByteStreamWriter.WriteBool(false);
 
+            uint byteDataSize = (uint)gameByteStreamWriter.GetByteDataSize();
             #if NET6_0
-            NetworkLayer.NetBitsSent += (uint)gameByteStreamWriter.GetByteDataSize() * 8U;
+            NetworkLayer.NetBitsSent += byteDataSize * 8U;
             #else
             FieldInfo netBitsSentField = typeof(NetworkLayer).GetField("NetBitsSent", BindingFlags.NonPublic | BindingFlags.Static);
             uint bitsSent = (uint)netBitsSentField.GetValue(null);
-            bitsSent += (uint)gameByteStreamWriter.GetByteDataSize() * 8U;
+            bitsSent += byteDataSize * 8U;
             netBitsSentField.SetValue(null, bitsSent);
             #endif
-            SteamGameServerNetworking.SendP2PPacket(recipient.PlayerID, gameByteStreamWriter.GetByteData(), (uint)gameByteStreamWriter.GetByteDataSize(), EP2PSend.k_EP2PSendReliable, recipient.PlayerChannel);
+            SteamGameServerNetworking.SendP2PPacket(recipient.PlayerID, gameByteStreamWriter.GetByteData(), byteDataSize, EP2PSend.k_EP2PSendReliable, recipient.PlayerChannel);
+        }
+
+        private static void NetworkSendConsole(Player recipient, params string[] messages)
+        {
+            GameByteStreamWriter gameByteStreamWriter = GameByteStreamWriter.GetGameByteStreamWriter(0U, "Si_AdminMod::NetworkSendConsole", true);
+            gameByteStreamWriter.WriteByte((byte)ENetworkPacketType.RemoteCommandResult);
+            gameByteStreamWriter.WriteUInt64((ulong)recipient.PlayerID);
+            gameByteStreamWriter.WriteByte((byte)recipient.PlayerChannel);
+            short stringCount = (short)messages.Length;
+            gameByteStreamWriter.WriteInt16(stringCount);
+            int i = 0;
+            while (i < stringCount)
+            {
+                gameByteStreamWriter.WriteString(messages[i]);
+                gameByteStreamWriter.WriteByte((byte)DebugConsole.LogLevel.NoFormat);
+                i++;
+            }
+            uint byteDataSize = (uint)gameByteStreamWriter.GetByteDataSize();
+            #if NET6_0
+            NetworkLayer.NetBitsSent += byteDataSize * 8U;
+            #else
+            FieldInfo netBitsSentField = typeof(NetworkLayer).GetField("NetBitsSent", BindingFlags.NonPublic | BindingFlags.Static);
+            uint bitsSent = (uint)netBitsSentField.GetValue(null);
+            bitsSent += byteDataSize * 8U;
+            netBitsSentField.SetValue(null, bitsSent);
+            #endif
+            SteamGameServerNetworking.SendP2PPacket(recipient.PlayerID, gameByteStreamWriter.GetByteData(), byteDataSize, EP2PSend.k_EP2PSendReliable, recipient.PlayerChannel);
         }
 
         public static Player FindBroadcastPlayer()
