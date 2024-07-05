@@ -36,7 +36,7 @@ using Si_RepairFacility;
 using System.Collections.Generic;
 using System.Text;
 
-[assembly: MelonInfo(typeof(RepairFacility), "Repair Facility", "1.0.0", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(RepairFacility), "Repair Facility", "1.0.1", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -87,14 +87,10 @@ namespace Si_RepairFacility
                     {
                         Timer_HealVehicles = 0.0f;
 
+                        CleanRepairList();
+
                         foreach (DamageManager vehicleDamageManager in vehiclesAtRepairShop)
                         {
-                            if (vehicleDamageManager == null || vehicleDamageManager.IsDestroyed || vehicleDamageManager.NetworkComponent == null)
-                            {
-                                // TODO: Add these to a list to remove them from the repair shop
-                                continue;
-                            }
-
                             float healAmount = vehicleDamageManager.MaxHealth * _Pref_Humans_Vehicle_HealRate.Value;
                             float newHealth = Mathf.Clamp(vehicleDamageManager.Health + healAmount, 0.0f, vehicleDamageManager.MaxHealth);
                             vehicleDamageManager.SetHealth(newHealth);
@@ -155,11 +151,11 @@ namespace Si_RepairFacility
             }
         }
 
-#if NET6_0
+        #if NET6_0
         [HarmonyPatch(typeof(OpenableBase), nameof(OpenableBase.OnUnitExitZone))]
-#else
+        #else
         [HarmonyPatch(typeof(OpenableBase), "OnUnitExitZone")]
-#endif
+        #endif
         private static class RepairFacility_Patch_OpenableBase_OnUnitExitZone
         {
             public static void Postfix(OpenableBase __instance, Zone __0, Unit __1)
@@ -244,6 +240,27 @@ namespace Si_RepairFacility
                         __instance.Data.HealAmountPct = _Pref_Aliens_LargeUnit_HealRate.Value;
                         break;
                 }
+            }
+        }
+
+        public static void CleanRepairList()
+        {
+            // remove any null elements first
+            if (vehiclesAtRepairShop.RemoveAll(vehicleDM => vehicleDM == null) > 0)
+            {
+                MelonLogger.Warning("Removed null element(s) from Repair List");
+            }
+
+            // remove anything that has been destroyed
+            if (vehiclesAtRepairShop.RemoveAll(vehicleDM => vehicleDM.IsDestroyed) > 0)
+            {
+                MelonLogger.Warning("Removed destroyed damage managers from Repair List");
+            }
+
+            // and anything that has a null network component
+            if (vehiclesAtRepairShop.RemoveAll(vehicleDM => vehicleDM.NetworkComponent == null) > 0)
+            {
+                MelonLogger.Warning("Removed damage managers with null network components from Repair List");
             }
         }
     }
