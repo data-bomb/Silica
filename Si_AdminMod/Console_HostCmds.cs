@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using HarmonyLib;
 using System;
 using System.Linq;
+using MelonLoader;
 
 #if NET6_0
 using Il2Cpp;
@@ -166,6 +167,128 @@ namespace SilicaAdminMod
             }
 
             HelperMethods.AlertAdminAction(null, String.Join(" ", parameters));
+        }
+    }
+
+    public class CSAM_Cvar : DebugConsole.ICommand
+    {
+        public string Key
+        {
+            get
+            {
+                return "sam_cvar";
+            }
+        }
+
+        public string Description
+        {
+            get
+            {
+                return "Allows a host to change a preference value without a restart";
+            }
+        }
+
+        public EAdminLevel RequiredAdminLevel
+        {
+            get
+            {
+                return EAdminLevel.HOST;
+            }
+        }
+
+        public bool ServerSide
+        {
+            get
+            {
+                return true;
+            }
+        }
+
+        public void Execute(params string[] parameters)
+        {
+            if (parameters == null || parameters.Length < 1)
+            {
+                DebugConsole.Log(this.Key + " usage: <preference_string> [optional: new_value]", DebugConsole.LogLevel.Log);
+                DebugConsole.Log("", DebugConsole.LogLevel.Log);
+                return;
+            }
+
+            MelonPreferences_Entry? preferenceEntry = SiAdminMod._modCategory.GetEntry(parameters[0]);
+            if (preferenceEntry == null)
+            {
+                DebugConsole.Log("Could not find specified preference in the preference list: " + parameters[0], DebugConsole.LogLevel.Warning);
+                DebugConsole.Log("", DebugConsole.LogLevel.Log);
+                return;
+            }
+
+            // do we want to modify the value?
+            if (parameters.Length > 1)
+            {
+                Type preferenceType = preferenceEntry.GetReflectedType();
+                if (preferenceType == typeof(string))
+                {
+                    preferenceEntry.BoxedValue = String.Join(" ", parameters[1..]);
+                    DebugConsole.Log(parameters[0] + " changed to: " + preferenceEntry.GetValueAsString(), DebugConsole.LogLevel.Log);
+                    DebugConsole.Log("", DebugConsole.LogLevel.Log);
+                }
+                else if (preferenceType == typeof(bool))
+                {
+                    bool parsedBool;
+                    if (bool.TryParse(parameters[1], out parsedBool))
+                    {
+                        preferenceEntry.BoxedValue = parsedBool;
+                        DebugConsole.Log(parameters[0] + " changed to: " + preferenceEntry.GetValueAsString(), DebugConsole.LogLevel.Log);
+                        DebugConsole.Log("", DebugConsole.LogLevel.Log);
+                    }
+                    else
+                    {
+                        DebugConsole.Log("Could not convert argument (" + parameters[1] + ") into preference type (" + preferenceType.ToString() + ")", DebugConsole.LogLevel.Warning);
+                        DebugConsole.Log("", DebugConsole.LogLevel.Log);
+                    }
+                }
+                else if (preferenceType == typeof(int))
+                {
+                    int parsedInt;
+                    if (int.TryParse(parameters[1], out parsedInt))
+                    {
+                        preferenceEntry.BoxedValue = parsedInt;
+                        DebugConsole.Log(parameters[0] + " changed to: " + preferenceEntry.GetValueAsString(), DebugConsole.LogLevel.Log);
+                        DebugConsole.Log("", DebugConsole.LogLevel.Log);
+                    }
+                    else
+                    {
+                        DebugConsole.Log("Could not convert argument (" + parameters[1] + ") into preference type (" + preferenceType.ToString() + ")", DebugConsole.LogLevel.Warning);
+                        DebugConsole.Log("", DebugConsole.LogLevel.Log);
+                    }
+                }
+                else if (preferenceType == typeof(float))
+                {
+                    float parsedFloat;
+                    if (float.TryParse(parameters[1], out parsedFloat))
+                    {
+                        preferenceEntry.BoxedValue = parsedFloat;
+                        DebugConsole.Log(parameters[0] + " changed to: " + preferenceEntry.GetValueAsString(), DebugConsole.LogLevel.Log);
+                        DebugConsole.Log("", DebugConsole.LogLevel.Log);
+                    }
+                    else
+                    {
+                        DebugConsole.Log("Could not convert argument (" + parameters[1] + ") into preference type (" + preferenceType.ToString() + ")", DebugConsole.LogLevel.Warning);
+                        DebugConsole.Log("", DebugConsole.LogLevel.Log);
+                    }
+                }
+                else
+                {
+                    DebugConsole.Log("Could not handle preference type (" + preferenceType.ToString() + ")", DebugConsole.LogLevel.Warning);
+                    DebugConsole.Log("", DebugConsole.LogLevel.Log);
+                }
+            }
+            // or just see the value?
+            else
+            {
+                DebugConsole.Log(parameters[0] + " is set to: " + preferenceEntry.GetValueAsString(), DebugConsole.LogLevel.Log);
+                DebugConsole.Log("", DebugConsole.LogLevel.Log);
+                return;
+            }
         }
     }
     #endif

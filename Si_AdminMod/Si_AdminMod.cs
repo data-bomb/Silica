@@ -41,7 +41,7 @@ namespace SilicaAdminMod
 {
     public class SiAdminMod : MelonMod
     {
-        static MelonPreferences_Category _modCategory = null!;
+        public static MelonPreferences_Category _modCategory = null!;
         public static MelonPreferences_Entry<bool> Pref_Admin_AcceptTeamChatCommands = null!;
         public static MelonPreferences_Entry<int> Pre_Admin_VoteDuration = null!;
         public static MelonPreferences_Entry<bool> Pref_Admin_StopNonAdminCheats = null!;
@@ -53,6 +53,7 @@ namespace SilicaAdminMod
         {
             try
             {
+                
                 AdminMethods.AdminCommands = new List<AdminCommand>();
                 PlayerMethods.PlayerCommands = new List<PlayerCommand>();
                 PlayerMethods.PlayerPhrases = new List<PlayerCommand>();
@@ -64,26 +65,35 @@ namespace SilicaAdminMod
                 Pre_Admin_VoteDuration ??= _modCategory.CreateEntry<int>("Admin_VoteDuration_Seconds", 30);
                 Pref_Admin_StopNonAdminCheats ??= _modCategory.CreateEntry<bool>("Admin_PreventNonAdminCheats", false);
                 Pref_Admin_ReplicateCheatsForPasswordedServers ??= _modCategory.CreateEntry<bool>("Admin_ReplicateCheatsForPrivateServers", true);
-
+                
                 #if !NET6_0
                 MelonLogger.Msg("Registering host console commands...");
 
                 FieldInfo commandField = typeof(DebugConsole).GetField("s_Commands", BindingFlags.NonPublic | BindingFlags.Static);
+                Dictionary<string, DebugConsole.ICommand> s_Commands = (Dictionary<string, DebugConsole.ICommand>)commandField.GetValue(null);
 
                 DebugConsole.ICommand addAdminConsoleCmd = (DebugConsole.ICommand)Activator.CreateInstance(typeof(CSAM_AddAdmin));
-                DebugConsole.ICommand addSayConsoleCmd = (DebugConsole.ICommand)Activator.CreateInstance(typeof(CSAM_Say));
-                if (addAdminConsoleCmd != null && addSayConsoleCmd != null)
+                if (addAdminConsoleCmd != null)
                 {
-                    Dictionary<string, DebugConsole.ICommand> s_Commands = (Dictionary<string, DebugConsole.ICommand>)commandField.GetValue(null);
-
                     MelonLogger.Msg(addAdminConsoleCmd.Key.ToLower() + " registered.");
                     s_Commands.Add(addAdminConsoleCmd.Key.ToLower(), addAdminConsoleCmd);
-
-                    MelonLogger.Msg(addSayConsoleCmd.Key.ToLower() + " registered.");
-                    s_Commands.Add(addSayConsoleCmd.Key.ToLower(), addSayConsoleCmd);
-
-                    commandField.SetValue(null, s_Commands);
                 }
+
+                DebugConsole.ICommand addSayConsoleCmd = (DebugConsole.ICommand)Activator.CreateInstance(typeof(CSAM_Say));
+                if (addSayConsoleCmd != null)
+                {
+                    MelonLogger.Msg(addSayConsoleCmd.Key.ToLower() + " registered.");
+                    s_Commands.Add(addSayConsoleCmd.Key.ToLower(), addSayConsoleCmd);    
+                }
+
+                DebugConsole.ICommand cvarConsoleCmd = (DebugConsole.ICommand)Activator.CreateInstance(typeof(CSAM_Cvar));
+                if (cvarConsoleCmd != null)
+                {
+                    MelonLogger.Msg(cvarConsoleCmd.Key.ToLower() + " registered.");
+                    s_Commands.Add(cvarConsoleCmd.Key.ToLower(), cvarConsoleCmd);
+                }
+
+                commandField.SetValue(null, s_Commands);
                 #endif
 
                 // subscribe to the OnRequestPlayerChat event
