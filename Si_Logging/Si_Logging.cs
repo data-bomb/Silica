@@ -43,7 +43,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Text;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.3.3", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.4.0", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -52,6 +52,8 @@ namespace Si_Logging
     // https://developer.valvesoftware.com/wiki/HL_Log_Standard
     public class HL_Logging : MelonMod
     {
+        const string defaultConsoleColor = "<color=#FDE8BB>";
+        
         static int[] teamResourcesCollected = new int[SiConstants.MaxPlayableTeams + 1];
         static Player?[]? lastCommander;
 
@@ -62,6 +64,7 @@ namespace Si_Logging
         static MelonPreferences_Entry<string> Pref_Log_PythonExe = null!;
         public static MelonPreferences_Entry<float> Pref_Log_PerfMonitor_Interval = null!;
         public static MelonPreferences_Entry<bool> Pref_Log_PerfMonitor_Enable = null!;
+        public static MelonPreferences_Entry<bool> Pref_Log_PlayerConsole_Enable = null!;
 
         public static bool ParserFilePresent()
         {
@@ -149,6 +152,7 @@ namespace Si_Logging
                 Pref_Log_PythonExe ??= _modCategory.CreateEntry<string>("Logging_PythonExePath", "C:\\Users\\A\\Mods\\Silica\\ranked\\venv\\Scripts\\python.exe");
                 Pref_Log_PerfMonitor_Interval ??= _modCategory.CreateEntry<float>("Logging_PerfMonitor_LogInterval", 60f);
                 Pref_Log_PerfMonitor_Enable ??= _modCategory.CreateEntry<bool>("Logging_PerfMonitor_Enable", true);
+                Pref_Log_PlayerConsole_Enable ??= _modCategory.CreateEntry<bool>("Logging_PlayerConsole_Enable", true);
 
                 if (!System.IO.Directory.Exists(GetLogFileDirectory()))
                 {
@@ -352,7 +356,7 @@ namespace Si_Logging
                     bool isVictimHuman = (victimPlayer != null);
                     bool isAttackerHuman = (attackerPlayer != null);
 
-                    #pragma warning disable CS8602 // Dereference of a possibly null reference.
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
                     if (isVictimHuman)
                     {
 
@@ -372,6 +376,12 @@ namespace Si_Logging
 
                                 string LogLine = "\"" + victimPlayer.PlayerName + "<" + victimUserID + "><" + GetPlayerID(victimPlayer) + "><" + victimPlayer.Team.TeamShortName + ">\" committed suicide with \"" + __2.ToString().Split('(')[0] + "\" (dmgtype \"" + __1.ToString() + "\")";
                                 PrintLogLine(LogLine);
+
+                                if (Pref_Log_PlayerConsole_Enable.Value)
+                                {
+                                    string ConsoleLine = HelperMethods.GetTeamColor(victimPlayer) + victimPlayer.PlayerName + defaultConsoleColor + " (" + __2.ToString().Split('(')[0] + ") committed suicide";
+                                    HelperMethods.SendConsoleMessage(ConsoleLine);
+                                }
                             }
                             // human-controlled player killed another human-controlled player
                             else
@@ -379,6 +389,12 @@ namespace Si_Logging
                                 int attackerUserID = Math.Abs(attackerPlayer.GetInstanceID());
                                 string LogLine = "\"" + attackerPlayer.PlayerName + "<" + attackerUserID + "><" + GetPlayerID(attackerPlayer) + "><" + attackerPlayer.Team.TeamShortName + ">\" killed \"" + victimPlayer.PlayerName + "<" + victimUserID + "><" + GetPlayerID(victimPlayer) + "><" + victimPlayer.Team.TeamShortName + ">\" with \"" + __2.ToString().Split('(')[0] + "\" (dmgtype \"" + __1.ToString() + "\") (victim \"" + __0.ToString().Split('(')[0] + "\")";
                                 PrintLogLine(LogLine);
+
+                                if (Pref_Log_PlayerConsole_Enable.Value)
+                                {
+                                    string ConsoleLine = HelperMethods.GetTeamColor(attackerPlayer) + attackerPlayer.PlayerName + defaultConsoleColor + " (" + __2.ToString().Split('(')[0] + ") killed " + HelperMethods.GetTeamColor(victimPlayer) + victimPlayer.PlayerName + defaultConsoleColor + " (" + __0.ToString().Split('(')[0] + ")";
+                                    HelperMethods.SendConsoleMessage(ConsoleLine);
+                                }
                             }
                         }
                         else if (Pref_Log_Kills_Include_AI_vs_Player.Value)
@@ -386,6 +402,12 @@ namespace Si_Logging
                         {
                             string LogLine = "\"" + __2.ToString().Split('(')[0] + "<><><" + attackerBase.Team.TeamShortName + ">\" killed \"" + victimPlayer.PlayerName + "<" + victimUserID + "><" + GetPlayerID(victimPlayer) + "><" + victimPlayer.Team.TeamShortName + ">\" with \"" + __2.ToString().Split('(')[0] + "\" (dmgtype \"" + __1.ToString() + "\") (victim \"" + __0.ToString().Split('(')[0] + "\")";
                             PrintLogLine(LogLine);
+
+                            if (Pref_Log_PlayerConsole_Enable.Value)
+                            {
+                                string ConsoleLine = HelperMethods.GetTeamColor(attackerBase.Team) + "AI (" + __2.ToString().Split('(')[0] + ")" + defaultConsoleColor + " killed " + HelperMethods.GetTeamColor(victimPlayer) + victimPlayer.PlayerName + defaultConsoleColor + " (" + __0.ToString().Split('(')[0] + ")";
+                                HelperMethods.SendConsoleMessage(ConsoleLine);
+                            }
                         }
                     }
                     else if (isAttackerHuman && Pref_Log_Kills_Include_AI_vs_Player.Value)
@@ -394,6 +416,12 @@ namespace Si_Logging
                         int attackerUserID = Math.Abs(attackerPlayer.GetInstanceID());
                         string LogLine = "\"" + attackerPlayer.PlayerName + "<" + attackerUserID + "><" + GetPlayerID(attackerPlayer) + "><" + attackerPlayer.Team.TeamShortName + ">\" killed \"" + __0.ToString().Split('(')[0] + "<><><" + __0.Team.TeamShortName + ">\" with \"" + __2.ToString().Split('(')[0] + "\" (dmgtype \"" + __1.ToString() + "\") (victim \"" + __0.ToString().Split('(')[0] + "\")";
                         PrintLogLine(LogLine);
+
+                        if (Pref_Log_PlayerConsole_Enable.Value)
+                        {
+                            string ConsoleLine = HelperMethods.GetTeamColor(attackerPlayer) + attackerPlayer.PlayerName + defaultConsoleColor + " (" + __2.ToString().Split('(')[0] + ") killed " + HelperMethods.GetTeamColor(__0.Team) + "AI (" + __0.ToString().Split('(')[0] + ")";
+                            PrintLogLine(ConsoleLine);
+                        }
                     }
                     #pragma warning restore CS8602 // Dereference of a possibly null reference.
                 }
@@ -433,11 +461,29 @@ namespace Si_Logging
                         theNewTeamName = __2.TeamShortName;
                     }
 
-                    if (__0 != null)
+                    if (__0 == null)
                     {
-                        int userID = Math.Abs(__0.GetInstanceID());
-                        string LogLine = "\"" + __0.PlayerName + "<" + userID + "><" + GetPlayerID(__0) + "><" + theOldTeamName + ">\" joined team \"" + theNewTeamName + "\"";
-                        PrintLogLine(LogLine);
+                        return;
+                    }
+
+
+                    int userID = Math.Abs(__0.GetInstanceID());
+                    string LogLine = "\"" + __0.PlayerName + "<" + userID + "><" + GetPlayerID(__0) + "><" + theOldTeamName + ">\" joined team \"" + theNewTeamName + "\"";
+                    PrintLogLine(LogLine);
+
+                    if (Pref_Log_PlayerConsole_Enable.Value)
+                    {
+                        string ConsoleLine = string.Empty;
+                        if (__1 == null)
+                        {
+                            ConsoleLine = defaultConsoleColor + __0.PlayerName + " joined team " + HelperMethods.GetTeamColor(__2) + __2.TeamShortName;
+                        }
+                        else
+                        {
+                            ConsoleLine = defaultConsoleColor + __0.PlayerName + " changed teams to " + HelperMethods.GetTeamColor(__2) + __2.TeamShortName;
+                        }
+
+                        HelperMethods.SendConsoleMessage(ConsoleLine);
                     }
                 }
                 catch (Exception error)
@@ -639,18 +685,21 @@ namespace Si_Logging
                                     attackerPlayerTeam = attackerPlayer.Team.TeamShortName;
                                 }
 
-                                string structTeam;
-                                if (__0.Team == null)
+                                if (__0.Team == null || attackerPlayer.Team == null)
                                 {
-                                    structTeam = "";
+                                    return;
                                 }
-                                else
-                                {
-                                    structTeam = __0.Team.TeamShortName;
-                                }
+
+                                string structTeam = __0.Team.TeamShortName;
 
                                 string LogLine = "\"" + attackerPlayer.PlayerName + "<" + userID + "><" + GetPlayerID(attackerPlayer) + "><" + attackerPlayerTeam + ">\" triggered \"structure_kill\" (structure \"" + structName + "\") (struct_team \"" + structTeam + "\")";
                                 PrintLogLine(LogLine);
+
+                                if (Pref_Log_PlayerConsole_Enable.Value)
+                                {
+                                    string ConsoleLine = HelperMethods.GetTeamColor(attackerPlayer) + attackerPlayer.PlayerName + defaultConsoleColor + " destroyed a structure (" + HelperMethods.GetTeamColor(__0.Team) + structName + defaultConsoleColor + ")";
+                                    HelperMethods.SendConsoleMessageToTeam(attackerPlayer.Team, ConsoleLine);
+                                }
                             }
 
                         }
@@ -728,6 +777,12 @@ namespace Si_Logging
 
                         string VictoryLogLine = "Team \"" + __1.TeamShortName + "\" triggered \"Victory\"";
                         PrintLogLine(VictoryLogLine);
+
+                        if (Pref_Log_PlayerConsole_Enable.Value)
+                        {
+                            string ConsoleLine = "Team " + HelperMethods.GetTeamColor(__1) + __1.TeamShortName + defaultConsoleColor + " is victorious!";
+                            HelperMethods.SendConsoleMessage(ConsoleLine);
+                        }
 
                         for (int i = 0; i < SiConstants.MaxPlayableTeams; i++)
                         {
