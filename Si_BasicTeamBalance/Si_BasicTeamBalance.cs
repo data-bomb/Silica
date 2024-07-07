@@ -38,7 +38,7 @@ using System;
 using SilicaAdminMod;
 using System.Linq;
 
-[assembly: MelonInfo(typeof(BasicTeamBalance), "Basic Team Balance", "1.3.3", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(BasicTeamBalance), "Basic Team Balance", "1.3.4", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -338,6 +338,12 @@ namespace Si_BasicTeamBalance
 
                     // only look at RPC_RequestJoinTeam bytes
                     if (__1 != (byte)MP_Strategy.ERPCs.REQUEST_JOIN_TEAM)
+                    {
+                        return true;
+                    }
+
+                    // if the game is over then don't run any balance checks
+                    if (GameMode.CurrentGameMode.GameOver)
                     {
                         return true;
                     }
