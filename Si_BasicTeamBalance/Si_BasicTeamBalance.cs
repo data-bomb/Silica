@@ -38,7 +38,7 @@ using System;
 using SilicaAdminMod;
 using System.Linq;
 
-[assembly: MelonInfo(typeof(BasicTeamBalance), "Basic Team Balance", "1.3.2", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(BasicTeamBalance), "Basic Team Balance", "1.3.3", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -381,6 +381,17 @@ namespace Si_BasicTeamBalance
                         return false;
                     }
 
+                    MP_Strategy strategyInstance = GameObject.FindObjectOfType<MP_Strategy>();
+
+                    // if there is some kind of game bug and the player is on an invalid team then let the change occur
+                    if (JoiningPlayer.Team != null && strategyInstance.GetStrategyTeamSetup(JoiningPlayer.Team) == null)
+                    {
+                        MelonLogger.Warning("Found player on invalid team. Allowing role change.");
+                        JoiningPlayer.Team = TargetTeam;
+                        NetworkLayer.SendPlayerSelectTeam(JoiningPlayer, TargetTeam);
+                        return false;
+                    }
+
                     // the team change should be permitted as it doesn't impact balance
                     if (!JoinCausesImbalance(TargetTeam))
                     {
@@ -392,7 +403,7 @@ namespace Si_BasicTeamBalance
                     // if the player hasn't joined a team yet, force them to the team that needs it the most
                     if (JoiningPlayer.Team == null)
                     {
-                        MP_Strategy strategyInstance = GameObject.FindObjectOfType<MP_Strategy>();
+                        
                         MP_Strategy.ETeamsVersus versusMode = strategyInstance.TeamsVersus;
                         Team? ForcedTeam = FindLowestPopulationTeam(versusMode);
                         if (ForcedTeam != null)
