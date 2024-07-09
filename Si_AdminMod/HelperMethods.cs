@@ -39,7 +39,7 @@ namespace SilicaAdminMod
     {
         public static readonly float Timer_Inactive = -123.0f;
         public const string defaultColor = "<color=#DDE98C>";
-        public const string chatPrefix = "<b>" + defaultColor + "[<color=#DFA725>SAM" + defaultColor + "]</b> ";
+        public const string chatPrefix = "<b>" + defaultColor + "[</color><color=#DFA725>SAM</color>" + defaultColor + "]</color></b> ";
 
         public delegate void CommandCallback(Player? callerPlayer, String args);
 

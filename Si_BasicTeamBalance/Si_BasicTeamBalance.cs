@@ -38,7 +38,7 @@ using System;
 using SilicaAdminMod;
 using System.Linq;
 
-[assembly: MelonInfo(typeof(BasicTeamBalance), "Basic Team Balance", "1.3.4", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(BasicTeamBalance), "Basic Team Balance", "1.3.5", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -313,7 +313,7 @@ namespace Si_BasicTeamBalance
 
             // swap and notify players
             SwapTeam(player, team);
-            HelperMethods.AlertAdminAction(callerPlayer, "swapped " + player.PlayerName + " to " + HelperMethods.GetTeamColor(player) + team.TeamShortName);
+            HelperMethods.AlertAdminAction(callerPlayer, "swapped " + player.PlayerName + " to " + HelperMethods.GetTeamColor(player) + team.TeamShortName + "</color>");
         }
 
         public static void SwapTeam(Player player, Team team)
@@ -417,7 +417,7 @@ namespace Si_BasicTeamBalance
                             // avoid chat spam
                             if (LastPlayerChatMessage != JoiningPlayer)
                             {
-                                HelperMethods.ReplyToCommand_Player(JoiningPlayer, " was forced to " + HelperMethods.GetTeamColor(ForcedTeam) + ForcedTeam.TeamShortName + HelperMethods.defaultColor + " to fix imbalance");
+                                HelperMethods.ReplyToCommand_Player(JoiningPlayer, " was forced to " + HelperMethods.GetTeamColor(ForcedTeam) + ForcedTeam.TeamShortName + "</color> to fix imbalance");
                                 LastPlayerChatMessage = JoiningPlayer;
                             }
 

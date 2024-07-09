@@ -35,7 +35,7 @@ using SilicaAdminMod;
 using System.Linq;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(AntiGrief), "Anti-Grief", "1.2.0", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(AntiGrief), "Anti-Grief", "1.2.1", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -150,7 +150,7 @@ namespace Si_AntiGrief
                     if (victimPlayer != null)
                     {
                         MelonLogger.Msg(attackerPlayer.PlayerName + " team killed " + victimPlayer.PlayerName);
-                        HelperMethods.ReplyToCommand_Player(attackerPlayer, "team killed " + HelperMethods.GetTeamColor(victimPlayer) + victimPlayer.PlayerName);
+                        HelperMethods.ReplyToCommand_Player(attackerPlayer, "team killed " + HelperMethods.GetTeamColor(victimPlayer) + victimPlayer.PlayerName + "</color>");
                     }
 
                     if (currentKillScore >= _NegativeKillsThreshold.Value)
@@ -234,7 +234,7 @@ namespace Si_AntiGrief
                     }
 
                     MelonLogger.Msg(attackerPlayer.PlayerName + " team killed a structure " + structureName);
-                    HelperMethods.ReplyToCommand_Player(attackerPlayer, "killed a friendly structure (" + HelperMethods.GetTeamColor(attackerPlayer) + structureName + HelperMethods.defaultColor + ")");
+                    HelperMethods.ReplyToCommand_Player(attackerPlayer, "killed a friendly structure (" + HelperMethods.GetTeamColor(attackerPlayer) + structureName + "</color>)");
                 }
                 catch (Exception error)
                 {
@@ -287,7 +287,7 @@ namespace Si_AntiGrief
                 string unitName = GetDisplayName(unit.name);
 
                 MelonLogger.Msg(player.PlayerName + " tried to despawn a non-trivial Alien unit (" + unitName + ")");
-                HelperMethods.ReplyToCommand_Player(player, "tried to despawn a unit (" + HelperMethods.GetTeamColor(player) + unitName + HelperMethods.defaultColor + ")");
+                HelperMethods.ReplyToCommand_Player(player, "tried to despawn a unit (" + HelperMethods.GetTeamColor(player) + unitName + "</color>)");
 
                 // work-around to spawn a temp replacement before all the player's units are taken by DestroyAllUnitsForPlayer
                 GameMode.CurrentGameMode.SpawnUnitForPlayer(player, player.Team);
