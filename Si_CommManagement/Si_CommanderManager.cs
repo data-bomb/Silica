@@ -33,7 +33,7 @@ using System;
 using SilicaAdminMod;
 using System.Linq;
 
-[assembly: MelonInfo(typeof(CommanderManager), "Commander Management", "1.6.4", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(CommanderManager), "Commander Management", "1.6.5", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -119,7 +119,7 @@ namespace Si_CommanderManagement
                 {
                     if (_TeamOnlyResponses.Value)
                     {
-                        HelperMethods.SendChatMessageToTeam(args.Requester.Team, HelperMethods.chatPrefix, HelperMethods.GetTeamColor(args.Requester.Team), args.Requester.PlayerName, HelperMethods.defaultColor, " has applied for commander.");
+                        HelperMethods.SendChatMessageToTeam(args.Requester.Team, HelperMethods.chatPrefix, HelperMethods.GetTeamColor(args.Requester.Team), args.Requester.PlayerName, "</color> has applied for commander.");
                     }
                     else
                     {

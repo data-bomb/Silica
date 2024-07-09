@@ -192,7 +192,7 @@ namespace Si_CommanderManagement
 
                         if (CommanderPlayer != null && CommanderPlayer.Team.Index == i)
                         {
-                            HelperMethods.ReplyToCommand("Promoted " + HelperMethods.GetTeamColor(CommanderPlayer) + CommanderPlayer.PlayerName + HelperMethods.defaultColor + " to commander for " + HelperMethods.GetTeamColor(CommanderPlayer) + CommanderPlayer.Team.TeamShortName);
+                            HelperMethods.ReplyToCommand("Promoted " + HelperMethods.GetTeamColor(CommanderPlayer) + CommanderPlayer.PlayerName + "</color> to commander for " + HelperMethods.GetTeamColor(CommanderPlayer) + CommanderPlayer.Team.TeamShortName + "</color>");
                             promotedCommanders[CommanderPlayer.Team.Index] = CommanderPlayer;
                             CommanderPrimitives.PromoteToCommander(CommanderPlayer);
                             PreviousCommander prevCommander = new PreviousCommander()

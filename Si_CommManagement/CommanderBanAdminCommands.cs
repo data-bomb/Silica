@@ -67,7 +67,7 @@ namespace Si_CommanderManagement
             }
 
             CommanderBans.AddBan(playerToCmdrBan);
-            HelperMethods.AlertAdminAction(callerPlayer, "restricted " + HelperMethods.GetTeamColor(playerToCmdrBan) + playerToCmdrBan.PlayerName + HelperMethods.defaultColor + " to play as infantry only");
+            HelperMethods.AlertAdminAction(callerPlayer, "restricted " + HelperMethods.GetTeamColor(playerToCmdrBan) + playerToCmdrBan.PlayerName + "</color> to play as infantry only");
         }
 
         public static void Command_CommanderDemote(Player? callerPlayer, String args)
@@ -200,7 +200,7 @@ namespace Si_CommanderManagement
             bool removed = CommanderBans.RemoveBan(playerToUnCmdrBan);
             if (removed)
             {
-                HelperMethods.AlertAdminAction(callerPlayer, "permitted " + HelperMethods.GetTeamColor(playerToUnCmdrBan) + playerToUnCmdrBan.PlayerName + HelperMethods.defaultColor + " to play as commander");
+                HelperMethods.AlertAdminAction(callerPlayer, "permitted " + HelperMethods.GetTeamColor(playerToUnCmdrBan) + playerToUnCmdrBan.PlayerName + "</color> to play as commander");
             }
             else
             {

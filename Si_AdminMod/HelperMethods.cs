@@ -81,21 +81,21 @@ namespace SilicaAdminMod
         public static void ReplyToCommand_Player(Player player, params string[] messages)
         {
             Player broadcastPlayer = FindBroadcastPlayer();
-            broadcastPlayer.SendChatMessage(chatPrefix + GetTeamColor(player) + player.PlayerName + defaultColor + " " + String.Concat(messages), false);
+            broadcastPlayer.SendChatMessage(chatPrefix + GetTeamColor(player) + player.PlayerName + "</color> " + String.Concat(messages), false);
         }
 
         public static void AlertAdminActivity(Player? adminPlayer, Player targetPlayer, string action)
         {
             Player broadcastPlayer = FindBroadcastPlayer();
             string adminName = (adminPlayer == null) ? "SERVER CONSOLE" : adminPlayer.PlayerName;
-            broadcastPlayer.SendChatMessage(chatPrefix + GetAdminColor() + adminName + defaultColor + " " + action + " " + GetTeamColor(targetPlayer) + targetPlayer.PlayerName, false);
+            broadcastPlayer.SendChatMessage(chatPrefix + GetAdminColor() + adminName + "</color> " + action + " " + GetTeamColor(targetPlayer) + targetPlayer.PlayerName, false);
         }
 
         public static void AlertAdminAction(Player? adminPlayer, string action)
         {
             Player broadcastPlayer = FindBroadcastPlayer();
             string adminName = (adminPlayer == null) ? "SERVER CONSOLE" : adminPlayer.PlayerName;
-            broadcastPlayer.SendChatMessage(chatPrefix + GetAdminColor() + adminName + defaultColor + " " + action, false);
+            broadcastPlayer.SendChatMessage(chatPrefix + GetAdminColor() + adminName + "</color> " + action, false);
         }
 
         public static void SendChatMessageToTeam(Team team, params string[] messages)
