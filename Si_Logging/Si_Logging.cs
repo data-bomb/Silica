@@ -42,8 +42,9 @@ using System.Threading.Tasks;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
+using System.Runtime.CompilerServices;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.4.1", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.4.2", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -52,8 +53,6 @@ namespace Si_Logging
     // https://developer.valvesoftware.com/wiki/HL_Log_Standard
     public class HL_Logging : MelonMod
     {
-        const string defaultConsoleColor = "<color=#FDE8BB>";
-        
         static int[] teamResourcesCollected = new int[SiConstants.MaxPlayableTeams + 1];
         static Player?[]? lastCommander;
 
@@ -212,6 +211,12 @@ namespace Si_Logging
 
                 string LogLine = "Loading map \"" + sceneName + "\"";
                 PrintLogLine(LogLine);
+
+                if (Pref_Log_PlayerConsole_Enable.Value)
+                {
+                    string ConsoleLine = "<b>Loading map \"" + sceneName + "\"</b>";
+                    HelperMethods.SendConsoleMessage(ConsoleLine);
+                }
             }
             catch (Exception error)
             {
@@ -290,6 +295,12 @@ namespace Si_Logging
 
                         string LogLine = "\"" + __0.PlayerName + "<" + userID + "><" + GetPlayerID(__0) + "><" + teamName + ">\" disconnected";
                         PrintLogLine(LogLine);
+
+                        if (Pref_Log_PlayerConsole_Enable.Value)
+                        {
+                            string ConsoleLine = "<b>" + HelperMethods.GetTeamColor(__0) + __0.PlayerName + "</color></b> disconnected.";
+                            HelperMethods.SendConsoleMessage(ConsoleLine);
+                        }
                     }
                 }
                 catch (Exception error)
@@ -317,6 +328,7 @@ namespace Si_Logging
                     {
                         teamName = __0.Team.TeamShortName;
                     }
+
                     string LogLine = "Kick: \"" + __0.PlayerName + "<" + userID + "><" + GetPlayerID(__0) + "><" + teamName + "\" was kicked by \"Console\" (message \"\")";
                     PrintLogLine(LogLine);
                 }
@@ -356,7 +368,7 @@ namespace Si_Logging
                     bool isVictimHuman = (victimPlayer != null);
                     bool isAttackerHuman = (attackerPlayer != null);
 
-#pragma warning disable CS8602 // Dereference of a possibly null reference.
+                    #pragma warning disable CS8602 // Dereference of a possibly null reference.
                     if (isVictimHuman)
                     {
 
@@ -379,7 +391,7 @@ namespace Si_Logging
 
                                 if (Pref_Log_PlayerConsole_Enable.Value)
                                 {
-                                    string ConsoleLine = victimPlayer.PlayerName + " (" + __2.ToString().Split('(')[0] + ") committed suicide";
+                                    string ConsoleLine = "<b>" + HelperMethods.GetTeamColor(victimPlayer) + victimPlayer.PlayerName + "</color></b> (" + __2.ToString().Split('(')[0] + ") committed suicide";
                                     HelperMethods.SendConsoleMessage(ConsoleLine);
                                 }
                             }
@@ -392,7 +404,7 @@ namespace Si_Logging
 
                                 if (Pref_Log_PlayerConsole_Enable.Value)
                                 {
-                                    string ConsoleLine = attackerPlayer.PlayerName + " (" + __2.ToString().Split('(')[0] + ") killed " + victimPlayer.PlayerName + " (" + __0.ToString().Split('(')[0] + ")";
+                                    string ConsoleLine = "<b>" + HelperMethods.GetTeamColor(attackerPlayer) + attackerPlayer.PlayerName + "</color></b> (" + __2.ToString().Split('(')[0] + ") killed <b>" + HelperMethods.GetTeamColor(victimPlayer) + victimPlayer.PlayerName + "</color></b> (" + __0.ToString().Split('(')[0] + ")";
                                     HelperMethods.SendConsoleMessage(ConsoleLine);
                                 }
                             }
@@ -405,7 +417,7 @@ namespace Si_Logging
 
                             if (Pref_Log_PlayerConsole_Enable.Value)
                             {
-                                string ConsoleLine = "AI (" + __2.ToString().Split('(')[0] + ")" + " killed " + victimPlayer.PlayerName + " (" + __0.ToString().Split('(')[0] + ")";
+                                string ConsoleLine = "<b>AI</b> (" + __2.ToString().Split('(')[0] + ")" + " killed <b>" + HelperMethods.GetTeamColor(victimPlayer) + victimPlayer.PlayerName + "</color></b> (" + __0.ToString().Split('(')[0] + ")";
                                 HelperMethods.SendConsoleMessage(ConsoleLine);
                             }
                         }
@@ -419,7 +431,7 @@ namespace Si_Logging
 
                         if (Pref_Log_PlayerConsole_Enable.Value)
                         {
-                            string ConsoleLine = attackerPlayer.PlayerName + " (" + __2.ToString().Split('(')[0] + ") killed " + "AI (" + __0.ToString().Split('(')[0] + ")";
+                            string ConsoleLine = "<b>" + HelperMethods.GetTeamColor(attackerPlayer) + attackerPlayer.PlayerName + "</color></b> (" + __2.ToString().Split('(')[0] + ") killed " + "<b>AI</b> (" + __0.ToString().Split('(')[0] + ")";
                             HelperMethods.SendConsoleMessage(ConsoleLine);
                         }
                     }
@@ -474,14 +486,7 @@ namespace Si_Logging
                     if (Pref_Log_PlayerConsole_Enable.Value)
                     {
                         string ConsoleLine = string.Empty;
-                        if (__1 == null)
-                        {
-                            ConsoleLine = __0.PlayerName + " joined team " + __2.TeamShortName;
-                        }
-                        else
-                        {
-                            ConsoleLine = __0.PlayerName + " changed teams to " + __2.TeamShortName;
-                        }
+                        ConsoleLine = "<b>" + HelperMethods.GetTeamColor(__0) + __0.PlayerName + "</color></b> " + (__1 == null ? "joined team " : "changed teams ") + HelperMethods.GetTeamColor(__2) + __2.TeamShortName + "</color>";
 
                         HelperMethods.SendConsoleMessage(ConsoleLine);
                     }
@@ -697,7 +702,7 @@ namespace Si_Logging
 
                                 if (Pref_Log_PlayerConsole_Enable.Value)
                                 {
-                                    string ConsoleLine = attackerPlayer.PlayerName + " destroyed a structure (" + structName + ")";
+                                    string ConsoleLine = "<b>" + HelperMethods.GetTeamColor(attackerPlayer) + attackerPlayer.PlayerName + "</color></b> destroyed a structure (" + HelperMethods.GetTeamColor(__0.Team) + structName + "</color>)";
                                     HelperMethods.SendConsoleMessageToTeam(attackerPlayer.Team, ConsoleLine);
                                 }
                             }
@@ -772,6 +777,13 @@ namespace Si_Logging
                         {
                             string RoundWinLogEarlyLine = "World triggered \"Round_Win\" (gametype \"" + versusMode.ToString() + "\")";
                             PrintLogLine(RoundWinLogEarlyLine);
+
+                            if (Pref_Log_PlayerConsole_Enable.Value)
+                            {
+                                string ConsoleLine = "<b>Round is over. Game is a draw.</b>";
+                                HelperMethods.SendConsoleMessage(ConsoleLine);
+                            }
+
                             return;
                         }
 
@@ -780,7 +792,7 @@ namespace Si_Logging
 
                         if (Pref_Log_PlayerConsole_Enable.Value)
                         {
-                            string ConsoleLine = "Team " + __1.TeamShortName + " is victorious!";
+                            string ConsoleLine = "<b>Team " + HelperMethods.GetTeamColor(__1) + __1.TeamShortName + "</color> is victorious!</b>";
                             HelperMethods.SendConsoleMessage(ConsoleLine);
                         }
 
@@ -897,7 +909,6 @@ namespace Si_Logging
                 {
                     HelperMethods.PrintError(error, "Failed to run OnSetConstructionSite");
                 }
-
             }
         }
 
@@ -923,6 +934,12 @@ namespace Si_Logging
                     initializeRound(ref currTiers);
 
                     firedRoundEndOnce = false;
+
+                    if (Pref_Log_PlayerConsole_Enable.Value)
+                    {
+                        string ConsoleLine = "<b>Round has begun.</b>";
+                        HelperMethods.SendConsoleMessage(ConsoleLine);
+                    }
                 }
                 catch (Exception error)
                 {
