@@ -37,7 +37,7 @@ using System;
 using System.Linq;
 
 
-[assembly: MelonInfo(typeof(ChatSilence), "Silence Admin Command", "1.2.2", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(ChatSilence), "Chat Silence", "2.0.0", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -46,10 +46,12 @@ namespace Si_ChatSilence
     public class ChatSilence : MelonMod
     {
         static List<CSteamID> silencedPlayers = null!;
+        static List<CSteamID> mutedPlayers = null!;
 
         public override void OnInitializeMelon()
         {
             silencedPlayers = new List<CSteamID>();
+            mutedPlayers = new List<CSteamID>();
         }
 
         public override void OnLateInitializeMelon()
@@ -61,6 +63,12 @@ namespace Si_ChatSilence
             HelperMethods.CommandCallback unSilenceCallback = Command_UnSilence;
             HelperMethods.RegisterAdminCommand("unsilence", unSilenceCallback, Power.Mute, "Allows target player to send chat messages. Usage: !unsilence <player>");
 
+            HelperMethods.CommandCallback muteCallback = Command_Mute;
+            HelperMethods.RegisterAdminCommand("mute", muteCallback, Power.Mute, "Prevents target player from sending voice messages. Usage: !mute <player>");
+
+            HelperMethods.CommandCallback unMuteCallback = Command_UnMute;
+            HelperMethods.RegisterAdminCommand("unmute", unMuteCallback, Power.Mute, "Allows target player to send voice messages. Usage: !unmute <player>");
+
 
             // subscribe to the OnRequestPlayerChat event
             Event_Netcode.OnRequestPlayerChat += OnRequestPlayerChat;
@@ -69,7 +77,7 @@ namespace Si_ChatSilence
         public static void Command_Silence(Player? callerPlayer, String args)
         {
             string commandName = args.Split(' ')[0];
-            
+
             // validate argument count
             int argumentCount = args.Split(' ').Length - 1;
             if (argumentCount > 1)
@@ -113,7 +121,7 @@ namespace Si_ChatSilence
         public static void Command_UnSilence(Player? callerPlayer, String args)
         {
             string commandName = args.Split(' ')[0];
-            
+
             // validate argument count
             int argumentCount = args.Split(' ').Length - 1;
             if (argumentCount > 1)
@@ -161,7 +169,7 @@ namespace Si_ChatSilence
 
         public static bool IsSteamSilenced(CSteamID steamID)
         {
-            return silencedPlayers.Any(s => s ==  steamID);
+            return silencedPlayers.Any(s => s == steamID);
         }
 
         public static void SilencePlayer(Player playerTarget)
@@ -211,6 +219,132 @@ namespace Si_ChatSilence
                     HelperMethods.PrintError(error, "Failed to run GameMode::OnPlayerLeftBase");
                 }
             }
+        }
+
+        public static void Command_Mute(Player? callerPlayer, String args)
+        {
+            string commandName = args.Split(' ')[0];
+
+            // validate argument count
+            int argumentCount = args.Split(' ').Length - 1;
+            if (argumentCount > 1)
+            {
+                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": Too many arguments");
+                return;
+            }
+            else if (argumentCount < 1)
+            {
+                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": Too few arguments");
+                return;
+            }
+
+            // validate argument contents
+            String sTarget = args.Split(' ')[1];
+            Player? playerTarget = HelperMethods.FindTargetPlayer(sTarget);
+
+            if (playerTarget == null)
+            {
+                HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Ambiguous or invalid target");
+                return;
+            }
+
+            if (callerPlayer != null && !callerPlayer.CanAdminTarget(playerTarget))
+            {
+                HelperMethods.ReplyToCommand_Player(playerTarget, "is immune due to level");
+                return;
+            }
+
+            if (IsPlayerMuted(playerTarget))
+            {
+                HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Target player already muted");
+            }
+            else
+            {
+                MutePlayer(playerTarget);
+                HelperMethods.AlertAdminActivity(callerPlayer, playerTarget, "muted");
+            }
+        }
+
+        public static void Command_UnMute(Player? callerPlayer, String args)
+        {
+            string commandName = args.Split(' ')[0];
+
+            // validate argument count
+            int argumentCount = args.Split(' ').Length - 1;
+            if (argumentCount > 1)
+            {
+                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": Too many arguments");
+                return;
+            }
+            else if (argumentCount < 1)
+            {
+                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": Too few arguments");
+                return;
+            }
+
+            // validate argument contents
+            String sTarget = args.Split(' ')[1];
+            Player? playerTarget = HelperMethods.FindTargetPlayer(sTarget);
+
+            if (playerTarget == null)
+            {
+                HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Ambiguous or invalid target");
+                return;
+            }
+
+            if (callerPlayer != null && !callerPlayer.CanAdminTarget(playerTarget))
+            {
+                HelperMethods.ReplyToCommand_Player(playerTarget, "is immune due to level");
+                return;
+            }
+
+            if (IsPlayerMuted(playerTarget))
+            {
+                UnMutePlayer(playerTarget);
+                HelperMethods.AlertAdminActivity(callerPlayer, playerTarget, "unmuted");
+            }
+            else
+            {
+                HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Target player not muted");
+            }
+        }
+
+        [HarmonyPatch(typeof(NetworkLayer), nameof(NetworkLayer.RelayVoiceStreamPacket))]
+        private static class Mute_Patch_GameMode_RelayVoiceStreamPacket
+        {
+            #if NET6_0
+            public static bool Prefix(Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppStructArray<byte> __0, uint __1, EP2PSend __2, Player __3, bool __4)
+            #else
+            public static bool Prefix(byte[] __0, uint __1, EP2PSend __2, Player __3, bool __4)
+            #endif
+            {
+                if (IsPlayerMuted(__3))
+                {
+                    return false;
+                }
+
+                return true;
+            }
+        }
+
+        public static bool IsPlayerMuted(Player player)
+        {
+            return mutedPlayers.Any(s => s == player.PlayerID);
+        }
+
+        public static bool IsSteamMuted(CSteamID steamID)
+        {
+            return mutedPlayers.Any(s => s == steamID);
+        }
+
+        public static void MutePlayer(Player playerTarget)
+        {
+            mutedPlayers.Add(playerTarget.PlayerID);
+        }
+
+        public static void UnMutePlayer(Player playerTarget)
+        {
+            mutedPlayers.Remove(playerTarget.PlayerID);
         }
     }
 }
