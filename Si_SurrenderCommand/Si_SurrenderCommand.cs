@@ -34,7 +34,7 @@ using System;
 using UnityEngine;
 using System.Collections.Generic;
 
-[assembly: MelonInfo(typeof(SurrenderCommand), "Surrender Command", "1.3.1", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(SurrenderCommand), "Surrender Command", "1.3.2", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -98,7 +98,7 @@ namespace Si_SurrenderCommand
 
             // check if they're on a valid team
             Team? team = callerPlayer.Team;
-            if (team == null || team.Index >= SiConstants.MaxPlayableTeams)
+            if (team == null || team.Index == (int)SiConstants.ETeam.Wildlife)
             {
                 HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, " This team does not support surrender.");
                 return;
