@@ -38,7 +38,7 @@ using System;
 using SilicaAdminMod;
 using System.Linq;
 
-[assembly: MelonInfo(typeof(BasicTeamBalance), "Basic Team Balance", "1.3.6", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(BasicTeamBalance), "Basic Team Balance", "1.3.7", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -200,10 +200,7 @@ namespace Si_BasicTeamBalance
 
             return LowestPopTeam;
         }
-
-        // Team Index 0 - Alien
-        // Team Index 1 - Human (Centauri)
-        // Team Index 2 - Human (Sol)
+        
         public static bool JoinCausesImbalance(Team? TargetTeam)
         {
             if (TargetTeam == null)
