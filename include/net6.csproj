@@ -11,9 +11,6 @@
     <Reference Include="Il2Cppcom.rlabrecque.steamworks.net">
       <HintPath>..\include\net6.0\Il2Cppcom.rlabrecque.steamworks.net.dll</HintPath>
     </Reference>
-    <Reference Include="Assembly-CSharp-firstpass">
-      <HintPath>..\include\net6.0\Assembly-CSharp-firstpass.dll</HintPath>
-    </Reference>
     <Reference Include="Assembly-CSharp">
       <HintPath>..\include\net6.0\Assembly-CSharp.dll</HintPath>
     </Reference>
