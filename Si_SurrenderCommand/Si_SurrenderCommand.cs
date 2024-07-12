@@ -34,7 +34,7 @@ using System;
 using UnityEngine;
 using System.Collections.Generic;
 
-[assembly: MelonInfo(typeof(SurrenderCommand), "Surrender Command", "1.3.2", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(SurrenderCommand), "Surrender Command", "1.3.3", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -46,7 +46,7 @@ namespace Si_SurrenderCommand
 
         public override void OnInitializeMelon()
         {
-            votesToSurrender = new List<Player>[SiConstants.MaxPlayableTeams];
+            votesToSurrender = new List<Player>[SiConstants.MaxPlayableTeams + 1];
             for (int i = 0; i < SiConstants.MaxPlayableTeams; i++)
             {
                 votesToSurrender[i] = new List<Player>();

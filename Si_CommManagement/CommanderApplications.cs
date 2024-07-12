@@ -41,15 +41,15 @@ namespace Si_CommanderManagement
 
         public static void InitializeApplications()
         {
-            commanderApplicants = new List<Player>[SiConstants.MaxPlayableTeams];
+            commanderApplicants = new List<Player>[SiConstants.MaxPlayableTeams + 1];
             for (int i = 0; i < SiConstants.MaxPlayableTeams; i++)
             {
                 commanderApplicants[i] = new List<Player>();
             }
 
             previousCommanders = new List<PreviousCommander>();
-            teamswapCommanderChecks = new Player[SiConstants.MaxPlayableTeams];
-            promotedCommanders = new Player[SiConstants.MaxPlayableTeams];
+            teamswapCommanderChecks = new Player[SiConstants.MaxPlayableTeams + 1];
+            promotedCommanders = new Player[SiConstants.MaxPlayableTeams + 1];
         }
 
         public static bool IsApplicant(Player player)
