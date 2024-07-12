@@ -32,7 +32,7 @@ using SilicaAdminMod;
 using System;
 using System.Collections.Generic;
 
-[assembly: MelonInfo(typeof(BetterSpawns), "Better Spawns", "1.0.4", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(BetterSpawns), "Better Spawns", "1.0.5", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -65,7 +65,7 @@ namespace Si_BetterSpawns
                 {
                     // check if we're supposed to change the game code or not for the given team
                     // alien team
-                    if (__0.Index == 0)
+                    if (__0.Index == (int)SiConstants.ETeam.Alien)
                     {
                         if (!Pref_BetterSpawns_Alien_ReselectSpawn_Enabled.Value)
                         {
@@ -73,7 +73,7 @@ namespace Si_BetterSpawns
                         }
                     }
                     // human teams
-                    else if (__0.Index == 1 || __0.Index == 2)
+                    else if (__0.Index == (int)SiConstants.ETeam.Sol || __0.Index == (int)SiConstants.ETeam.Centauri)
                     {
                         if (!Pref_BetterSpawns_Human_ReselectSpawn_Enabled.Value)
                         {
@@ -81,7 +81,7 @@ namespace Si_BetterSpawns
                         }
                     }
                     // ignore for non-playable teams
-                    else if (__0.Index > 2)
+                    else
                     {
                         return true;
                     }
@@ -116,7 +116,7 @@ namespace Si_BetterSpawns
 
                     // check if we're supposed to change the game code or not for the given team
                     // alien team
-                    if (__0.Index == 0)
+                    if (__0.Index == (int)SiConstants.ETeam.Alien)
                     {
                         if (!Pref_BetterSpawns_Alien_InitialSpawn_Enabled.Value)
                         {
@@ -126,7 +126,7 @@ namespace Si_BetterSpawns
                         // TODO
                     }
                     // human teams
-                    else if (__0.Index == 1 || __0.Index == 2)
+                    else if (__0.Index == (int)SiConstants.ETeam.Sol || __0.Index == (int)SiConstants.ETeam.Centauri)
                     {
                         if (!Pref_BetterSpawns_Human_InitialSpawn_Enabled.Value)
                         {
@@ -170,7 +170,7 @@ namespace Si_BetterSpawns
                         return false;
                     }
                     // ignore for non-playable teams
-                    else if (__0.Index > 2)
+                    else
                     {
                         return true;
                     }
@@ -199,7 +199,7 @@ namespace Si_BetterSpawns
                     }
 
                     // only do something for playable teams for now
-                    if (__0.Index > 2)
+                    if (__0.Index == (int)SiConstants.ETeam.Wildlife)
                     {
                         return true;
                     }
@@ -217,7 +217,7 @@ namespace Si_BetterSpawns
                     }
 
                     // for human teams
-                    if (__0.Index == 1 || __0.Index == 2)
+                    if (__0.Index == (int)SiConstants.ETeam.Sol || __0.Index == (int)SiConstants.ETeam.Centauri)
                     {
                         SpawnPoint? spawnPointRandomBarracks = FindRandomHumanBarracksSpawn(__0);
                         if (spawnPointRandomBarracks == null)
@@ -232,7 +232,7 @@ namespace Si_BetterSpawns
                         return false;
                     }
                     // for alien team
-                    else if (__0.Index == 0)
+                    else if (__0.Index == (int)SiConstants.ETeam.Alien)
                     {
                         // placeholder
                         return true;
