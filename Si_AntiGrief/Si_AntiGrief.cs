@@ -35,7 +35,7 @@ using SilicaAdminMod;
 using System.Linq;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(AntiGrief), "Anti-Grief", "1.2.2", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(AntiGrief), "Anti-Grief", "1.2.3", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -261,7 +261,7 @@ namespace Si_AntiGrief
                 }
 
                 // if the player isn't on the alien team, we can skip this check
-                if (player.Team.Index != 0)
+                if (player.Team.Index != (int)SiConstants.ETeam.Alien)
                 {
                     return;
                 }
