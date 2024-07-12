@@ -35,7 +35,7 @@ using System;
 using SilicaAdminMod;
 using System.Linq;
 
-[assembly: MelonInfo(typeof(DefaultUnits), "Default Spawn Units", "1.0.2", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(DefaultUnits), "Default Spawn Units", "1.0.3", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -58,7 +58,6 @@ namespace Si_DefaultUnits
         static MelonPreferences_Entry<string> _Alien_Unit_Tier_III = null!;
         static MelonPreferences_Entry<string> _Alien_Unit_Tier_IV = null!;
 
-        const int MaxTeams = 3;
         static int[]? teamTechTiers;
         static bool[]? teamFirstSpawn;
 
@@ -78,8 +77,8 @@ namespace Si_DefaultUnits
             _Alien_Unit_Tier_III ??= _modCategory.CreateEntry<string>("DefaultSpawn_Alien_TechTier_III", "Wasp");
             _Alien_Unit_Tier_IV ??= _modCategory.CreateEntry<string>("DefaultSpawn_Alien_TechTier_IV", "Wasp");
 
-            teamTechTiers = new int[MaxTeams];
-            teamFirstSpawn = new bool[MaxTeams];
+            teamTechTiers = new int[SiConstants.MaxPlayableTeams];
+            teamFirstSpawn = new bool[SiConstants.MaxPlayableTeams];
         }
 
         #if NET6_0
@@ -193,26 +192,28 @@ namespace Si_DefaultUnits
                         return;
                     }
 
-                    for (int i = 0; i < MaxTeams; i++)
+                    for (int i = 0; i < SiConstants.MaxPlayableTeams; i++)
                     {
-                        if (Team.Teams[i] != null)
-                        {
-                            if (Team.Teams[i].CurrentTechnologyTier != 0)
-                            {
-                                MelonLogger.Warning("Manually resetting tech tier level to 0 for team: " + Team.Teams[i].TeamName);
-
-                                #if NET6_0
-                                Team.Teams[i].CurrentTechnologyTier = 0;
-                                #else
-                                Type teamType = typeof(Team);
-                                PropertyInfo currentTechTierProperty = teamType.GetProperty("CurrentTechnologyTier");
-                                currentTechTierProperty.SetValue(Team.Teams[i], 0);
-                                #endif
-                            }
-                        }
-                        
                         teamTechTiers[i] = 0;
                         teamFirstSpawn[i] = true;
+
+                        if (Team.Teams[i] == null)
+                        {
+                            continue;
+                        }
+
+                        if (Team.Teams[i].CurrentTechnologyTier != 0)
+                        {
+                            MelonLogger.Warning("Manually resetting tech tier level to 0 for team: " + Team.Teams[i].TeamName);
+
+                            #if NET6_0
+                            Team.Teams[i].CurrentTechnologyTier = 0;
+                            #else
+                            Type teamType = typeof(Team);
+                            PropertyInfo currentTechTierProperty = teamType.GetProperty("CurrentTechnologyTier");
+                            currentTechTierProperty.SetValue(Team.Teams[i], 0);
+                            #endif
+                        }
                     }
                 }
                 catch (Exception error)
@@ -255,7 +256,7 @@ namespace Si_DefaultUnits
 
         static string GetDesiredSpawnConfig(Team team)
         {
-            bool humanTeam = team.TeamName.StartsWith("Human");
+            bool humanTeam = (team.Index == (int)SiConstants.ETeam.Sol) || (team.Index == (int)SiConstants.ETeam.Centauri);
 
             if (teamTechTiers == null)
             {
