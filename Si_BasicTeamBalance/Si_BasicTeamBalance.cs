@@ -38,7 +38,7 @@ using System;
 using SilicaAdminMod;
 using System.Linq;
 
-[assembly: MelonInfo(typeof(BasicTeamBalance), "Basic Team Balance", "1.3.5", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(BasicTeamBalance), "Basic Team Balance", "1.3.6", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -390,7 +390,7 @@ namespace Si_BasicTeamBalance
                     MP_Strategy strategyInstance = GameObject.FindObjectOfType<MP_Strategy>();
 
                     // if there is some kind of game bug and the player is on an invalid team then let the change occur
-                    if (JoiningPlayer.Team != null && strategyInstance.GetStrategyTeamSetup(JoiningPlayer.Team) == null)
+                    if (JoiningPlayer.Team != null && strategyInstance.GetTeamSetup(JoiningPlayer.Team) == null)
                     {
                         MelonLogger.Warning("Found player on invalid team. Allowing role change.");
                         JoiningPlayer.Team = TargetTeam;
