@@ -35,7 +35,7 @@ using SilicaAdminMod;
 using System.Linq;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(AntiGrief), "Anti-Grief", "1.2.1", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(AntiGrief), "Anti-Grief", "1.2.2", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -267,7 +267,7 @@ namespace Si_AntiGrief
                 }
 
                 // if a player switches to non-infantry it will despawn their alien unit
-                if (args.Role == MP_Strategy.ETeamRole.INFANTRY)
+                if (args.Role == GameModeExt.ETeamRole.INFANTRY)
                 {
                     return;
                 }

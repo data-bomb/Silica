@@ -35,7 +35,7 @@ using System;
 using SilicaAdminMod;
 using System.Linq;
 
-[assembly: MelonInfo(typeof(DefaultUnits), "Default Spawn Units", "1.0.1", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(DefaultUnits), "Default Spawn Units", "1.0.2", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -149,7 +149,7 @@ namespace Si_DefaultUnits
                     // update the tech tier
                     teamTechTiers[playerTeam.Index] = playerTeam.CurrentTechnologyTier;
 
-                    StrategyTeamSetup teamSetup = __instance.GetStrategyTeamSetup(playerTeam);
+                    BaseTeamSetup teamSetup = __instance.GetTeamSetup(playerTeam);
                     if (teamSetup == null)
                     {
                         MelonLogger.Warning("Could not find StrategyTeamSetup for Team: " + playerTeam.TeamName);

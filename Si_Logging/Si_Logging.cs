@@ -44,7 +44,7 @@ using System.IO;
 using System.Text;
 using System.Runtime.CompilerServices;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.4.2", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.4.3", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -511,11 +511,11 @@ namespace Si_Logging
                 int userID = Math.Abs(player.GetInstanceID());
                 string role;
 
-                if (args.Role == MP_Strategy.ETeamRole.COMMANDER)
+                if (args.Role == GameModeExt.ETeamRole.COMMANDER)
                 {
                     role = "Commander";
                 }
-                else if (args.Role == MP_Strategy.ETeamRole.INFANTRY)
+                else if (args.Role == GameModeExt.ETeamRole.INFANTRY)
                 {
                     role = "Infantry";
                 } else

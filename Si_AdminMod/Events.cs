@@ -96,7 +96,7 @@ namespace SilicaAdminMod
             get => _player;
             set => _player = value ?? throw new ArgumentNullException("Player is required.");
         }
-        public MP_Strategy.ETeamRole Role
+        public GameModeExt.ETeamRole Role
         {
             get;
             set;
