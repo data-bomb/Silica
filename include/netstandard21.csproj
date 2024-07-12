@@ -4,7 +4,7 @@
       <HintPath>..\include\netstandard2.1\0Harmony.dll</HintPath>
     </Reference>
     <Reference Include="Assembly-CSharp-firstpass">
-      <HintPath>..\include\netstandard2.1\Assembly-CSharp-firstpass.dll</HintPath>
+      <HintPath>..\include\netstandard2.1\com.rlabrecque.steamworks.net.dll</HintPath>
     </Reference>
     <Reference Include="Assembly-CSharp">
       <HintPath>..\include\netstandard2.1\Assembly-CSharp.dll</HintPath>
@@ -14,9 +14,6 @@
     </Reference>
     <Reference Include="UnityEngine">
       <HintPath>..\include\netstandard2.1\UnityEngine.dll</HintPath>
-    </Reference>
-    <Reference Include="UnityEngine.CoreModule">
-      <HintPath>..\include\netstandard2.1\UnityEngine.CoreModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.InputLegacyModule">
       <HintPath>..\include\netstandard2.1\UnityEngine.InputLegacyModule.dll</HintPath>
