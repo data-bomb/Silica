@@ -50,7 +50,7 @@ namespace Si_CommanderManagement
             #endif
 
             // need to get the player back to Infantry and not stuck in no-clip
-            SendToRole(DemotedCommander, MP_Strategy.ETeamRole.INFANTRY);
+            SendToRole(DemotedCommander, GameModeExt.ETeamRole.INFANTRY);
             // respawn
             GameMode.CurrentGameMode.SpawnUnitForPlayer(DemotedCommander, TargetTeam);
         }
@@ -77,7 +77,7 @@ namespace Si_CommanderManagement
             #endif
 
             // now mimic switching to COMMANDER role
-            StrategyTeamSetup strategyTeamInstance = strategyInstance.GetStrategyTeamSetup(CommanderPlayer.Team);
+            BaseTeamSetup strategyTeamInstance = strategyInstance.GetTeamSetup(CommanderPlayer.Team);
             MelonLogger.Msg("Trying to promote " + CommanderPlayer.PlayerName + " on team " + CommanderPlayer.Team.TeamShortName);
 
 
@@ -94,10 +94,10 @@ namespace Si_CommanderManagement
             #endif
 
             // make a log entry of this role change
-            Event_Roles.FireOnRoleChangedEvent(CommanderPlayer, MP_Strategy.ETeamRole.COMMANDER);
+            Event_Roles.FireOnRoleChangedEvent(CommanderPlayer, GameModeExt.ETeamRole.COMMANDER);
         }
 
-        public static void SendToRole(Player FormerCommander, MP_Strategy.ETeamRole role)
+        public static void SendToRole(Player FormerCommander, GameModeExt.ETeamRole role)
         {
             GameByteStreamWriter theRoleStream;
             theRoleStream = GameMode.CurrentGameMode.CreateRPCPacket(2);
