@@ -34,14 +34,14 @@ namespace SilicaAdminMod
     {
         public const string SAM_AddAdmin_Usage = " usage: <player> <powers> <level>";
 
-        public const int MaxPlayableTeams = 3;
+        public const int MaxPlayableTeams = 4;
 
         public enum ETeam
         {
             Alien = 0,
-            Centauri = 1,
-            Sol = 2,
-            Wildlife = 3
+            Wildlife = 1,
+            Centauri = 2,
+            Sol = 3
         }
     }
 }
