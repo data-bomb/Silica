@@ -55,13 +55,13 @@ namespace SilicaAdminMod
                     }
 
                     // only look at RPC_RequestRole
-                    if (__1 != (byte)MP_Strategy.ERPCs.REQUEST_ROLE)
+                    if (__1 != (byte)GameModeExt.ERPCs.REQUEST_ROLE)
                     {
                         return true;
                     }
 
                     Player requestingPlayer = Player.FindPlayer((CSteamID)__0.ReadUInt64(), (int)__0.ReadByte());
-                    MP_Strategy.ETeamRole eRole = (MP_Strategy.ETeamRole)__0.ReadByte();
+                    GameModeExt.ETeamRole eRole = (GameModeExt.ETeamRole)__0.ReadByte();
 
                     if (requestingPlayer == null)
                     {
@@ -70,15 +70,15 @@ namespace SilicaAdminMod
                     }
 
                     // would the game code treat it as an infantry/no role request?
-                    if (eRole != MP_Strategy.ETeamRole.COMMANDER || __instance.GetCommanderForTeam(requestingPlayer.Team))
+                    if (eRole != GameModeExt.ETeamRole.COMMANDER || __instance.GetCommanderForTeam(requestingPlayer.Team))
                     {
                         __0 = RestoreRPC_RequestRoleReader(requestingPlayer, eRole);
                         FireOnRoleChangedEvent(requestingPlayer, eRole);
                         return true;
                     }
 
-                    StrategyTeamSetup strategyTeamSetup = __instance.GetStrategyTeamSetup(requestingPlayer.Team);
-                    if (strategyTeamSetup == null)
+                    BaseTeamSetup baseTeamSetup = __instance.GetTeamSetup(requestingPlayer.Team);
+                    if (baseTeamSetup == null)
                     {
                         return false;
                     }
@@ -92,7 +92,7 @@ namespace SilicaAdminMod
                         {
                             MelonLogger.Msg("Preventing Spawn");
                             __instance.SpawnUnitForPlayer(requestingPlayer, requestingPlayer.Team);
-                            FireOnRoleChangedEvent(requestingPlayer, MP_Strategy.ETeamRole.INFANTRY);
+                            FireOnRoleChangedEvent(requestingPlayer, GameModeExt.ETeamRole.INFANTRY);
                         }
 
                         return false;
@@ -100,18 +100,18 @@ namespace SilicaAdminMod
 
                     MelonLogger.Msg("Allowing to join commander");
                     #if NET6_0
-                    __instance.SetCommander(strategyTeamSetup.Team, requestingPlayer);
-                    __instance.RPC_SynchCommander(strategyTeamSetup.Team);
+                    __instance.SetCommander(baseTeamSetup.Team, requestingPlayer);
+                    __instance.RPC_SynchCommander(baseTeamSetup.Team);
                     #else
                     Type strategyType = typeof(MP_Strategy);
                     MethodInfo setCommanderMethod = strategyType.GetMethod("SetCommander", BindingFlags.Instance | BindingFlags.NonPublic);
-                    setCommanderMethod.Invoke(__instance, parameters: new object?[] { strategyTeamSetup.Team, requestingPlayer });
+                    setCommanderMethod.Invoke(__instance, parameters: new object?[] { baseTeamSetup.Team, requestingPlayer });
 
                     MethodInfo synchCommanderMethod = strategyType.GetMethod("RPC_SynchCommander", BindingFlags.Instance | BindingFlags.NonPublic);
-                    synchCommanderMethod.Invoke(__instance, new object[] { strategyTeamSetup.Team });
+                    synchCommanderMethod.Invoke(__instance, new object[] { baseTeamSetup.Team });
                     #endif
 
-                    FireOnRoleChangedEvent(requestingPlayer, MP_Strategy.ETeamRole.COMMANDER);
+                    FireOnRoleChangedEvent(requestingPlayer, GameModeExt.ETeamRole.COMMANDER);
 
                     return false;
                 }
@@ -124,12 +124,12 @@ namespace SilicaAdminMod
             }
         }
 
-        public static GameByteStreamReader RestoreRPC_RequestRoleReader(Player requestingPlayer, MP_Strategy.ETeamRole role)
+        public static GameByteStreamReader RestoreRPC_RequestRoleReader(Player requestingPlayer, GameModeExt.ETeamRole role)
         {
             GameByteStreamWriter gameByteStreamWriter = GameByteStreamWriter.GetGameByteStreamWriter(0U, "Si_AdminMod::RestoreRPC_RequestRoleReader", true);
             gameByteStreamWriter.WriteByte((byte)ENetworkPacketType.GameModeRPC);
             gameByteStreamWriter.WriteByte(0);
-            gameByteStreamWriter.WriteByte((byte)MP_Strategy.ERPCs.REQUEST_ROLE);
+            gameByteStreamWriter.WriteByte((byte)GameModeExt.ERPCs.REQUEST_ROLE);
             gameByteStreamWriter.WriteUInt64((ulong)requestingPlayer.PlayerID);
             gameByteStreamWriter.WriteByte((byte)requestingPlayer.PlayerChannel);
             gameByteStreamWriter.WriteByte((byte)role);
@@ -140,7 +140,7 @@ namespace SilicaAdminMod
             return gameByteStreamReader;
         }
 
-        public static void FireOnRoleChangedEvent(Player player, MP_Strategy.ETeamRole role)
+        public static void FireOnRoleChangedEvent(Player player, GameModeExt.ETeamRole role)
         {
             MelonLogger.Msg("Firing Role Change Event for " + player.PlayerName + " to role " + role.ToString());
 
