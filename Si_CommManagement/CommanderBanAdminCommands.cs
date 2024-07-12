@@ -107,21 +107,21 @@ namespace Si_CommanderManagement
                     if (strategyInstance.TeamsVersus == MP_Strategy.ETeamsVersus.HUMANS_VS_ALIENS)
                     {
                         // if it's human vs aliens then human translates to the Human (Sol) team index
-                        targetTeamIndex = 2;
+                        targetTeamIndex = (int)SiConstants.ETeam.Sol;
                     }
                     // otherwise, it's ambigious and we can't make a decision
                 }
                 else if (String.Equals(targetTeamText, "Alien", StringComparison.OrdinalIgnoreCase))
                 {
-                    targetTeamIndex = 0;
+                    targetTeamIndex = (int)SiConstants.ETeam.Alien;
                 }
                 else if (targetTeamText.Contains("Cent", StringComparison.OrdinalIgnoreCase))
                 {
-                    targetTeamIndex = 1;
+                    targetTeamIndex = (int)SiConstants.ETeam.Centauri;
                 }
                 else if (String.Equals(targetTeamText, "Sol", StringComparison.OrdinalIgnoreCase))
                 {
-                    targetTeamIndex = 2;
+                    targetTeamIndex = (int)SiConstants.ETeam.Sol;
                 }
 
                 // check if we still don't have a valid target
