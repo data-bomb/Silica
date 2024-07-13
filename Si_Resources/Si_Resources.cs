@@ -32,7 +32,7 @@ using SilicaAdminMod;
 using System;
 using System.Linq;
 
-[assembly: MelonInfo(typeof(ResourceConfig), "Resource Configuration", "1.1.1", "databomb")]
+[assembly: MelonInfo(typeof(ResourceConfig), "Resource Configuration", "1.2.0", "databomb")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -41,16 +41,21 @@ namespace Si_Resources
     public class ResourceConfig : MelonMod
     {
         static MelonPreferences_Category _modCategory = null!;
-        static MelonPreferences_Entry<int> Pref_Resources_Humans_StartingAmount = null!;
+        static MelonPreferences_Entry<int> Pref_Resources_Centauri_StartingAmount = null!;
+        static MelonPreferences_Entry<int> Pref_Resources_Sol_StartingAmount = null!;
         static MelonPreferences_Entry<int> Pref_Resources_Aliens_StartingAmount = null!;
+        static MelonPreferences_Entry<bool> Pref_Resources_Aliens_RevealClosestArea = null!;
+        static MelonPreferences_Entry<bool> Pref_Resources_Humans_RevealClosestArea = null!;
 
         public override void OnInitializeMelon()
         {
             _modCategory ??= MelonPreferences.CreateCategory("Silica");
-            Pref_Resources_Humans_StartingAmount ??= _modCategory.CreateEntry<int>("Resources_Humans_StartingAmount", 11000);
-            Pref_Resources_Aliens_StartingAmount ??= _modCategory.CreateEntry<int>("Resources_Aliens_StartingAmount", 9000);
+            Pref_Resources_Centauri_StartingAmount ??= _modCategory.CreateEntry<int>("Resources_Centauri_StartingAmount", 8000);
+            Pref_Resources_Sol_StartingAmount ??= _modCategory.CreateEntry<int>("Resources_Sol_StartingAmount", 8000);
+            Pref_Resources_Aliens_StartingAmount ??= _modCategory.CreateEntry<int>("Resources_Aliens_StartingAmount", 8000);
+            Pref_Resources_Aliens_RevealClosestArea ??= _modCategory.CreateEntry<bool>("Resources_Aliens_RevealClosestAreaOnStart", false);
+            Pref_Resources_Humans_RevealClosestArea ??= _modCategory.CreateEntry<bool>("Resources_Humans_RevealClosestAreaOnStart", true);
         }
-
        
         public override void OnLateInitializeMelon()
         {
@@ -66,10 +71,12 @@ namespace Si_Resources
 
             QList.Options.RegisterMod(this);
 
-            QList.OptionTypes.IntOption humanStartingRes = new(Pref_Resources_Humans_StartingAmount, true, Pref_Resources_Humans_StartingAmount.Value, 3500, 50000, 500);
-            QList.OptionTypes.IntOption alienStartingRes = new(Pref_Resources_Aliens_StartingAmount, true, Pref_Resources_Aliens_StartingAmount.Value, 3500, 50000, 500);
+            QList.OptionTypes.IntOption centauriStartingRes = new(Pref_Resources_Centauri_StartingAmount, true, Pref_Resources_Centauri_StartingAmount.Value, 8000, 50000, 500);
+            QList.OptionTypes.IntOption solStartingRes = new(Pref_Resources_Sol_StartingAmount, true, Pref_Resources_Sol_StartingAmount.Value, 8000, 50000, 500);
+            QList.OptionTypes.IntOption alienStartingRes = new(Pref_Resources_Aliens_StartingAmount, true, Pref_Resources_Aliens_StartingAmount.Value, 8000, 50000, 500);
 
-            QList.Options.AddOption(humanStartingRes);
+            QList.Options.AddOption(centauriStartingRes);
+            QList.Options.AddOption(solStartingRes);
             QList.Options.AddOption(alienStartingRes);
             #endif
         }
@@ -113,8 +120,7 @@ namespace Si_Resources
             }
 
             string amountText = args.Split(' ')[1];
-            int amount = 0;
-            if (!int.TryParse(amountText, out amount))
+            if (!int.TryParse(amountText, out int amount))
             {
                 HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": Invalid amount specified");
                 return;
@@ -151,58 +157,160 @@ namespace Si_Resources
         [HarmonyPatch(typeof(MP_Strategy), nameof(MP_Strategy.SetTeamVersusMode))]
         private static class Resources_Patch_MPStrategy_SetTeamVersusMode
         {
-            public static void Postfix(MP_Strategy __instance, MP_Strategy.ETeamsVersus __0)
+            public static void Postfix(MP_Strategy __instance, GameModeExt.ETeamsVersus __0)
             {
                 try
                 {
-                    switch (__0)
+                    foreach (StrategyTeamSetup strategyTeamSetup in __instance.TeamSetups)
                     {
-                        case MP_Strategy.ETeamsVersus.HUMANS_VS_HUMANS:
+                        if (!__instance.GetTeamSetupActive(strategyTeamSetup))
                         {
-                            // Sol
-                            Team.Teams[2].StartingResources = Pref_Resources_Humans_StartingAmount.Value;
-                            // Centauri
-                            Team.Teams[1].StartingResources = Pref_Resources_Humans_StartingAmount.Value;
-
-                            MelonLogger.Msg("Set starting resources. Humans: " + Pref_Resources_Humans_StartingAmount.Value.ToString());
-                            break;
+                            continue;
                         }
-                        case MP_Strategy.ETeamsVersus.HUMANS_VS_ALIENS:
+
+                        // re-adjust starting resources immediately after the game sets it
+                        strategyTeamSetup.Team.StartingResources = GetTeamStartingResources(strategyTeamSetup.Team);
+                        MelonLogger.Msg("Set starting resources for Team (" + strategyTeamSetup.Team.TeamShortName + ") to " + strategyTeamSetup.Team.StartingResources);
+
+                        // check if we should make the first biotics/balterium resource area visible to the team
+                        if (!MakeClosestResearchAreaVisible(strategyTeamSetup.Team))
                         {
-                            // Alien
-                            Team.Teams[0].StartingResources = Pref_Resources_Aliens_StartingAmount.Value;
-                            // Sol
-                            Team.Teams[2].StartingResources = Pref_Resources_Humans_StartingAmount.Value;
-
-                            MelonLogger.Msg("Set starting resources. Aliens: " + Pref_Resources_Aliens_StartingAmount.Value.ToString() + " Humans: " + Pref_Resources_Humans_StartingAmount.Value.ToString());
-                            break;
+                            continue;
                         }
-                        case MP_Strategy.ETeamsVersus.HUMANS_VS_HUMANS_VS_ALIENS:
+
+                        Resource? resourceType = GetTeamResourceType(strategyTeamSetup.Team);
+                        if (resourceType == null)
                         {
-                            // Alien
-                            Team.Teams[0].StartingResources = Pref_Resources_Aliens_StartingAmount.Value;
-                            // Sol
-                            Team.Teams[1].StartingResources = Pref_Resources_Humans_StartingAmount.Value;
-                            // Centauri
-                            Team.Teams[2].StartingResources = Pref_Resources_Humans_StartingAmount.Value;
-
-                            MelonLogger.Msg("Set starting resources. Aliens: " + Pref_Resources_Aliens_StartingAmount.Value.ToString() + " Humans: " + Pref_Resources_Humans_StartingAmount.Value.ToString());
-                            break;
+                            MelonLogger.Warning("Could not find default resource type for team: " + strategyTeamSetup.Team.TeamShortName);
+                            continue;
                         }
-                    }
 
-                    if (__0 != MP_Strategy.ETeamsVersus.NONE)
-                    {
-                        // set how many resources are in each resource area
+                        if (ResourceArea.GetNumKnownResourcesAreas(strategyTeamSetup.Team, resourceType) > 0)
+                        {
+                            MelonLogger.Msg("Already a visible resource type for team: " + strategyTeamSetup.Team.TeamShortName);
+                            continue;
+                        }
 
-                        // hook? ResourceArea.DistributeAllResources
-                        // iterate and set ResourceArea.ResourceAmountMax = ?
+                        ResourceArea? closestStartingResourceArea = GetTeamClosestResourceArea(strategyTeamSetup.Team, resourceType);
+                        if (closestStartingResourceArea == null)
+                        {
+                            MelonLogger.Warning("Could not find closest resource area for team: " + strategyTeamSetup.Team.TeamShortName);
+                            continue;
+                        }
+
+                        UnityEngine.Vector3 unitSpawnPosition = closestStartingResourceArea.transform.position;
+                        unitSpawnPosition[1] += 7f;
+
+                        // make this visible by spawning a starting unit
+                        string prefabName = (strategyTeamSetup.Team.Index == (int)SiConstants.ETeam.Alien ? "Crab" : "Soldier_Scout");
+                        HelperMethods.SpawnAtLocation(prefabName, unitSpawnPosition, UnityEngine.Quaternion.identity, strategyTeamSetup.Team.Index);
                     }
                 }
                 catch (Exception error)
                 {
                     HelperMethods.PrintError(error, "Failed to run MP_Strategy::SetTeamVersusMode");
                 }
+            }
+        }
+
+        static bool MakeClosestResearchAreaVisible(Team team)
+        {
+            if (team.Index == (int)SiConstants.ETeam.Alien)
+            {
+                return Pref_Resources_Aliens_RevealClosestArea.Value;
+            }
+            else if (team.Index == (int)SiConstants.ETeam.Sol || team.Index == (int)SiConstants.ETeam.Centauri)
+            {
+                return Pref_Resources_Humans_RevealClosestArea.Value;
+            }
+
+            return false;
+        }
+
+        static ResourceArea? GetTeamClosestResourceArea(Team team, Resource type)
+        {
+            UnityEngine.Vector3 position = GetTeamStartingPosition(team);
+
+            GameListCache.QueryResourceAreas.Clear();
+            foreach (ResourceArea resourceArea in ResourceArea.ResourceAreas)
+            {
+                if (resourceArea.ResourceType != type)
+                {
+                    continue;
+                }
+
+                if (resourceArea.ResourceAmountCurrent <= 0)
+                {
+                    continue;
+                }
+
+                GameListCache.QueryResourceAreas.Add(resourceArea);
+            }
+
+            ResourceArea? closestArea = null;
+            float closestDistance = float.MaxValue;
+            foreach (ResourceArea resourceArea in GameListCache.QueryResourceAreas)
+            {
+                float sqrMagnitude = (resourceArea.SignalCenter - position).sqrMagnitude;
+                if (sqrMagnitude < closestDistance)
+                {
+                    closestArea = resourceArea;
+                    closestDistance = sqrMagnitude;
+                }
+            }
+
+            return closestArea;
+        }
+
+        static UnityEngine.Vector3 GetTeamStartingPosition(Team team)
+        {
+            if (team.Structures.Count <= 0)
+            {
+                MelonLogger.Warning("Could not determine starting position for team: " + team.TeamShortName);
+                return UnityEngine.Vector3.zero;
+            }
+
+            return team.Structures[0].transform.position;
+        }
+
+        static Resource? GetTeamResourceType(Team team)
+        {
+            switch (team.Index)
+            {
+                case (int)SiConstants.ETeam.Alien:
+                    // "Biotics"
+                    #if NET6_0
+                    return Resource.Resources[1];
+                    #else
+                    return Resource.Resources.Find(r => r.ResourceName.StartsWith("Bi"));
+                    #endif               
+                case (int)SiConstants.ETeam.Sol:
+                case (int)SiConstants.ETeam.Centauri:
+                    // "Balterium"
+                    #if NET6_0
+                    return Resource.Resources[0];
+                    #else
+                    return Resource.Resources.Find(r => r.ResourceName.StartsWith("Ba"));
+                    #endif
+                default:
+                    MelonLogger.Warning("Could not determine default resource type for team: " + team.TeamShortName);
+                    return null;
+            }
+        }
+
+        static int GetTeamStartingResources(Team team)
+        {
+            switch (team.Index)
+            {
+                case (int)SiConstants.ETeam.Alien:
+                    return Pref_Resources_Aliens_StartingAmount.Value;
+                case (int)SiConstants.ETeam.Centauri:
+                    return Pref_Resources_Centauri_StartingAmount.Value;
+                case (int)SiConstants.ETeam.Sol:
+                    return Pref_Resources_Sol_StartingAmount.Value;
+                default:
+                    MelonLogger.Warning("Could not determine starting resources for team: " + team.TeamShortName);
+                    return 8000;
             }
         }
     }
