@@ -29,6 +29,7 @@ using System.Linq;
 using MelonLoader;
 using UnityEngine;
 using System.Reflection;
+using System.Text;
 
 namespace Si_CommanderManagement
 {
@@ -257,41 +258,47 @@ namespace Si_CommanderManagement
             }
         }
 
-        [HarmonyPatch(typeof(GameMode), nameof(GameMode.CreateRPCPacket))]
-        private static class CommanderManager_Patch_GameMode_GameByteStreamWriter
+        #if NET6_0
+        [HarmonyPatch(typeof(MP_Strategy), nameof(MP_Strategy.RPC_TimerUpdate))]
+        #else
+        [HarmonyPatch(typeof(MP_Strategy), "RPC_TimerUpdate")]
+        #endif
+        private static class CommanderManager_Patch_Strategy_TimerUpdate
         {
-            static void Postfix(GameMode __instance, GameByteStreamWriter __result, byte __0)
+            private static void Postfix(MP_Strategy __instance)
             {
-                if (CommanderManager._BlockRoundStartUntilEnoughApplicants != null && CommanderManager._BlockRoundStartUntilEnoughApplicants.Value)
+                MelonLogger.Msg("Hit RPC_TimerUpdate");
+                if (!CommanderManager._BlockRoundStartUntilEnoughApplicants.Value)
                 {
-                    MP_Strategy strategyInstance = GameObject.FindObjectOfType<MP_Strategy>();
+                    return;
+                }
 
-                    // is this the countdown timer for the round to start?
-                    if (__0 == (byte)MP_Strategy.ERPCs.TIMER_UPDATE && !strategyInstance.GameOver)
-                    {
-                        #if NET6_0
-                        if (!AllTeamsHaveCommanderApplicants() && strategyInstance.Timer < 5f && strategyInstance.Timer > 4f)
-                        {
-                            // reset timer value and keep counting down
-                            strategyInstance.Timer = 25f;
-                            // TODO: Fix repeating message 
-                            HelperMethods.ReplyToCommand("Round cannot start because all teams don't have a commander. Chat !commander to apply.");
-                        }
+                MelonLogger.Msg("Checking applicants");
+                if (AllTeamsHaveCommanderApplicants())
+                {
+                    return;
+                }
 
-                        #else
-                        Type strategyType = typeof(MP_Strategy);
-                        FieldInfo timerField = strategyType.GetField("Timer", BindingFlags.NonPublic | BindingFlags.Instance);
+                float timerValue;
 
-                        float timerValue = (float)timerField.GetValue(strategyInstance);
-                        if (!AllTeamsHaveCommanderApplicants() && timerValue < 5f && timerValue > 4f)
-                        {
-                            // reset timer value and keep counting down
-                            timerField.SetValue(strategyInstance, 25f);
-                            // TODO: Fix repeating message 
-                            HelperMethods.ReplyToCommand("Round cannot start because all teams don't have a commander. Chat !commander to apply.");
-                        }
-                        #endif
-                    }
+                #if NET6_0
+                timerValue = __instance.Timer;
+                #else
+                Type strategyType = typeof(MP_Strategy);
+                FieldInfo timerField = strategyType.GetField("Timer", BindingFlags.NonPublic | BindingFlags.Instance);
+                timerValue = (float)timerField.GetValue(__instance);
+                #endif
+
+                MelonLogger.Msg("timer value: " + timerValue.ToString());
+                if (timerValue <= 5f && timerValue > 4f)
+                {
+                    HelperMethods.ReplyToCommand("Round cannot start because all teams don't have a commander. Chat !commander to apply.");
+
+                    #if NET6_0
+                    __instance.Timer = 21f;
+                    #else
+                    timerField.SetValue(__instance, 21f);
+                    #endif
                 }
             }
         }
