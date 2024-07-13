@@ -267,13 +267,11 @@ namespace Si_CommanderManagement
         {
             private static void Postfix(MP_Strategy __instance)
             {
-                MelonLogger.Msg("Hit RPC_TimerUpdate");
                 if (!CommanderManager._BlockRoundStartUntilEnoughApplicants.Value)
                 {
                     return;
                 }
 
-                MelonLogger.Msg("Checking applicants");
                 if (AllTeamsHaveCommanderApplicants())
                 {
                     return;
@@ -289,7 +287,6 @@ namespace Si_CommanderManagement
                 timerValue = (float)timerField.GetValue(__instance);
                 #endif
 
-                MelonLogger.Msg("timer value: " + timerValue.ToString());
                 if (timerValue <= 5f && timerValue > 4f)
                 {
                     HelperMethods.ReplyToCommand("Round cannot start because all teams don't have a commander. Chat !commander to apply.");
