@@ -44,7 +44,7 @@ using System.IO;
 using System.Text;
 using System.Runtime.CompilerServices;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.4.3", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.4.4", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -486,7 +486,7 @@ namespace Si_Logging
                     if (Pref_Log_PlayerConsole_Enable.Value)
                     {
                         string ConsoleLine = string.Empty;
-                        ConsoleLine = "<b>" + HelperMethods.GetTeamColor(__0) + __0.PlayerName + "</color></b> " + (__1 == null ? "joined team " : "changed teams ") + HelperMethods.GetTeamColor(__2) + __2.TeamShortName + "</color>";
+                        ConsoleLine = "<b>" + HelperMethods.GetTeamColor(__0) + __0.PlayerName + "</color></b> " + (__1 == null ? "joined team " : "changed to team ") + HelperMethods.GetTeamColor(__2) + __2.TeamShortName + "</color>";
 
                         HelperMethods.SendConsoleMessage(ConsoleLine);
                     }
@@ -934,12 +934,6 @@ namespace Si_Logging
                     initializeRound(ref currTiers);
 
                     firedRoundEndOnce = false;
-
-                    if (Pref_Log_PlayerConsole_Enable.Value)
-                    {
-                        string ConsoleLine = "<b>Round has begun.</b>";
-                        HelperMethods.SendConsoleMessage(ConsoleLine);
-                    }
                 }
                 catch (Exception error)
                 {
