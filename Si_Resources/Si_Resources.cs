@@ -32,7 +32,7 @@ using SilicaAdminMod;
 using System;
 using System.Linq;
 
-[assembly: MelonInfo(typeof(ResourceConfig), "Resource Configuration", "1.2.0", "databomb")]
+[assembly: MelonInfo(typeof(ResourceConfig), "Resource Configuration", "1.2.1", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -40,6 +40,14 @@ namespace Si_Resources
 {
     public class ResourceConfig : MelonMod
     {
+        const int defaultStartingResources = 8000;
+
+        enum EResource
+        {
+            Balterium = 0,
+            Biotics = 1
+        }
+
         static MelonPreferences_Category _modCategory = null!;
         static MelonPreferences_Entry<int> Pref_Resources_Centauri_StartingAmount = null!;
         static MelonPreferences_Entry<int> Pref_Resources_Sol_StartingAmount = null!;
@@ -50,9 +58,9 @@ namespace Si_Resources
         public override void OnInitializeMelon()
         {
             _modCategory ??= MelonPreferences.CreateCategory("Silica");
-            Pref_Resources_Centauri_StartingAmount ??= _modCategory.CreateEntry<int>("Resources_Centauri_StartingAmount", 8000);
-            Pref_Resources_Sol_StartingAmount ??= _modCategory.CreateEntry<int>("Resources_Sol_StartingAmount", 8000);
-            Pref_Resources_Aliens_StartingAmount ??= _modCategory.CreateEntry<int>("Resources_Aliens_StartingAmount", 8000);
+            Pref_Resources_Centauri_StartingAmount ??= _modCategory.CreateEntry<int>("Resources_Centauri_StartingAmount", defaultStartingResources);
+            Pref_Resources_Sol_StartingAmount ??= _modCategory.CreateEntry<int>("Resources_Sol_StartingAmount", defaultStartingResources);
+            Pref_Resources_Aliens_StartingAmount ??= _modCategory.CreateEntry<int>("Resources_Aliens_StartingAmount", defaultStartingResources);
             Pref_Resources_Aliens_RevealClosestArea ??= _modCategory.CreateEntry<bool>("Resources_Aliens_RevealClosestAreaOnStart", false);
             Pref_Resources_Humans_RevealClosestArea ??= _modCategory.CreateEntry<bool>("Resources_Humans_RevealClosestAreaOnStart", true);
         }
@@ -280,7 +288,7 @@ namespace Si_Resources
                 case (int)SiConstants.ETeam.Alien:
                     // "Biotics"
                     #if NET6_0
-                    return Resource.Resources[1];
+                    return Resource.Resources[(int)EResource.Biotics];
                     #else
                     return Resource.Resources.Find(r => r.ResourceName.StartsWith("Bi"));
                     #endif               
@@ -288,7 +296,7 @@ namespace Si_Resources
                 case (int)SiConstants.ETeam.Centauri:
                     // "Balterium"
                     #if NET6_0
-                    return Resource.Resources[0];
+                    return Resource.Resources[(int)EResource.Balterium];
                     #else
                     return Resource.Resources.Find(r => r.ResourceName.StartsWith("Ba"));
                     #endif
@@ -310,7 +318,7 @@ namespace Si_Resources
                     return Pref_Resources_Sol_StartingAmount.Value;
                 default:
                     MelonLogger.Warning("Could not determine starting resources for team: " + team.TeamShortName);
-                    return 8000;
+                    return defaultStartingResources;
             }
         }
     }
