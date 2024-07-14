@@ -38,7 +38,7 @@ using System;
 using SilicaAdminMod;
 using System.Linq;
 
-[assembly: MelonInfo(typeof(BasicTeamBalance), "Basic Team Balance", "1.3.7", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(BasicTeamBalance), "Basic Team Balance", "1.3.8", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -109,7 +109,7 @@ namespace Si_BasicTeamBalance
         public static void SendClearRequest(ulong thisPlayerSteam64, int thisPlayerChannel)
         {
             // send RPC_ClearRequest (3)
-            GameByteStreamWriter clearWriteInstance = GameMode.CurrentGameMode.CreateRPCPacket((byte)MP_Strategy.ERPCs.CLEAR_REQUEST);
+            GameByteStreamWriter clearWriteInstance = GameMode.CurrentGameMode.CreateRPCPacket((byte)GameModeExt.ERPCs.CLEAR_REQUEST);
             if (clearWriteInstance != null)
             {
                 clearWriteInstance.WriteUInt64(thisPlayerSteam64);
@@ -139,18 +139,18 @@ namespace Si_BasicTeamBalance
             return false;
         }
 
-        public static int GetNumberOfActiveTeams(MP_Strategy.ETeamsVersus versusMode)
+        public static int GetNumberOfActiveTeams(GameModeExt.ETeamsVersus versusMode)
         {
             int NumActiveTeams = 0;
             switch (versusMode)
             {
-                case MP_Strategy.ETeamsVersus.HUMANS_VS_ALIENS:
-                case MP_Strategy.ETeamsVersus.HUMANS_VS_HUMANS:
+                case GameModeExt.ETeamsVersus.HUMANS_VS_ALIENS:
+                case GameModeExt.ETeamsVersus.HUMANS_VS_HUMANS:
                     {
                         NumActiveTeams = 2;
                         break;
                     }
-                case MP_Strategy.ETeamsVersus.HUMANS_VS_HUMANS_VS_ALIENS:
+                case GameModeExt.ETeamsVersus.HUMANS_VS_HUMANS_VS_ALIENS:
                     {
                         // need to determine if one faction has been eliminated
                         if (OneFactionEliminated())
@@ -168,7 +168,7 @@ namespace Si_BasicTeamBalance
             return NumActiveTeams;
         }
 
-        public static Team? FindLowestPopulationTeam(MP_Strategy.ETeamsVersus versusMode)
+        public static Team? FindLowestPopulationTeam(GameModeExt.ETeamsVersus versusMode)
         {
             int LowestTeamNumPlayers = NetworkGameServer.GetPlayersMax() + 1;
             Team? LowestPopTeam = null;
@@ -176,16 +176,16 @@ namespace Si_BasicTeamBalance
             for (int i = 0; i < SiConstants.MaxPlayableTeams; i++)
             {
                 Team? thisTeam = Team.Teams[i];
-                if (versusMode == MP_Strategy.ETeamsVersus.HUMANS_VS_HUMANS && i == (int)SiConstants.ETeam.Alien)
+                if (versusMode == GameModeExt.ETeamsVersus.HUMANS_VS_HUMANS && i == (int)SiConstants.ETeam.Alien)
                 {
                     continue;
                 }
-                else if (versusMode == MP_Strategy.ETeamsVersus.HUMANS_VS_ALIENS && i == (int)SiConstants.ETeam.Centauri)
+                else if (versusMode == GameModeExt.ETeamsVersus.HUMANS_VS_ALIENS && i == (int)SiConstants.ETeam.Centauri)
                 {
                     continue;
                 }
                 // has the team been eliminated?
-                else if (versusMode == MP_Strategy.ETeamsVersus.HUMANS_VS_HUMANS_VS_ALIENS && !thisTeam.GetHasAnyCritical())
+                else if (versusMode == GameModeExt.ETeamsVersus.HUMANS_VS_HUMANS_VS_ALIENS && !thisTeam.GetHasAnyCritical())
                 {
                     continue;
                 }
@@ -209,7 +209,7 @@ namespace Si_BasicTeamBalance
             }
 
             MP_Strategy strategyInstance = GameObject.FindObjectOfType<MP_Strategy>();
-            MP_Strategy.ETeamsVersus versusMode = strategyInstance.TeamsVersus;
+            GameModeExt.ETeamsVersus versusMode = strategyInstance.TeamsVersus;
 
             Team? LowestPopTeam = null;
             int NumActiveTeams = GetNumberOfActiveTeams(versusMode);
@@ -334,7 +334,7 @@ namespace Si_BasicTeamBalance
                     }
 
                     // only look at RPC_RequestJoinTeam bytes
-                    if (__1 != (byte)MP_Strategy.ERPCs.REQUEST_JOIN_TEAM)
+                    if (__1 != (byte)GameModeExt.ERPCs.REQUEST_JOIN_TEAM)
                     {
                         return true;
                     }
@@ -355,6 +355,7 @@ namespace Si_BasicTeamBalance
 
                     if (JoiningPlayer == null)
                     {
+                        Debug.LogError("MP_Strategy::ProcessNetRPC - Player was NULL for REQUEST_JOIN_TEAM, ID: " + PlayerSteam64.ToString() + ", channel: " + PlayerChannel.ToString());
                         return false;
                     }
 
@@ -407,7 +408,7 @@ namespace Si_BasicTeamBalance
                     if (JoiningPlayer.Team == null)
                     {
                         
-                        MP_Strategy.ETeamsVersus versusMode = strategyInstance.TeamsVersus;
+                        GameModeExt.ETeamsVersus versusMode = strategyInstance.TeamsVersus;
                         Team? ForcedTeam = FindLowestPopulationTeam(versusMode);
                         if (ForcedTeam != null)
                         {
@@ -427,6 +428,7 @@ namespace Si_BasicTeamBalance
                         }
 
                         MelonLogger.Warning("Error in FindLowestPopulationTeam(). Could not find a valid team.");
+                        SendClearRequest(PlayerSteam64, PlayerChannel);
                         return false;
                     }
                         
