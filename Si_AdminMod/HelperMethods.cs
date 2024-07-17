@@ -505,51 +505,28 @@ namespace SilicaAdminMod
             int prefabIndex = GameDatabase.GetSpawnablePrefabIndex(name);
             if (prefabIndex <= -1)
             {
+                DebugConsole.Log("SpawnAtLocation: Could not find prefab '" + name + "' in network spawn lists!", DebugConsole.LogLevel.Warning);
                 return null;
             }
 
             GameObject prefabObject = GameDatabase.GetSpawnablePrefab(prefabIndex);
-            GameObject spawnedObject = Game.SpawnPrefab(prefabObject, null, true, true);
-
-            if (spawnedObject == null)
+            GameObject? spawnedObject;
+            if (teamIndex > -1)
             {
-                return null;
+                spawnedObject = Game.SpawnPrefab(prefabObject, null, Team.Teams[teamIndex], position, rotation, true, true);
             }
-
-            Unit thisUnit = spawnedObject.GetComponent<Unit>();
-            // unit
-            if (thisUnit != null)
+            else
             {
-                position.y += 3f;
-                spawnedObject.transform.position = position;
-                spawnedObject.transform.rotation = rotation;
-
-                spawnedObject.transform.GetBaseGameObject().Teleport(position, rotation);
-
-                if (teamIndex > -1)
+                BaseGameObject baseGameObject = prefabObject.GetBaseGameObject();
+                if (baseGameObject)
                 {
-                    thisUnit.Team = Team.Teams[teamIndex];
+                    teamIndex = baseGameObject.DefaultTeam.Index;
                 }
 
-                return spawnedObject;
+                spawnedObject = Game.SpawnPrefab(prefabObject, null, Team.Teams[teamIndex], position, rotation, true, true);
             }
 
-            Structure thisStructure = spawnedObject.GetComponent<Structure>();
-            // structure
-            if (thisStructure != null)
-            {
-                spawnedObject.transform.position = position;
-                spawnedObject.transform.rotation = rotation;
-
-                if (teamIndex > -1)
-                {
-                    thisStructure.Team = Team.Teams[teamIndex];
-                }
-
-                return spawnedObject;
-            }
-
-            return null;
+            return spawnedObject;
         }
 
         public static bool IsTimerActive(float time)
