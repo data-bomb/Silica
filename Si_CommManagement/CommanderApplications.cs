@@ -272,6 +272,11 @@ namespace Si_CommanderManagement
                     return;
                 }
 
+                if (__instance.GameOver)
+                {
+                    return;
+                }
+
                 if (AllTeamsHaveCommanderApplicants())
                 {
                     return;
