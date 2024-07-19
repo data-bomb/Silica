@@ -62,7 +62,10 @@ namespace SilicaAdminMod
                 return;
             }
 
-            MelonLogger.Msg("Reached vote callback for: " + args);
+            if (SiAdminMod.Pref_Admin_DebugLogMessages.Value)
+            {
+                MelonLogger.Msg("Reached vote callback for: " + args);
+            }
 
             foreach (OptionVoteResult currentVoteResult in currentVoteResults.DetailedResults)
             {
@@ -132,7 +135,10 @@ namespace SilicaAdminMod
         
         private static void StartVoteDurationTimer()
         {
-            MelonLogger.Msg("Starting vote timer with duration " + SiAdminMod.Pre_Admin_VoteDuration.Value.ToString());
+            if (SiAdminMod.Pref_Admin_DebugLogMessages.Value)
+            {
+                MelonLogger.Msg("Starting vote timer with duration " + SiAdminMod.Pre_Admin_VoteDuration.Value.ToString());
+            }
             voteInProgress = true;
             HelperMethods.StartTimer(ref Timer_TallyVote);
         }
@@ -178,7 +184,10 @@ namespace SilicaAdminMod
                                     winningResult = currentVoteResult;
                                 }
 
-                                MelonLogger.Msg("Found command " + currentVoteResult.Command + " with votes " + currentVoteResult.Votes);
+                                if (SiAdminMod.Pref_Admin_DebugLogMessages.Value)
+                                {
+                                    MelonLogger.Msg("Found command " + currentVoteResult.Command + " with votes " + currentVoteResult.Votes);
+                                }
 
                                 // unregister commands for current vote
                                 PlayerMethods.UnregisterPlayerPhrase(currentVoteResult.Command);

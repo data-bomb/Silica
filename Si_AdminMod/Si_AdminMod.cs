@@ -35,7 +35,6 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using UnityEngine;
-using static MelonLoader.MelonLogger;
 
 namespace SilicaAdminMod
 {
@@ -46,6 +45,7 @@ namespace SilicaAdminMod
         public static MelonPreferences_Entry<int> Pre_Admin_VoteDuration = null!;
         public static MelonPreferences_Entry<bool> Pref_Admin_StopNonAdminCheats = null!;
         public static MelonPreferences_Entry<bool> Pref_Admin_ReplicateCheatsForPasswordedServers = null!;
+        public static MelonPreferences_Entry<bool> Pref_Admin_DebugLogMessages = null!;
 
         public static List<Admin> AdminList = null!;
 
@@ -53,7 +53,6 @@ namespace SilicaAdminMod
         {
             try
             {
-                
                 AdminMethods.AdminCommands = new List<AdminCommand>();
                 PlayerMethods.PlayerCommands = new List<PlayerCommand>();
                 PlayerMethods.PlayerPhrases = new List<PlayerCommand>();
@@ -65,7 +64,8 @@ namespace SilicaAdminMod
                 Pre_Admin_VoteDuration ??= _modCategory.CreateEntry<int>("Admin_VoteDuration_Seconds", 30);
                 Pref_Admin_StopNonAdminCheats ??= _modCategory.CreateEntry<bool>("Admin_PreventNonAdminCheats", false);
                 Pref_Admin_ReplicateCheatsForPasswordedServers ??= _modCategory.CreateEntry<bool>("Admin_ReplicateCheatsForPrivateServers", true);
-                
+                Pref_Admin_DebugLogMessages ??= _modCategory.CreateEntry<bool>("Admin_EnableDebugLogging", false);
+
                 #if !NET6_0
                 MelonLogger.Msg("Registering host console commands...");
 
@@ -75,21 +75,30 @@ namespace SilicaAdminMod
                 DebugConsole.ICommand addAdminConsoleCmd = (DebugConsole.ICommand)Activator.CreateInstance(typeof(CSAM_AddAdmin));
                 if (addAdminConsoleCmd != null)
                 {
-                    MelonLogger.Msg(addAdminConsoleCmd.Key.ToLower() + " registered.");
+                    if (Pref_Admin_DebugLogMessages.Value)
+                    {
+                        MelonLogger.Msg(addAdminConsoleCmd.Key.ToLower() + " registered.");
+                    }
                     s_Commands.Add(addAdminConsoleCmd.Key.ToLower(), addAdminConsoleCmd);
                 }
 
                 DebugConsole.ICommand addSayConsoleCmd = (DebugConsole.ICommand)Activator.CreateInstance(typeof(CSAM_Say));
                 if (addSayConsoleCmd != null)
                 {
-                    MelonLogger.Msg(addSayConsoleCmd.Key.ToLower() + " registered.");
+                    if (Pref_Admin_DebugLogMessages.Value)
+                    {
+                        MelonLogger.Msg(addSayConsoleCmd.Key.ToLower() + " registered.");
+                    }
                     s_Commands.Add(addSayConsoleCmd.Key.ToLower(), addSayConsoleCmd);    
                 }
 
                 DebugConsole.ICommand cvarConsoleCmd = (DebugConsole.ICommand)Activator.CreateInstance(typeof(CSAM_Cvar));
                 if (cvarConsoleCmd != null)
                 {
-                    MelonLogger.Msg(cvarConsoleCmd.Key.ToLower() + " registered.");
+                    if (Pref_Admin_DebugLogMessages.Value)
+                    {
+                        MelonLogger.Msg(cvarConsoleCmd.Key.ToLower() + " registered.");
+                    }
                     s_Commands.Add(cvarConsoleCmd.Key.ToLower(), cvarConsoleCmd);
                 }
 

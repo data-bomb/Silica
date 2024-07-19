@@ -88,12 +88,19 @@ namespace SilicaAdminMod
                                 return;
                             }
 
-                            MelonLogger.Msg("Firing OnRequestPlayerChatEvent for player (size=" + __1.ToString() + "): " + chatterPlayer.PlayerName);
+                            if (SiAdminMod.Pref_Admin_DebugLogMessages.Value)
+                            {
+                                MelonLogger.Msg("Firing OnRequestPlayerChatEvent for player (size=" + __1.ToString() + "): " + chatterPlayer.PlayerName);
+                            }
+
                             OnRequestPlayerChatArgs onRequestPlayerChatArgs = FireOnRequestPlayerChatEvent(chatterPlayer, chatText, chatTeamOnly);
 
                             if (onRequestPlayerChatArgs.Block)
                             {
-                                MelonLogger.Msg("Blocking chat message for player: " + chatterPlayer.PlayerName);
+                                if (SiAdminMod.Pref_Admin_DebugLogMessages.Value)
+                                {
+                                    MelonLogger.Msg("Blocking chat message for player: " + chatterPlayer.PlayerName);
+                                }
                                 __0[1] = (byte)127;
                             }
 

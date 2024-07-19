@@ -67,11 +67,17 @@ namespace SilicaAdminMod
 
                     if (onRequestEnterUnitArgs.Block)
                     {
-                        MelonLogger.Msg("Blocking player " + __0.ControlledBy.PlayerName + " from entering unit " + __instance.OwnerUnit.ToString());
+                        if (SiAdminMod.Pref_Admin_DebugLogMessages.Value)
+                        {
+                            MelonLogger.Msg("Blocking player " + __0.ControlledBy.PlayerName + " from entering unit " + __instance.OwnerUnit.ToString());
+                        }
                         return false;
                     }
 
-                    MelonLogger.Msg("Allowing player to enter unit's compartment");
+                    if (SiAdminMod.Pref_Admin_DebugLogMessages.Value)
+                    {
+                        MelonLogger.Msg("Allowing player to enter unit's compartment");
+                    }
 
                     return true;
                 }

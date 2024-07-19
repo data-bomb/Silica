@@ -87,10 +87,17 @@ namespace SilicaAdminMod
 
                     if (onRequestCommanderArgs.Block)
                     {
-                        MelonLogger.Msg("Blocking commander role request for " + onRequestCommanderArgs.Requester.PlayerName);
+                        if (SiAdminMod.Pref_Admin_DebugLogMessages.Value)
+                        {
+                            MelonLogger.Msg("Blocking commander role request for " + onRequestCommanderArgs.Requester.PlayerName);
+                        }
+                        
                         if (!onRequestCommanderArgs.PreventSpawnWhenBlocked)
                         {
-                            MelonLogger.Msg("Preventing Spawn");
+                            if (SiAdminMod.Pref_Admin_DebugLogMessages.Value)
+                            {
+                                MelonLogger.Msg("Preventing Spawn");
+                            }
                             __instance.SpawnUnitForPlayer(requestingPlayer, requestingPlayer.Team);
                             FireOnRoleChangedEvent(requestingPlayer, GameModeExt.ETeamRole.INFANTRY);
                         }
@@ -98,7 +105,10 @@ namespace SilicaAdminMod
                         return false;
                     }
 
-                    MelonLogger.Msg("Allowing to join commander");
+                    if (SiAdminMod.Pref_Admin_DebugLogMessages.Value)
+                    {
+                        MelonLogger.Msg("Allowing to join commander");
+                    }
                     #if NET6_0
                     __instance.SetCommander(baseTeamSetup.Team, requestingPlayer);
                     __instance.RPC_SynchCommander(baseTeamSetup.Team);
@@ -142,7 +152,10 @@ namespace SilicaAdminMod
 
         public static void FireOnRoleChangedEvent(Player player, GameModeExt.ETeamRole role)
         {
-            MelonLogger.Msg("Firing Role Change Event for " + player.PlayerName + " to role " + role.ToString());
+            if (SiAdminMod.Pref_Admin_DebugLogMessages.Value)
+            {
+                MelonLogger.Msg("Firing Role Change Event for " + player.PlayerName + " to role " + role.ToString());
+            }
 
             OnRoleChangedArgs onRoleChangedArgs = new OnRoleChangedArgs
             {

@@ -52,7 +52,10 @@ namespace SilicaAdminMod
                     return;
                 }
 
-                MelonLogger.Msg("Processing admin or player command.");
+                if (SiAdminMod.Pref_Admin_DebugLogMessages.Value)
+                {
+                    MelonLogger.Msg("Processing admin or player command.");
+                }
 
                 // ignore team chat if preference is set
                 if (args.TeamOnly && SiAdminMod.Pref_Admin_AcceptTeamChatCommands != null && !SiAdminMod.Pref_Admin_AcceptTeamChatCommands.Value)
@@ -64,7 +67,10 @@ namespace SilicaAdminMod
                 AdminCommand? adminCommand = GetAdminCommand(args.Text);
                 if (adminCommand != null)
                 {
-                    MelonLogger.Msg("Processing admin command: " + adminCommand.AdminCommandText);
+                    if (SiAdminMod.Pref_Admin_DebugLogMessages.Value)
+                    {
+                        MelonLogger.Msg("Processing admin command: " + adminCommand.AdminCommandText);
+                    }
 
                     // are they an admin?
                     if (!args.Player.IsAdmin())
@@ -97,7 +103,10 @@ namespace SilicaAdminMod
                     return;
                 }
 
-                MelonLogger.Msg("Processing player command: " + playerCommand.CommandName);
+                if (SiAdminMod.Pref_Admin_DebugLogMessages.Value)
+                {
+                    MelonLogger.Msg("Processing player command: " + playerCommand.CommandName);
+                }
 
                 // run the callback
                 playerCommand.PlayerCommandCallback(args.Player, args.Text);

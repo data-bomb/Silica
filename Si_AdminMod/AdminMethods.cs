@@ -59,7 +59,10 @@ namespace SilicaAdminMod
             if (addAdminConsoleCmd != null)
             {
                 Dictionary<string, DebugConsole.ICommand> s_Commands = (Dictionary<string, DebugConsole.ICommand>)commandField.GetValue(null);
-                MelonLogger.Msg(addAdminConsoleCmd.Key.ToLower() + " console command registered.");
+                if (SiAdminMod.Pref_Admin_DebugLogMessages.Value)
+                {
+                    MelonLogger.Msg(addAdminConsoleCmd.Key.ToLower() + " console command registered.");
+                }
                 s_Commands.Add(addAdminConsoleCmd.Key.ToLower(), addAdminConsoleCmd);
                 commandField.SetValue(null, s_Commands);
             }
