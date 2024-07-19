@@ -203,9 +203,11 @@ jobs:
           
       - name: Make output paths
         run: |
+          mkdir -p release/dedi/Plugins
           mkdir -p release/dedi/Mods/disabled
-          mkdir -p release/listen/Mods/disabled
           mkdir -p release/dedi/UserData
+          mkdir -p release/listen/Plugins
+          mkdir -p release/listen/Mods/disabled
           mkdir -p release/listen/UserData
           cp rungame.bat release/dedi/rungame.bat
           cp launch.bat release/dedi/launch.bat
@@ -224,7 +226,21 @@ jobs:
           merge-multiple: true
           path: release/listen/Mods
 
-      - name: Disable some mods
+      - name: Download Updater Plugin
+        uses: robinraju/release-downloader@v1.9
+        with:
+          repository: "data-bomb/MelonLoader_SilicaUpdater"
+          latest: true
+          fileName: "*.dll"
+          tarBall: false
+          zipBall: false
+  
+      - name: Move Updater Plugin into Release
+        run: |
+          mv Si_ModUpdater.dll release/dedi/Plugins
+          mv Si_ModUpdater_ListenServer.dll release/listen/Plugins/Si_ModUpdater.dll
+        
+      - name: Disable Deprecated Mods
         run: |
           # AutoTeamsSelect was addressed with a game update to vote on the next mode
           mv release/dedi/Mods/Si_AutoTeamsSelect.dll release/dedi/Mods/disabled
