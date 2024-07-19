@@ -38,7 +38,7 @@ using System;
 using SilicaAdminMod;
 using System.Linq;
 
-[assembly: MelonInfo(typeof(BasicTeamBalance), "Basic Team Balance", "1.3.8", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(BasicTeamBalance), "Basic Team Balance", "1.3.9", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -118,133 +118,89 @@ namespace Si_BasicTeamBalance
             }
         }
 
-        public static bool OneFactionEliminated()
+        public static int GetNumberOfActiveTeams(MP_Strategy strategyInstance)
         {
-            int TeamsWithMajorStructures = 0;
-            for (int i = 0; i < SiConstants.MaxPlayableTeams; i++)
+            int activeTeams = 0;
+
+            foreach (BaseTeamSetup baseTeamSetup in strategyInstance.TeamSetups)
             {
-                Team? thisTeam = Team.Teams[i];
-                int thisTeamMajorStructures = thisTeam.NumMajorStructures;
-                if (thisTeamMajorStructures > 0)
+                if (strategyInstance.GetTeamSetupActive(baseTeamSetup) && !baseTeamSetup.GetHasLost())
                 {
-                    TeamsWithMajorStructures++;
+                    activeTeams++;
                 }
             }
 
-            if (TeamsWithMajorStructures < 3)
-            {
-                return true;
-            }
-
-            return false;
+            return activeTeams;
         }
 
-        public static int GetNumberOfActiveTeams(GameModeExt.ETeamsVersus versusMode)
+        public static Team? FindLowestPopulationTeam(MP_Strategy strategyInstance)
         {
-            int NumActiveTeams = 0;
-            switch (versusMode)
+            int lowestPlayerCount = NetworkGameServer.GetPlayersMax() + 1;
+            Team? lowestPopTeam = null;
+
+            foreach (BaseTeamSetup baseTeamSetup in strategyInstance.TeamSetups)
             {
-                case GameModeExt.ETeamsVersus.HUMANS_VS_ALIENS:
-                case GameModeExt.ETeamsVersus.HUMANS_VS_HUMANS:
+                if (strategyInstance.GetTeamSetupActive(baseTeamSetup) && !baseTeamSetup.GetHasLost())
+                {
+                    int playerCount = baseTeamSetup.Team.GetNumPlayers();
+                    if (playerCount < lowestPlayerCount)
                     {
-                        NumActiveTeams = 2;
-                        break;
+                        lowestPlayerCount = playerCount;
+                        lowestPopTeam = baseTeamSetup.Team;
                     }
-                case GameModeExt.ETeamsVersus.HUMANS_VS_HUMANS_VS_ALIENS:
-                    {
-                        // need to determine if one faction has been eliminated
-                        if (OneFactionEliminated())
-                        {
-                            NumActiveTeams = 2;
-                        }
-                        else
-                        {
-                            NumActiveTeams = 3;
-                        }    
-                        break;
-                    }
-            }
-
-            return NumActiveTeams;
-        }
-
-        public static Team? FindLowestPopulationTeam(GameModeExt.ETeamsVersus versusMode)
-        {
-            int LowestTeamNumPlayers = NetworkGameServer.GetPlayersMax() + 1;
-            Team? LowestPopTeam = null;
-
-            for (int i = 0; i < SiConstants.MaxPlayableTeams; i++)
-            {
-                Team? thisTeam = Team.Teams[i];
-                if (versusMode == GameModeExt.ETeamsVersus.HUMANS_VS_HUMANS && i == (int)SiConstants.ETeam.Alien)
-                {
-                    continue;
-                }
-                else if (versusMode == GameModeExt.ETeamsVersus.HUMANS_VS_ALIENS && i == (int)SiConstants.ETeam.Centauri)
-                {
-                    continue;
-                }
-                // has the team been eliminated?
-                else if (versusMode == GameModeExt.ETeamsVersus.HUMANS_VS_HUMANS_VS_ALIENS && !thisTeam.GetHasAnyCritical())
-                {
-                    continue;
-                }
-
-                int thisTeamNumPlayers = thisTeam.GetNumPlayers();
-                if (thisTeamNumPlayers < LowestTeamNumPlayers)
-                {
-                    LowestTeamNumPlayers = thisTeamNumPlayers;
-                    LowestPopTeam = thisTeam;
                 }
             }
 
-            return LowestPopTeam;
+            return lowestPopTeam;
         }
         
-        public static bool JoinCausesImbalance(Team? TargetTeam)
+        public static bool JoinCausesImbalance(Team? targetTeam, MP_Strategy strategyInstance)
         {
-            if (TargetTeam == null)
+            if (targetTeam == null)
             {
                 return false;
             }
 
-            MP_Strategy strategyInstance = GameObject.FindObjectOfType<MP_Strategy>();
             GameModeExt.ETeamsVersus versusMode = strategyInstance.TeamsVersus;
 
-            Team? LowestPopTeam = null;
-            int NumActiveTeams = GetNumberOfActiveTeams(versusMode);
-            LowestPopTeam = FindLowestPopulationTeam(versusMode);
+            Team? lowestPopTeam = null;
+            int activeTeams = GetNumberOfActiveTeams(strategyInstance);
+            lowestPopTeam = FindLowestPopulationTeam(strategyInstance);
 
             // are we already trying to join the team with lowest pop or did we have an error?
-            if (LowestPopTeam == null || LowestPopTeam == TargetTeam)
+            if (lowestPopTeam == null || lowestPopTeam == targetTeam)
             {
                 return false;
             }
 
             // what's the player count difference?
-            int TargetTeamPop = TargetTeam.GetNumPlayers();
-            int PlayerDifference = TargetTeamPop - LowestPopTeam.GetNumPlayers();
+            int targetTeamPop = targetTeam.GetNumPlayers();
+            int playerCountDifference = targetTeamPop - lowestPopTeam.GetNumPlayers();
             // as a positive number only
-            if (PlayerDifference < 0)
+            if (playerCountDifference < 0)
             {
-                PlayerDifference = -PlayerDifference;
+                playerCountDifference = -playerCountDifference;
             }
 
             // determine maximum allowed difference
-            int TotalNumPlayers = Player.Players.Count;
-            int MaxDifferenceAllowed;
-            if (NumActiveTeams == 2)
+            int totalPlayers = Player.Players.Count;
+            int maxDifferenceAllowed = 5;
+            if (activeTeams == 2)
             {
-                MaxDifferenceAllowed = (int)Math.Ceiling((TotalNumPlayers / _TwoTeamBalanceDivisor.Value) + _TwoTeamBalanceAddend.Value);
+                maxDifferenceAllowed = (int)Math.Ceiling((totalPlayers / _TwoTeamBalanceDivisor.Value) + _TwoTeamBalanceAddend.Value);
             }
             // more strict enforcement for Humans vs Humans vs Aliens
+            else if (activeTeams == 3) 
+            {
+                maxDifferenceAllowed = (int)Math.Ceiling((totalPlayers / _ThreeTeamBalanceDivisor.Value) + _ThreeTeamBalanceAddend.Value);
+            }
             else
             {
-                MaxDifferenceAllowed = (int)Math.Ceiling((TotalNumPlayers / _ThreeTeamBalanceDivisor.Value) + _ThreeTeamBalanceAddend.Value);
+                MelonLogger.Warning("Found unhandled number of active teams: " + activeTeams.ToString());
             }
 
 
-            if (PlayerDifference > MaxDifferenceAllowed)
+            if (playerCountDifference > maxDifferenceAllowed)
             {
                 return true;
             }
@@ -370,7 +326,7 @@ namespace Si_BasicTeamBalance
 
                     // these would normally get processed at this point but check if early team switching is being stopped and the player already has a team
                     // if re-joining the current team would be considered as imbalanced, then override the prevention - player is trying to help
-                    if (_PreventEarlyTeamSwitches.Value && GameMode.CurrentGameMode.GameOngoing && preventTeamSwitches && mTeam != null && !JoinCausesImbalance(mTeam))
+                    if (_PreventEarlyTeamSwitches.Value && GameMode.CurrentGameMode.GameOngoing && preventTeamSwitches && mTeam != null && !JoinCausesImbalance(mTeam, __instance))
                     {
                         // avoid chat spam
                         if (LastPlayerChatMessage != JoiningPlayer)
@@ -385,10 +341,8 @@ namespace Si_BasicTeamBalance
                         return false;
                     }
 
-                    MP_Strategy strategyInstance = GameObject.FindObjectOfType<MP_Strategy>();
-
                     // if there is some kind of game bug and the player is on an invalid team then let the change occur
-                    if (JoiningPlayer.Team != null && strategyInstance.GetTeamSetup(JoiningPlayer.Team) == null)
+                    if (JoiningPlayer.Team != null && __instance.GetTeamSetup(JoiningPlayer.Team) == null)
                     {
                         MelonLogger.Warning("Found player on invalid team. Allowing role change.");
                         JoiningPlayer.Team = TargetTeam;
@@ -397,7 +351,7 @@ namespace Si_BasicTeamBalance
                     }
 
                     // the team change should be permitted as it doesn't impact balance
-                    if (!JoinCausesImbalance(TargetTeam))
+                    if (!JoinCausesImbalance(TargetTeam, __instance))
                     {
                         JoiningPlayer.Team = TargetTeam;
                         NetworkLayer.SendPlayerSelectTeam(JoiningPlayer, TargetTeam);
@@ -407,9 +361,8 @@ namespace Si_BasicTeamBalance
                     // if the player hasn't joined a team yet, force them to the team that needs it the most
                     if (JoiningPlayer.Team == null)
                     {
-                        
-                        GameModeExt.ETeamsVersus versusMode = strategyInstance.TeamsVersus;
-                        Team? ForcedTeam = FindLowestPopulationTeam(versusMode);
+                        GameModeExt.ETeamsVersus versusMode = __instance.TeamsVersus;
+                        Team? ForcedTeam = FindLowestPopulationTeam(__instance);
                         if (ForcedTeam != null)
                         {
                             // avoid chat spam
