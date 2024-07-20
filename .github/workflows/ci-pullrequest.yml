@@ -5,7 +5,7 @@ name: Eval-PR
 
 on:
   pull_request:
-    types: [opened, reopened]
+    types: [opened, synchronize, edited, reopened]
     
 env:
   BUILD_TYPE: Release
@@ -43,6 +43,17 @@ jobs:
       run: echo "START_DIR=`pwd`" >> $GITHUB_ENV
       
     - uses: actions/checkout@v4
+
+    - name: Download References
+      uses: actions/checkout@v4
+      with:
+        repository: ${{ secrets.PRIV_R }}
+        token: ${{ secrets.FGAT_PRIV_R }}
+        path: references
+
+    - name: Move References
+      run: |
+        cp -r references/. include
     
     - name: Download QList
       uses: robinraju/release-downloader@v1.9

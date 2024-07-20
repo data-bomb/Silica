@@ -267,17 +267,7 @@ namespace Si_CommanderManagement
         {
             private static void Postfix(MP_Strategy __instance)
             {
-                if (!CommanderManager._BlockRoundStartUntilEnoughApplicants.Value)
-                {
-                    return;
-                }
-
                 if (__instance.GameOver)
-                {
-                    return;
-                }
-
-                if (AllTeamsHaveCommanderApplicants())
                 {
                     return;
                 }
@@ -292,14 +282,66 @@ namespace Si_CommanderManagement
                 timerValue = (float)timerField.GetValue(__instance);
                 #endif
 
+                // the last second before the round is about to start
+                if (timerValue <= 1f && timerValue > 0f)
+                {
+                    // switch all applicants to freecam
+                    for (int i = 0; i < SiConstants.MaxPlayableTeams; i++)
+                    {
+                        if (commanderApplicants[i].Count == 0)
+                        {
+                            continue;
+                        }
+
+                        foreach (Player applicantPlayer in commanderApplicants[i])
+                        {
+                            if (applicantPlayer == null)
+                            {
+                                continue;
+                            }
+
+                            // send to role NONE
+                            CommanderPrimitives.SendToRole(applicantPlayer, GameModeExt.ETeamRole.NONE);
+                            MelonLogger.Msg("Player " + applicantPlayer.PlayerName + " is being sent to role NONE.");
+
+                            // force switching to role NONE
+                            GameMode.CurrentGameMode.DestroyAllUnitsForPlayer(applicantPlayer);
+                            #if NET6_0
+                            if (__instance.PlayerRespawnTracker.ContainsKey(applicantPlayer))
+                            {
+                                __instance.PlayerRespawnTracker.Remove(applicantPlayer);
+                            }
+                            #else
+                            FieldInfo playerRespawnTrackerField = typeof(MP_Strategy).GetField("PlayerRespawnTracker", BindingFlags.NonPublic | BindingFlags.Instance);
+                            Dictionary<Player, float> localPlayerRespawnTracker = (Dictionary<Player, float>)playerRespawnTrackerField.GetValue(__instance);
+                            if (localPlayerRespawnTracker.ContainsKey(applicantPlayer))
+                            {
+                                localPlayerRespawnTracker.Remove(applicantPlayer);
+                                playerRespawnTrackerField.SetValue(__instance, localPlayerRespawnTracker);
+                            }
+                            #endif
+                        }
+                    }
+                }
+
+                if (!CommanderManager._BlockRoundStartUntilEnoughApplicants.Value)
+                {
+                    return;
+                }
+
+                if (AllTeamsHaveCommanderApplicants())
+                {
+                    return;
+                }
+
                 if (timerValue <= 5f && timerValue > 4f)
                 {
                     HelperMethods.ReplyToCommand("Round cannot start because all teams don't have a commander. Chat !commander to apply.");
 
                     #if NET6_0
-                    __instance.Timer = 21f;
+                    __instance.Timer = 26f;
                     #else
-                    timerField.SetValue(__instance, 21f);
+                    timerField.SetValue(__instance, 26f);
                     #endif
                 }
             }

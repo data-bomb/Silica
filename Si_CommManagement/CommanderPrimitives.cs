@@ -59,23 +59,6 @@ namespace Si_CommanderManagement
         {
             MP_Strategy strategyInstance = GameObject.FindObjectOfType<MP_Strategy>();
 
-            // mimic switching to role NONE first
-            GameMode.CurrentGameMode.DestroyAllUnitsForPlayer(CommanderPlayer);
-            #if NET6_0
-            if (strategyInstance.PlayerRespawnTracker.ContainsKey(CommanderPlayer))
-            {
-                strategyInstance.PlayerRespawnTracker.Remove(CommanderPlayer);
-            }
-            #else
-            FieldInfo playerRespawnTrackerField = typeof(MP_Strategy).GetField("PlayerRespawnTracker", BindingFlags.NonPublic | BindingFlags.Instance);
-            Dictionary<Player, float> localPlayerRespawnTracker = (Dictionary<Player, float>)playerRespawnTrackerField.GetValue(strategyInstance);
-            if (localPlayerRespawnTracker.ContainsKey(CommanderPlayer))
-            {
-                localPlayerRespawnTracker.Remove(CommanderPlayer);
-                playerRespawnTrackerField.SetValue(strategyInstance, localPlayerRespawnTracker);
-            }
-            #endif
-
             // now mimic switching to COMMANDER role
             BaseTeamSetup strategyTeamInstance = strategyInstance.GetTeamSetup(CommanderPlayer.Team);
             MelonLogger.Msg("Trying to promote " + CommanderPlayer.PlayerName + " on team " + CommanderPlayer.Team.TeamShortName);
