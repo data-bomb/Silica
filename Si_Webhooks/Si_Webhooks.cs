@@ -37,7 +37,7 @@ using System.Text.RegularExpressions;
 using System.Collections.Generic;
 using Newtonsoft.Json;
 
-[assembly: MelonInfo(typeof(Webhooks), "Webhooks", "1.2.5", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(Webhooks), "Webhooks", "1.2.6", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -78,10 +78,7 @@ namespace Si_Webhooks
 
             try
             {
-                if (!SteamAPI.IsSteamRunning())
-                {
-                    SteamAPI.Init();
-                }
+                SteamAPI.Init();
             }
             catch (Exception error)
             {
