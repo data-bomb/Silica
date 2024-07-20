@@ -117,7 +117,7 @@ namespace SilicaAdminMod
             }
         }
 
-        public static void SendMessageToTeamNoCommander(Team team, params string[] messages)
+        public static void SendChatMessageToTeamNoCommander(Team team, params string[] messages)
         {
             Player broadcastPlayer = FindBroadcastPlayer(team);
 
