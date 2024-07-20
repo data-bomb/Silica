@@ -234,11 +234,22 @@ jobs:
           fileName: "*.dll"
           tarBall: false
           zipBall: false
+          
+      - name: Download Discord Status Plugin
+        uses: robinraju/release-downloader@v1.9
+        with:
+          repository: "data-bomb/MelonLoader_SilicaDiscordRP"
+          latest: true
+          fileName: "*.dll"
+          tarBall: false
+          zipBall: false
   
-      - name: Move Updater Plugin into Release
+      - name: Move Plugins into Release
         run: |
           mv Si_ModUpdater.dll release/dedi/Plugins
           mv Si_ModUpdater_ListenServer.dll release/listen/Plugins/Si_ModUpdater.dll
+          mv Si_DiscordStatus.dll release/dedi/Plugins
+          mv Si_DiscordStatus_ListenServer.dll release/listen/Plugins/Si_DiscordStatus.dll
         
       - name: Disable Deprecated Mods
         run: |
