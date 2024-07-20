@@ -35,7 +35,7 @@ using SilicaAdminMod;
 using System.Linq;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(AntiGrief), "Anti-Grief", "1.2.3", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(AntiGrief), "Anti-Grief", "1.2.4", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -274,6 +274,11 @@ namespace Si_AntiGrief
 
                 Unit unit = player.ControlledUnit;
                 if (unit == null)
+                {
+                    return;
+                }
+
+                if (unit.DamageManager.IsDestroyed)
                 {
                     return;
                 }
