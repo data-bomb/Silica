@@ -1,3 +1,3 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <Import Project="..\include\common.csproj" />
+  <Import Project="..\include\common.csproj"/>
 </Project>
