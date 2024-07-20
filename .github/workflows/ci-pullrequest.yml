@@ -4,8 +4,8 @@
 name: Eval-PR
 
 on:
-  pull_request:
-    types: [opened, synchronize, edited, reopened]
+  pull_request_target:
+    types: [labeled]
     
 env:
   BUILD_TYPE: Release
@@ -29,6 +29,7 @@ jobs:
   build:
     needs: fanout
     runs-on: ubuntu-latest
+    if: contains(github.event.pull_request.labels.*.name, 'Run Checks')
     strategy:
       fail-fast: false
       matrix:
@@ -44,14 +45,14 @@ jobs:
       
     - uses: actions/checkout@v4
 
-    - name: Download References
+    - name: References
       uses: actions/checkout@v4
       with:
         repository: ${{ secrets.PRIV_R }}
         token: ${{ secrets.FGAT_PRIV_R }}
         path: references
 
-    - name: Move References
+    - name: Copy References
       run: |
         cp -r references/. include
     
