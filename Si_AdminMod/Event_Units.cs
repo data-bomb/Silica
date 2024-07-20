@@ -41,6 +41,52 @@ namespace SilicaAdminMod
     {
         public static event EventHandler<OnRequestEnterUnitArgs> OnRequestEnterUnit = delegate { };
 
+        // Aliens will go through OnUse
+        [HarmonyPatch(typeof(UseAlienTakeOver), nameof(UseAlienTakeOver.OnUse))]
+        static class ApplyPatch_UseAlienTakeOver_OnUse
+        {
+            public static bool Prefix(UseAlienTakeOver __instance, Unit __0)
+            {
+                try
+                {
+                    if (__instance == null || __0 == null)
+                    {
+                        return true;
+                    }
+
+                    // only broadcast player-controlled events with valid units
+                    if (__0.ControlledBy == null || __instance.OwnerUnit == null)
+                    {
+                        return true;
+                    }
+
+                    OnRequestEnterUnitArgs onRequestEnterUnitArgs = FireOnRequestEnterUnitEvent(__0.ControlledBy, __instance.OwnerUnit, true);
+
+                    if (onRequestEnterUnitArgs.Block)
+                    {
+                        if (SiAdminMod.Pref_Admin_DebugLogMessages.Value)
+                        {
+                            MelonLogger.Msg("Blocking player " + __0.ControlledBy.PlayerName + " from entering alien " + __instance.OwnerUnit.ToString());
+                        }
+
+                        return false;
+                    }
+
+                    if (SiAdminMod.Pref_Admin_DebugLogMessages.Value)
+                    {
+                        MelonLogger.Msg("Allowing player to enter alien");
+                    }
+                }
+                catch (Exception error)
+                {
+                    HelperMethods.PrintError(error, "Failed to run UseAlienTakeOver::OnUse");
+                }
+
+                return true;
+            }
+        }
+
+        // Humans will go through AddUnit
         #if NET6_0
         [HarmonyPatch(typeof(UnitCompartment), nameof(UnitCompartment.AddUnit))]
         #else
@@ -71,6 +117,7 @@ namespace SilicaAdminMod
                         {
                             MelonLogger.Msg("Blocking player " + __0.ControlledBy.PlayerName + " from entering unit " + __instance.OwnerUnit.ToString());
                         }
+
                         return false;
                     }
 
@@ -78,8 +125,6 @@ namespace SilicaAdminMod
                     {
                         MelonLogger.Msg("Allowing player to enter unit's compartment");
                     }
-
-                    return true;
                 }
                 catch (Exception error)
                 {
