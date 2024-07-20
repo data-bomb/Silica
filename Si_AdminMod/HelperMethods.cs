@@ -117,6 +117,25 @@ namespace SilicaAdminMod
             }
         }
 
+        public static void SendMessageToTeamNoCommander(Team team, params string[] messages)
+        {
+            Player broadcastPlayer = FindBroadcastPlayer(team);
+
+            for (int i = 0; i < Player.Players.Count; i++)
+            {
+                Player? player = Player.Players[i];
+                if (player == null)
+                {
+                    continue;
+                }
+
+                if (player.Team == team && !player.IsCommander)
+                {
+                    NetworkSendChat(player, broadcastPlayer, messages);
+                }
+            }
+        }
+
         public static void SendConsoleMessage(params string[] messages)
         {
             for (int i = 0; i < Player.Players.Count; i++)
