@@ -143,6 +143,8 @@ namespace Si_CommanderManagement
             {
                 try
                 {
+                    Mutineer.ClearMutineerList();
+
                     if (CommanderApplications.commanderApplicants == null || CommanderApplications.previousCommanders == null || promotedCommanders == null)
                     {
                         return;

@@ -32,8 +32,9 @@ using Si_CommanderManagement;
 using System;
 using SilicaAdminMod;
 using System.Linq;
+using System.Collections.Generic;
 
-[assembly: MelonInfo(typeof(CommanderManager), "Commander Management", "1.7.0", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(CommanderManager), "Commander Management", "1.8.0", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -45,6 +46,8 @@ namespace Si_CommanderManagement
         public static MelonPreferences_Entry<bool> _BlockRoundStartUntilEnoughApplicants = null!;
         public static MelonPreferences_Entry<bool> _TeamOnlyResponses = null!;
 
+        public static List<Player>[] mutineerPlayers = null!;
+
         public override void OnInitializeMelon()
         {
             _modCategory ??= MelonPreferences.CreateCategory("Silica");
@@ -55,6 +58,7 @@ namespace Si_CommanderManagement
             {
                 CommanderBans.InitializeList();
                 CommanderApplications.InitializeApplications();
+                Mutineer.InitializeMutineerList();
             }
             catch (Exception error)
             {
@@ -80,6 +84,9 @@ namespace Si_CommanderManagement
             HelperMethods.CommandCallback commanderCallback = CommanderApplications.Command_Commander;
             HelperMethods.RegisterPlayerCommand("commander", commanderCallback, true);
 
+            HelperMethods.CommandCallback mutinyCallback = Mutineer.Command_Mutiny;
+            HelperMethods.RegisterPlayerCommand("mutiny", mutinyCallback, true);
+
             // subscribe to the OnRequestCommander event
             Event_Roles.OnRequestCommander += OnRequestCommander;
 
@@ -94,6 +101,10 @@ namespace Si_CommanderManagement
             QList.OptionTypes.BoolOption dontStartWithoutCommanders = new(_BlockRoundStartUntilEnoughApplicants, _BlockRoundStartUntilEnoughApplicants.Value);
             QList.Options.AddOption(dontStartWithoutCommanders);
             #endif
+        }
+        public override void OnSceneWasLoaded(int buildIndex, string sceneName)
+        {
+            Mutineer.ClearMutineerList();
         }
 
         public void OnRequestCommander(object? sender, OnRequestCommanderArgs args)
