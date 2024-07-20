@@ -35,7 +35,7 @@ using SilicaAdminMod;
 using System.Linq;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(AntiGrief), "Anti-Grief", "1.2.4", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(AntiGrief), "Anti-Grief", "1.3.0", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -47,6 +47,7 @@ namespace Si_AntiGrief
         static MelonPreferences_Entry<int> _NegativeKillsThreshold = null!;
         static MelonPreferences_Entry<bool> _NegativeKills_Penalty_Ban = null!;
         static MelonPreferences_Entry<bool> _StructureAntiGrief_IgnoreNodes = null!;
+        static MelonPreferences_Entry<bool> _BlockShrimpControllers = null!;
 
         private const string ModCategory = "Silica";
 
@@ -56,13 +57,15 @@ namespace Si_AntiGrief
             _NegativeKillsThreshold ??= _modCategory.CreateEntry<int>("Grief_NegativeKills_Threshold", -125);
             _NegativeKills_Penalty_Ban ??= _modCategory.CreateEntry<bool>("Grief_NegativeKills_Penalty_Ban", true);
             _StructureAntiGrief_IgnoreNodes ??= _modCategory.CreateEntry<bool>("Grief_IgnoreFriendlyNodesDestroyed", true);
+            _BlockShrimpControllers ??= _modCategory.CreateEntry<bool>("Grief_BlockShrimpTakeOver", true);
         }
 
 
         public override void OnLateInitializeMelon()
         {
-            //subscribing to the event
+            //subscribing to the events
             Event_Roles.OnRoleChanged += OnRoleChanged;
+            Event_Units.OnRequestEnterUnit += OnRequestEnterUnit;
 
             #if NET6_0
             bool QListLoaded = RegisteredMelons.Any(m => m.Info.Name == "QList");
@@ -243,6 +246,48 @@ namespace Si_AntiGrief
             }
         }
 
+        public void OnRequestEnterUnit(object? sender, OnRequestEnterUnitArgs args)
+        {
+            try
+            {
+                if (args == null)
+                {
+                    return;
+                }
+
+                if (!_BlockShrimpControllers.Value)
+                {
+                    return;
+                }
+
+                Player player = args.Player;
+                Unit unit = args.Unit;
+
+                if (player == null || player.Team == null || unit == null)
+                {
+                    return;
+                }
+
+                // if the player isn't on the alien team, we can skip this check
+                if (player.Team.Index != (int)SiConstants.ETeam.Alien)
+                {
+                    return;
+                }
+
+                // is it a shrimp?
+                if (unit.IsResourceHolder)
+                {
+                    MelonLogger.Msg("Found " + player.PlayerName + " trying to use an Alien shrimp.");
+                    HelperMethods.SendChatMessageToPlayer(player, HelperMethods.chatPrefix, " use of shrimp is not permitted on this server.");
+                    args.Block = true;
+                }
+            }
+            catch (Exception error)
+            {
+                HelperMethods.PrintError(error, "Failed to run OnRequestEnterUnit");
+            }
+        }
+
         // hook DestroyAllUnitsForPlayer pre and override game code to prevent aliens from dying
         public void OnRoleChanged(object? sender, OnRoleChangedArgs args)
         {
@@ -301,7 +346,6 @@ namespace Si_AntiGrief
             {
                 HelperMethods.PrintError(error, "Failed to run OnRoleChanged");
             }
-
         }
 
         public static bool IsHighValueAlienUnit(Unit unit)
