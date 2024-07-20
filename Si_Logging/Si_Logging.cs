@@ -66,7 +66,11 @@ namespace Si_Logging
 
         public static bool ParserExePresent()
         {
-            return System.IO.File.Exists(Pref_Log_ParserExe.Value);
+            return System.IO.File.Exists(GetParserPath());
+        }
+        public static string GetParserPath()
+        {
+            return System.IO.Path.Combine(MelonEnvironment.UserDataDirectory, Pref_Log_ParserExe.Value);
         }
 
         public static void PrintLogLine(string LogMessage, bool suppressConsoleOutput = false)
@@ -141,7 +145,7 @@ namespace Si_Logging
                 _modCategory ??= MelonPreferences.CreateCategory("Silica");
                 Pref_Log_Damage ??= _modCategory.CreateEntry<bool>("Logging_LogDamage", false);
                 Pref_Log_Kills_Include_AI_vs_Player ??= _modCategory.CreateEntry<bool>("Logging_LogKills_IncludeAIvsPlayer", true);
-                Pref_Log_ParserExe ??= _modCategory.CreateEntry<string>("Logging_ParserExePath", "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Silica Dedicated Server\\UserData\\parser.exe");
+                Pref_Log_ParserExe ??= _modCategory.CreateEntry<string>("Logging_ParserExePath", "parser.exe");
                 Pref_Log_PerfMonitor_Interval ??= _modCategory.CreateEntry<float>("Logging_PerfMonitor_LogInterval", 60f);
                 Pref_Log_PerfMonitor_Enable ??= _modCategory.CreateEntry<bool>("Logging_PerfMonitor_Enable", true);
                 Pref_Log_PlayerConsole_Enable ??= _modCategory.CreateEntry<bool>("Logging_PlayerConsole_Enable", true);
@@ -840,7 +844,7 @@ namespace Si_Logging
                         // launch parser
                         MelonLogger.Msg("Launching parser.");
                         ProcessStartInfo start = new ProcessStartInfo();
-                        start.FileName = Path.GetFullPath(Pref_Log_ParserExe.Value);
+                        start.FileName = Path.GetFullPath(GetParserPath());
                         string arguments = string.Format("\"{0}", GetLogFileDirectory());
                         start.Arguments = arguments;
                         start.UseShellExecute = false;
