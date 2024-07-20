@@ -37,7 +37,7 @@ using System.Text.RegularExpressions;
 using System.Collections.Generic;
 using Newtonsoft.Json;
 
-[assembly: MelonInfo(typeof(Webhooks), "Webhooks", "1.2.4", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(Webhooks), "Webhooks", "1.2.5", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -167,6 +167,7 @@ namespace Si_Webhooks
                     {
                         avatarURL = _Default_Avatar_URL.Value;
                     }
+
                     SendMessageToWebhook(rawMessage, username, avatarURL, isUserReport);
                 }
                 catch (Exception error)
@@ -181,6 +182,11 @@ namespace Si_Webhooks
             if (_Webhooks_URL.Value == string.Empty || message == string.Empty)
             {
                 return;
+            }
+
+            if (!SteamAPI.IsSteamRunning())
+            {
+                SteamAPI.Init();
             }
 
             HTTPRequestHandle request = SteamHTTP.CreateHTTPRequest(EHTTPMethod.k_EHTTPMethodPOST, _Webhooks_URL.Value);
