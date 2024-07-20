@@ -4,8 +4,8 @@
 name: Eval-PR
 
 on:
-  pull_request:
-    types: [opened, reopened]
+  pull_request_target:
+    types: [labeled]
     
 env:
   BUILD_TYPE: Release
@@ -29,6 +29,7 @@ jobs:
   build:
     needs: fanout
     runs-on: ubuntu-latest
+    if: contains(github.event.pull_request.labels.*.name, 'Run Checks')
     strategy:
       fail-fast: false
       matrix:
@@ -43,6 +44,17 @@ jobs:
       run: echo "START_DIR=`pwd`" >> $GITHUB_ENV
       
     - uses: actions/checkout@v4
+
+    - name: References
+      uses: actions/checkout@v4
+      with:
+        repository: ${{ secrets.PRIV_R }}
+        token: ${{ secrets.FGAT_PRIV_R }}
+        path: references
+
+    - name: Copy References
+      run: |
+        cp -r references/. include
     
     - name: Download QList
       uses: robinraju/release-downloader@v1.9
