@@ -33,7 +33,7 @@ using System;
 using SilicaAdminMod;
 using System.Linq;
 
-[assembly: MelonInfo(typeof(CommanderManager), "Commander Management", "1.6.12", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(CommanderManager), "Commander Management", "1.7.0", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -131,7 +131,7 @@ namespace Si_CommanderManagement
 
                 MelonLogger.Msg("Denied early game commander join for " + args.Requester.PlayerName);
                 args.Block = true;
-                args.PreventSpawnWhenBlocked = true;
+                args.PreventSpawnWhenBlocked = false;
                 return;
             }
         }
