@@ -44,7 +44,7 @@ using System.IO;
 using System.Text;
 using System.Runtime.CompilerServices;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.4.4", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.4.5", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -59,20 +59,14 @@ namespace Si_Logging
         static MelonPreferences_Category _modCategory = null!;
         static MelonPreferences_Entry<bool> Pref_Log_Damage = null!;
         static MelonPreferences_Entry<bool> Pref_Log_Kills_Include_AI_vs_Player = null!;
-        static MelonPreferences_Entry<string> Pref_Log_ParserFile = null!;
-        static MelonPreferences_Entry<string> Pref_Log_PythonExe = null!;
+        static MelonPreferences_Entry<string> Pref_Log_ParserExe = null!;
         public static MelonPreferences_Entry<float> Pref_Log_PerfMonitor_Interval = null!;
         public static MelonPreferences_Entry<bool> Pref_Log_PerfMonitor_Enable = null!;
         public static MelonPreferences_Entry<bool> Pref_Log_PlayerConsole_Enable = null!;
 
-        public static bool ParserFilePresent()
+        public static bool ParserExePresent()
         {
-            return System.IO.File.Exists(GetParserPath());
-        }
-
-        public static string GetParserPath()
-        {
-            return System.IO.Path.Combine(MelonEnvironment.UserDataDirectory, Pref_Log_ParserFile.Value);
+            return System.IO.File.Exists(Pref_Log_ParserExe.Value);
         }
 
         public static void PrintLogLine(string LogMessage, bool suppressConsoleOutput = false)
@@ -147,8 +141,7 @@ namespace Si_Logging
                 _modCategory ??= MelonPreferences.CreateCategory("Silica");
                 Pref_Log_Damage ??= _modCategory.CreateEntry<bool>("Logging_LogDamage", false);
                 Pref_Log_Kills_Include_AI_vs_Player ??= _modCategory.CreateEntry<bool>("Logging_LogKills_IncludeAIvsPlayer", true);
-                Pref_Log_ParserFile ??= _modCategory.CreateEntry<string>("Logging_LogParserPath", "inserting_info.py");
-                Pref_Log_PythonExe ??= _modCategory.CreateEntry<string>("Logging_PythonExePath", "C:\\Users\\A\\Mods\\Silica\\ranked\\venv\\Scripts\\python.exe");
+                Pref_Log_ParserExe ??= _modCategory.CreateEntry<string>("Logging_ParserExePath", "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Silica Dedicated Server\\UserData\\parser.exe");
                 Pref_Log_PerfMonitor_Interval ??= _modCategory.CreateEntry<float>("Logging_PerfMonitor_LogInterval", 60f);
                 Pref_Log_PerfMonitor_Enable ??= _modCategory.CreateEntry<bool>("Logging_PerfMonitor_Enable", true);
                 Pref_Log_PlayerConsole_Enable ??= _modCategory.CreateEntry<bool>("Logging_PlayerConsole_Enable", true);
@@ -838,7 +831,7 @@ namespace Si_Logging
                         PrintLogLine(RoundWinLogLine);
 
                         // call parser
-                        if (!ParserFilePresent())
+                        if (!ParserExePresent())
                         {
                             MelonLogger.Msg("Parser file not present.");
                             return;
@@ -847,8 +840,8 @@ namespace Si_Logging
                         // launch parser
                         MelonLogger.Msg("Launching parser.");
                         ProcessStartInfo start = new ProcessStartInfo();
-                        start.FileName = Pref_Log_PythonExe.Value;
-                        string arguments = string.Format("\"{0}\" \"{1}\"", GetParserPath(), GetLogFileDirectory());
+                        start.FileName = Path.GetFullPath(Pref_Log_ParserExe.Value);
+                        string arguments = string.Format("\"{0}", GetLogFileDirectory());
                         start.Arguments = arguments;
                         start.UseShellExecute = false;
                         start.RedirectStandardOutput = false;
