@@ -37,7 +37,7 @@ namespace SilicaAdminMod
             }
 
             // check if we have a match before adding more details
-            if (AdminMethods.FindAdminFromSteamId(playerSteamId) == null)
+            if (AdminMethods.FindAdminFromSteamId(playerSteamId) != null)
             {
                 return false;
             }
