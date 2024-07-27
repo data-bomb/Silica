@@ -39,7 +39,7 @@ using SilicaAdminMod;
 using System.Linq;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(MapCycleMod), "Mapcycle", "1.6.1", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(MapCycleMod), "Mapcycle", "1.6.2", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -59,6 +59,7 @@ namespace Si_Mapcycle
         static MelonPreferences_Category _modCategory = null!;
         static MelonPreferences_Entry<int> Pref_Mapcycle_RoundsBeforeChange = null!;
         static MelonPreferences_Entry<int> Pref_Mapcycle_EndgameDelay = null!;
+        static MelonPreferences_Entry<float> Pref_Mapcycle_RockTheVote_Percent = null!;
 
         static float Timer_EndRoundDelay = HelperMethods.Timer_Inactive;
         static float Timer_InitialPostVoteDelay = HelperMethods.Timer_Inactive;
@@ -71,6 +72,7 @@ namespace Si_Mapcycle
                 _modCategory ??= MelonPreferences.CreateCategory("Silica");
                 Pref_Mapcycle_RoundsBeforeChange ??= _modCategory.CreateEntry<int>("Mapcycle_RoundsBeforeMapChange", 2);
                 Pref_Mapcycle_EndgameDelay ??= _modCategory.CreateEntry<int>("Mapcycle_DelayBeforeEndgameMapChange_Seconds", 9);
+                Pref_Mapcycle_RockTheVote_Percent ??= _modCategory.CreateEntry<float>("Mapcycle_RockTheVote_PercentNeeded", 0.31f);
 
                 String mapCycleFile = MelonEnvironment.UserDataDirectory + "\\mapcycle.txt";
 
@@ -312,7 +314,7 @@ namespace Si_Mapcycle
         public static int RocksNeededForVote()
         {
             int totalPlayers = Player.Players.Count;
-            int rocksNeeded = (int)Math.Ceiling(totalPlayers * 0.31f);
+            int rocksNeeded = (int)Math.Ceiling(totalPlayers * Pref_Mapcycle_RockTheVote_Percent.Value);
             if (rocksNeeded < 1)
             {
                 return 1;
