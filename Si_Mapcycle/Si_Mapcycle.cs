@@ -233,11 +233,25 @@ namespace Si_Mapcycle
             // then remaining from the mapcycle, if any
             for (int i = rtvIndex; i < 3; i++)
             {
-                rtvOptions[i] = new OptionPair
+                for (int j = 0; j < sMapCycle.Length; j++)
                 {
-                    Command = (i + 1).ToString(),
-                    Description = sMapCycle[(iMapLoadCount + 1 + i) % (sMapCycle.Length)]
-                };
+                    string candidateMapName = sMapCycle[(iMapLoadCount + 1 + i + j) % (sMapCycle.Length)];
+
+                    if (mapNominations.Contains(candidateMapName))
+                    {
+                        // keep checking for a match
+                        continue;
+                    }
+
+                    // no duplicate found, so add it and exit inner loop
+                    rtvOptions[i] = new OptionPair
+                    {
+                        Command = (i + 1).ToString(),
+                        Description = candidateMapName
+                    };
+
+                    break;
+                }
             }
 
             rtvOptions[3] = new OptionPair
