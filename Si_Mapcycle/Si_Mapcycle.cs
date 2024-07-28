@@ -39,7 +39,7 @@ using SilicaAdminMod;
 using System.Linq;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(MapCycleMod), "Mapcycle", "1.6.2", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(MapCycleMod), "Mapcycle", "1.6.3", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -376,18 +376,25 @@ namespace Si_Mapcycle
 
             if (ChatVotes.IsVoteInProgress())
             {
-                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, " Can't nominate a map because a vote is in progress.");
+                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": Can't nominate a map because a vote is in progress.");
                 return;
             }
 
             if (!GameMode.CurrentGameMode.GameOngoing)
             {
-                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, " Can't nominate a map yet. Game not started.");
+                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": Can't nominate a map yet. Game not started.");
                 return;
             }
 
-            HelperMethods.ReplyToCommand_Player(callerPlayer, "nominated " + targetMapName + " as a map for the rock the vote list.");
-            mapNominations.Add(targetMapName);
+            LevelInfo? levelInfo = GetLevelInfo(targetMapName);
+            if (levelInfo == null)
+            {
+                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": Can't find level info for specified map.");
+                return;
+            }
+
+            HelperMethods.ReplyToCommand_Player(callerPlayer, "nominated " + levelInfo.FileName + " as a map for the rock the vote list.");
+            mapNominations.Add(levelInfo.FileName);
         }
 
         public static void Command_CurrentMap(Player? callerPlayer, String args)
