@@ -173,21 +173,24 @@ namespace Si_CommanderManagement
                             continue;
                         }
 
-                        // remove previous commanders from applicant list
-                        for (int j = 0; j < previousCommanders.Count; j++)
+                        // remove previous commanders from applicant list, if there is a choice
+                        if (commanderApplicants[i].Count > 1)
                         {
-                            RemovePlayer = commanderApplicants[i].Find(k => k == previousCommanders[j].Commander);
-                            if (RemovePlayer != null)
+                            for (int j = 0; j < previousCommanders.Count; j++)
                             {
-                                MelonLogger.Msg("Removing applicant from 2 rounds ago from random selection: " + RemovePlayer.PlayerName);
-                                GameMode.CurrentGameMode.SpawnUnitForPlayer(RemovePlayer, RemovePlayer.Team);
-                                commanderApplicants[i].Remove(RemovePlayer);
+                                RemovePlayer = commanderApplicants[i].Find(k => k == previousCommanders[j].Commander);
+                                if (RemovePlayer != null)
+                                {
+                                    MelonLogger.Msg("Removing applicant from 2 rounds ago from random selection: " + RemovePlayer.PlayerName);
+                                    GameMode.CurrentGameMode.SpawnUnitForPlayer(RemovePlayer, RemovePlayer.Team);
+                                    commanderApplicants[i].Remove(RemovePlayer);
+                                }
                             }
-                        }
 
-                        if (commanderApplicants[i].Count == 0)
-                        {
-                            continue;
+                            if (commanderApplicants[i].Count == 0)
+                            {
+                                continue;
+                            }
                         }
 
                         int iCommanderIndex = randomIndex.Next(0, commanderApplicants[i].Count - 1);
