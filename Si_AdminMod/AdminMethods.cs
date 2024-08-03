@@ -80,7 +80,7 @@ namespace SilicaAdminMod
             return AdminCommands.Remove(matchingCommand);
         }
 
-        public static Admin? FindAdminFromSteamId(long steamId)
+        public static Admin? FindAdminFromSteamId(long steamId, bool modAdminOnly = false)
         {
             // check the mod admin list first
             foreach (Admin modAdmin in SiAdminMod.AdminList)
@@ -89,6 +89,11 @@ namespace SilicaAdminMod
                 {
                     return modAdmin;
                 }
+            }
+
+            if (modAdminOnly)
+            {
+                return null;
             }
 
             // grant some default powers if they are on the game's admin list but missing from the mod admin list
