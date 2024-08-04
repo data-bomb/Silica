@@ -36,7 +36,7 @@ using Si_RepairFacility;
 using System.Collections.Generic;
 using System.Text;
 
-[assembly: MelonInfo(typeof(RepairFacility), "Repair Facility", "1.0.1", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(RepairFacility), "Repair Facility", "1.0.2", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -174,12 +174,6 @@ namespace Si_RepairFacility
                         return;
                     }
 
-                    // is the unit a player-controlled vehicle?
-                    if (__1.DriverCompartment == null || __1.NetworkComponent == null || __1.ControlledBy == null)
-                    {
-                        return;
-                    }
-
                     // there are two openablebases in a LightVehicleFactory:
                     // HousingUnit07_MainDoor and LVF_EntryDoor_Part01
                     if (!__instance.NetworkComponent.ToString().StartsWith("LightVehicleF"))
@@ -187,8 +181,19 @@ namespace Si_RepairFacility
                         return;
                     }
 
-                    MelonLogger.Msg("Found player's vehicle exiting LVF repair zone: " + __1.ControlledBy.PlayerName + " with vehicle " + __1.ToString());
-
+                    // is the unit a player-controlled vehicle?
+                    if (__1.DriverCompartment == null || __1.NetworkComponent == null || __1.ControlledBy == null)
+                    {
+                        if (vehiclesAtRepairShop.Contains(__1.DamageManager))
+                        {
+                            MelonLogger.Msg("Found vehicle exiting LVF repair zone: " + __1.ToString());
+                        }
+                    }
+                    else
+                    {
+                        MelonLogger.Msg("Found player's vehicle exiting LVF repair zone: " + __1.ControlledBy.PlayerName + " with vehicle " + __1.ToString());
+                    }
+                    
                     vehiclesAtRepairShop.RemoveAll(vehicleDM => vehicleDM == __1.DamageManager);
                 }
                 catch (Exception error)
