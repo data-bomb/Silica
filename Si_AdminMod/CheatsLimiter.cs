@@ -118,8 +118,14 @@ namespace SilicaAdminMod
                     bitsSent += byteDataSize * 8U;
                     netBitsSentField.SetValue(null, bitsSent);
                     #endif
-                    
-                    SteamGameServerNetworking.SendP2PPacket(player.PlayerID, byteData, byteDataSize, EP2PSend.k_EP2PSendReliable, player.PlayerChannel);
+
+                    #if NET6_0
+                    NetworkLayer.SendServerPacket(player.PlayerID, gameByteStreamWriter.GetByteData(), byteDataSize, ENetworkPacketSend.Reliable, player.PlayerChannel);
+                    #else
+                    Type networkLayerType = typeof(NetworkLayer);
+                    MethodInfo sendServerPacketMethod = networkLayerType.GetMethod("SendServerPacket", BindingFlags.NonPublic | BindingFlags.Static);
+                    sendServerPacketMethod.Invoke(null, new object[] { player.PlayerID, gameByteStreamWriter.GetByteData(), byteDataSize, ENetworkPacketSend.Reliable, player.PlayerChannel });
+                    #endif
                 }
             }
         }
