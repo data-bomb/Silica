@@ -110,6 +110,11 @@ namespace SilicaAdminMod
                 Power modPowers = player.GetAdminPowers();
                 if (player.AdminLevel >= EAdminLevel.STANDARD || AdminMethods.PowerInPowers(Power.Cheat, modPowers))
                 {
+                    if (SiAdminMod.Pref_Admin_DebugLogMessages.Value)
+                    {
+                        MelonLogger.Msg("Permitting cheats access to admin: " + player.PlayerName + " (server level: " + player.AdminLevel.ToString() + ") (mod powers: " + modPowers.ToString() + ")");
+                    }
+
                     #if NET6_0
                     NetworkLayer.NetBitsSent += byteDataSize * 8U;
                     #else
