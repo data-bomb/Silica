@@ -558,6 +558,23 @@ namespace SilicaAdminMod
             return spawnedObject;
         }
 
+        #if !NET6_0
+        public static byte FindByteValueInEnum(Type parentType, string enumName, string byteName)
+        {
+                Type enumType = parentType.GetNestedType(enumName, BindingFlags.NonPublic);
+                var enumValues = enumType.GetEnumValues();
+                foreach (var enumValue in enumValues)
+                {
+                    if (string.Compare(enumValue.ToString(), byteName) == 0)
+                    {
+                        return (byte)enumValue;
+                    }
+                }
+
+                return byte.MaxValue;
+        }
+        #endif
+
         public static bool IsTimerActive(float time)
         {
             if (time >= 0.0f)
