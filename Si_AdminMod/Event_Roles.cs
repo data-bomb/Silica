@@ -40,6 +40,7 @@ namespace SilicaAdminMod
 {
     public static class Event_Roles
     {
+        public static byte ERPC_RequestRole = FindRequestRoleEnumByte();
         public static event EventHandler<OnRequestCommanderArgs> OnRequestCommander = delegate { };
         public static event EventHandler<OnRoleChangedArgs> OnRoleChanged = delegate { };
 
@@ -59,16 +60,7 @@ namespace SilicaAdminMod
                     #if NET6_0
                     if (__1 != (byte)MP_Strategy.ERPCs.REQUEST_ROLE)
                     #else
-                    Type strategyERPCsType = typeof(MP_Strategy).GetNestedType("ERPCs", BindingFlags.NonPublic);
-                    if (strategyERPCsType == null)
-                    {
-                        MelonLogger.Error("Cannot find MP_Strategy::ERPCs");
-                        return true;
-                    }
-
-                    string RPCname = strategyERPCsType.GetEnumName((byte)__1);
-
-                    if (string.Compare(RPCname, "REQUEST_ROLE") != 0)
+                    if (__1 != ERPC_RequestRole)
                     #endif
                     {
                         return true;
@@ -156,15 +148,7 @@ namespace SilicaAdminMod
             #if NET6_0
             gameByteStreamWriter.WriteByte((byte)MP_Strategy.ERPCs.REQUEST_ROLE);
             #else
-            Type strategyERPCsType = typeof(MP_Strategy).GetNestedType("ERPCs", BindingFlags.NonPublic);
-            var rpcValues = strategyERPCsType.GetEnumValues();
-            foreach (var rpcValue in rpcValues)
-            {
-                if (string.Compare(rpcValue.ToString(), "REQUEST_ROLE") == 0)
-                {
-                    gameByteStreamWriter.WriteByte((byte)rpcValue);
-                }
-            }
+            gameByteStreamWriter.WriteByte(ERPC_RequestRole);
             #endif
             gameByteStreamWriter.WriteUInt64((ulong)requestingPlayer.PlayerID);
             gameByteStreamWriter.WriteByte((byte)requestingPlayer.PlayerChannel);
@@ -174,6 +158,21 @@ namespace SilicaAdminMod
             gameByteStreamReader.ReadByte();
             gameByteStreamReader.ReadByte();
             return gameByteStreamReader;
+        }
+
+        private static byte FindRequestRoleEnumByte()
+        {
+            Type strategyERPCsType = typeof(MP_Strategy).GetNestedType("ERPCs", BindingFlags.NonPublic);
+            var rpcValues = strategyERPCsType.GetEnumValues();
+            foreach (var rpcValue in rpcValues)
+            {
+                if (string.Compare(rpcValue.ToString(), "REQUEST_ROLE") == 0)
+                {
+                    return (byte)rpcValue;
+                }
+            }
+
+            return byte.MaxValue;
         }
 
         public static void FireOnRoleChangedEvent(Player player, GameModeExt.ETeamRole role)
