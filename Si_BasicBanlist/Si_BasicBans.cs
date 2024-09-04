@@ -35,7 +35,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-[assembly: MelonInfo(typeof(BasicBanlist), "Basic Banlist", "1.5.1", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(BasicBanlist), "Basic Banlist", "1.5.2", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -332,15 +332,15 @@ namespace Si_BasicBanlist
         public static void BanPlayer(Player playerToBan, Player? adminPlayer)
         {
             // are we already banned?
-            if (IsPlayerBanned(playerToBan.PlayerID.m_SteamID))
+            if (IsPlayerBanned(playerToBan.PlayerID.SteamID.m_SteamID))
             {
-                MelonLogger.Warning("Player name (" + playerToBan.PlayerName + ") SteamID (" + playerToBan.PlayerID.m_SteamID.ToString() + ") already on banlist.");
+                MelonLogger.Warning("Player name (" + playerToBan.PlayerName + ") SteamID (" + playerToBan.PlayerID.SteamID.m_SteamID.ToString() + ") already on banlist.");
                 return;
             }
 
             if (MasterBanList == null)
             {
-                NetworkServerSettings.PlayerAddBan(playerToBan.PlayerID.m_SteamID, playerToBan.PlayerName, 0, adminPlayer == null ? "banned by SERVER CONSOLE" : "banned by " + adminPlayer.PlayerName);
+                NetworkServerSettings.PlayerAddBan(playerToBan.PlayerID.SteamID.m_SteamID, playerToBan.PlayerName, 0, adminPlayer == null ? "banned by SERVER CONSOLE" : "banned by " + adminPlayer.PlayerName);
             }
             else
             {
@@ -349,7 +349,7 @@ namespace Si_BasicBanlist
                 UpdateBanFile();
             }
 
-            MelonLogger.Msg("Added player name (" + playerToBan.PlayerName + ") SteamID (" + playerToBan.PlayerID.m_SteamID.ToString() + ") to the banlist.");
+            MelonLogger.Msg("Added player name (" + playerToBan.PlayerName + ") SteamID (" + playerToBan.PlayerID.SteamID.m_SteamID.ToString() + ") to the banlist.");
             NetworkGameServer.KickPlayer(playerToBan);
             HelperMethods.AlertAdminActivity(adminPlayer, playerToBan, "banned");
         }

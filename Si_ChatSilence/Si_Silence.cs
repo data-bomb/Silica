@@ -37,7 +37,7 @@ using System;
 using System.Linq;
 
 
-[assembly: MelonInfo(typeof(ChatSilence), "Chat Silence", "2.0.0", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(ChatSilence), "Chat Silence", "2.0.1", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -45,13 +45,13 @@ namespace Si_ChatSilence
 {
     public class ChatSilence : MelonMod
     {
-        static List<CSteamID> silencedPlayers = null!;
-        static List<CSteamID> mutedPlayers = null!;
+        static List<NetworkID> silencedPlayers = null!;
+        static List<NetworkID> mutedPlayers = null!;
 
         public override void OnInitializeMelon()
         {
-            silencedPlayers = new List<CSteamID>();
-            mutedPlayers = new List<CSteamID>();
+            silencedPlayers = new List<NetworkID>();
+            mutedPlayers = new List<NetworkID>();
         }
 
         public override void OnLateInitializeMelon()
@@ -167,7 +167,7 @@ namespace Si_ChatSilence
             return silencedPlayers.Any(s => s == player.PlayerID);
         }
 
-        public static bool IsSteamSilenced(CSteamID steamID)
+        public static bool IsSteamSilenced(NetworkID steamID)
         {
             return silencedPlayers.Any(s => s == steamID);
         }
@@ -332,7 +332,7 @@ namespace Si_ChatSilence
             return mutedPlayers.Any(s => s == player.PlayerID);
         }
 
-        public static bool IsSteamMuted(CSteamID steamID)
+        public static bool IsSteamMuted(NetworkID steamID)
         {
             return mutedPlayers.Any(s => s == steamID);
         }

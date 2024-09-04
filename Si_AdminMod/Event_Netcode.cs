@@ -77,7 +77,7 @@ namespace SilicaAdminMod
                     {
                         case (byte)ENetworkPacketType.ChatMessage:
                         {
-                            CSteamID chatterSteamId = (CSteamID)tempReader.ReadUInt64();
+                            NetworkID chatterSteamId = (NetworkID)tempReader.ReadUInt64();
                             int chatterChannel = (int)tempReader.ReadByte();
                             string chatText = tempReader.ReadString();
                             bool chatTeamOnly = tempReader.ReadBool();

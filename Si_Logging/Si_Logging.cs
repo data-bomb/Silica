@@ -44,7 +44,7 @@ using System.IO;
 using System.Text;
 using System.Runtime.CompilerServices;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.4.5", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.4.6", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -534,13 +534,13 @@ namespace Si_Logging
         [HarmonyPatch(typeof(NetworkLayer), nameof(NetworkLayer.SendPlayerChangeName))]
         private static class ApplyPatchSendPlayerChangeName
         {
-            public static void Postfix(CSteamID __0, int __1, string __2)
+            public static void Postfix(NetworkID __0, int __1, string __2)
             {
                 try
                 {
                     // Player player = GetPlayerFromSteamID(__0);
                     // TODO: grab old name and current team
-                    string LogLine = "\"...<><" + __0.ToString() + "><>\" changed name to \"" + __2 + "\"";
+                    string LogLine = "\"...<><" + __0.SteamID.ToString() + "><>\" changed name to \"" + __2 + "\"";
                     PrintLogLine(LogLine);
                 }
                 catch (Exception error)

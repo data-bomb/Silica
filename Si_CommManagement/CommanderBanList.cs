@@ -103,7 +103,7 @@ namespace Si_CommanderManagement
             }
 
             BanEntry? matchingCmdrBan;
-            matchingCmdrBan = CommanderBans.BanList.Find(i => i.OffenderSteamId == (long)playerToCmdrUnban.PlayerID.m_SteamID);
+            matchingCmdrBan = CommanderBans.BanList.Find(i => i.OffenderSteamId == (long)playerToCmdrUnban.PlayerID.SteamID.m_SteamID);
 
             if (matchingCmdrBan == null)
             {
