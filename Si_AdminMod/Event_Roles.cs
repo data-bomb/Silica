@@ -27,6 +27,7 @@ using MelonLoader.ICSharpCode.SharpZipLib.Core;
 using System.Runtime.CompilerServices;
 using System.Reflection;
 using System.Data;
+using System.Globalization;
 
 #if NET6_0
 using Il2Cpp;
@@ -39,6 +40,9 @@ namespace SilicaAdminMod
 {
     public static class Event_Roles
     {
+        #if !NET6_0
+        public static byte ERPC_RequestRole = HelperMethods.FindByteValueInEnum(typeof(MP_Strategy), "ERPCs", "REQUEST_ROLE");
+        #endif
         public static event EventHandler<OnRequestCommanderArgs> OnRequestCommander = delegate { };
         public static event EventHandler<OnRoleChangedArgs> OnRoleChanged = delegate { };
 
@@ -55,12 +59,16 @@ namespace SilicaAdminMod
                     }
 
                     // only look at RPC_RequestRole
-                    if (__1 != (byte)GameModeExt.ERPCs.REQUEST_ROLE)
+                    #if NET6_0
+                    if (__1 != (byte)MP_Strategy.ERPCs.REQUEST_ROLE)
+                    #else
+                    if (__1 != ERPC_RequestRole)
+                    #endif
                     {
                         return true;
                     }
 
-                    Player requestingPlayer = Player.FindPlayer((CSteamID)__0.ReadUInt64(), (int)__0.ReadByte());
+                    Player requestingPlayer = Player.FindPlayer((NetworkID)__0.ReadUInt64(), (int)__0.ReadByte());
                     GameModeExt.ETeamRole eRole = (GameModeExt.ETeamRole)__0.ReadByte();
 
                     if (requestingPlayer == null)
@@ -109,17 +117,17 @@ namespace SilicaAdminMod
                     {
                         MelonLogger.Msg("Allowing to join commander");
                     }
-                    #if NET6_0
+#if NET6_0
                     __instance.SetCommander(baseTeamSetup.Team, requestingPlayer);
                     __instance.RPC_SynchCommander(baseTeamSetup.Team);
-                    #else
+#else
                     Type strategyType = typeof(MP_Strategy);
                     MethodInfo setCommanderMethod = strategyType.GetMethod("SetCommander", BindingFlags.Instance | BindingFlags.NonPublic);
                     setCommanderMethod.Invoke(__instance, parameters: new object?[] { baseTeamSetup.Team, requestingPlayer });
 
                     MethodInfo synchCommanderMethod = strategyType.GetMethod("RPC_SynchCommander", BindingFlags.Instance | BindingFlags.NonPublic);
                     synchCommanderMethod.Invoke(__instance, new object[] { baseTeamSetup.Team });
-                    #endif
+#endif
 
                     FireOnRoleChangedEvent(requestingPlayer, GameModeExt.ETeamRole.COMMANDER);
 
@@ -139,7 +147,11 @@ namespace SilicaAdminMod
             GameByteStreamWriter gameByteStreamWriter = GameByteStreamWriter.GetGameByteStreamWriter(0U, "Si_AdminMod::RestoreRPC_RequestRoleReader", true);
             gameByteStreamWriter.WriteByte((byte)ENetworkPacketType.GameModeRPC);
             gameByteStreamWriter.WriteByte(0);
-            gameByteStreamWriter.WriteByte((byte)GameModeExt.ERPCs.REQUEST_ROLE);
+            #if NET6_0
+            gameByteStreamWriter.WriteByte((byte)MP_Strategy.ERPCs.REQUEST_ROLE);
+            #else
+            gameByteStreamWriter.WriteByte(ERPC_RequestRole);
+            #endif
             gameByteStreamWriter.WriteUInt64((ulong)requestingPlayer.PlayerID);
             gameByteStreamWriter.WriteByte((byte)requestingPlayer.PlayerChannel);
             gameByteStreamWriter.WriteByte((byte)role);

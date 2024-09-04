@@ -200,7 +200,8 @@ namespace SilicaAdminMod
             gameByteStreamWriter.WriteUInt64((ulong)sender.PlayerID);
             gameByteStreamWriter.WriteByte((byte)sender.PlayerChannel);
             gameByteStreamWriter.WriteString(String.Concat(messages));
-            gameByteStreamWriter.WriteBool(false);
+            gameByteStreamWriter.WriteBool(false); // teamOnly
+            gameByteStreamWriter.WriteBool(true); // isServerMessage
 
             uint byteDataSize = (uint)gameByteStreamWriter.GetByteDataSize();
             #if NET6_0
@@ -211,7 +212,14 @@ namespace SilicaAdminMod
             bitsSent += byteDataSize * 8U;
             netBitsSentField.SetValue(null, bitsSent);
             #endif
-            SteamGameServerNetworking.SendP2PPacket(recipient.PlayerID, gameByteStreamWriter.GetByteData(), byteDataSize, EP2PSend.k_EP2PSendReliable, recipient.PlayerChannel);
+
+            #if NET6_0
+            NetworkLayer.SendServerPacket(recipient.PlayerID, gameByteStreamWriter.GetByteData(), byteDataSize, ENetworkPacketSend.Reliable, recipient.PlayerChannel);
+            #else
+            Type networkLayerType = typeof(NetworkLayer);
+            MethodInfo sendServerPacketMethod = networkLayerType.GetMethod("SendServerPacket", BindingFlags.NonPublic | BindingFlags.Static);
+            sendServerPacketMethod.Invoke(null, new object[] { recipient.PlayerID, gameByteStreamWriter.GetByteData(), byteDataSize, ENetworkPacketSend.Reliable, recipient.PlayerChannel });
+            #endif
         }
 
         private static void NetworkSendConsole(Player recipient, params string[] messages)
@@ -238,7 +246,14 @@ namespace SilicaAdminMod
             bitsSent += byteDataSize * 8U;
             netBitsSentField.SetValue(null, bitsSent);
             #endif
-            SteamGameServerNetworking.SendP2PPacket(recipient.PlayerID, gameByteStreamWriter.GetByteData(), byteDataSize, EP2PSend.k_EP2PSendReliable, recipient.PlayerChannel);
+
+            #if NET6_0
+            NetworkLayer.SendServerPacket(recipient.PlayerID, gameByteStreamWriter.GetByteData(), byteDataSize, ENetworkPacketSend.Reliable, recipient.PlayerChannel);
+            #else
+            Type networkLayerType = typeof(NetworkLayer);
+            MethodInfo sendServerPacketMethod = networkLayerType.GetMethod("SendServerPacket", BindingFlags.NonPublic | BindingFlags.Static);
+            sendServerPacketMethod.Invoke(null, new object[] { recipient.PlayerID, gameByteStreamWriter.GetByteData(), byteDataSize, ENetworkPacketSend.Reliable, recipient.PlayerChannel });
+            #endif
         }
 
         public static Player FindBroadcastPlayer()
@@ -300,11 +315,11 @@ namespace SilicaAdminMod
             int iTargetCount = 0;
 
             // loop through all players
-            #if NET6_0
+#if NET6_0
             Il2CppSystem.Collections.Generic.List<Player> players = Player.Players;
-            #else
+#else
             List<Player> players = Player.Players;
-            #endif
+#endif
 
             int iPlayerCount = players.Count;
 
@@ -502,18 +517,13 @@ namespace SilicaAdminMod
                 return false;
             }
 
-#if NET6_0
-            Il2CppSteamworks.CSteamID serverSteam = NetworkGameServer.GetServerID();
-            Il2CppSteamworks.CSteamID playerSteam = playerToKick.PlayerID;
-#else
-            Steamworks.CSteamID serverSteam = NetworkGameServer.GetServerID();
-            Steamworks.CSteamID playerSteam = playerToKick.PlayerID;
-#endif
+            NetworkID serverSteam = NetworkGameServer.GetServerID();
+            NetworkID playerSteam = playerToKick.PlayerID;
 
             int playerChannel = playerToKick.PlayerChannel;
 
             NetworkLayer.SendPlayerConnectResponse(ENetworkPlayerConnectType.Kicked, playerSteam, playerChannel, serverSteam);
-            Player.RemovePlayer(playerSteam, playerChannel);
+            Player.RemovePlayer(playerSteam);
             NetworkLayer.SendPlayerConnect(ENetworkPlayerConnectType.Disconnected, playerSteam, playerChannel);
 
             return true;
@@ -547,6 +557,23 @@ namespace SilicaAdminMod
 
             return spawnedObject;
         }
+
+        #if !NET6_0
+        public static byte FindByteValueInEnum(Type parentType, string enumName, string byteName)
+        {
+                Type enumType = parentType.GetNestedType(enumName, BindingFlags.NonPublic);
+                var enumValues = enumType.GetEnumValues();
+                foreach (var enumValue in enumValues)
+                {
+                    if (string.Compare(enumValue.ToString(), byteName) == 0)
+                    {
+                        return (byte)enumValue;
+                    }
+                }
+
+                return byte.MaxValue;
+        }
+        #endif
 
         public static bool IsTimerActive(float time)
         {
