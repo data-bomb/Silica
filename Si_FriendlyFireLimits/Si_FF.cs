@@ -1,6 +1,6 @@
 ﻿/*
  Silica Friendly-Fire Adjustments Mod
- Copyright (C) 2024 by databomb
+ Copyright (C) 2023-2024 by databomb
  
  * Description *
  For Silica listen servers, adjust the amount of friendly fire damage 
@@ -32,7 +32,7 @@ using System;
 using SilicaAdminMod;
 using System.Linq;
 
-[assembly: MelonInfo(typeof(FriendlyFireLimits), "Friendly Fire Limits", "1.2.3", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(FriendlyFireLimits), "Friendly Fire Limits", "1.2.4", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -88,9 +88,9 @@ namespace Si_FriendlyFireLimits
         static class GetGameByteStreamReaderPrePatch
         {
             #if NET6_0
-            public static void Prefix(GameByteStreamReader __result, Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppStructArray<byte> __0, int __1, bool __2)
+            public static void Prefix(GameByteStreamReader __result, Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppStructArray<byte> __0, int __1, uint __2, string __3, bool __4)
             #else
-            public static void Prefix(GameByteStreamReader __result, byte[] __0, int __1, bool __2)
+            public static void Prefix(GameByteStreamReader __result, byte[] __0, int __1, uint __2, string __3, bool __4)
             #endif
             {
                 try
@@ -98,7 +98,7 @@ namespace Si_FriendlyFireLimits
                     // byte[0] = (2) Byte
                     // byte[1] = ENetworkPacketType
                     ENetworkPacketType packetType = (ENetworkPacketType)__0[1];
-                    if (packetType == ENetworkPacketType.ObjectReceiveDamage)
+                    if (packetType == ENetworkPacketType.ObjectClientDamageHit)
                     {
                         // byte[2] = (8) PackedUInt32
                         // byte[3:4] = NetID
