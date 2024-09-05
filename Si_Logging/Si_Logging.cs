@@ -44,7 +44,7 @@ using System.IO;
 using System.Text;
 using System.Runtime.CompilerServices;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.4.7", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.4.8", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -135,7 +135,7 @@ namespace Si_Logging
 
         public static string GetPlayerID(Player player)
         {
-            return player.ToString().Split('_')[1];
+            return player.PlayerID.SteamID.m_SteamID.ToString();
         }
 
         public override void OnInitializeMelon()
