@@ -29,7 +29,7 @@ namespace SilicaAdminMod
     {
         public static bool AddAdmin(Player player, String powerText, byte level)
         {
-            long playerSteamId = long.Parse(player.ToString().Split('_')[1]);
+            long playerSteamId = (long)player.PlayerID.SteamID.m_SteamID;
 
             if (SiAdminMod.AdminList == null)
             {

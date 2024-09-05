@@ -27,7 +27,7 @@ namespace SilicaAdminMod
     {
         public static bool CanAdminExecute(Player callerPlayer, Power power, Player? targetPlayer = null)
         {
-            long playerSteamId = long.Parse(callerPlayer.ToString().Split('_')[1]);
+            long playerSteamId = (long)callerPlayer.PlayerID.SteamID.m_SteamID;
             Admin? callerMatch = AdminMethods.FindAdminFromSteamId(playerSteamId);
             Power callerPowers = Power.None;
             if (callerMatch != null)
@@ -64,7 +64,7 @@ namespace SilicaAdminMod
 
         public static bool CanAdminTarget(Player callerPlayer, Player targetPlayer)
         {
-            long callerSteamId = long.Parse(callerPlayer.ToString().Split('_')[1]);
+            long callerSteamId = (long)callerPlayer.PlayerID.SteamID.m_SteamID;
             Admin? callerMatch = AdminMethods.FindAdminFromSteamId(callerSteamId);
             byte callerLevel = 0;
             if (callerMatch != null)
@@ -72,7 +72,7 @@ namespace SilicaAdminMod
                 callerLevel = callerMatch.Level;
             }
 
-            long targetSteamId = long.Parse(targetPlayer.ToString().Split('_')[1]);
+            long targetSteamId = (long)targetPlayer.PlayerID.SteamID.m_SteamID;
             Admin? targetMatch = AdminMethods.FindAdminFromSteamId(targetSteamId);
             byte targetLevel = 0;
             if (targetMatch != null)
@@ -90,7 +90,7 @@ namespace SilicaAdminMod
 
         public static Power GetAdminPowers(Player callerPlayer)
         {
-            long callerSteamId = long.Parse(callerPlayer.ToString().Split('_')[1]);
+            long callerSteamId = (long)callerPlayer.PlayerID.SteamID.m_SteamID;
             Admin? match = AdminMethods.FindAdminFromSteamId(callerSteamId);
             if (match != null)
             {
@@ -102,7 +102,7 @@ namespace SilicaAdminMod
 
         public static byte GetAdminLevel(Player callerPlayer)
         {
-            long callerSteamId = long.Parse(callerPlayer.ToString().Split('_')[1]);
+            long callerSteamId = (long)callerPlayer.PlayerID.SteamID.m_SteamID;
             Admin? match = AdminMethods.FindAdminFromSteamId(callerSteamId);
             if (match != null)
             {
@@ -114,7 +114,7 @@ namespace SilicaAdminMod
 
         public static bool IsAdmin(Player callerPlayer)
         {
-            long callerSteamId = long.Parse(callerPlayer.ToString().Split('_')[1]);
+            long callerSteamId = (long)callerPlayer.PlayerID.SteamID.m_SteamID;
             Admin? match = AdminMethods.FindAdminFromSteamId(callerSteamId);
             if (match != null)
             {
