@@ -85,7 +85,7 @@ namespace Si_CommanderManagement
             }
 
             // check if player is allowed to be commander
-            long playerSteamId = long.Parse(player.ToString().Split('_')[1]);
+            long playerSteamId = (long)player.PlayerID.SteamID.m_SteamID;
             BanEntry? banEntry = BanList.Find(i => i.OffenderSteamId == playerSteamId);
             if (banEntry != null)
             {
@@ -128,7 +128,7 @@ namespace Si_CommanderManagement
             Player serverPlayer = NetworkGameServer.GetServerPlayer();
             BanEntry thisBan = new BanEntry()
             {
-                OffenderSteamId = long.Parse(playerToCmdrBan.ToString().Split('_')[1]),
+                OffenderSteamId = (long)playerToCmdrBan.PlayerID.SteamID.m_SteamID,
                 OffenderName = playerToCmdrBan.PlayerName,
                 UnixBanTime = (int)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds,
                 Comments = "banned from playing commander by " + serverPlayer.PlayerName
