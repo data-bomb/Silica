@@ -74,28 +74,24 @@ namespace SilicaAdminMod
 
         public static void ReplyToCommand(params string[] messages)
         {
-            Player broadcastPlayer = FindBroadcastPlayer();
-            broadcastPlayer.SendChatMessage(chatPrefix + String.Concat(messages), false);
+            SendChatMessageToAll(chatPrefix + String.Concat(messages));
         }
 
         public static void ReplyToCommand_Player(Player player, params string[] messages)
         {
-            Player broadcastPlayer = FindBroadcastPlayer();
-            broadcastPlayer.SendChatMessage(chatPrefix + GetTeamColor(player) + player.PlayerName + "</color> " + String.Concat(messages), false);
+            SendChatMessageToAll(chatPrefix + GetTeamColor(player) + player.PlayerName + "</color> " + String.Concat(messages));
         }
 
         public static void AlertAdminActivity(Player? adminPlayer, Player targetPlayer, string action)
         {
-            Player broadcastPlayer = FindBroadcastPlayer();
-            string adminName = (adminPlayer == null) ? "SERVER CONSOLE" : adminPlayer.PlayerName;
-            broadcastPlayer.SendChatMessage(chatPrefix + GetAdminColor() + adminName + "</color> " + action + " " + GetTeamColor(targetPlayer) + targetPlayer.PlayerName, false);
+            string adminName = (adminPlayer == null) ? "CONSOLE" : adminPlayer.PlayerName;
+            SendChatMessageToAll(chatPrefix + GetAdminColor() + adminName + "</color> " + action + " " + GetTeamColor(targetPlayer) + targetPlayer.PlayerName);
         }
 
         public static void AlertAdminAction(Player? adminPlayer, string action)
         {
-            Player broadcastPlayer = FindBroadcastPlayer();
-            string adminName = (adminPlayer == null) ? "SERVER CONSOLE" : adminPlayer.PlayerName;
-            broadcastPlayer.SendChatMessage(chatPrefix + GetAdminColor() + adminName + "</color> " + action, false);
+            string adminName = (adminPlayer == null) ? "CONSOLE" : adminPlayer.PlayerName;
+            SendChatMessageToAll(chatPrefix + GetAdminColor() + adminName + "</color> " + action);
         }
 
         public static void SendChatMessageToAll(params string[] messages)
@@ -131,8 +127,6 @@ namespace SilicaAdminMod
 
         public static void SendChatMessageToTeamNoCommander(Team team, params string[] messages)
         {
-            Player broadcastPlayer = FindBroadcastPlayer(team);
-
             for (int i = 0; i < Player.Players.Count; i++)
             {
                 Player? player = Player.Players[i];
@@ -143,7 +137,7 @@ namespace SilicaAdminMod
 
                 if (player.Team == team && !player.IsCommander)
                 {
-                    NetworkSendChat(player, broadcastPlayer, messages);
+                    NetworkSendChat(player, true, messages);
                 }
             }
         }
@@ -267,47 +261,6 @@ namespace SilicaAdminMod
             #endif
         }
 
-        public static Player FindBroadcastPlayer()
-        {
-            if (!NetworkGameServer.GetServerDedicated())
-            {
-                return NetworkGameServer.GetServerPlayer();
-            }
-
-            // not ideal but funnel messages through the first player for now
-            if (Player.Players.Count > 0)
-            {
-                return Player.Players[0];
-            }
-
-            return NetworkGameServer.GetServerPlayer();
-        }
-
-        public static Player FindBroadcastPlayer(Team team)
-        {
-            if (!NetworkGameServer.GetServerDedicated())
-            {
-                return NetworkGameServer.GetServerPlayer();
-            }
-
-            // not ideal but funnel messages through the first player on the team for now
-            for (int i = 0; i < Player.Players.Count; i++)
-            {
-                Player? player = Player.Players[i];
-                if (player == null)
-                {
-                    continue;
-                }
-
-                if (player.Team == team)
-                {
-                    return player;
-                }
-            }
-
-            return NetworkGameServer.GetServerPlayer();
-        }
-
         public static void PrintError(Exception exception, string? message = null)
         {
             if (message != null)
@@ -353,7 +306,7 @@ namespace SilicaAdminMod
 
         public static string GetAdminColor()
         {
-            return "<color=#DFA725>";
+            return "<color=#9741A4>";
         }
 
         private static string TeamColorTextFromIndex(SiConstants.ETeam teamIndex)
