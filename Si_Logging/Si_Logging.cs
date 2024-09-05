@@ -44,7 +44,7 @@ using System.IO;
 using System.Text;
 using System.Runtime.CompilerServices;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.4.6", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.4.7", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -341,17 +341,17 @@ namespace Si_Logging
         [HarmonyPatch(typeof(StrategyMode), nameof(StrategyMode.OnUnitDestroyed))]
         private static class ApplyPatch_StrategyMode_OnUnitDestroyed
         {
-            public static void Postfix(StrategyMode __instance, Unit __0, EDamageType __1, UnityEngine.GameObject __2)
+            public static void Postfix(StrategyMode __instance, Unit __0, UnityEngine.GameObject __1)
             {
                 try
                 {
-                    if (__0 == null || __2 == null)
+                    if (__0 == null || __1 == null)
                     {
                         return;
                     }
 
                     // Attacker
-                    BaseGameObject attackerBase = GameFuncs.GetBaseGameObject(__2);
+                    BaseGameObject attackerBase = GameFuncs.GetBaseGameObject(__1);
                     if (attackerBase == null)
                     {
                         return;
@@ -383,12 +383,12 @@ namespace Si_Logging
                             if (isSuicide)
                             {
 
-                                string LogLine = "\"" + victimPlayer.PlayerName + "<" + victimUserID + "><" + GetPlayerID(victimPlayer) + "><" + victimPlayer.Team.TeamShortName + ">\" committed suicide with \"" + __2.ToString().Split('(')[0] + "\" (dmgtype \"" + __1.ToString() + "\")";
+                                string LogLine = "\"" + victimPlayer.PlayerName + "<" + victimUserID + "><" + GetPlayerID(victimPlayer) + "><" + victimPlayer.Team.TeamShortName + ">\" committed suicide with \"" + __1.ToString().Split('(')[0] + "\" (dmgtype \"\")";
                                 PrintLogLine(LogLine);
 
                                 if (Pref_Log_PlayerConsole_Enable.Value)
                                 {
-                                    string ConsoleLine = "<b>" + HelperMethods.GetTeamColor(victimPlayer) + victimPlayer.PlayerName + "</color></b> (" + __2.ToString().Split('(')[0] + ") committed suicide";
+                                    string ConsoleLine = "<b>" + HelperMethods.GetTeamColor(victimPlayer) + victimPlayer.PlayerName + "</color></b> (" + __1.ToString().Split('(')[0] + ") committed suicide";
                                     HelperMethods.SendConsoleMessage(ConsoleLine);
                                 }
                             }
@@ -396,12 +396,12 @@ namespace Si_Logging
                             else
                             {
                                 int attackerUserID = Math.Abs(attackerPlayer.GetInstanceID());
-                                string LogLine = "\"" + attackerPlayer.PlayerName + "<" + attackerUserID + "><" + GetPlayerID(attackerPlayer) + "><" + attackerPlayer.Team.TeamShortName + ">\" killed \"" + victimPlayer.PlayerName + "<" + victimUserID + "><" + GetPlayerID(victimPlayer) + "><" + victimPlayer.Team.TeamShortName + ">\" with \"" + __2.ToString().Split('(')[0] + "\" (dmgtype \"" + __1.ToString() + "\") (victim \"" + __0.ToString().Split('(')[0] + "\")";
+                                string LogLine = "\"" + attackerPlayer.PlayerName + "<" + attackerUserID + "><" + GetPlayerID(attackerPlayer) + "><" + attackerPlayer.Team.TeamShortName + ">\" killed \"" + victimPlayer.PlayerName + "<" + victimUserID + "><" + GetPlayerID(victimPlayer) + "><" + victimPlayer.Team.TeamShortName + ">\" with \"" + __1.ToString().Split('(')[0] + "\" (dmgtype \"\") (victim \"" + __0.ToString().Split('(')[0] + "\")";
                                 PrintLogLine(LogLine);
 
                                 if (Pref_Log_PlayerConsole_Enable.Value)
                                 {
-                                    string ConsoleLine = "<b>" + HelperMethods.GetTeamColor(attackerPlayer) + attackerPlayer.PlayerName + "</color></b> (" + __2.ToString().Split('(')[0] + ") killed <b>" + HelperMethods.GetTeamColor(victimPlayer) + victimPlayer.PlayerName + "</color></b> (" + __0.ToString().Split('(')[0] + ")";
+                                    string ConsoleLine = "<b>" + HelperMethods.GetTeamColor(attackerPlayer) + attackerPlayer.PlayerName + "</color></b> (" + __1.ToString().Split('(')[0] + ") killed <b>" + HelperMethods.GetTeamColor(victimPlayer) + victimPlayer.PlayerName + "</color></b> (" + __0.ToString().Split('(')[0] + ")";
                                     HelperMethods.SendConsoleMessage(ConsoleLine);
                                 }
                             }
@@ -409,12 +409,12 @@ namespace Si_Logging
                         else if (Pref_Log_Kills_Include_AI_vs_Player.Value)
                         // Attacker is an AI, Victim is a human
                         {
-                            string LogLine = "\"" + __2.ToString().Split('(')[0] + "<><><" + attackerBase.Team.TeamShortName + ">\" killed \"" + victimPlayer.PlayerName + "<" + victimUserID + "><" + GetPlayerID(victimPlayer) + "><" + victimPlayer.Team.TeamShortName + ">\" with \"" + __2.ToString().Split('(')[0] + "\" (dmgtype \"" + __1.ToString() + "\") (victim \"" + __0.ToString().Split('(')[0] + "\")";
+                            string LogLine = "\"" + __1.ToString().Split('(')[0] + "<><><" + attackerBase.Team.TeamShortName + ">\" killed \"" + victimPlayer.PlayerName + "<" + victimUserID + "><" + GetPlayerID(victimPlayer) + "><" + victimPlayer.Team.TeamShortName + ">\" with \"" + __1.ToString().Split('(')[0] + "\" (dmgtype \"\") (victim \"" + __0.ToString().Split('(')[0] + "\")";
                             PrintLogLine(LogLine);
 
                             if (Pref_Log_PlayerConsole_Enable.Value)
                             {
-                                string ConsoleLine = "<b>AI</b> (" + __2.ToString().Split('(')[0] + ")" + " killed <b>" + HelperMethods.GetTeamColor(victimPlayer) + victimPlayer.PlayerName + "</color></b> (" + __0.ToString().Split('(')[0] + ")";
+                                string ConsoleLine = "<b>AI</b> (" + __1.ToString().Split('(')[0] + ")" + " killed <b>" + HelperMethods.GetTeamColor(victimPlayer) + victimPlayer.PlayerName + "</color></b> (" + __0.ToString().Split('(')[0] + ")";
                                 HelperMethods.SendConsoleMessage(ConsoleLine);
                             }
                         }
@@ -423,12 +423,12 @@ namespace Si_Logging
                     // Attacker is a human, Victim is an AI
                     {
                         int attackerUserID = Math.Abs(attackerPlayer.GetInstanceID());
-                        string LogLine = "\"" + attackerPlayer.PlayerName + "<" + attackerUserID + "><" + GetPlayerID(attackerPlayer) + "><" + attackerPlayer.Team.TeamShortName + ">\" killed \"" + __0.ToString().Split('(')[0] + "<><><" + __0.Team.TeamShortName + ">\" with \"" + __2.ToString().Split('(')[0] + "\" (dmgtype \"" + __1.ToString() + "\") (victim \"" + __0.ToString().Split('(')[0] + "\")";
+                        string LogLine = "\"" + attackerPlayer.PlayerName + "<" + attackerUserID + "><" + GetPlayerID(attackerPlayer) + "><" + attackerPlayer.Team.TeamShortName + ">\" killed \"" + __0.ToString().Split('(')[0] + "<><><" + __0.Team.TeamShortName + ">\" with \"" + __1.ToString().Split('(')[0] + "\" (dmgtype \"\") (victim \"" + __0.ToString().Split('(')[0] + "\")";
                         PrintLogLine(LogLine);
 
                         if (Pref_Log_PlayerConsole_Enable.Value)
                         {
-                            string ConsoleLine = "<b>" + HelperMethods.GetTeamColor(attackerPlayer) + attackerPlayer.PlayerName + "</color></b> (" + __2.ToString().Split('(')[0] + ") killed " + "<b>AI</b> (" + __0.ToString().Split('(')[0] + ")";
+                            string ConsoleLine = "<b>" + HelperMethods.GetTeamColor(attackerPlayer) + attackerPlayer.PlayerName + "</color></b> (" + __1.ToString().Split('(')[0] + ") killed " + "<b>AI</b> (" + __0.ToString().Split('(')[0] + ")";
                             HelperMethods.SendConsoleMessage(ConsoleLine);
                         }
                     }
@@ -558,7 +558,7 @@ namespace Si_Logging
         #endif
         private static class ApplyPatchOnDamageReceived
         {
-            public static void Postfix(DamageManager __instance, UnityEngine.Collider __0, float __1, EDamageType __2, UnityEngine.GameObject __3, UnityEngine.Vector3 __4)
+            public static void Postfix(DamageManager __instance, float __0, GameObject __1, byte __2, bool __3)
             {
                 // should we log the damage?
                 if (!Pref_Log_Damage.Value)
@@ -567,12 +567,12 @@ namespace Si_Logging
                 }
 
                 // was it a non-human-controlled instigator?
-                if (__3 == null)
+                if (__1 == null)
                 {
                     return;
                 }
 
-                BaseGameObject attackerBase = GameFuncs.GetBaseGameObject(__3);
+                BaseGameObject attackerBase = GameFuncs.GetBaseGameObject(__1);
                 if (attackerBase == null)
                 {
                     return;
@@ -610,7 +610,7 @@ namespace Si_Logging
                 }
 
                 // was damage less than (or equal to) 1?
-                int damage = (int)Math.Ceiling(__1);
+                int damage = (int)Math.Ceiling(__0);
                 if (damage <= 1)
                 {
                     return;
@@ -618,7 +618,7 @@ namespace Si_Logging
 
                 int attackerUserID = Math.Abs(attackerPlayer.GetInstanceID());
                 int victimUserID = Math.Abs(victimPlayer.GetInstanceID());
-                string LogLine = "\"" + attackerPlayer.PlayerName + "<" + attackerUserID + "><" + GetPlayerID(attackerPlayer) + "><" + attackerPlayer.Team.TeamShortName + ">\" attacked \"" + victimPlayer.PlayerName + "<" + victimUserID + "><" + GetPlayerID(victimPlayer) + "><" + victimPlayer.Team.TeamShortName + ">\" with \"" + __3.ToString().Split('(')[0] + "\"" + " (damage \"" + damage.ToString() + "\")";
+                string LogLine = "\"" + attackerPlayer.PlayerName + "<" + attackerUserID + "><" + GetPlayerID(attackerPlayer) + "><" + attackerPlayer.Team.TeamShortName + ">\" attacked \"" + victimPlayer.PlayerName + "<" + victimUserID + "><" + GetPlayerID(victimPlayer) + "><" + victimPlayer.Team.TeamShortName + ">\" with \"" + __1.ToString().Split('(')[0] + "\"" + " (damage \"" + damage.ToString() + "\")";
                 PrintLogLine(LogLine, true);
             }
         }
@@ -630,13 +630,16 @@ namespace Si_Logging
         [HarmonyPatch(typeof(MP_Strategy), nameof(MP_Strategy.OnStructureDestroyed))]
         private static class ApplyPatchOnStructureDestroyed
         {
-            public static void Postfix(MP_Strategy __instance, Structure __0, EDamageType __1, UnityEngine.GameObject __2)
+            public static void Postfix(MP_Strategy __instance, Structure __0, UnityEngine.GameObject __1)
             {
                 try
                 {
-                    //check if the destruction affects the tech tier.
-                    if (__0 == null) return;
+                    if (__0 == null)
+                    {
+                        return;
+                    }
 
+                    //check if the destruction affects the tech tier.
                     if (__0.Team != null)
                     {
                         Team structureTeam = __0.Team;
@@ -647,63 +650,69 @@ namespace Si_Logging
                             LogTierChange(structureTeam, tier);
                         }
                     }
-                    if (__2 == null) return;
 
-                        // Attacker
-                    BaseGameObject attackerBase = GameFuncs.GetBaseGameObject(__2);
-
-                    if (attackerBase != null)
+                    if (__1 == null)
                     {
-                        NetworkComponent attackerNetComp = attackerBase.NetworkComponent;
-                        // was teamkiller a playable character?
-                        if (attackerNetComp != null)
+                        return;
+                    }
+
+                    // Attacker
+                    BaseGameObject attackerBase = GameFuncs.GetBaseGameObject(__1);
+                    if (attackerBase == null)
+                    {
+                        return;
+                    }
+
+                    NetworkComponent attackerNetComp = attackerBase.NetworkComponent;
+                    // was teamkiller a playable character?
+                    if (attackerNetComp == null)
+                    {
+                        return;
+                    }
+
+                    Player attackerPlayer = attackerNetComp.OwnerPlayer;
+
+                    if (attackerPlayer != null)
+                    {
+                        int userID = Math.Abs(attackerPlayer.GetInstanceID());
+                        string structName;
+                        if (__0.ToString().Contains('_'))
                         {
-                            Player attackerPlayer = attackerNetComp.OwnerPlayer;
+                            structName = __0.ToString().Split('_')[0];
+                        }
+                        else if (__0.ToString().Contains('('))
+                        {
+                            structName = __0.ToString().Split('(')[0];
+                        }
+                        else
+                        {
+                            structName = __0.ToString();
+                        }
 
-                            if (attackerPlayer != null)
-                            {
-                                int userID = Math.Abs(attackerPlayer.GetInstanceID());
-                                string structName;
-                                if (__0.ToString().Contains('_'))
-                                {
-                                    structName = __0.ToString().Split('_')[0];
-                                }
-                                else if (__0.ToString().Contains('('))
-                                {
-                                    structName = __0.ToString().Split('(')[0];
-                                }
-                                else
-                                {
-                                    structName = __0.ToString();
-                                }
+                        string attackerPlayerTeam;
+                        if (attackerPlayer.Team == null)
+                        {
+                            attackerPlayerTeam = "";
+                        }
+                        else
+                        {
+                            attackerPlayerTeam = attackerPlayer.Team.TeamShortName;
+                        }
 
-                                string attackerPlayerTeam;
-                                if (attackerPlayer.Team == null)
-                                {
-                                    attackerPlayerTeam = "";
-                                }
-                                else
-                                {
-                                    attackerPlayerTeam = attackerPlayer.Team.TeamShortName;
-                                }
+                        if (__0.Team == null || attackerPlayer.Team == null)
+                        {
+                            return;
+                        }
 
-                                if (__0.Team == null || attackerPlayer.Team == null)
-                                {
-                                    return;
-                                }
+                        string structTeam = __0.Team.TeamShortName;
 
-                                string structTeam = __0.Team.TeamShortName;
+                        string LogLine = "\"" + attackerPlayer.PlayerName + "<" + userID + "><" + GetPlayerID(attackerPlayer) + "><" + attackerPlayerTeam + ">\" triggered \"structure_kill\" (structure \"" + structName + "\") (struct_team \"" + structTeam + "\")";
+                        PrintLogLine(LogLine);
 
-                                string LogLine = "\"" + attackerPlayer.PlayerName + "<" + userID + "><" + GetPlayerID(attackerPlayer) + "><" + attackerPlayerTeam + ">\" triggered \"structure_kill\" (structure \"" + structName + "\") (struct_team \"" + structTeam + "\")";
-                                PrintLogLine(LogLine);
-
-                                if (Pref_Log_PlayerConsole_Enable.Value)
-                                {
-                                    string ConsoleLine = "<b>" + HelperMethods.GetTeamColor(attackerPlayer) + attackerPlayer.PlayerName + "</color></b> destroyed a structure (" + HelperMethods.GetTeamColor(__0.Team) + structName + "</color>)";
-                                    HelperMethods.SendConsoleMessageToTeam(attackerPlayer.Team, ConsoleLine);
-                                }
-                            }
-
+                        if (Pref_Log_PlayerConsole_Enable.Value)
+                        {
+                            string ConsoleLine = "<b>" + HelperMethods.GetTeamColor(attackerPlayer) + attackerPlayer.PlayerName + "</color></b> destroyed a structure (" + HelperMethods.GetTeamColor(__0.Team) + structName + "</color>)";
+                            HelperMethods.SendConsoleMessageToTeam(attackerPlayer.Team, ConsoleLine);
                         }
                     }
                 }
