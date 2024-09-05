@@ -98,10 +98,22 @@ namespace SilicaAdminMod
             broadcastPlayer.SendChatMessage(chatPrefix + GetAdminColor() + adminName + "</color> " + action, false);
         }
 
+        public static void SendChatMessageToAll(params string[] messages)
+        {
+            for (int i = 0; i < Player.Players.Count; i++)
+            {
+                Player? player = Player.Players[i];
+                if (player == null)
+                {
+                    continue;
+                }
+
+                NetworkSendChat(player, false, messages);
+            }
+        }
+
         public static void SendChatMessageToTeam(Team team, params string[] messages)
         {
-            Player broadcastPlayer = FindBroadcastPlayer(team);
-
             for (int i = 0; i < Player.Players.Count; i++)
             {
                 Player? player = Player.Players[i];
@@ -112,7 +124,7 @@ namespace SilicaAdminMod
 
                 if (player.Team == team)
                 {
-                    NetworkSendChat(player, broadcastPlayer, messages);
+                    NetworkSendChat(player, true, messages);
                 }
             }
         }
@@ -177,8 +189,7 @@ namespace SilicaAdminMod
                 return;
             }
 
-            Player broadcastPlayer = FindBroadcastPlayer();
-            NetworkSendChat(player, broadcastPlayer, messages);
+            NetworkSendChat(player, true, messages);
         }
         public static void SendConsoleMessageToPlayer(Player? player, params string[] messages)
         {
@@ -193,14 +204,14 @@ namespace SilicaAdminMod
             NetworkSendConsole(player, messages);
         }
         
-        private static void NetworkSendChat(Player recipient, Player sender, params string[] messages)
+        private static void NetworkSendChat(Player recipient, bool teamOnly, params string[] messages)
         {
             GameByteStreamWriter gameByteStreamWriter = GameByteStreamWriter.GetGameByteStreamWriter(0U, "Si_AdminMod::NetworkSendChat", true);
             gameByteStreamWriter.WriteByte((byte)ENetworkPacketType.ChatMessage);
-            gameByteStreamWriter.WriteUInt64((ulong)sender.PlayerID);
-            gameByteStreamWriter.WriteByte((byte)sender.PlayerChannel);
+            gameByteStreamWriter.WriteUInt64((ulong)NetworkID.CurrentUserID);
+            gameByteStreamWriter.WriteByte((byte)0);
             gameByteStreamWriter.WriteString(String.Concat(messages));
-            gameByteStreamWriter.WriteBool(false); // teamOnly
+            gameByteStreamWriter.WriteBool(teamOnly); // teamOnly
             gameByteStreamWriter.WriteBool(true); // isServerMessage
 
             uint byteDataSize = (uint)gameByteStreamWriter.GetByteDataSize();
