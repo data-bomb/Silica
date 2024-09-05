@@ -33,7 +33,7 @@ using UnityEngine;
 using System;
 using SilicaAdminMod;
 
-[assembly: MelonInfo(typeof(HQlessHumansLose), "HQless Humans Lose", "1.3.8", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HQlessHumansLose), "HQless Humans Lose", "1.3.9", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -426,7 +426,7 @@ namespace Si_HQlessHumansLose
         [HarmonyPatch(typeof(MP_Strategy), nameof(MP_Strategy.OnStructureDestroyed))]
         private static class ApplyPatch_OnStructureDestroyed
         {
-            private static void Postfix(MP_Strategy __instance, Structure __0, EDamageType __1, UnityEngine.GameObject __2)
+            private static void Postfix(MP_Strategy __instance, Structure __0, UnityEngine.GameObject __1)
             {
                 try
                 {
@@ -440,7 +440,7 @@ namespace Si_HQlessHumansLose
                         return;
                     }
 
-                    MelonLogger.Msg("Structure destroyed: " + __0.name);
+                    //MelonLogger.Msg("Structure destroyed: " + __0.name);
 
                     Team structureTeam = __0.Team;
                     if (structureTeam == null)
@@ -466,9 +466,9 @@ namespace Si_HQlessHumansLose
 
                     // was a human-controlled player responsible for the destruction?
                     destroyerOfWorlds = null;
-                    if (__2 != null)
+                    if (__1 != null)
                     {
-                        BaseGameObject attackerBase = GameFuncs.GetBaseGameObject(__2);
+                        BaseGameObject attackerBase = GameFuncs.GetBaseGameObject(__1);
                         if (attackerBase != null)
                         {
                             NetworkComponent attackerNetComp = attackerBase.NetworkComponent;
@@ -492,7 +492,7 @@ namespace Si_HQlessHumansLose
         [HarmonyPatch(typeof(StrategyMode), nameof(StrategyMode.OnUnitDestroyed))]
         private static class ApplyPatch_StrategyMode_OnUnitDestroyed
         {
-            public static void Postfix(StrategyMode __instance, Unit __0, EDamageType __1, UnityEngine.GameObject __2)
+            public static void Postfix(StrategyMode __instance, Unit __0, UnityEngine.GameObject __1)
             {
                 try
                 {
@@ -506,7 +506,7 @@ namespace Si_HQlessHumansLose
                         return;
                     }
 
-                    MelonLogger.Msg("Unit destroyed: " + __0.name);
+                    //MelonLogger.Msg("Unit destroyed: " + __0.name);
 
                     Team unitTeam = __0.Team;
                     if (unitTeam == null)
@@ -527,9 +527,9 @@ namespace Si_HQlessHumansLose
 
                     // was a human-controlled player responsible for the destruction?
                     destroyerOfWorlds = null;
-                    if (__2 != null)
+                    if (__1 != null)
                     {
-                        BaseGameObject attackerBase = GameFuncs.GetBaseGameObject(__2);
+                        BaseGameObject attackerBase = GameFuncs.GetBaseGameObject(__1);
                         if (attackerBase != null)
                         {
                             NetworkComponent attackerNetComp = attackerBase.NetworkComponent;
