@@ -35,7 +35,7 @@ using SilicaAdminMod;
 using System.Linq;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(AntiGrief), "Anti-Grief", "1.3.1", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(AntiGrief), "Anti-Grief", "1.3.2", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -88,11 +88,11 @@ namespace Si_AntiGrief
         [HarmonyPatch(typeof(StrategyMode), nameof(StrategyMode.OnUnitDestroyed))]
         private static class ApplyPatch_StrategyMode_OnUnitDestroyed
         {
-            public static void Postfix(StrategyMode __instance, Unit __0, EDamageType __1, UnityEngine.GameObject __2)
+            public static void Postfix(StrategyMode __instance, Unit __0, UnityEngine.GameObject __1)
             {
                 try
                 {
-                    if (__0 == null || __2 == null || _NegativeKillsThreshold == null || _NegativeKills_Penalty_Ban == null)
+                    if (__0 == null || __1 == null || _NegativeKillsThreshold == null || _NegativeKills_Penalty_Ban == null)
                     {
                         return;
                     }
@@ -100,7 +100,7 @@ namespace Si_AntiGrief
                     // Victim
                     Team victimTeam = __0.Team;
                     // Attacker
-                    BaseGameObject attackerBase = GameFuncs.GetBaseGameObject(__2);
+                    BaseGameObject attackerBase = GameFuncs.GetBaseGameObject(__1);
 
                     if (attackerBase == null || victimTeam == null)
                     {
@@ -187,11 +187,11 @@ namespace Si_AntiGrief
         [HarmonyPatch(typeof(MP_Strategy), nameof(MP_Strategy.OnStructureDestroyed))]
         private static class ApplyPatch_OnStructureDestroyed
         {
-            public static void Postfix(MP_Strategy __instance, Structure __0, EDamageType __1, UnityEngine.GameObject __2)
+            public static void Postfix(MP_Strategy __instance, Structure __0, UnityEngine.GameObject __1)
             {
                 try
                 {
-                    if (__0 == null || __2 == null)
+                    if (__0 == null || __1 == null)
                     {
                         return;
                     }
@@ -199,7 +199,7 @@ namespace Si_AntiGrief
                     // Victim
                     Team victimTeam = __0.Team;
                     // Attacker
-                    BaseGameObject attackerBase = GameFuncs.GetBaseGameObject(__2);
+                    BaseGameObject attackerBase = GameFuncs.GetBaseGameObject(__1);
 
                     if (attackerBase == null || victimTeam == null)
                     {
