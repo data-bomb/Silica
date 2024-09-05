@@ -37,7 +37,7 @@ using UnityEngine;
 using Si_WormBounty;
 
 
-[assembly: MelonInfo(typeof(WormBounty), "Worm Bounty", "0.9.2", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(WormBounty), "Worm Bounty", "0.9.3", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -49,7 +49,6 @@ namespace Si_WormBounty
         static MelonPreferences_Entry<int> _Pref_GreatWorms_MaxNumber = null!;
         static MelonPreferences_Entry<float> _Pref_GreatWorms_SpawnChance = null!;
         static MelonPreferences_Entry<int> _Pref_GreatWorms_Bounty_BaseAmount = null!;
-        static MelonPreferences_Entry<int> _Pref_GreatWorms_Bounty_NonExplosionBonus = null!;
         static MelonPreferences_Entry<int> _Pref_GreatWorms_Bounty_RandomBonusMax = null!;
 
 
@@ -58,7 +57,6 @@ namespace Si_WormBounty
             _modCategory ??= MelonPreferences.CreateCategory("Silica");
             _Pref_GreatWorms_MaxNumber ??= _modCategory.CreateEntry<int>("GreatWorms_MaxNumber", 2);
             _Pref_GreatWorms_Bounty_BaseAmount ??= _modCategory.CreateEntry<int>("GreatWorms_Bounty_BaseAmount", 500);
-            _Pref_GreatWorms_Bounty_NonExplosionBonus ??= _modCategory.CreateEntry<int>("GreatWorms_Bounty_Bonus_NonExplosion", 500);
             _Pref_GreatWorms_Bounty_RandomBonusMax ??= _modCategory.CreateEntry<int>("GreatWorms_Bounty_Bonus_RandomMax", 750);
             _Pref_GreatWorms_SpawnChance ??= _modCategory.CreateEntry<float>("GreatWorms_SpawnChance", 0.25f);
         }
@@ -151,11 +149,11 @@ namespace Si_WormBounty
         #endif
         private static class WormBounty_Patch_AmbientLife_OnUnitDestroyed
         {
-            public static void Prefix(AmbientLife __instance, Unit __0, EDamageType __1, GameObject __2)
+            public static void Prefix(AmbientLife __instance, Unit __0, GameObject __1)
             {
                 try
                 {
-                    if (__2 == null)
+                    if (__1 == null)
                     {
                         return;
                     }
@@ -167,7 +165,7 @@ namespace Si_WormBounty
                     }
 
                     // check if this is an actual player
-                    BaseGameObject attackerBase = GameFuncs.GetBaseGameObject(__2);
+                    BaseGameObject attackerBase = GameFuncs.GetBaseGameObject(__1);
                     if (attackerBase == null)
                     {
                         return;
@@ -191,7 +189,7 @@ namespace Si_WormBounty
                     }
 
                     // determine bounty amount
-                    int bountyAmount = FindBounty(__1);
+                    int bountyAmount = FindBounty();
 
                     // award bounty
                     AwardBounty(attackerPlayer, bountyAmount);
@@ -203,10 +201,10 @@ namespace Si_WormBounty
             }
         }
 
-        private static int FindBounty(EDamageType damageType)
+        private static int FindBounty()
         {
             // explosion kills earn a bit less
-            int baseAmount = (damageType == EDamageType.Explosion) ? _Pref_GreatWorms_Bounty_BaseAmount.Value : (_Pref_GreatWorms_Bounty_BaseAmount.Value + _Pref_GreatWorms_Bounty_NonExplosionBonus.Value);
+            int baseAmount = _Pref_GreatWorms_Bounty_BaseAmount.Value;
 
             // give a little more, perhaps
             int varyingAmount = 0;
