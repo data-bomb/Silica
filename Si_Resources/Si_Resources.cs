@@ -32,7 +32,7 @@ using SilicaAdminMod;
 using System;
 using System.Linq;
 
-[assembly: MelonInfo(typeof(ResourceConfig), "Resource Configuration", "1.2.1", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(ResourceConfig), "Resource Configuration", "1.2.2", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -138,7 +138,8 @@ namespace Si_Resources
                 HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": No amount specified");
                 return;
             }
-            else if (amount > team.RemainingResourceCapacity)
+            // 0 resource capacity happens in the early game and is interpretted as inf resource capacity
+            else if (amount > team.RemainingResourceCapacity && team.RemainingResourceCapacity > 0)
             {
                 HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": Amount specified is higher than team resource capacity");
                 return;
