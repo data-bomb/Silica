@@ -36,7 +36,7 @@ using SilicaAdminMod;
 using System.Linq;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(Announcements), "Server Announcements", "1.1.9", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(Announcements), "Server Announcements", "1.1.10", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -155,9 +155,7 @@ namespace Si_Announcements
                         }
 
                         string nextAnnouncement = GetNextAnnouncement();
-
-                        Player broadcastPlayer = HelperMethods.FindBroadcastPlayer();
-                        broadcastPlayer.SendChatMessage(nextAnnouncement);
+                        HelperMethods.SendChatMessageToAll(nextAnnouncement);
                     }
                 }
                 catch (Exception exception)
