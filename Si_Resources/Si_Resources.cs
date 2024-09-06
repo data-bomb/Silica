@@ -32,7 +32,7 @@ using SilicaAdminMod;
 using System;
 using System.Linq;
 
-[assembly: MelonInfo(typeof(ResourceConfig), "Resource Configuration", "1.2.2", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(ResourceConfig), "Resource Configuration", "1.2.3", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -153,7 +153,12 @@ namespace Si_Resources
             // change resource amount and notify players
             if (amount >= 0)
             {
-                team.StoreResource(amount);
+                int unstored = team.StoreResource(amount);
+                if (unstored > 0)
+                {
+                    team.StartingResources += unstored;
+                }
+
                 HelperMethods.AlertAdminAction(callerPlayer, "granted " + amountText + " resources to " + HelperMethods.GetTeamColor(team) + team.TeamShortName + "</color>");
             }
             else
