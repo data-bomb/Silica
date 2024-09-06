@@ -85,7 +85,7 @@ namespace SilicaAdminMod
         public static void AlertAdminActivity(Player? adminPlayer, Player targetPlayer, string action)
         {
             string adminName = (adminPlayer == null) ? "CONSOLE" : adminPlayer.PlayerName;
-            SendChatMessageToAll(chatPrefix + GetAdminColor() + adminName + "</color> " + action + " " + GetTeamColor(targetPlayer) + targetPlayer.PlayerName);
+            SendChatMessageToAll(chatPrefix + GetAdminColor() + adminName + "</color> " + action + " " + GetTeamColor(targetPlayer) + targetPlayer.PlayerName + "</color>");
         }
 
         public static void AlertAdminAction(Player? adminPlayer, string action)
@@ -120,7 +120,7 @@ namespace SilicaAdminMod
 
                 if (player.Team == team)
                 {
-                    NetworkSendChat(player, true, messages);
+                    NetworkSendChat(player, false, messages);
                 }
             }
         }
@@ -137,7 +137,7 @@ namespace SilicaAdminMod
 
                 if (player.Team == team && !player.IsCommander)
                 {
-                    NetworkSendChat(player, true, messages);
+                    NetworkSendChat(player, false, messages);
                 }
             }
         }
@@ -183,7 +183,7 @@ namespace SilicaAdminMod
                 return;
             }
 
-            NetworkSendChat(player, true, messages);
+            NetworkSendChat(player, false, messages);
         }
         public static void SendConsoleMessageToPlayer(Player? player, params string[] messages)
         {
