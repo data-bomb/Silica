@@ -281,9 +281,13 @@ namespace Si_BasicTeamBalance
         public static void SwapTeam(Player player, Team team)
         {
             MelonLogger.Msg("Swapping player (" + player.PlayerName + ") to team: " + team.TeamShortName);
+            GameMode.CurrentGameMode.DestroyAllUnitsForPlayer(player);
 
             player.Team = team;
             NetworkLayer.SendPlayerSelectTeam(player, team);
+
+            // respawn
+            GameMode.CurrentGameMode.SpawnUnitForPlayer(player, team);
         }
 
         [HarmonyPatch(typeof(MP_Strategy), nameof(MP_Strategy.ProcessNetRPC))]
