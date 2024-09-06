@@ -306,7 +306,7 @@ namespace SilicaAdminMod
 
         public static string GetAdminColor()
         {
-            return "<color=#9741A4>";
+            return "<color=#ff54ff>";
         }
 
         private static string TeamColorTextFromIndex(SiConstants.ETeam teamIndex)
