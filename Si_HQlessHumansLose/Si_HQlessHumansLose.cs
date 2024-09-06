@@ -33,7 +33,7 @@ using UnityEngine;
 using System;
 using SilicaAdminMod;
 
-[assembly: MelonInfo(typeof(HQlessHumansLose), "HQless Humans Lose", "1.3.9", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HQlessHumansLose), "HQless Humans Lose", "1.3.10", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -56,16 +56,14 @@ namespace Si_HQlessHumansLose
 
         public static void TeamLostMessage(Team team)
         {
-            Player broadcastPlayer = HelperMethods.FindBroadcastPlayer();
             String rootStructureName = GetRootCriticalFullName(team);
-            broadcastPlayer.SendChatMessage(HelperMethods.chatPrefix + HelperMethods.GetTeamColor(team) + team.TeamShortName + "</color> lost their " + rootStructureName, false);
+            HelperMethods.ReplyToCommand(HelperMethods.GetTeamColor(team) + team.TeamShortName + "</color> lost their " + rootStructureName);
         }
 
         public static void TeamLostByPlayerMessage(Team team, Player player)
         {
-            Player broadcastPlayer = HelperMethods.FindBroadcastPlayer();
             String rootStructureName = GetRootCriticalFullName(team);
-            broadcastPlayer.SendChatMessage(HelperMethods.chatPrefix + HelperMethods.GetTeamColor(player) + player.PlayerName + "</color> destroyed " + HelperMethods.GetTeamColor(team) + team.TeamShortName + "</color>'s " + rootStructureName, false);
+            HelperMethods.ReplyToCommand(HelperMethods.GetTeamColor(player) + player.PlayerName + "</color> destroyed " + HelperMethods.GetTeamColor(team) + team.TeamShortName + "</color>'s " + rootStructureName);
         }
 
         static String GetRootCriticalPrefix(Team team)
