@@ -35,7 +35,7 @@ using SilicaAdminMod;
 using System.Linq;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(AntiGrief), "Anti-Grief", "1.3.2", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(AntiGrief), "Anti-Grief", "1.3.3", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -54,7 +54,7 @@ namespace Si_AntiGrief
         public override void OnInitializeMelon()
         {
             _modCategory ??= MelonPreferences.CreateCategory(ModCategory);
-            _NegativeKillsThreshold ??= _modCategory.CreateEntry<int>("Grief_NegativeKills_Threshold", -125);
+            _NegativeKillsThreshold ??= _modCategory.CreateEntry<int>("Grief_NegativeKills_Threshold", -9);
             _NegativeKills_Penalty_Ban ??= _modCategory.CreateEntry<bool>("Grief_NegativeKills_Penalty_Ban", true);
             _StructureAntiGrief_IgnoreNodes ??= _modCategory.CreateEntry<bool>("Grief_IgnoreFriendlyNodesDestroyed", true);
             _BlockShrimpControllers ??= _modCategory.CreateEntry<bool>("Grief_BlockShrimpTakeOver", false);
