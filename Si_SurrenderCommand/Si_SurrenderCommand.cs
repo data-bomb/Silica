@@ -34,7 +34,7 @@ using System;
 using UnityEngine;
 using System.Collections.Generic;
 
-[assembly: MelonInfo(typeof(SurrenderCommand), "Surrender Command", "1.4.1", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(SurrenderCommand), "Surrender Command", "1.5.0", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -191,13 +191,13 @@ namespace Si_SurrenderCommand
             HelperMethods.ReplyToCommand_Player(player, "used !surrender to end");
 
             // find all construction sites we should destroy form the team that's surrendering
-            RemoveConstructionSites(team);
+            RemoveConstructionSites(team, true);
 
-            // destroy all structures on team that's surrendering
-            RemoveStructures(team);
+            // destroy only critical structures on team that's surrendering
+            RemoveStructures(team, true);
 
-            // and destroy all units (especially the queen)
-            RemoveUnits(team);
+            // and destroy only critical units (e.g., the queen)
+            RemoveUnits(team, true);
 
             // clear all people who voted for a surrender
             ClearSurrenderVotes();
@@ -219,7 +219,7 @@ namespace Si_SurrenderCommand
             }
         }
 
-        public static void RemoveConstructionSites(Team team)
+        public static void RemoveConstructionSites(Team team, bool criticalOnly)
         {
             List<ConstructionSite> sitesToDestroy = new List<ConstructionSite>();
 
@@ -235,6 +235,13 @@ namespace Si_SurrenderCommand
                     continue;
                 }
 
+                if (criticalOnly && constructionSite.ObjectInfo && !constructionSite.ObjectInfo.Critical)
+                {
+                    continue;
+                }
+
+                MelonLogger.Msg("Found critical construction site: " + constructionSite.ToString());
+
                 sitesToDestroy.Add(constructionSite);
             }
 
@@ -244,7 +251,7 @@ namespace Si_SurrenderCommand
             }
         }
 
-        public static void RemoveStructures(Team team)
+        public static void RemoveStructures(Team team, bool criticalOnly)
         {
             for (int i = 0; i < team.Structures.Count; i++)
             {
@@ -254,11 +261,22 @@ namespace Si_SurrenderCommand
                     continue;
                 }
 
+                if (team.Structures[i].IsDestroyed)
+                {
+                    continue;
+                }
+
+                if (criticalOnly && team.Structures[i].ObjectInfo && !team.Structures[i].ObjectInfo.Critical)
+                {
+                    continue;
+                }
+
+                MelonLogger.Msg("Found critical structure: " + team.Structures[i].ToString());
                 team.Structures[i].DamageManager.SetHealth01(0.0f);
             }
         }
 
-        public static void RemoveUnits(Team team)
+        public static void RemoveUnits(Team team, bool criticalOnly)
         {
             for (int i = 0; i < team.Units.Count; i++)
             {
@@ -272,6 +290,13 @@ namespace Si_SurrenderCommand
                 {
                     continue;
                 }
+
+                if (criticalOnly && team.Units[i].ObjectInfo && !team.Units[i].ObjectInfo.Critical)
+                {
+                    continue;
+                }
+
+                MelonLogger.Msg("Found critical unit: " + team.Units[i].ToString());
 
                 team.Units[i].DamageManager.SetHealth01(0.0f);
             }
