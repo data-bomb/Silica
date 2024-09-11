@@ -34,7 +34,7 @@ using System;
 using UnityEngine;
 using System.Collections.Generic;
 
-[assembly: MelonInfo(typeof(SurrenderCommand), "Surrender Command", "1.5.0", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(SurrenderCommand), "Surrender Command", "1.5.1", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -132,7 +132,7 @@ namespace Si_SurrenderCommand
             // did the player already vote for surrender?
             if (votesToSurrender[team.Index].Contains(callerPlayer))
             {
-                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, " Already voted for surrender. ", MoreSurrenderVotesNeeded(team).ToString(), " more players " + (Pref_Surrender_CommanderImmediate.Value ? "or 1 commander" : "") + " needed.");
+                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, " Already voted for surrender. ", MoreSurrenderVotesNeeded(team).ToString(), " more players " + (Pref_Surrender_CommanderImmediate.Value ? "" : "or 1 commander") + " needed.");
                 return;
             }
 
