@@ -44,7 +44,7 @@ using System.IO;
 using System.Text;
 using System.Runtime.CompilerServices;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.4.8", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.4.9", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -388,7 +388,7 @@ namespace Si_Logging
 
                                 if (Pref_Log_PlayerConsole_Enable.Value)
                                 {
-                                    string ConsoleLine = "<b>" + HelperMethods.GetTeamColor(victimPlayer) + victimPlayer.PlayerName + "</color></b> (" + __1.ToString().Split('(')[0] + ") committed suicide";
+                                    string ConsoleLine = "<align=\"right\"><b>" + HelperMethods.GetTeamColor(victimPlayer) + victimPlayer.PlayerName + "</color></b> (" + __1.ToString().Split('(')[0] + ") committed suicide</align>";
                                     HelperMethods.SendConsoleMessage(ConsoleLine);
                                 }
                             }
@@ -401,7 +401,7 @@ namespace Si_Logging
 
                                 if (Pref_Log_PlayerConsole_Enable.Value)
                                 {
-                                    string ConsoleLine = "<b>" + HelperMethods.GetTeamColor(attackerPlayer) + attackerPlayer.PlayerName + "</color></b> (" + __1.ToString().Split('(')[0] + ") killed <b>" + HelperMethods.GetTeamColor(victimPlayer) + victimPlayer.PlayerName + "</color></b> (" + __0.ToString().Split('(')[0] + ")";
+                                    string ConsoleLine = "<align=\"right\"><b>" + HelperMethods.GetTeamColor(attackerPlayer) + attackerPlayer.PlayerName + "</color></b> (" + __1.ToString().Split('(')[0] + ") killed <b>" + HelperMethods.GetTeamColor(victimPlayer) + victimPlayer.PlayerName + "</color></b> (" + __0.ToString().Split('(')[0] + ")</align>";
                                     HelperMethods.SendConsoleMessage(ConsoleLine);
                                 }
                             }
@@ -414,7 +414,7 @@ namespace Si_Logging
 
                             if (Pref_Log_PlayerConsole_Enable.Value)
                             {
-                                string ConsoleLine = "<b>AI</b> (" + __1.ToString().Split('(')[0] + ")" + " killed <b>" + HelperMethods.GetTeamColor(victimPlayer) + victimPlayer.PlayerName + "</color></b> (" + __0.ToString().Split('(')[0] + ")";
+                                string ConsoleLine = "<align=\"right\"><b>AI</b> (" + __1.ToString().Split('(')[0] + ")" + " killed <b>" + HelperMethods.GetTeamColor(victimPlayer) + victimPlayer.PlayerName + "</color></b> (" + __0.ToString().Split('(')[0] + ")</align>";
                                 HelperMethods.SendConsoleMessage(ConsoleLine);
                             }
                         }
@@ -428,7 +428,7 @@ namespace Si_Logging
 
                         if (Pref_Log_PlayerConsole_Enable.Value)
                         {
-                            string ConsoleLine = "<b>" + HelperMethods.GetTeamColor(attackerPlayer) + attackerPlayer.PlayerName + "</color></b> (" + __1.ToString().Split('(')[0] + ") killed " + "<b>AI</b> (" + __0.ToString().Split('(')[0] + ")";
+                            string ConsoleLine = "<align=\"right\"><b>" + HelperMethods.GetTeamColor(attackerPlayer) + attackerPlayer.PlayerName + "</color></b> (" + __1.ToString().Split('(')[0] + ") killed " + "<b>AI</b> (" + __0.ToString().Split('(')[0] + ")</align>";
                             HelperMethods.SendConsoleMessage(ConsoleLine);
                         }
                     }
@@ -711,7 +711,7 @@ namespace Si_Logging
 
                         if (Pref_Log_PlayerConsole_Enable.Value)
                         {
-                            string ConsoleLine = "<b>" + HelperMethods.GetTeamColor(attackerPlayer) + attackerPlayer.PlayerName + "</color></b> destroyed a structure (" + HelperMethods.GetTeamColor(__0.Team) + structName + "</color>)";
+                            string ConsoleLine = "<align=\"right\"><b>" + HelperMethods.GetTeamColor(attackerPlayer) + attackerPlayer.PlayerName + "</color></b> destroyed a structure (" + HelperMethods.GetTeamColor(__0.Team) + structName + "</color>)</align>";
                             HelperMethods.SendConsoleMessageToTeam(attackerPlayer.Team, ConsoleLine);
                         }
                     }
