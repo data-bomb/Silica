@@ -35,7 +35,7 @@ using SilicaAdminMod;
 using System.Linq;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(AntiGrief), "Anti-Grief", "1.3.3", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(AntiGrief), "Anti-Grief", "1.3.4", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -59,7 +59,6 @@ namespace Si_AntiGrief
             _StructureAntiGrief_IgnoreNodes ??= _modCategory.CreateEntry<bool>("Grief_IgnoreFriendlyNodesDestroyed", true);
             _BlockShrimpControllers ??= _modCategory.CreateEntry<bool>("Grief_BlockShrimpTakeOver", false);
         }
-
 
         public override void OnLateInitializeMelon()
         {
@@ -184,10 +183,10 @@ namespace Si_AntiGrief
             }
         }
 
-        [HarmonyPatch(typeof(MP_Strategy), nameof(MP_Strategy.OnStructureDestroyed))]
-        private static class ApplyPatch_OnStructureDestroyed
+        [HarmonyPatch(typeof(Player), nameof(Player.OnTargetDestroyed))]
+        private static class ApplyPatch_OnTargetDestroyed
         {
-            public static void Postfix(MP_Strategy __instance, Structure __0, UnityEngine.GameObject __1)
+            public static void Postfix(Target __0, GameObject __1)
             {
                 try
                 {
@@ -228,7 +227,7 @@ namespace Si_AntiGrief
                         return;
                     }
 
-                    string structureName = GetDisplayName(__0.ToString());
+                    string structureName = GetDisplayName(__0);
 
                     // should we ignore the message for this particular type of structure?
                     if (!DisplayTeamKillForStructure(structureName))
@@ -237,11 +236,11 @@ namespace Si_AntiGrief
                     }
 
                     MelonLogger.Msg(attackerPlayer.PlayerName + " team killed a structure " + structureName);
-                    HelperMethods.ReplyToCommand_Player(attackerPlayer, "killed a friendly structure (" + HelperMethods.GetTeamColor(attackerPlayer) + structureName + "</color>)");
+                    HelperMethods.ReplyToCommand_Player(attackerPlayer, "killed a friendly " + (__0.OwnerConstructionSite == null ? "structure" : "construction site") + " (" + HelperMethods.GetTeamColor(attackerPlayer) + structureName + "</color>)");
                 }
                 catch (Exception error)
                 {
-                    HelperMethods.PrintError(error, "Failed to run MP_Strategy::OnStructureDestroyed");
+                    HelperMethods.PrintError(error, "Failed to run Player::OnTargetDestroyed");
                 }
             }
         }
@@ -382,6 +381,28 @@ namespace Si_AntiGrief
             }
 
             return true;
+        }
+
+        private static string GetDisplayName(Target target)
+        {
+            if (target.ToString().Contains('_'))
+            {
+                // is this a construction site or not?
+                if (target.OwnerConstructionSite == null)
+                {
+                    return target.ToString().Split('_')[0];
+                }
+                else
+                {
+                    return target.ToString().Split('_')[1];
+                }
+            }
+            else if (target.ToString().Contains('('))
+            {
+                return target.ToString().Split('(')[0];
+            }
+
+            return target.ToString();
         }
 
         private static string GetDisplayName(string fullName)
