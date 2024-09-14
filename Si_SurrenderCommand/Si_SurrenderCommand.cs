@@ -34,7 +34,7 @@ using System;
 using UnityEngine;
 using System.Collections.Generic;
 
-[assembly: MelonInfo(typeof(SurrenderCommand), "Surrender Command", "1.5.2", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(SurrenderCommand), "Surrender Command", "1.6.0", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -46,12 +46,14 @@ namespace Si_SurrenderCommand
 
         static MelonPreferences_Category _modCategory = null!;
         static MelonPreferences_Entry<bool> Pref_Surrender_CommanderImmediate = null!;
+        static MelonPreferences_Entry<bool> Pref_Surrender_ShowNames = null!;
         static MelonPreferences_Entry<float> Pref_Surrender_Vote_Percent = null!;
 
         public override void OnInitializeMelon()
         {
             _modCategory ??= MelonPreferences.CreateCategory("Silica");
             Pref_Surrender_CommanderImmediate ??= _modCategory.CreateEntry<bool>("Surrender_CommanderImmediate", false);
+            Pref_Surrender_ShowNames ??= _modCategory.CreateEntry<bool>("Surrender_ShowPlayerNames", true);
             Pref_Surrender_Vote_Percent ??= _modCategory.CreateEntry<float>("Surrender_Vote_PercentNeeded", 0.35f);
 
             votesToSurrender = new List<Player>[SiConstants.MaxPlayableTeams + 1];
@@ -141,7 +143,12 @@ namespace Si_SurrenderCommand
             // if we haven't met the threshold then send a message to the teammates
             if (votesToSurrender[team.Index].Count < TeammatesNeededForSurrender(team))
             {
-                HelperMethods.SendChatMessageToTeam(team, HelperMethods.chatPrefix, HelperMethods.GetTeamColor(team), " ", callerPlayer.PlayerName, "</color> votes to surrender. ", MoreSurrenderVotesNeeded(team).ToString(), " more players " + (Pref_Surrender_CommanderImmediate.Value ? "or 1 commander" : "") + " needed.");
+                HelperMethods.SendChatMessageToTeam(team, HelperMethods.chatPrefix, HelperMethods.GetTeamColor(team), " ", (Pref_Surrender_ShowNames.Value ? callerPlayer.PlayerName : "A teammate"), "</color> votes to surrender. ", MoreSurrenderVotesNeeded(team).ToString(), " more players " + (Pref_Surrender_CommanderImmediate.Value ? "or 1 commander" : "") + " needed.");
+                if (Pref_Surrender_ShowNames.Value)
+                {
+                    HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, " Your surrender vote was recorded.");
+                }
+
                 return;
             }
 
@@ -188,7 +195,14 @@ namespace Si_SurrenderCommand
         public static void Surrender(Team team, Player player)
         {
             // notify all players
-            HelperMethods.ReplyToCommand_Player(player, "used !surrender to end");
+            if (Pref_Surrender_ShowNames.Value)
+            {
+                HelperMethods.ReplyToCommand_Player(player, "used !surrender to end");
+            }
+            else
+            {
+                HelperMethods.SendChatMessageToAll(HelperMethods.chatPrefix, HelperMethods.GetTeamColor(team), team.TeamShortName, "</color> surrendered.");
+            }
 
             // find all construction sites we should destroy form the team that's surrendering
             RemoveConstructionSites(team, true);
