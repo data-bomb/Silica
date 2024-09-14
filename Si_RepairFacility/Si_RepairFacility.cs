@@ -55,6 +55,7 @@ namespace Si_RepairFacility
         static MelonPreferences_Entry<float> _Pref_Aliens_Structure_HealRate = null!;
         static MelonPreferences_Entry<float> _Pref_Aliens_Queen_HealRate = null!;
         static MelonPreferences_Entry<float> _Pref_Humans_Infantry_HealRate = null!;
+        static MelonPreferences_Entry<bool> _Pref_Repair_Notification = null!;
 
         public override void OnInitializeMelon()
         {
@@ -69,6 +70,8 @@ namespace Si_RepairFacility
             _Pref_Aliens_Queen_HealRate ??= _modCategory.CreateEntry<float>("RepairFacility_Alien_Queen_HealRate", 0.01f);
 
             _Pref_Aliens_Structure_HealRate ??= _modCategory.CreateEntry<float>("RepairFacility_Alien_Structure_HealRate", 0.01f);
+
+            _Pref_Repair_Notification ??= _modCategory.CreateEntry<bool>("RepairFacility_ChatNotifications", false);
 
             vehiclesAtRepairShop = new List<Unit>();
         }
@@ -145,6 +148,11 @@ namespace Si_RepairFacility
                     MelonLogger.Msg("Found player's " + (__1.IsFlyingType ? "aircraft" : "vehicle") + " entering LVF repair zone: " + __1.ControlledBy.PlayerName + " with vehicle " + __1.ToString());
 
                     vehiclesAtRepairShop.Add(__1);
+
+                    if (_Pref_Repair_Notification.Value)
+                    {
+                        HelperMethods.SendChatMessageToPlayer(__1.ControlledBy, HelperMethods.chatPrefix, " Entered vehicle repair zone.");
+                    }
                 }
                 catch (Exception error)
                 {
@@ -196,7 +204,12 @@ namespace Si_RepairFacility
                         MelonLogger.Msg("Found player's " + (__1.IsFlyingType ? "aircraft" : "vehicle") + " exiting LVF repair zone: " + __1.ControlledBy.PlayerName + " with vehicle " + __1.ToString());
                     }
                     
-                    vehiclesAtRepairShop.RemoveAll(vehicleDM => vehicleDM == __1);
+                    vehiclesAtRepairShop.RemoveAll(vehicle => vehicle == __1);
+
+                    if (_Pref_Repair_Notification.Value)
+                    {
+                        HelperMethods.SendChatMessageToPlayer(__1.ControlledBy, HelperMethods.chatPrefix, " Left vehicle repair zone.");
+                    }
                 }
                 catch (Exception error)
                 {
