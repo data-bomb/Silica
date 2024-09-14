@@ -44,7 +44,7 @@ using System.IO;
 using System.Text;
 using System.Runtime.CompilerServices;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.4.10", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.4.11", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -675,7 +675,15 @@ namespace Si_Logging
                     string structName;
                     if (__0.ToString().Contains('_'))
                     {
-                        structName = __0.ToString().Split('_')[0];
+                        // is this a construction site or not?
+                        if (__0.OwnerConstructionSite == null)
+                        {
+                            structName = __0.ToString().Split('_')[0];
+                        }
+                        else
+                        {
+                            structName = __0.ToString().Split('_')[1];
+                        }
                     }
                     else if (__0.ToString().Contains('('))
                     {
@@ -686,12 +694,12 @@ namespace Si_Logging
                         structName = __0.ToString();
                     }
 
-                    string LogLine = "\"" + attackerPlayer.PlayerName + "<" + userID + "><" + GetPlayerID(attackerPlayer) + "><" + attackerPlayer.Team.TeamShortName + ">\" triggered \"structure_kill\" (structure \"" + structName + "\") (struct_team \"" + structTeam + "\")";
+                    string LogLine = "\"" + attackerPlayer.PlayerName + "<" + userID + "><" + GetPlayerID(attackerPlayer) + "><" + attackerPlayer.Team.TeamShortName + ">\" triggered \"structure_kill\" (structure \"" + structName + "\") (struct_team \"" + structTeam + "\") (construction \"" + (__0.OwnerConstructionSite == null ? "no" : "yes") + "\")";
                     PrintLogLine(LogLine);
 
                     if (Pref_Log_PlayerConsole_Enable.Value)
                     {
-                        string ConsoleLine = "<b>" + HelperMethods.GetTeamColor(attackerPlayer) + attackerPlayer.PlayerName + "</color></b> destroyed a structure (" + HelperMethods.GetTeamColor(__0.Team) + structName + "</color>)";
+                        string ConsoleLine = "<b>" + HelperMethods.GetTeamColor(attackerPlayer) + attackerPlayer.PlayerName + "</color></b> destroyed a " + (__0.OwnerConstructionSite == null ? "construction site" : "structure") + "(" + HelperMethods.GetTeamColor(__0.Team) + structName + "</color>)";
                         HelperMethods.SendConsoleMessageToTeam(attackerPlayer.Team, ConsoleLine);
                     }
                 }
