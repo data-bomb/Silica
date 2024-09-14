@@ -35,7 +35,7 @@ using SilicaAdminMod;
 using System.Linq;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(AntiGrief), "Anti-Grief", "1.3.4", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(AntiGrief), "Anti-Grief", "1.3.5", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -394,7 +394,7 @@ namespace Si_AntiGrief
                 }
                 else
                 {
-                    return target.ToString().Split('_')[1];
+                    return target.ToString().Split('_')[1].Split('(')[0];
                 }
             }
             else if (target.ToString().Contains('('))

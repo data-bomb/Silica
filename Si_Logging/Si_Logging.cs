@@ -44,7 +44,7 @@ using System.IO;
 using System.Text;
 using System.Runtime.CompilerServices;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.4.11", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.4.12", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -682,7 +682,7 @@ namespace Si_Logging
                         }
                         else
                         {
-                            structName = __0.ToString().Split('_')[1];
+                            structName = __0.ToString().Split('_')[1].Split('(')[0];
                         }
                     }
                     else if (__0.ToString().Contains('('))
