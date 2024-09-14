@@ -44,7 +44,7 @@ using System.IO;
 using System.Text;
 using System.Runtime.CompilerServices;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.4.9", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.4.10", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -627,6 +627,81 @@ namespace Si_Logging
         // None for now. Re-evaluate with updates
 
         // 060. Player Objectives/Actions - Structure Kill
+        [HarmonyPatch(typeof(Player), nameof(Player.OnTargetDestroyed))]
+        private static class ApplyPatchOnTargetDestroyed
+        {
+            public static void Postfix(Target __0, GameObject __1)
+            {
+                try
+                {
+                    if (__0 == null || __1 == null)
+                    {
+                        return;
+                    }
+
+                    BaseGameObject attackerBase = GameFuncs.GetBaseGameObject(__1);
+                    if (attackerBase == null)
+                    {
+                        return;
+                    }
+
+                    NetworkComponent attackerNetComp = attackerBase.NetworkComponent;
+                    if (attackerNetComp == null)
+                    {
+                        return;
+                    }
+
+                    Player attackerPlayer = attackerNetComp.OwnerPlayer;
+                    if (attackerPlayer == null)
+                    {
+                        return;
+                    }
+
+                    if (__0.Team == null || attackerPlayer.Team == null)
+                    {
+                        return;
+                    }
+
+                    // under construction buildings still appear as ObjectInfoType.Structure
+                    if (__0.ObjectInfo == null || __0.ObjectInfo.ObjectType != ObjectInfoType.Structure)
+                    {
+                        return;
+                    }
+
+                    int userID = Math.Abs(attackerPlayer.GetInstanceID());
+
+                    string structTeam = __0.Team.TeamShortName;
+
+                    string structName;
+                    if (__0.ToString().Contains('_'))
+                    {
+                        structName = __0.ToString().Split('_')[0];
+                    }
+                    else if (__0.ToString().Contains('('))
+                    {
+                        structName = __0.ToString().Split('(')[0];
+                    }
+                    else
+                    {
+                        structName = __0.ToString();
+                    }
+
+                    string LogLine = "\"" + attackerPlayer.PlayerName + "<" + userID + "><" + GetPlayerID(attackerPlayer) + "><" + attackerPlayer.Team.TeamShortName + ">\" triggered \"structure_kill\" (structure \"" + structName + "\") (struct_team \"" + structTeam + "\")";
+                    PrintLogLine(LogLine);
+
+                    if (Pref_Log_PlayerConsole_Enable.Value)
+                    {
+                        string ConsoleLine = "<align=\"right\"><b>" + HelperMethods.GetTeamColor(attackerPlayer) + attackerPlayer.PlayerName + "</color></b> destroyed a structure (" + HelperMethods.GetTeamColor(__0.Team) + structName + "</color>)</align>";
+                        HelperMethods.SendConsoleMessageToTeam(attackerPlayer.Team, ConsoleLine);
+                    }
+                }
+                catch (Exception error)
+                {
+                    HelperMethods.PrintError(error, "Failed to run OnTargetDestroyed");
+                }
+            }
+        }
+
         [HarmonyPatch(typeof(MP_Strategy), nameof(MP_Strategy.OnStructureDestroyed))]
         private static class ApplyPatchOnStructureDestroyed
         {
@@ -648,71 +723,6 @@ namespace Si_Logging
                         {
                             currTiers[structureTeam.name] = tier;
                             LogTierChange(structureTeam, tier);
-                        }
-                    }
-
-                    if (__1 == null)
-                    {
-                        return;
-                    }
-
-                    // Attacker
-                    BaseGameObject attackerBase = GameFuncs.GetBaseGameObject(__1);
-                    if (attackerBase == null)
-                    {
-                        return;
-                    }
-
-                    NetworkComponent attackerNetComp = attackerBase.NetworkComponent;
-                    // was teamkiller a playable character?
-                    if (attackerNetComp == null)
-                    {
-                        return;
-                    }
-
-                    Player attackerPlayer = attackerNetComp.OwnerPlayer;
-
-                    if (attackerPlayer != null)
-                    {
-                        int userID = Math.Abs(attackerPlayer.GetInstanceID());
-                        string structName;
-                        if (__0.ToString().Contains('_'))
-                        {
-                            structName = __0.ToString().Split('_')[0];
-                        }
-                        else if (__0.ToString().Contains('('))
-                        {
-                            structName = __0.ToString().Split('(')[0];
-                        }
-                        else
-                        {
-                            structName = __0.ToString();
-                        }
-
-                        string attackerPlayerTeam;
-                        if (attackerPlayer.Team == null)
-                        {
-                            attackerPlayerTeam = "";
-                        }
-                        else
-                        {
-                            attackerPlayerTeam = attackerPlayer.Team.TeamShortName;
-                        }
-
-                        if (__0.Team == null || attackerPlayer.Team == null)
-                        {
-                            return;
-                        }
-
-                        string structTeam = __0.Team.TeamShortName;
-
-                        string LogLine = "\"" + attackerPlayer.PlayerName + "<" + userID + "><" + GetPlayerID(attackerPlayer) + "><" + attackerPlayerTeam + ">\" triggered \"structure_kill\" (structure \"" + structName + "\") (struct_team \"" + structTeam + "\")";
-                        PrintLogLine(LogLine);
-
-                        if (Pref_Log_PlayerConsole_Enable.Value)
-                        {
-                            string ConsoleLine = "<align=\"right\"><b>" + HelperMethods.GetTeamColor(attackerPlayer) + attackerPlayer.PlayerName + "</color></b> destroyed a structure (" + HelperMethods.GetTeamColor(__0.Team) + structName + "</color>)</align>";
-                            HelperMethods.SendConsoleMessageToTeam(attackerPlayer.Team, ConsoleLine);
                         }
                     }
                 }
