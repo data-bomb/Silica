@@ -35,7 +35,7 @@ using SilicaAdminMod;
 using System.Linq;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(AntiGrief), "Anti-Grief", "1.3.5", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(AntiGrief), "Anti-Grief", "1.3.6", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -201,6 +201,12 @@ namespace Si_AntiGrief
                     BaseGameObject attackerBase = GameFuncs.GetBaseGameObject(__1);
 
                     if (attackerBase == null || victimTeam == null)
+                    {
+                        return;
+                    }
+
+                    // don't check unless it was a structure
+                    if (__0.ObjectInfo == null || __0.ObjectInfo.ObjectType != ObjectInfoType.Structure)
                     {
                         return;
                     }
