@@ -699,7 +699,7 @@ namespace Si_Logging
 
                     if (Pref_Log_PlayerConsole_Enable.Value)
                     {
-                        string ConsoleLine = "<b>" + HelperMethods.GetTeamColor(attackerPlayer) + attackerPlayer.PlayerName + "</color></b> destroyed a " + (__0.OwnerConstructionSite == null ? "construction site" : "structure") + "(" + HelperMethods.GetTeamColor(__0.Team) + structName + "</color>)";
+                        string ConsoleLine = "<b>" + HelperMethods.GetTeamColor(attackerPlayer) + attackerPlayer.PlayerName + "</color></b> destroyed a " + (__0.OwnerConstructionSite == null ? "structure" : "construction site") + "(" + HelperMethods.GetTeamColor(__0.Team) + structName + "</color>)";
                         HelperMethods.SendConsoleMessageToTeam(attackerPlayer.Team, ConsoleLine);
                     }
                 }
