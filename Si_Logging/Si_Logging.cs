@@ -388,7 +388,7 @@ namespace Si_Logging
 
                                 if (Pref_Log_PlayerConsole_Enable.Value)
                                 {
-                                    string ConsoleLine = "<align=\"right\"><b>" + HelperMethods.GetTeamColor(victimPlayer) + victimPlayer.PlayerName + "</color></b> (" + __1.ToString().Split('(')[0] + ") committed suicide</align>";
+                                    string ConsoleLine = "<b>" + HelperMethods.GetTeamColor(victimPlayer) + victimPlayer.PlayerName + "</color></b> (" + __1.ToString().Split('(')[0] + ") committed suicide";
                                     HelperMethods.SendConsoleMessage(ConsoleLine);
                                 }
                             }
@@ -401,7 +401,7 @@ namespace Si_Logging
 
                                 if (Pref_Log_PlayerConsole_Enable.Value)
                                 {
-                                    string ConsoleLine = "<align=\"right\"><b>" + HelperMethods.GetTeamColor(attackerPlayer) + attackerPlayer.PlayerName + "</color></b> (" + __1.ToString().Split('(')[0] + ") killed <b>" + HelperMethods.GetTeamColor(victimPlayer) + victimPlayer.PlayerName + "</color></b> (" + __0.ToString().Split('(')[0] + ")</align>";
+                                    string ConsoleLine = "<b>" + HelperMethods.GetTeamColor(attackerPlayer) + attackerPlayer.PlayerName + "</color></b> (" + __1.ToString().Split('(')[0] + ") killed <b>" + HelperMethods.GetTeamColor(victimPlayer) + victimPlayer.PlayerName + "</color></b> (" + __0.ToString().Split('(')[0] + ")";
                                     HelperMethods.SendConsoleMessage(ConsoleLine);
                                 }
                             }
@@ -414,7 +414,7 @@ namespace Si_Logging
 
                             if (Pref_Log_PlayerConsole_Enable.Value)
                             {
-                                string ConsoleLine = "<align=\"right\"><b>AI</b> (" + __1.ToString().Split('(')[0] + ")" + " killed <b>" + HelperMethods.GetTeamColor(victimPlayer) + victimPlayer.PlayerName + "</color></b> (" + __0.ToString().Split('(')[0] + ")</align>";
+                                string ConsoleLine = "<b>AI</b> (" + __1.ToString().Split('(')[0] + ")" + " killed <b>" + HelperMethods.GetTeamColor(victimPlayer) + victimPlayer.PlayerName + "</color></b> (" + __0.ToString().Split('(')[0] + ")";
                                 HelperMethods.SendConsoleMessage(ConsoleLine);
                             }
                         }
@@ -428,7 +428,7 @@ namespace Si_Logging
 
                         if (Pref_Log_PlayerConsole_Enable.Value)
                         {
-                            string ConsoleLine = "<align=\"right\"><b>" + HelperMethods.GetTeamColor(attackerPlayer) + attackerPlayer.PlayerName + "</color></b> (" + __1.ToString().Split('(')[0] + ") killed " + "<b>AI</b> (" + __0.ToString().Split('(')[0] + ")</align>";
+                            string ConsoleLine = "<b>" + HelperMethods.GetTeamColor(attackerPlayer) + attackerPlayer.PlayerName + "</color></b> (" + __1.ToString().Split('(')[0] + ") killed " + "<b>AI</b> (" + __0.ToString().Split('(')[0] + ")";
                             HelperMethods.SendConsoleMessage(ConsoleLine);
                         }
                     }
@@ -691,7 +691,7 @@ namespace Si_Logging
 
                     if (Pref_Log_PlayerConsole_Enable.Value)
                     {
-                        string ConsoleLine = "<align=\"right\"><b>" + HelperMethods.GetTeamColor(attackerPlayer) + attackerPlayer.PlayerName + "</color></b> destroyed a structure (" + HelperMethods.GetTeamColor(__0.Team) + structName + "</color>)</align>";
+                        string ConsoleLine = "<b>" + HelperMethods.GetTeamColor(attackerPlayer) + attackerPlayer.PlayerName + "</color></b> destroyed a structure (" + HelperMethods.GetTeamColor(__0.Team) + structName + "</color>)";
                         HelperMethods.SendConsoleMessageToTeam(attackerPlayer.Team, ConsoleLine);
                     }
                 }
