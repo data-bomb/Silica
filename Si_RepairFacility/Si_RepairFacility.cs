@@ -36,7 +36,7 @@ using Si_RepairFacility;
 using System.Collections.Generic;
 using System.Text;
 
-[assembly: MelonInfo(typeof(RepairFacility), "Repair Facility", "1.0.2", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(RepairFacility), "Repair Facility", "1.1.0", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -44,10 +44,11 @@ namespace Si_RepairFacility
 {
     public class RepairFacility : MelonMod
     {
-        static List<DamageManager> vehiclesAtRepairShop = null!;
+        static List<Unit> vehiclesAtRepairShop = null!;
         static float Timer_HealVehicles = 0f;
         static MelonPreferences_Category _modCategory = null!;
         static MelonPreferences_Entry<float> _Pref_Humans_Vehicle_HealRate = null!;
+        static MelonPreferences_Entry<float> _Pref_Humans_Aircraft_HealRate = null!;
         static MelonPreferences_Entry<float> _Pref_Aliens_SmallUnit_HealRate = null!;
         static MelonPreferences_Entry<float> _Pref_Aliens_MediumUnit_HealRate = null!;
         static MelonPreferences_Entry<float> _Pref_Aliens_LargeUnit_HealRate = null!;
@@ -59,6 +60,7 @@ namespace Si_RepairFacility
         {
             _modCategory ??= MelonPreferences.CreateCategory("Silica");
             _Pref_Humans_Vehicle_HealRate ??= _modCategory.CreateEntry<float>("RepairFacility_HumanVehicle_HealRate", 0.035f);
+            _Pref_Humans_Aircraft_HealRate ??= _modCategory.CreateEntry<float>("RepairFacility_HumanAircraft_HealRate", 0.015f);
             _Pref_Humans_Infantry_HealRate ??= _modCategory.CreateEntry<float>("RepairFacility_HumanInfantry_HealRate", 0.015f);
 
             _Pref_Aliens_SmallUnit_HealRate ??= _modCategory.CreateEntry<float>("RepairFacility_Alien_SmallUnit_HealRate", 0.02f);
@@ -68,7 +70,7 @@ namespace Si_RepairFacility
 
             _Pref_Aliens_Structure_HealRate ??= _modCategory.CreateEntry<float>("RepairFacility_Alien_Structure_HealRate", 0.01f);
 
-            vehiclesAtRepairShop = new List<DamageManager>();
+            vehiclesAtRepairShop = new List<Unit>();
         }
 
         #if NET6_0
@@ -89,11 +91,11 @@ namespace Si_RepairFacility
 
                         CleanRepairList();
 
-                        foreach (DamageManager vehicleDamageManager in vehiclesAtRepairShop)
+                        foreach (Unit vehicle in vehiclesAtRepairShop)
                         {
-                            float healAmount = vehicleDamageManager.MaxHealth * _Pref_Humans_Vehicle_HealRate.Value;
-                            float newHealth = Mathf.Clamp(vehicleDamageManager.Health + healAmount, 0.0f, vehicleDamageManager.MaxHealth);
-                            vehicleDamageManager.SetHealth(newHealth);
+                            float healAmount = vehicle.DamageManager.MaxHealth * (vehicle.IsFlyingType ? _Pref_Humans_Aircraft_HealRate.Value : _Pref_Humans_Vehicle_HealRate.Value);
+                            float newHealth = Mathf.Clamp(vehicle.DamageManager.Health + healAmount, 0.0f, vehicle.DamageManager.MaxHealth);
+                            vehicle.DamageManager.SetHealth(newHealth);
                         }
                     }
                 }
@@ -140,9 +142,9 @@ namespace Si_RepairFacility
                         return;
                     }
 
-                    MelonLogger.Msg("Found player's vehicle entering LVF repair zone: " + __1.ControlledBy.PlayerName + " with vehicle " + __1.ToString());
+                    MelonLogger.Msg("Found player's " + (__1.IsFlyingType ? "aircraft" : "vehicle") + " entering LVF repair zone: " + __1.ControlledBy.PlayerName + " with vehicle " + __1.ToString());
 
-                    vehiclesAtRepairShop.Add(__1.DamageManager);
+                    vehiclesAtRepairShop.Add(__1);
                 }
                 catch (Exception error)
                 {
@@ -184,17 +186,17 @@ namespace Si_RepairFacility
                     // is the unit a player-controlled vehicle?
                     if (__1.DriverCompartment == null || __1.NetworkComponent == null || __1.ControlledBy == null)
                     {
-                        if (vehiclesAtRepairShop.Contains(__1.DamageManager))
+                        if (vehiclesAtRepairShop.Contains(__1))
                         {
-                            MelonLogger.Msg("Found vehicle exiting LVF repair zone: " + __1.ToString());
+                            MelonLogger.Msg("Found " + (__1.IsFlyingType ? "aircraft" : "vehicle") + " exiting LVF repair zone: " + __1.ToString());
                         }
                     }
                     else
                     {
-                        MelonLogger.Msg("Found player's vehicle exiting LVF repair zone: " + __1.ControlledBy.PlayerName + " with vehicle " + __1.ToString());
+                        MelonLogger.Msg("Found player's " + (__1.IsFlyingType ? "aircraft" : "vehicle") + " exiting LVF repair zone: " + __1.ControlledBy.PlayerName + " with vehicle " + __1.ToString());
                     }
                     
-                    vehiclesAtRepairShop.RemoveAll(vehicleDM => vehicleDM == __1.DamageManager);
+                    vehiclesAtRepairShop.RemoveAll(vehicleDM => vehicleDM == __1);
                 }
                 catch (Exception error)
                 {
@@ -251,21 +253,21 @@ namespace Si_RepairFacility
         public static void CleanRepairList()
         {
             // remove any null elements first
-            if (vehiclesAtRepairShop.RemoveAll(vehicleDM => vehicleDM == null) > 0)
+            if (vehiclesAtRepairShop.RemoveAll(vehicle => vehicle == null) > 0)
             {
                 MelonLogger.Warning("Removed null element(s) from Repair List");
             }
 
             // remove anything that has been destroyed
-            if (vehiclesAtRepairShop.RemoveAll(vehicleDM => vehicleDM.IsDestroyed) > 0)
+            if (vehiclesAtRepairShop.RemoveAll(vehicle => vehicle.DamageManager.IsDestroyed) > 0)
             {
-                MelonLogger.Warning("Removed destroyed damage managers from Repair List");
+                MelonLogger.Warning("Removed destroyed units from Repair List");
             }
 
             // and anything that has a null network component
-            if (vehiclesAtRepairShop.RemoveAll(vehicleDM => vehicleDM.NetworkComponent == null) > 0)
+            if (vehiclesAtRepairShop.RemoveAll(vehicle => vehicle.NetworkComponent == null) > 0)
             {
-                MelonLogger.Warning("Removed damage managers with null network components from Repair List");
+                MelonLogger.Warning("Removed units with null network components from Repair List");
             }
         }
     }
