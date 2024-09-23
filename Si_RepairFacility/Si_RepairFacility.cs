@@ -36,7 +36,7 @@ using Si_RepairFacility;
 using System.Collections.Generic;
 using System.Text;
 
-[assembly: MelonInfo(typeof(RepairFacility), "Repair Facility", "1.1.1", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(RepairFacility), "Repair Facility", "1.1.2", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -97,12 +97,38 @@ namespace Si_RepairFacility
                         foreach (Unit vehicle in vehiclesAtRepairShop)
                         {
                             float healAmount = vehicle.DamageManager.MaxHealth * (vehicle.IsFlyingType ? _Pref_Humans_Aircraft_HealRate.Value : _Pref_Humans_Vehicle_HealRate.Value);
-                            float newHealth = Mathf.Clamp(vehicle.DamageManager.Health + healAmount, 0.0f, vehicle.DamageManager.MaxHealth);
-                            vehicle.DamageManager.SetHealth(newHealth);
 
-                            if (_Pref_Repair_Notification.Value && vehicle.ControlledBy != null)
+                            if (vehicle.DamageManager.Health == vehicle.DamageManager.MaxHealth)
                             {
-                                HelperMethods.SendChatMessageToPlayer(vehicle.ControlledBy, HelperMethods.chatPrefix, " Debug Info: Health[" + vehicle.DamageManager.Health + "] MaxHP[" + vehicle.DamageManager.MaxHealth + "] HealAmt[" + healAmount + "]");
+                                if (_Pref_Repair_Notification.Value && vehicle.ControlledBy != null)
+                                {
+                                    HelperMethods.SendChatMessageToPlayer(vehicle.ControlledBy, HelperMethods.chatPrefix, " Debug Info: (Skipping) Health[" + vehicle.DamageManager.Health + "] MaxHP[" + vehicle.DamageManager.MaxHealth + "] HealAmt[" + healAmount + "]");
+                                }
+
+                                continue;
+                            }
+
+                            float newHealthUnclamped = vehicle.DamageManager.Health + healAmount;
+
+                            if (newHealthUnclamped >= vehicle.DamageManager.MaxHealth)
+                            {
+                                vehicle.DamageManager.SetHealth01(1f);
+
+                                if (_Pref_Repair_Notification.Value && vehicle.ControlledBy != null)
+                                {
+                                    HelperMethods.SendChatMessageToPlayer(vehicle.ControlledBy, HelperMethods.chatPrefix, " Debug Info: (Max) Health[" + vehicle.DamageManager.Health + "] MaxHP[" + vehicle.DamageManager.MaxHealth + "] HealAmt[" + healAmount + "]");
+                                }
+                            }
+                            else
+                            {
+                                float newHealth = Mathf.Clamp(newHealthUnclamped, 0.0f, vehicle.DamageManager.MaxHealth);
+
+                                vehicle.DamageManager.SetHealth(newHealth);
+
+                                if (_Pref_Repair_Notification.Value && vehicle.ControlledBy != null)
+                                {
+                                    HelperMethods.SendChatMessageToPlayer(vehicle.ControlledBy, HelperMethods.chatPrefix, " Debug Info: (Incremental) Health[" + vehicle.DamageManager.Health + "] MaxHP[" + vehicle.DamageManager.MaxHealth + "] HealAmt[" + healAmount + "]");
+                                }
                             }
                         }
                     }
