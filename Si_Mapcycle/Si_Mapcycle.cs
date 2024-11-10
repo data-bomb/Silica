@@ -39,7 +39,7 @@ using SilicaAdminMod;
 using System.Linq;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(MapCycleMod), "Mapcycle", "1.6.3", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(MapCycleMod), "Mapcycle", "1.6.4", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -703,6 +703,11 @@ namespace Si_Mapcycle
 
         private static GameModeInfo? GetGameModeInfo(LevelInfo levelInfo)
         {
+            // the highest priority for any given level is the preferred mode
+            // currently this should resolve to MP_Strategy or MP_Siege for most maps
+            int highestPriority = -1;
+            GameModeInfo? priorityGameMode = null;
+
             foreach (GameModeInfo gameModeInfo in levelInfo.GameModes)
             {
                 if (gameModeInfo == null)
@@ -715,15 +720,15 @@ namespace Si_Mapcycle
                     continue;
                 }
 
-                MelonLogger.Msg("Found gameModeInfo name: " + gameModeInfo.ObjectName);
-
-                if (String.Equals("MP_Strategy", gameModeInfo.ObjectName, StringComparison.OrdinalIgnoreCase))
+                if (highestPriority < gameModeInfo.Priority)
                 {
-                    return gameModeInfo;
+                    highestPriority = gameModeInfo.Priority;
+                    priorityGameMode = gameModeInfo;
                 }
             }
 
-            return null;
+            MelonLogger.Msg("Found highest priority gameMode: " + priorityGameMode?.ObjectName ?? "null");
+            return priorityGameMode;
         }
 
         private static bool IsMapNameValid(string mapName)
