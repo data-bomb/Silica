@@ -39,7 +39,7 @@ using SilicaAdminMod;
 using System.Linq;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(MapCycleMod), "Mapcycle", "1.6.4", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(MapCycleMod), "Mapcycle", "1.6.5", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -223,7 +223,7 @@ namespace Si_Mapcycle
                     rtvOptions[rtvIndex] = new OptionPair
                     {
                         Command = (rtvIndex + 1).ToString(),
-                        Description = mapName
+                        Description = GetDisplayName(mapName)
                     };
 
                     rtvIndex++;
@@ -247,7 +247,7 @@ namespace Si_Mapcycle
                     rtvOptions[i] = new OptionPair
                     {
                         Command = (i + 1).ToString(),
-                        Description = candidateMapName
+                        Description = GetDisplayName(candidateMapName)
                     };
 
                     break;
@@ -262,7 +262,7 @@ namespace Si_Mapcycle
 
             ChatVoteBallot rtvBallot = new ChatVoteBallot
             {
-                Question = "Select the next map:",
+                Question = "Vote for a map:",
                 VoteHandler = RockTheVote_Handler,
                 Options = rtvOptions
             };
@@ -800,6 +800,17 @@ namespace Si_Mapcycle
                 iMapLoadCount += (sMapCycle.Length) - (currentArrayIndex - matchIndex); 
             }
             // if matchIndex == currentArrayIndex, no need to do anything
+        }
+
+        private static string GetDisplayName(string mapName)
+        {
+            LevelInfo? levelInfo = GetLevelInfo(mapName);
+            if (levelInfo == null)
+            {
+                return mapName;
+            }
+            
+            return levelInfo.DisplayName;
         }
     }
 }
