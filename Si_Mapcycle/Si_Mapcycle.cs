@@ -424,7 +424,7 @@ namespace Si_Mapcycle
 				return;
 			}
 			
-            HelperMethods.ReplyToCommand_Player(callerPlayer, ": The current map is " + mapName);
+            HelperMethods.ReplyToCommand_Player(callerPlayer, ": The current map is " + GetDisplayName(mapName));
         }
         
         public static void Command_NextMap(Player? callerPlayer, String args)
@@ -442,7 +442,7 @@ namespace Si_Mapcycle
             }
 
             int roundsLeft = Pref_Mapcycle_RoundsBeforeChange.Value - roundsOnSameMap;
-            HelperMethods.ReplyToCommand_Player(callerPlayer, ": The next map is " + GetNextMap() + ". " + roundsLeft.ToString() + " more round" + (roundsLeft == 1 ? "" : "s") + " before map changes.");
+            HelperMethods.ReplyToCommand_Player(callerPlayer, ": The next map is " + GetDisplayName(GetNextMap()) + ". " + roundsLeft.ToString() + " more round" + (roundsLeft == 1 ? "" : "s") + " before map changes.");
         }
 
         public static string GetNextMap()
@@ -505,7 +505,7 @@ namespace Si_Mapcycle
                 MelonLogger.Warning("Admin changed map while initial RTV timer was in progress. Forcing timer to expire.");
             }
 
-            HelperMethods.AlertAdminAction(callerPlayer, "changing map to " + targetMapName + "...");
+            HelperMethods.AlertAdminAction(callerPlayer, "changing map to " + GetDisplayName(targetMapName) + "...");
             MelonLogger.Msg("Changing map to " + targetMapName + "...");
 
             QueueChangeMap(targetMapName);
@@ -558,11 +558,11 @@ namespace Si_Mapcycle
             IndexToMapInCycle(sceneName);
         }
 
-#if NET6_0
+        #if NET6_0
         [HarmonyPatch(typeof(MusicJukeboxHandler), nameof(MusicJukeboxHandler.Update))]
-#else
+        #else
         [HarmonyPatch(typeof(MusicJukeboxHandler), "Update")]
-#endif
+        #endif
         private static class ApplyPatch_MusicJukeboxHandlerUpdate
         {
             private static void Postfix(MusicJukeboxHandler __instance)
@@ -606,7 +606,7 @@ namespace Si_Mapcycle
                                 return;
                             }
 
-                            HelperMethods.ReplyToCommand("Preparing to change map to " + rockthevoteWinningMap + "...");
+                            HelperMethods.ReplyToCommand("Preparing to change map to " + GetDisplayName(rockthevoteWinningMap) + "...");
                             HelperMethods.StartTimer(ref Timer_FinalPostVoteDelay);
                             return;
                         }
