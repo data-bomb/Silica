@@ -39,7 +39,7 @@ using SilicaAdminMod;
 using System.Linq;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(MapCycleMod), "Mapcycle", "1.6.5", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(MapCycleMod), "Mapcycle", "1.6.6", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -349,25 +349,30 @@ namespace Si_Mapcycle
 
             // validate argument count
             int argumentCount = args.Split(' ').Length - 1;
-            if (argumentCount > 1)
-            {
-                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": Too many arguments");
-                return;
-            }
-            else if (argumentCount < 1)
+            if (argumentCount < 1)
             {
                 HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": Too few arguments");
                 return;
             }
 
-            // validate argument
+            // gather map or display name
+            int nominateOffset = args.IndexOf(' ');
+            string nominateTarget = args.Substring(nominateOffset);
+
+            // ensure global vars populated
             if (sMapCycle == null || sMapCycle.Length <= 0)
             {
                 MelonLogger.Warning("mapcycle invalid");
                 return;
             }
 
-            String targetMapName = args.Split(' ')[1];
+            // if it's a display name then get the map name
+            string targetMapName = nominateTarget;
+            if (IsMapDisplayNameValid(nominateTarget))
+            {
+                targetMapName = GetMapName(nominateTarget);
+            }
+
             if (!IsMapNameValid(targetMapName))
             {
                 HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": Invalid map name");
@@ -741,7 +746,7 @@ namespace Si_Mapcycle
             return false;
         }
 
-        private static LevelInfo? GetLevelInfo(string mapName)
+        private static LevelInfo? GetLevelInfo(string name, bool displayNameSearch = false)
         {
             if (GameDatabase.Database == null || GameDatabase.Database.AllLevels == null)
             {
@@ -766,9 +771,19 @@ namespace Si_Mapcycle
                     continue;
                 }
 
-                if (String.Equals(mapName, levelInfo.FileName, StringComparison.OrdinalIgnoreCase))
+                if (!displayNameSearch)
                 {
-                    return levelInfo;
+                    if (String.Equals(name, levelInfo.FileName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return levelInfo;
+                    }
+                }
+                else
+                {
+                    if (String.Equals(name, levelInfo.DisplayName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return levelInfo;
+                    }
                 }
             }
 
@@ -811,6 +826,27 @@ namespace Si_Mapcycle
             }
             
             return levelInfo.DisplayName;
+        }
+
+        private static string GetMapName(string displayName)
+        {
+            LevelInfo? levelInfo = GetLevelInfo(displayName);
+            if (levelInfo == null)
+            {
+                return "";
+            }
+
+            return levelInfo.DisplayName;
+        }
+
+        private static bool IsMapDisplayNameValid(string displayName)
+        {
+            if (GetLevelInfo(displayName, true) != null)
+            {
+                return true;
+            }
+
+            return false;
         }
     }
 }
