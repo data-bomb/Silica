@@ -44,7 +44,7 @@ using System.IO;
 using System.Text;
 using System.Runtime.CompilerServices;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.4.13", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.4.14", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -950,10 +950,15 @@ namespace Si_Logging
             {
                 try
                 {
-                    MP_Strategy strategyInstance = GameObject.FindObjectOfType<MP_Strategy>();
-                    MP_Strategy.ETeamsVersus versusMode = strategyInstance.TeamsVersus;
+                    string RoundStartLogLine = "World triggered \"Round_Start\" (gamemode \"" + GameMode.CurrentGameMode.ToString().Split(' ')[0] + "\")";
 
-                    string RoundStartLogLine = "World triggered \"Round_Start\" (gametype \"" + versusMode.ToString() + "\")";
+                    if (GameMode.CurrentGameMode is MP_Strategy)
+                    {
+                        MP_Strategy strategyInstance = GameObject.FindObjectOfType<MP_Strategy>();
+                        MP_Strategy.ETeamsVersus versusMode = strategyInstance.TeamsVersus;
+                        RoundStartLogLine += " (gametype \"" + versusMode.ToString() + "\")";
+                    }
+                    
                     PrintLogLine(RoundStartLogLine);
                     initializeRound(ref currTiers);
 
