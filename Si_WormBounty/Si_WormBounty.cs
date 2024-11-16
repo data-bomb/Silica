@@ -37,7 +37,7 @@ using UnityEngine;
 using Si_WormBounty;
 
 
-[assembly: MelonInfo(typeof(WormBounty), "Worm Bounty", "0.9.3", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(WormBounty), "Worm Bounty", "1.0.0", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -153,6 +153,12 @@ namespace Si_WormBounty
             {
                 try
                 {
+                    // skip bounty unless it's a gamemode like MP_Strategy that supports ambient life
+                    if (!GameMode.CurrentGameMode || !GameMode.CurrentGameMode.GetAmbientLifeEnabled())
+                    {
+                        return;
+                    }
+
                     if (__1 == null)
                     {
                         return;
