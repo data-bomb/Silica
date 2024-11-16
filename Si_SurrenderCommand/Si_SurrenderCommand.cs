@@ -34,7 +34,7 @@ using System;
 using UnityEngine;
 using System.Collections.Generic;
 
-[assembly: MelonInfo(typeof(SurrenderCommand), "Surrender Command", "1.6.0", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(SurrenderCommand), "Surrender Command", "1.6.1", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -63,28 +63,20 @@ namespace Si_SurrenderCommand
             }
         }
 
-        public static bool IsCommander(Player thePlayer)
+        public static bool IsCommander(Player player)
         {
-            if (thePlayer == null)
+            if (player == null)
             {
                 return false;
             }
 
-            Team theTeam = thePlayer.Team;
-            if (theTeam == null)
+            Team team = player.Team;
+            if (team == null)
             {
                 return false;
             }
 
-            MP_Strategy strategyInstance = GameObject.FindObjectOfType<MP_Strategy>();
-            Player teamCommander = strategyInstance.GetCommanderForTeam(theTeam);
-
-            if (teamCommander == thePlayer)
-            {
-                return true;
-            }
-
-            return false;
+            return GameMode.CurrentGameMode.GetPlayerIsCommander(player);
         }
 
         public override void OnLateInitializeMelon()
@@ -159,9 +151,18 @@ namespace Si_SurrenderCommand
         {
             int playerCount = team.GetNumPlayers();
 
-            // don't count the commander as a player here
-            MP_Strategy strategyInstance = GameObject.FindObjectOfType<MP_Strategy>();
-            playerCount -= (strategyInstance.GetCommanderForTeam(team) != null ? 1 : 0);
+            // don't count the commander as a player if set to immediate commander surrender
+            if (GameMode.CurrentGameMode && Pref_Surrender_CommanderImmediate.Value)
+            {
+                if (GameMode.CurrentGameMode is MP_Strategy strategyInstance)
+                {
+                    playerCount -= (strategyInstance.GetCommanderForTeam(team) != null ? 1 : 0);
+                }
+                else if (GameMode.CurrentGameMode is MP_TowerDefense defenseInstance)
+                {
+                    playerCount -= (defenseInstance.GetCommanderForTeam(team) != null ? 1 : 0);
+                }
+            }
 
             int teammatesNeeded = (int)Math.Ceiling(playerCount * Pref_Surrender_Vote_Percent.Value);
             if (teammatesNeeded < 1)
@@ -204,7 +205,7 @@ namespace Si_SurrenderCommand
                 HelperMethods.SendChatMessageToAll(HelperMethods.chatPrefix, HelperMethods.GetTeamColor(team), team.TeamShortName, "</color> surrendered.");
             }
 
-            // find all construction sites we should destroy form the team that's surrendering
+            // find all construction sites we should destroy from the team that's surrendering
             RemoveConstructionSites(team, true);
 
             // destroy only critical structures on team that's surrendering
