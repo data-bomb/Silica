@@ -34,7 +34,7 @@ using System;
 using UnityEngine;
 using System.Collections.Generic;
 
-[assembly: MelonInfo(typeof(SurrenderCommand), "Surrender Command", "1.6.1", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(SurrenderCommand), "Surrender Command", "1.6.2", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -205,14 +205,22 @@ namespace Si_SurrenderCommand
                 HelperMethods.SendChatMessageToAll(HelperMethods.chatPrefix, HelperMethods.GetTeamColor(team), team.TeamShortName, "</color> surrendered.");
             }
 
-            // find all construction sites we should destroy from the team that's surrendering
-            RemoveConstructionSites(team, true);
+            if (GameMode.CurrentGameMode is MP_Strategy)
+            {
+                // find all construction sites we should destroy from the team that's surrendering
+                RemoveConstructionSites(team, true);
 
-            // destroy only critical structures on team that's surrendering
-            RemoveStructures(team, true);
+                // destroy only critical structures on team that's surrendering
+                RemoveStructures(team, true);
 
-            // and destroy only critical units (e.g., the queen)
-            RemoveUnits(team, true);
+                // and destroy only critical units (e.g., the queen)
+                RemoveUnits(team, true);
+            }
+            else if (GameMode.CurrentGameMode is MP_TowerDefense defenseInstance)
+            {
+                // change game state to EMissionState.ENDED
+                defenseInstance.EndRound();
+            }
 
             // clear all people who voted for a surrender
             ClearSurrenderVotes();
