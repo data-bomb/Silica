@@ -39,7 +39,7 @@ using SilicaAdminMod;
 using System.Linq;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(MapCycleMod), "Mapcycle", "1.6.6", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(MapCycleMod), "Mapcycle", "1.6.7", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -357,7 +357,7 @@ namespace Si_Mapcycle
 
             // gather map or display name
             int nominateOffset = args.IndexOf(' ');
-            string nominateTarget = args.Substring(nominateOffset);
+            string nominateTarget = args.Substring(nominateOffset+1);
 
             // ensure global vars populated
             if (sMapCycle == null || sMapCycle.Length <= 0)
@@ -412,7 +412,7 @@ namespace Si_Mapcycle
                 return;
             }
 
-            HelperMethods.ReplyToCommand_Player(callerPlayer, "nominated " + levelInfo.FileName + " as a map for the rock the vote list.");
+            HelperMethods.ReplyToCommand_Player(callerPlayer, "nominated " + levelInfo.DisplayName + " as a map for the rock the vote list.");
             mapNominations.Add(levelInfo.FileName);
         }
 
@@ -830,13 +830,13 @@ namespace Si_Mapcycle
 
         private static string GetMapName(string displayName)
         {
-            LevelInfo? levelInfo = GetLevelInfo(displayName);
+            LevelInfo? levelInfo = GetLevelInfo(displayName, true);
             if (levelInfo == null)
             {
                 return "";
             }
 
-            return levelInfo.DisplayName;
+            return levelInfo.FileName;
         }
 
         private static bool IsMapDisplayNameValid(string displayName)
