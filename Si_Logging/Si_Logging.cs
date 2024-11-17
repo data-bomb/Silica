@@ -28,7 +28,6 @@ using Il2CppSteamworks;
 using Steamworks;
 #endif
 
-using System.Threading;
 using HarmonyLib;
 using MelonLoader;
 using MelonLoader.Utils;
@@ -38,14 +37,10 @@ using System;
 using SilicaAdminMod;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using System.Diagnostics;
 using System.IO;
-using System.Text;
-using System.Runtime.CompilerServices;
-using Il2CppBehaviorDesigner.Runtime.Tasks.Unity.UnityGameObject;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.5.0", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.5.1", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
