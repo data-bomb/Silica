@@ -32,7 +32,7 @@ using SilicaAdminMod;
 using System;
 using System.Linq;
 
-[assembly: MelonInfo(typeof(ResourceConfig), "Resource Configuration", "1.2.3", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(ResourceConfig), "Resource Configuration", "1.3.0", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -40,7 +40,9 @@ namespace Si_Resources
 {
     public class ResourceConfig : MelonMod
     {
-        const int defaultStartingResources = 8000;
+        const int defaultStrategyStartingResources = 8000;
+        const int defaultSiegeAttackingStartingResources = 45000;
+        const int defaultSiegeDefendingStartingResources = 20000;
 
         enum EResource
         {
@@ -49,20 +51,26 @@ namespace Si_Resources
         }
 
         static MelonPreferences_Category _modCategory = null!;
+        // MP_Strategy preferences
         static MelonPreferences_Entry<int> Pref_Resources_Centauri_StartingAmount = null!;
         static MelonPreferences_Entry<int> Pref_Resources_Sol_StartingAmount = null!;
         static MelonPreferences_Entry<int> Pref_Resources_Aliens_StartingAmount = null!;
         static MelonPreferences_Entry<bool> Pref_Resources_Aliens_RevealClosestArea = null!;
         static MelonPreferences_Entry<bool> Pref_Resources_Humans_RevealClosestArea = null!;
+        // MP_TowerDefense preferences
+        static MelonPreferences_Entry<int> Pref_Resources_Attackers_StartingAmount = null!;
+        static MelonPreferences_Entry<int> Pref_Resources_Defenders_StartingAmount = null!;
 
         public override void OnInitializeMelon()
         {
             _modCategory ??= MelonPreferences.CreateCategory("Silica");
-            Pref_Resources_Centauri_StartingAmount ??= _modCategory.CreateEntry<int>("Resources_Centauri_StartingAmount", defaultStartingResources);
-            Pref_Resources_Sol_StartingAmount ??= _modCategory.CreateEntry<int>("Resources_Sol_StartingAmount", defaultStartingResources);
-            Pref_Resources_Aliens_StartingAmount ??= _modCategory.CreateEntry<int>("Resources_Aliens_StartingAmount", defaultStartingResources);
+            Pref_Resources_Centauri_StartingAmount ??= _modCategory.CreateEntry<int>("Resources_Centauri_StartingAmount", defaultStrategyStartingResources);
+            Pref_Resources_Sol_StartingAmount ??= _modCategory.CreateEntry<int>("Resources_Sol_StartingAmount", defaultStrategyStartingResources);
+            Pref_Resources_Aliens_StartingAmount ??= _modCategory.CreateEntry<int>("Resources_Aliens_StartingAmount", defaultStrategyStartingResources);
             Pref_Resources_Aliens_RevealClosestArea ??= _modCategory.CreateEntry<bool>("Resources_Aliens_RevealClosestAreaOnStart", false);
             Pref_Resources_Humans_RevealClosestArea ??= _modCategory.CreateEntry<bool>("Resources_Humans_RevealClosestAreaOnStart", true);
+            Pref_Resources_Attackers_StartingAmount ??= _modCategory.CreateEntry<int>("Resources_Attackers_StartingAmount", defaultSiegeAttackingStartingResources);
+            Pref_Resources_Defenders_StartingAmount ??= _modCategory.CreateEntry<int>("Resources_Defenders_StartingAmount", defaultSiegeDefendingStartingResources);
         }
        
         public override void OnLateInitializeMelon()
@@ -168,6 +176,32 @@ namespace Si_Resources
             }
         }
 
+        [HarmonyPatch(typeof(MP_TowerDefense), nameof(MP_TowerDefense.SetTeamVersusMode))]
+        private static class Resources_Patch_MPTowerDefense_SetTeamVersusMode
+        {
+            public static void Postfix(MP_TowerDefense __instance, GameModeExt.ETeamsVersus __0)
+            {
+                try
+                {
+                    foreach (BaseTeamSetup baseTeamSetup in __instance.TeamSetups)
+                    {
+                        if (!__instance.GetTeamSetupActive(baseTeamSetup))
+                        {
+                            continue;
+                        }
+
+                        // re-adjust starting resources immediately after the game sets it
+                        baseTeamSetup.Team.StartingResources = GetTeamStartingResources(__instance, baseTeamSetup.Team);
+                        MelonLogger.Msg("Set starting resources for Team (" + baseTeamSetup.Team.TeamShortName + ") to " + baseTeamSetup.Team.StartingResources);
+                    }
+                }
+                catch (Exception error)
+                {
+                    HelperMethods.PrintError(error, "Failed to run MP_TowerDefense::SetTeamVersusMode");
+                }
+            }
+        }
+
         [HarmonyPatch(typeof(MP_Strategy), nameof(MP_Strategy.SetTeamVersusMode))]
         private static class Resources_Patch_MPStrategy_SetTeamVersusMode
         {
@@ -183,7 +217,7 @@ namespace Si_Resources
                         }
 
                         // re-adjust starting resources immediately after the game sets it
-                        strategyTeamSetup.Team.StartingResources = GetTeamStartingResources(strategyTeamSetup.Team);
+                        strategyTeamSetup.Team.StartingResources = GetTeamStartingResources(__instance, strategyTeamSetup.Team);
                         MelonLogger.Msg("Set starting resources for Team (" + strategyTeamSetup.Team.TeamShortName + ") to " + strategyTeamSetup.Team.StartingResources);
 
                         // check if we should make the first biotics/balterium resource area visible to the team
@@ -312,20 +346,39 @@ namespace Si_Resources
             }
         }
 
-        static int GetTeamStartingResources(Team team)
+        static int GetTeamStartingResources<T>(T gameModeInstance, Team team) where T : GameModeExt
         {
-            switch (team.Index)
+            if (gameModeInstance is MP_Strategy)
             {
-                case (int)SiConstants.ETeam.Alien:
-                    return Pref_Resources_Aliens_StartingAmount.Value;
-                case (int)SiConstants.ETeam.Centauri:
-                    return Pref_Resources_Centauri_StartingAmount.Value;
-                case (int)SiConstants.ETeam.Sol:
-                    return Pref_Resources_Sol_StartingAmount.Value;
-                default:
-                    MelonLogger.Warning("Could not determine starting resources for team: " + team.TeamShortName);
-                    return defaultStartingResources;
+                switch (team.Index)
+                {
+                    case (int)SiConstants.ETeam.Alien:
+                        return Pref_Resources_Aliens_StartingAmount.Value;
+                    case (int)SiConstants.ETeam.Centauri:
+                        return Pref_Resources_Centauri_StartingAmount.Value;
+                    case (int)SiConstants.ETeam.Sol:
+                        return Pref_Resources_Sol_StartingAmount.Value;
+                    default:
+                        MelonLogger.Warning("Could not determine starting resources for strategy team: " + team.TeamShortName);
+                        return defaultStrategyStartingResources;
+                }
             }
+            else if (gameModeInstance is MP_TowerDefense)
+            {
+                switch (team.Index)
+                {
+                    case (int)SiConstants.ETeam.Centauri:
+                        return Pref_Resources_Attackers_StartingAmount.Value;
+                    case (int)SiConstants.ETeam.Sol:
+                        return Pref_Resources_Defenders_StartingAmount.Value;
+                    default:
+                        MelonLogger.Warning("Could not determine starting resources for siege team: " + team.TeamShortName);
+                        return defaultSiegeAttackingStartingResources;
+                }
+            }
+
+            MelonLogger.Error("Could not determine gamemode. Returning strategy default resources for team: " + team.TeamShortName);
+            return defaultStrategyStartingResources;
         }
     }
 }
