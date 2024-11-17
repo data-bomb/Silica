@@ -35,7 +35,7 @@ using SilicaAdminMod;
 using System.Linq;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(AntiGrief), "Anti-Grief", "1.3.6", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(AntiGrief), "Anti-Grief", "1.3.7", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -82,7 +82,6 @@ namespace Si_AntiGrief
             QList.Options.AddOption(banGriefers);
             #endif
         }
-
 
         [HarmonyPatch(typeof(StrategyMode), nameof(StrategyMode.OnUnitDestroyed))]
         private static class ApplyPatch_StrategyMode_OnUnitDestroyed
@@ -155,26 +154,7 @@ namespace Si_AntiGrief
                         HelperMethods.ReplyToCommand_Player(attackerPlayer, "team killed " + HelperMethods.GetTeamColor(victimPlayer) + victimPlayer.PlayerName + "</color>");
                     }
 
-                    if (currentKillScore >= _NegativeKillsThreshold.Value)
-                    {
-                        return;
-                    }
-
-                    String sPlayerNameToKick = attackerPlayer.PlayerName;
-
-                    if (_NegativeKills_Penalty_Ban.Value)
-                    {
-                        MelonLogger.Msg("Banned " + sPlayerNameToKick + " (" + attackerPlayer.ToString() + ") for griefing (negative kills)");
-                        HelperMethods.ReplyToCommand_Player(attackerPlayer, "was banned for griefing (negative kills)");
-                        // this uses the default in-game kick button response, which at least imposes a temp-ban for the life of the server (if not more)
-                        NetworkGameServer.KickPlayer(attackerPlayer);
-                    }
-                    else
-                    {
-                        MelonLogger.Msg("Kicked " + sPlayerNameToKick + " (" + attackerPlayer.ToString() + ") for griefing (negative kills)");
-                        HelperMethods.ReplyToCommand_Player(attackerPlayer, "was kicked for griefing (negative kills)");
-                        HelperMethods.KickPlayer(attackerPlayer);
-                    }                        
+                    EvaluatePunishment(attackerPlayer);                        
                 }
                 catch (Exception error)
                 {
@@ -350,6 +330,31 @@ namespace Si_AntiGrief
             catch (Exception error)
             {
                 HelperMethods.PrintError(error, "Failed to run OnRoleChanged");
+            }
+        }
+
+        public static void EvaluatePunishment(Player player)
+        {
+            short currentKillScore = player.Kills;
+            if (currentKillScore >= _NegativeKillsThreshold.Value)
+            {
+                return;
+            }
+
+            String sPlayerNameToKick = player.PlayerName;
+
+            if (_NegativeKills_Penalty_Ban.Value)
+            {
+                MelonLogger.Msg("Banned " + sPlayerNameToKick + " (" + player.ToString() + ") for griefing (negative kills)");
+                HelperMethods.ReplyToCommand_Player(player, "was banned for griefing (negative kills)");
+                // this uses the default in-game kick button response, which at least imposes a temp-ban for the life of the server (if not more)
+                NetworkGameServer.KickPlayer(player);
+            }
+            else
+            {
+                MelonLogger.Msg("Kicked " + sPlayerNameToKick + " (" + player.ToString() + ") for griefing (negative kills)");
+                HelperMethods.ReplyToCommand_Player(player, "was kicked for griefing (negative kills)");
+                HelperMethods.KickPlayer(player);
             }
         }
 
