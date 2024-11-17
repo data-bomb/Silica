@@ -83,86 +83,6 @@ namespace Si_AntiGrief
             #endif
         }
 
-        [HarmonyPatch(typeof(StrategyMode), nameof(StrategyMode.OnUnitDestroyed))]
-        private static class ApplyPatch_StrategyMode_OnUnitDestroyed
-        {
-            public static void Postfix(StrategyMode __instance, Unit __0, UnityEngine.GameObject __1)
-            {
-                try
-                {
-                    if (__0 == null || __1 == null || _NegativeKillsThreshold == null || _NegativeKills_Penalty_Ban == null)
-                    {
-                        return;
-                    }
-
-                    // Victim
-                    Team victimTeam = __0.Team;
-                    // Attacker
-                    BaseGameObject attackerBase = GameFuncs.GetBaseGameObject(__1);
-
-                    if (attackerBase == null || victimTeam == null)
-                    {
-                        return;
-                    }
-
-                    Team attackerTeam = attackerBase.Team;
-
-                    // don't check unless it was a team kill by a unit
-                    if (attackerTeam == null || (attackerTeam.Index != victimTeam.Index))
-                    {
-                        return;
-                    }
-
-
-                    ObjectInfo attackerObjectInfo = attackerBase.ObjectInfo;
-                    if (attackerObjectInfo == null)
-                    {
-                        return;
-                    }
-
-                    ObjectInfoType? attackerType = attackerObjectInfo.ObjectType;
-
-                    if (attackerType == null || attackerType != ObjectInfoType.Unit)
-                    {
-                        return;
-                    }
-
-                    Player victimPlayer = __0.ControlledBy;
-                    NetworkComponent attackerNetComp = attackerBase.NetworkComponent;
-
-                    // was teamkiller a playable character?
-                    if (attackerNetComp == null)
-                    {
-                        return;
-                    }
-
-                    Player attackerPlayer = attackerNetComp.OwnerPlayer;
-                    // don't need to worry about fall damage or other self-inflicted damage
-                    if (attackerPlayer == null || (victimPlayer == attackerPlayer))
-                    {
-                        return;
-                    }
-
-                    // check score of attacker
-                    short currentKillScore = attackerPlayer.Kills;
-                    MelonLogger.Msg(attackerPlayer.PlayerName + " destroyed a friendly unit with kill score of " + currentKillScore.ToString());
-
-                    // check if another player was the victim
-                    if (victimPlayer != null)
-                    {
-                        MelonLogger.Msg(attackerPlayer.PlayerName + " team killed " + victimPlayer.PlayerName);
-                        HelperMethods.ReplyToCommand_Player(attackerPlayer, "team killed " + HelperMethods.GetTeamColor(victimPlayer) + victimPlayer.PlayerName + "</color>");
-                    }
-
-                    EvaluatePunishment(attackerPlayer);                        
-                }
-                catch (Exception error)
-                {
-                    HelperMethods.PrintError(error, "Failed to run StrategyMode::OnUnitDestroyed");
-                }
-            }
-        }
-
         [HarmonyPatch(typeof(Player), nameof(Player.OnTargetDestroyed))]
         private static class ApplyPatch_OnTargetDestroyed
         {
@@ -185,44 +105,61 @@ namespace Si_AntiGrief
                         return;
                     }
 
-                    // don't check unless it was a structure
-                    if (__0.ObjectInfo == null || __0.ObjectInfo.ObjectType != ObjectInfoType.Structure)
-                    {
-                        return;
-                    }
-
-                    Team attackerTeam = attackerBase.Team;
-
                     // don't check unless it was a team kill
+                    Team attackerTeam = attackerBase.Team;
                     if (attackerTeam == null || (attackerTeam.Index != victimTeam.Index))
                     {
                         return;
                     }
 
                     NetworkComponent attackerNetComp = attackerBase.NetworkComponent;
-
-                    // was teamkiller a playable character?
                     if (attackerNetComp == null)
                     {
                         return;
                     }
 
+                    // was teamkiller a playable character?
                     Player attackerPlayer = attackerNetComp.OwnerPlayer;
                     if (attackerPlayer == null)
                     {
                         return;
                     }
 
-                    string structureName = GetDisplayName(__0);
-
-                    // should we ignore the message for this particular type of structure?
-                    if (!DisplayTeamKillForStructure(structureName))
+                    // structure processing
+                    if (__0.Owner is Structure)
                     {
-                        return;
+                        string structureName = GetDisplayName(__0);
+
+                        // should we ignore the message for this particular type of structure?
+                        if (!DisplayTeamKillForStructure(structureName))
+                        {
+                            return;
+                        }
+
+                        MelonLogger.Msg(attackerPlayer.PlayerName + " team killed a structure " + structureName);
+                        HelperMethods.ReplyToCommand_Player(attackerPlayer, "killed a friendly " + (__0.OwnerConstructionSite == null ? "structure" : "construction site") + " (" + HelperMethods.GetTeamColor(attackerPlayer) + structureName + "</color>)");
+                    }
+                    // unit processing
+                    else if (__0.Owner is Unit)
+                    {
+                        // don't need to worry about fall damage or other self-inflicted damage
+                        Player victimPlayer = __0.OwnerUnit.ControlledBy;
+                        if (victimPlayer == attackerPlayer)
+                        {
+                            return;
+                        }
+
+                        MelonLogger.Msg(attackerPlayer.PlayerName + " destroyed a friendly unit with kill score of " + attackerPlayer.Kills);
+
+                        // check if another player was the victim
+                        if (victimPlayer != null)
+                        {
+                            MelonLogger.Msg(attackerPlayer.PlayerName + " team killed " + victimPlayer.PlayerName);
+                            HelperMethods.ReplyToCommand_Player(attackerPlayer, "team killed " + HelperMethods.GetTeamColor(victimPlayer) + victimPlayer.PlayerName + "</color>");
+                        }
                     }
 
-                    MelonLogger.Msg(attackerPlayer.PlayerName + " team killed a structure " + structureName);
-                    HelperMethods.ReplyToCommand_Player(attackerPlayer, "killed a friendly " + (__0.OwnerConstructionSite == null ? "structure" : "construction site") + " (" + HelperMethods.GetTeamColor(attackerPlayer) + structureName + "</color>)");
+                    EvaluatePunishment(attackerPlayer);
                 }
                 catch (Exception error)
                 {
