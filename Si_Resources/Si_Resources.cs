@@ -32,7 +32,7 @@ using SilicaAdminMod;
 using System;
 using System.Linq;
 
-[assembly: MelonInfo(typeof(ResourceConfig), "Resource Configuration", "1.3.0", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(ResourceConfig), "Resource Configuration", "1.3.1", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -179,7 +179,7 @@ namespace Si_Resources
         [HarmonyPatch(typeof(MP_TowerDefense), nameof(MP_TowerDefense.SetTeamVersusMode))]
         private static class Resources_Patch_MPTowerDefense_SetTeamVersusMode
         {
-            public static void Postfix(MP_TowerDefense __instance, GameModeExt.ETeamsVersus __0)
+            public static void Prefix(MP_TowerDefense __instance, GameModeExt.ETeamsVersus __0)
             {
                 try
                 {
@@ -190,9 +190,9 @@ namespace Si_Resources
                             continue;
                         }
 
-                        // re-adjust starting resources immediately after the game sets it
-                        baseTeamSetup.Team.StartingResources = GetTeamStartingResources(__instance, baseTeamSetup.Team);
-                        MelonLogger.Msg("Set starting resources for Team (" + baseTeamSetup.Team.TeamShortName + ") to " + baseTeamSetup.Team.StartingResources);
+                        // re-adjust starting resources before it gets set to the team
+                        baseTeamSetup.StartingResources = GetTeamStartingResources(__instance, baseTeamSetup.Team);
+                        MelonLogger.Msg("Set starting resources for Team (" + baseTeamSetup.Team.TeamShortName + ") to " + baseTeamSetup.StartingResources);
                     }
                 }
                 catch (Exception error)
