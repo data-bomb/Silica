@@ -35,7 +35,7 @@ using SilicaAdminMod;
 using System.Linq;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(AntiGrief), "Anti-Grief", "1.3.7", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(AntiGrief), "Anti-Grief", "1.3.8", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -126,7 +126,7 @@ namespace Si_AntiGrief
                     }
 
                     // structure processing
-                    if (__0.Owner is Structure)
+                    if (__0.Owner is Structure || __0.Owner is ConstructionSite)
                     {
                         string structureName = GetDisplayName(__0);
 
