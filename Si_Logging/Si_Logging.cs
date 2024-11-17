@@ -43,8 +43,9 @@ using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Runtime.CompilerServices;
+using Il2CppBehaviorDesigner.Runtime.Tasks.Unity.UnityGameObject;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.4.14", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.5.0", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -442,55 +443,71 @@ namespace Si_Logging
         }
 
         // 054. Team Selection
+        public static void ProcessOnPlayerChangedTeam(Player player, Team oldTeam, Team newTeam)
+        {
+            string theOldTeamName;
+            if (oldTeam == null)
+            {
+                theOldTeamName = "";
+            }
+            else
+            {
+                theOldTeamName = oldTeam.TeamShortName;
+            }
+
+            if (newTeam == null)
+            {
+                // this happens at the begginning of each map and isn't useful logging information
+                return;
+            }
+
+            if (player == null)
+            {
+                return;
+            }
+
+
+            int userID = Math.Abs(player.GetInstanceID());
+            string LogLine = "\"" + player.PlayerName + "<" + userID + "><" + GetPlayerID(player) + "><" + theOldTeamName + ">\" joined team \"" + newTeam.TeamShortName + "\"";
+            PrintLogLine(LogLine);
+
+            if (Pref_Log_PlayerConsole_Enable.Value)
+            {
+                string ConsoleLine = string.Empty;
+                ConsoleLine = "<b>" + HelperMethods.GetTeamColor(player) + player.PlayerName + "</color></b> " + (oldTeam == null ? "joined team " : "changed to team ") + HelperMethods.GetTeamColor(newTeam) + newTeam.TeamShortName + "</color>";
+
+                HelperMethods.SendConsoleMessage(ConsoleLine);
+            }
+        }
+
+        [HarmonyPatch(typeof(MP_TowerDefense), nameof(MP_TowerDefense.OnPlayerChangedTeam))]
+        private static class ApplyPatch_MPTowerDefense_OnPlayerChangedTeam
+        {
+            public static void Postfix (MP_TowerDefense __instance, Player __0, Team __1, Team __2)
+            {
+                try
+                {
+                    ProcessOnPlayerChangedTeam(__0, __1, __2);
+                }
+                catch (Exception error)
+                {
+                    HelperMethods.PrintError(error, "Failed to run MP_TowerDefense::OnPlayerChangedTeam");
+                }
+            }
+        }
+
         [HarmonyPatch(typeof(MP_Strategy), nameof(MP_Strategy.OnPlayerChangedTeam))]
-        private static class ApplyPatchOnPlayerChangedTeam
+        private static class ApplyPatch_MPStrategy_OnPlayerChangedTeam
         {
             public static void Postfix(MP_Strategy __instance, Player __0, Team __1, Team __2)
             {
                 try
                 {
-                    string theOldTeamName;
-                    if (__1 == null)
-                    {
-                        theOldTeamName = "";
-                    }
-                    else
-                    {
-                        theOldTeamName = __1.TeamShortName;
-                    }
-
-                    string theNewTeamName;
-                    if (__2 == null)
-                    {
-                        // this happens at the begginning of each map and isn't useful logging information
-                        return;
-                    }
-                    else
-                    {
-                        theNewTeamName = __2.TeamShortName;
-                    }
-
-                    if (__0 == null)
-                    {
-                        return;
-                    }
-
-
-                    int userID = Math.Abs(__0.GetInstanceID());
-                    string LogLine = "\"" + __0.PlayerName + "<" + userID + "><" + GetPlayerID(__0) + "><" + theOldTeamName + ">\" joined team \"" + theNewTeamName + "\"";
-                    PrintLogLine(LogLine);
-
-                    if (Pref_Log_PlayerConsole_Enable.Value)
-                    {
-                        string ConsoleLine = string.Empty;
-                        ConsoleLine = "<b>" + HelperMethods.GetTeamColor(__0) + __0.PlayerName + "</color></b> " + (__1 == null ? "joined team " : "changed to team ") + HelperMethods.GetTeamColor(__2) + __2.TeamShortName + "</color>";
-
-                        HelperMethods.SendConsoleMessage(ConsoleLine);
-                    }
+                    ProcessOnPlayerChangedTeam(__0, __1, __2);
                 }
                 catch (Exception error)
                 {
-                    HelperMethods.PrintError(error, "Failed to run OnPlayerChangedTeam");
+                    HelperMethods.PrintError(error, "Failed to run MP_Strategy::OnPlayerChangedTeam");
                 }
             }
         }
@@ -713,7 +730,7 @@ namespace Si_Logging
         [HarmonyPatch(typeof(MP_Strategy), nameof(MP_Strategy.OnStructureDestroyed))]
         private static class ApplyPatchOnStructureDestroyed
         {
-            public static void Postfix(MP_Strategy __instance, Structure __0, UnityEngine.GameObject __1)
+            public static void Postfix(MP_Strategy __instance, Structure __0, GameObject __1)
             {
                 try
                 {
@@ -789,17 +806,18 @@ namespace Si_Logging
                     {
                         firedRoundEndOnce = true;
 
-                        MP_Strategy strategyInstance = GameObject.FindObjectOfType<MP_Strategy>();
-                        MP_Strategy.ETeamsVersus versusMode = strategyInstance.TeamsVersus;
+                        GameModeExt gameModeInstance = GameObject.FindObjectOfType<GameModeExt>();
 
-                        if (strategyInstance == null)
+                        if (gameModeInstance == null)
                         {
                             return;
                         }
 
+                        GameModeExt.ETeamsVersus versusMode = gameModeInstance.TeamsVersus;
+
                         if (__1 == null)
                         {
-                            string RoundWinLogEarlyLine = "World triggered \"Round_Win\" (gametype \"" + versusMode.ToString() + "\")";
+                            string RoundWinLogEarlyLine = "World triggered \"Round_Win\" (gamemode \"" + GameMode.CurrentGameMode.ToString().Split(' ')[0] + "\") (gametype \"" + versusMode.ToString() + "\")";
                             PrintLogLine(RoundWinLogEarlyLine);
 
                             if (Pref_Log_PlayerConsole_Enable.Value)
@@ -823,11 +841,11 @@ namespace Si_Logging
                         for (int i = 0; i < SiConstants.MaxPlayableTeams; i++)
                         {
                             Team? thisTeam = Team.Teams[i];
-                            if (versusMode == MP_Strategy.ETeamsVersus.HUMANS_VS_HUMANS && i == (int)SiConstants.ETeam.Alien)
+                            if (versusMode == GameModeExt.ETeamsVersus.HUMANS_VS_HUMANS && i == (int)SiConstants.ETeam.Alien)
                             {
                                 continue;
                             }
-                            else if (versusMode == MP_Strategy.ETeamsVersus.HUMANS_VS_ALIENS && i == (int)SiConstants.ETeam.Centauri)
+                            else if (versusMode == GameModeExt.ETeamsVersus.HUMANS_VS_ALIENS && i == (int)SiConstants.ETeam.Centauri)
                             {
                                 continue;
                             }
@@ -950,14 +968,10 @@ namespace Si_Logging
             {
                 try
                 {
-                    string RoundStartLogLine = "World triggered \"Round_Start\" (gamemode \"" + GameMode.CurrentGameMode.ToString().Split(' ')[0] + "\")";
+                    GameModeExt gameModeInstance = GameObject.FindObjectOfType<GameModeExt>();
+                    GameModeExt.ETeamsVersus versusMode = gameModeInstance.TeamsVersus;
 
-                    if (GameMode.CurrentGameMode is MP_Strategy)
-                    {
-                        MP_Strategy strategyInstance = GameObject.FindObjectOfType<MP_Strategy>();
-                        MP_Strategy.ETeamsVersus versusMode = strategyInstance.TeamsVersus;
-                        RoundStartLogLine += " (gametype \"" + versusMode.ToString() + "\")";
-                    }
+                    string RoundStartLogLine = "World triggered \"Round_Start\" (gamemode \"" + GameMode.CurrentGameMode.ToString().Split(' ')[0] + "\") (gametype \"" + versusMode.ToString() + "\")";
                     
                     PrintLogLine(RoundStartLogLine);
                     initializeRound(ref currTiers);
