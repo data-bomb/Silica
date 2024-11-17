@@ -138,9 +138,7 @@ namespace Si_CommanderManagement
             if (playerToCmdrBan.IsCommander)
             {
                 Team playerTeam = playerToCmdrBan.Team;
-                MP_Strategy strategyInstance = GameObject.FindObjectOfType<MP_Strategy>();
-
-                CommanderPrimitives.DemoteTeamsCommander(strategyInstance, playerTeam);
+                CommanderPrimitives.DemoteTeamsCommander(playerTeam);
                 HelperMethods.ReplyToCommand_Player(playerToCmdrBan, "was demoted");
             }
 

@@ -63,7 +63,7 @@ namespace Si_CommanderManagement
                 return;
             }
 
-            if (!GameMode.CurrentGameMode.GameOngoing)
+            if (!GameMode.CurrentGameMode || !GameMode.CurrentGameMode.GameOngoing)
             {
                 HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, " Cannot mutiny at this time.");
                 return;
@@ -75,14 +75,14 @@ namespace Si_CommanderManagement
                 return;
             }
 
-            MP_Strategy strategyInstance = GameObject.FindObjectOfType<MP_Strategy>();
-            if (strategyInstance.GetCommanderForTeam(callerPlayer.Team) == null)
+            // is there no commander at all?
+            if (CommanderPrimitives.GetCommander(callerPlayer.Team) == null)
             {
                 HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, " Cannot mutiny when no one is commander.");
                 return;
             }
 
-            // did the player already vote for surrender?
+            // did the player already vote for a mutiny?
             if (CommanderManager.mutineerPlayers[callerPlayer.Team.Index].Contains(callerPlayer))
             {
                 HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, " Already voted to mutiny. ", MoreMutinyVotesNeeded(callerPlayer.Team).ToString(), " more players needed.");
@@ -98,15 +98,14 @@ namespace Si_CommanderManagement
                 return;
             }
 
-            Mutiny(strategyInstance, callerPlayer.Team);
+            Mutiny(callerPlayer.Team);
         }
         public static int TeammatesNeededForMutiny(Team team)
         {
             int playerCount = team.GetNumPlayers();
 
             // don't count the commander as a player here
-            MP_Strategy strategyInstance = GameObject.FindObjectOfType<MP_Strategy>();
-            playerCount -= (strategyInstance.GetCommanderForTeam(team) != null ? 1 : 0);
+            playerCount -= (CommanderPrimitives.GetCommander(team) != null ? 1 : 0);
 
             int teammatesNeeded = (int)Math.Ceiling(playerCount * 0.54f);
             if (teammatesNeeded < 1)
@@ -129,12 +128,12 @@ namespace Si_CommanderManagement
             return moreNeeded;
         }
 
-        public static void Mutiny(MP_Strategy strategyInstance, Team team)
+        public static void Mutiny(Team team)
         {
             // notify all players
             HelperMethods.ReplyToCommand(HelperMethods.GetTeamColor(team) + team.TeamShortName + "</color> had a mutiny against the current commander.");
             
-            CommanderPrimitives.DemoteTeamsCommander(strategyInstance, team);
+            CommanderPrimitives.DemoteTeamsCommander(team);
 
             // clear all people who voted for a mutiny
             ClearMutineerList();

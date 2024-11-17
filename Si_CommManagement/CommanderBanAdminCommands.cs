@@ -83,7 +83,6 @@ namespace Si_CommanderManagement
             }
 
             int targetTeamIndex = -1;
-            MP_Strategy strategyInstance = GameObject.FindObjectOfType<MP_Strategy>();
 
             // if no team was specified then try and use current team of the admin
             if (argumentCount == 0)
@@ -101,17 +100,7 @@ namespace Si_CommanderManagement
             {
                 String targetTeamText = args.Split(' ')[1];
 
-                if (String.Equals(targetTeamText, "Human", StringComparison.OrdinalIgnoreCase))
-                {
-                    // check gamemode - if Humans vs Aliens or the other ones
-                    if (strategyInstance.TeamsVersus == MP_Strategy.ETeamsVersus.HUMANS_VS_ALIENS)
-                    {
-                        // if it's human vs aliens then human translates to the Human (Sol) team index
-                        targetTeamIndex = (int)SiConstants.ETeam.Sol;
-                    }
-                    // otherwise, it's ambigious and we can't make a decision
-                }
-                else if (String.Equals(targetTeamText, "Alien", StringComparison.OrdinalIgnoreCase))
+                if (String.Equals(targetTeamText, "Alien", StringComparison.OrdinalIgnoreCase))
                 {
                     targetTeamIndex = (int)SiConstants.ETeam.Alien;
                 }
@@ -140,7 +129,7 @@ namespace Si_CommanderManagement
             }
 
             // check if they have a commander to demote
-            Player? targetPlayer = strategyInstance.GetCommanderForTeam(targetTeam);
+            Player? targetPlayer = CommanderPrimitives.GetCommander(targetTeam);
 
             // team has a commander if targetPlayer isn't null
             if (targetPlayer == null)
@@ -155,7 +144,7 @@ namespace Si_CommanderManagement
                 return;
             }
 
-            CommanderPrimitives.DemoteTeamsCommander(strategyInstance, targetTeam);
+            CommanderPrimitives.DemoteTeamsCommander(targetTeam);
             HelperMethods.AlertAdminActivity(callerPlayer, targetPlayer, "demoted");
         }
 

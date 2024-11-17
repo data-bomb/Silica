@@ -33,21 +33,32 @@ namespace Si_CommanderManagement
 {
     public class CommanderPrimitives
     {
-        public static void DemoteTeamsCommander(MP_Strategy strategyInstance, Team TargetTeam)
+        public static Player? GetCommander(Team team)
         {
-            Player DemotedCommander = strategyInstance.GetCommanderForTeam(TargetTeam);
+            if (GameMode.CurrentGameMode)
+            {
+                if (GameMode.CurrentGameMode is MP_Strategy strategyInstance)
+                {
+                    return strategyInstance.GetCommanderForTeam(team);
+                }
+                else if (GameMode.CurrentGameMode is MP_TowerDefense defenseInstance)
+                {
+                    return defenseInstance.GetCommanderForTeam(team);
+                }
+            }
 
-            #if NET6_0
-            strategyInstance.SetCommander(TargetTeam, null);
-            strategyInstance.RPC_SynchCommander(TargetTeam);
-            #else
-            Type strategyType = typeof(MP_Strategy);
-            MethodInfo setCommanderMethod = strategyType.GetMethod("SetCommander", BindingFlags.Instance | BindingFlags.NonPublic);
-            setCommanderMethod.Invoke(strategyInstance, parameters: new object?[] { TargetTeam, null });
+            return null;
+        }
 
-            MethodInfo synchCommanderMethod = strategyType.GetMethod("RPC_SynchCommander", BindingFlags.Instance | BindingFlags.NonPublic);
-            synchCommanderMethod.Invoke(strategyInstance, new object[] { TargetTeam });
-            #endif
+        public static void DemoteTeamsCommander(Team TargetTeam)
+        {
+            Player? DemotedCommander = GetCommander(TargetTeam);
+            if (DemotedCommander == null)
+            {
+                throw new ArgumentException("Team has no commander");
+            }
+
+            SetCommander(TargetTeam, null);
 
             // need to get the player back to Infantry and not stuck in no-clip
             SendToRole(DemotedCommander, GameModeExt.ETeamRole.INFANTRY);
@@ -55,29 +66,46 @@ namespace Si_CommanderManagement
             GameMode.CurrentGameMode.SpawnUnitForPlayer(DemotedCommander, TargetTeam);
         }
 
-        public static void PromoteToCommander(Player CommanderPlayer)
+        private static void SetCommander(Team team, Player? player)
         {
-            MP_Strategy strategyInstance = GameObject.FindObjectOfType<MP_Strategy>();
+            if (GameMode.CurrentGameMode is MP_Strategy strategyInstance)
+            {
+                #if NET6_0
+                strategyInstance.SetCommander(team, player);
+                strategyInstance.RPC_SynchCommander(team);
+                #else
+                Type strategyModeType = strategyInstance.GetType();
+                MethodInfo setCommanderMethod = strategyModeType.GetMethod("SetCommander", BindingFlags.Instance | BindingFlags.NonPublic);
+                setCommanderMethod.Invoke(strategyInstance, parameters: new object?[] { team, player });
 
-            // now mimic switching to COMMANDER role
-            BaseTeamSetup strategyTeamInstance = strategyInstance.GetTeamSetup(CommanderPlayer.Team);
-            MelonLogger.Msg("Trying to promote " + CommanderPlayer.PlayerName + " on team " + CommanderPlayer.Team.TeamShortName);
+                MethodInfo synchCommanderMethod = strategyModeType.GetMethod("RPC_SynchCommander", BindingFlags.Instance | BindingFlags.NonPublic);
+                synchCommanderMethod.Invoke(strategyInstance, new object[] { team });
+                #endif
+            }
+            else if (GameMode.CurrentGameMode is MP_TowerDefense defenseInstance)
+            {
+                #if NET6_0
+                defenseInstance.SetCommander(team, player);
+                defenseInstance.RPC_SynchCommander(team);
+                #else
+                Type defenseModeType = defenseInstance.GetType();
+                MethodInfo setCommanderMethod = defenseModeType.GetMethod("SetCommander", BindingFlags.Instance | BindingFlags.NonPublic);
+                setCommanderMethod.Invoke(defenseInstance, parameters: new object?[] { team, player });
 
+                MethodInfo synchCommanderMethod = defenseModeType.GetMethod("RPC_SynchCommander", BindingFlags.Instance | BindingFlags.NonPublic);
+                synchCommanderMethod.Invoke(defenseInstance, new object[] { team });
+                #endif
+            }
+        }
 
-            #if NET6_0
-            strategyInstance.SetCommander(strategyTeamInstance.Team, CommanderPlayer);
-            strategyInstance.RPC_SynchCommander(strategyTeamInstance.Team);
-            #else
-            Type strategyType = typeof(MP_Strategy);
-            MethodInfo setCommanderMethod = strategyType.GetMethod("SetCommander", BindingFlags.Instance | BindingFlags.NonPublic);
-            setCommanderMethod.Invoke(strategyInstance, parameters: new object?[] { strategyTeamInstance.Team, CommanderPlayer });
-
-            MethodInfo synchCommanderMethod = strategyType.GetMethod("RPC_SynchCommander", BindingFlags.Instance | BindingFlags.NonPublic);
-            synchCommanderMethod.Invoke(strategyInstance, new object[] { strategyTeamInstance.Team });
-            #endif
+        // mimic switching to COMMANDER role
+        public static void PromoteToCommander(Player commander)
+        {
+            MelonLogger.Msg("Trying to promote " + commander.PlayerName + " on team " + commander.Team.TeamShortName);
+            SetCommander(commander.Team, commander);
 
             // make a log entry of this role change
-            Event_Roles.FireOnRoleChangedEvent(CommanderPlayer, GameModeExt.ETeamRole.COMMANDER);
+            Event_Roles.FireOnRoleChangedEvent(commander, GameModeExt.ETeamRole.COMMANDER);
         }
 
         public static void SendToRole(Player FormerCommander, GameModeExt.ETeamRole role)

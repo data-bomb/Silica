@@ -264,6 +264,19 @@ namespace Si_CommanderManagement
         }
 
         #if NET6_0
+        [HarmonyPatch(typeof(MP_TowerDefense), nameof(MP_TowerDefense.RPC_TimerUpdate))]
+        #else
+        [HarmonyPatch(typeof(MP_TowerDefense), "RPC_TimerUpdate")]
+        #endif
+        private static class CommanderManager_Patch_TowerDefense_TimerUpdate
+        {
+            private static void Postfix(MP_TowerDefense __instance)
+            {
+                Process_RPC_TimerUpdate(__instance);
+            }
+        }
+
+        #if NET6_0
         [HarmonyPatch(typeof(MP_Strategy), nameof(MP_Strategy.RPC_TimerUpdate))]
         #else
         [HarmonyPatch(typeof(MP_Strategy), "RPC_TimerUpdate")]
@@ -272,83 +285,152 @@ namespace Si_CommanderManagement
         {
             private static void Postfix(MP_Strategy __instance)
             {
-                if (__instance.GameOver)
+                Process_RPC_TimerUpdate(__instance);
+            }
+        }
+
+        private static float GameModeTimer
+        {
+            get
+            {
+                if (GameMode.CurrentGameMode is MP_Strategy strategyInstance)
                 {
-                    return;
+                    #if NET6_0
+                    return strategyInstance.Timer;
+                    #else
+                    Type strategyType = strategyInstance.GetType();
+                    FieldInfo timerField = strategyType.GetField("Timer", BindingFlags.NonPublic | BindingFlags.Instance);
+                    return (float)timerField.GetValue(strategyInstance);
+                    #endif
                 }
-
-                float timerValue;
-
-                #if NET6_0
-                timerValue = __instance.Timer;
-                #else
-                Type strategyType = typeof(MP_Strategy);
-                FieldInfo timerField = strategyType.GetField("Timer", BindingFlags.NonPublic | BindingFlags.Instance);
-                timerValue = (float)timerField.GetValue(__instance);
-                #endif
-
-                // the last second before the round is about to start
-                if (timerValue <= 1f && timerValue > 0f)
+                else if (GameMode.CurrentGameMode is MP_TowerDefense defenseInstance)
                 {
-                    // switch all applicants to freecam
-                    for (int i = 0; i < SiConstants.MaxPlayableTeams; i++)
+                    #if NET6_0
+                    return defenseInstance.Timer;
+                    #else
+                    Type defenseType = defenseInstance.GetType();
+                    FieldInfo timerField = defenseType.GetField("Timer", BindingFlags.NonPublic | BindingFlags.Instance);
+                    return (float)timerField.GetValue(defenseInstance);
+                    #endif
+                }
+                throw new ArgumentException("Cannot access gamemode timer");
+            }
+            set
+            {
+                if (GameMode.CurrentGameMode is MP_Strategy strategyInstance)
+                {
+                    #if NET6_0
+                    strategyInstance.Timer = value;
+                    #else
+                    Type strategyType = strategyInstance.GetType();
+                    FieldInfo timerField = strategyType.GetField("Timer", BindingFlags.NonPublic | BindingFlags.Instance);
+                    timerField.SetValue(strategyInstance, value);
+                    #endif
+                }
+                else if (GameMode.CurrentGameMode is MP_TowerDefense defenseInstance)
+                {
+                    #if NET6_0
+                    defenseInstance.Timer = value;
+                    #else
+                    Type strategyType = defenseInstance.GetType();
+                    FieldInfo timerField = strategyType.GetField("Timer", BindingFlags.NonPublic | BindingFlags.Instance);
+                    timerField.SetValue(defenseInstance, value);
+                    #endif
+                }
+                throw new ArgumentException("Cannot set gamemode timer");
+            }
+        }
+
+        private static void RemovePlayerFromRespawnTracker<T>(T gameModeInstance, Player player) where T : GameModeExt
+        {
+            if (gameModeInstance is MP_Strategy strategyInstance)
+            {
+                #if NET6_0
+                if (strategyInstance.PlayerRespawnTracker.ContainsKey(player))
+                {
+                    strategyInstance.PlayerRespawnTracker.Remove(player);
+                }
+                #else
+                FieldInfo playerRespawnTrackerField = typeof(MP_Strategy).GetField("PlayerRespawnTracker", BindingFlags.NonPublic | BindingFlags.Instance);
+                Dictionary<Player, float> localPlayerRespawnTracker = (Dictionary<Player, float>)playerRespawnTrackerField.GetValue(strategyInstance);
+                if (localPlayerRespawnTracker.ContainsKey(player))
+                {
+                    localPlayerRespawnTracker.Remove(player);
+                    playerRespawnTrackerField.SetValue(strategyInstance, localPlayerRespawnTracker);
+                }
+                #endif
+            }
+            else if (gameModeInstance is MP_TowerDefense defenseInstance)
+            {
+                #if NET6_0
+                if (defenseInstance.PlayerRespawnTracker.ContainsKey(player))
+                {
+                    defenseInstance.PlayerRespawnTracker.Remove(player);
+                }
+                #else
+                FieldInfo playerRespawnTrackerField = typeof(MP_TowerDefense).GetField("PlayerRespawnTracker", BindingFlags.NonPublic | BindingFlags.Instance);
+                Dictionary<Player, float> localPlayerRespawnTracker = (Dictionary<Player, float>)playerRespawnTrackerField.GetValue(defenseInstance);
+                if (localPlayerRespawnTracker.ContainsKey(player))
+                {
+                    localPlayerRespawnTracker.Remove(player);
+                    playerRespawnTrackerField.SetValue(defenseInstance, localPlayerRespawnTracker);
+                }
+                #endif
+            }
+        }
+
+        private static void Process_RPC_TimerUpdate<T>(T gameModeInstance) where T : GameModeExt
+        {
+            if (gameModeInstance.GameOver)
+            {
+                return;
+            }
+
+            float timerValue = GameModeTimer;
+
+            // the last second before the round is about to start
+            if (timerValue <= 1f && timerValue > 0f)
+            {
+                // switch all applicants to freecam
+                for (int i = 0; i < SiConstants.MaxPlayableTeams; i++)
+                {
+                    if (commanderApplicants[i].Count == 0)
                     {
-                        if (commanderApplicants[i].Count == 0)
+                        continue;
+                    }
+
+                    foreach (Player applicantPlayer in commanderApplicants[i])
+                    {
+                        if (applicantPlayer == null)
                         {
                             continue;
                         }
 
-                        foreach (Player applicantPlayer in commanderApplicants[i])
-                        {
-                            if (applicantPlayer == null)
-                            {
-                                continue;
-                            }
+                        // send to role NONE
+                        CommanderPrimitives.SendToRole(applicantPlayer, GameModeExt.ETeamRole.NONE);
+                        MelonLogger.Msg("Player " + applicantPlayer.PlayerName + " is being sent to role NONE.");
 
-                            // send to role NONE
-                            CommanderPrimitives.SendToRole(applicantPlayer, GameModeExt.ETeamRole.NONE);
-                            MelonLogger.Msg("Player " + applicantPlayer.PlayerName + " is being sent to role NONE.");
-
-                            // force switching to role NONE
-                            GameMode.CurrentGameMode.DestroyAllUnitsForPlayer(applicantPlayer);
-                            #if NET6_0
-                            if (__instance.PlayerRespawnTracker.ContainsKey(applicantPlayer))
-                            {
-                                __instance.PlayerRespawnTracker.Remove(applicantPlayer);
-                            }
-                            #else
-                            FieldInfo playerRespawnTrackerField = typeof(MP_Strategy).GetField("PlayerRespawnTracker", BindingFlags.NonPublic | BindingFlags.Instance);
-                            Dictionary<Player, float> localPlayerRespawnTracker = (Dictionary<Player, float>)playerRespawnTrackerField.GetValue(__instance);
-                            if (localPlayerRespawnTracker.ContainsKey(applicantPlayer))
-                            {
-                                localPlayerRespawnTracker.Remove(applicantPlayer);
-                                playerRespawnTrackerField.SetValue(__instance, localPlayerRespawnTracker);
-                            }
-                            #endif
-                        }
+                        // force switching to role NONE
+                        gameModeInstance.DestroyAllUnitsForPlayer(applicantPlayer);
+                        RemovePlayerFromRespawnTracker(gameModeInstance, applicantPlayer);
                     }
                 }
+            }
 
-                if (!CommanderManager._BlockRoundStartUntilEnoughApplicants.Value)
-                {
-                    return;
-                }
+            if (!CommanderManager._BlockRoundStartUntilEnoughApplicants.Value)
+            {
+                return;
+            }
 
-                if (AllTeamsHaveCommanderApplicants())
-                {
-                    return;
-                }
+            if (AllTeamsHaveCommanderApplicants())
+            {
+                return;
+            }
 
-                if (timerValue <= 5f && timerValue > 4f)
-                {
-                    HelperMethods.ReplyToCommand("Round cannot start because all teams don't have a commander. Chat !commander to apply.");
-
-                    #if NET6_0
-                    __instance.Timer = 26f;
-                    #else
-                    timerField.SetValue(__instance, 26f);
-                    #endif
-                }
+            if (timerValue <= 5f && timerValue > 4f)
+            {
+                GameModeTimer = 26f;
+                HelperMethods.ReplyToCommand("Round cannot start because all teams don't have a commander. Chat !commander to apply.");
             }
         }
     }

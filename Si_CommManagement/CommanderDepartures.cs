@@ -142,79 +142,39 @@ namespace Si_CommanderManagement
         }
 
         #if NET6_0
+        [HarmonyPatch(typeof(MP_TowerDefense), nameof(MP_TowerDefense.SetCommander))]
+        #else
+        [HarmonyPatch(typeof(MP_TowerDefense), "SetCommander")]
+        #endif
+        private static class ApplyPatch_MPTowerDefense_SetCommander
+        {
+            public static bool Prefix(MP_TowerDefense __instance, Team __0, Player? __1)
+            {
+                try
+                {
+                    return SetCommanderPatch(__instance, __0, __1);
+                }
+                catch (Exception error)
+                {
+                    HelperMethods.PrintError(error, "Failed to run MP_TowerDefense::SetCommander");
+                }
+
+                return true;
+            }
+        }
+
+        #if NET6_0
         [HarmonyPatch(typeof(MP_Strategy), nameof(MP_Strategy.SetCommander))]
         #else
         [HarmonyPatch(typeof(MP_Strategy), "SetCommander")]
         #endif
-        private static class ApplyPatchSetCommander
+        private static class ApplyPatch_MPStrategy_SetCommander
         {
             public static bool Prefix(MP_Strategy __instance, Team __0, Player? __1)
             {
                 try
                 {
-                    MelonLogger.Msg("Reached SetCommander Patch for Team " + __0.TeamShortName);
-
-                    if (__instance == null || __0 == null || CommanderBans.BanList == null || CommanderApplications.commanderApplicants == null || CommanderApplications.teamswapCommanderChecks == null || CommanderApplications.promotedCommanders == null)
-                    {
-                        return true;
-                    }
-
-                    if (__1 != null)
-                    {
-                        // when the game is in full swing
-                        if (GameMode.CurrentGameMode.Started && GameMode.CurrentGameMode.GameBegun)
-                        {
-                            // determine if promoted commander was previously commanding another team
-                            int commanderSwappedTeamIndex = -1;
-                            for (int i = 0; i < SiConstants.MaxPlayableTeams; i++)
-                            {
-                                if (i == __0.Index)
-                                {
-                                    continue;
-                                }
-
-                                if (CommanderApplications.teamswapCommanderChecks[i] == __1)
-                                {
-                                    commanderSwappedTeamIndex = i;
-                                    break;
-                                }
-                            }
-
-                            // announce a commander swapped to command another team
-                            if (commanderSwappedTeamIndex != -1)
-                            {
-                                Team departingTeam = Team.Teams[commanderSwappedTeamIndex];
-                                HelperMethods.ReplyToCommand_Player(__1, "has left command of " + HelperMethods.GetTeamColor(departingTeam) + departingTeam.TeamShortName + "</color> and taken command of " + HelperMethods.GetTeamColor(__0) + __0.TeamShortName + "</color>");
-                                CommanderApplications.teamswapCommanderChecks[commanderSwappedTeamIndex] = null;
-                            }
-                            else
-                            {
-                                // announce a new commander, if needed
-                                if (CommanderApplications.teamswapCommanderChecks[__0.Index] != __1 && CommanderApplications.promotedCommanders[__0.Index] != __1)
-                                {
-                                    CommanderApplications.promotedCommanders[__0.Index] = __1;
-                                    if (CommanderManager._TeamOnlyResponses.Value)
-                                    {
-                                        HelperMethods.SendChatMessageToTeam(__1.Team, HelperMethods.chatPrefix, HelperMethods.GetTeamColor(__1.Team), __1.PlayerName, "</color> has taken command of " + HelperMethods.GetTeamColor(__0) + __0.TeamShortName + "</color>");
-                                    }
-                                    else
-                                    {
-                                        HelperMethods.ReplyToCommand_Player(__1, "has taken command of " + HelperMethods.GetTeamColor(__0) + __0.TeamShortName + "</color>");
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    // player is null
-                    else
-                    {
-                        // check if there is a current commander
-                        Player? teamCommander = __instance.GetCommanderForTeam(__0);
-                        if (teamCommander != null)
-                        {
-                            CommanderApplications.teamswapCommanderChecks[__0.Index] = teamCommander;
-                        }
-                    }
+                    return SetCommanderPatch(__instance, __0, __1);
                 }
                 catch (Exception error)
                 {
@@ -223,6 +183,75 @@ namespace Si_CommanderManagement
 
                 return true;
             }
+        }
+
+        private static bool SetCommanderPatch<T>(T gameModeInstance, Team team, Player? player) where T : GameModeExt
+        {
+            MelonLogger.Msg("Reached SetCommander Patch for Team " + team.TeamShortName);
+
+            if (gameModeInstance == null || team == null || CommanderBans.BanList == null || CommanderApplications.commanderApplicants == null || CommanderApplications.teamswapCommanderChecks == null || CommanderApplications.promotedCommanders == null)
+            {
+                return true;
+            }
+
+            if (player != null)
+            {
+                // when the game is in full swing
+                if (GameMode.CurrentGameMode.Started && GameMode.CurrentGameMode.GameBegun)
+                {
+                    // determine if promoted commander was previously commanding another team
+                    int commanderSwappedTeamIndex = -1;
+                    for (int i = 0; i < SiConstants.MaxPlayableTeams; i++)
+                    {
+                        if (i == team.Index)
+                        {
+                            continue;
+                        }
+
+                        if (CommanderApplications.teamswapCommanderChecks[i] == player)
+                        {
+                            commanderSwappedTeamIndex = i;
+                            break;
+                        }
+                    }
+
+                    // announce a commander swapped to command another team
+                    if (commanderSwappedTeamIndex != -1)
+                    {
+                        Team departingTeam = Team.Teams[commanderSwappedTeamIndex];
+                        HelperMethods.ReplyToCommand_Player(player, "has left command of " + HelperMethods.GetTeamColor(departingTeam) + departingTeam.TeamShortName + "</color> and taken command of " + HelperMethods.GetTeamColor(team) + team.TeamShortName + "</color>");
+                        CommanderApplications.teamswapCommanderChecks[commanderSwappedTeamIndex] = null;
+                    }
+                    else
+                    {
+                        // announce a new commander, if needed
+                        if (CommanderApplications.teamswapCommanderChecks[team.Index] != player && CommanderApplications.promotedCommanders[team.Index] != player)
+                        {
+                            CommanderApplications.promotedCommanders[team.Index] = player;
+                            if (CommanderManager._TeamOnlyResponses.Value)
+                            {
+                                HelperMethods.SendChatMessageToTeam(player.Team, HelperMethods.chatPrefix, HelperMethods.GetTeamColor(player.Team), player.PlayerName, "</color> has taken command of " + HelperMethods.GetTeamColor(team) + team.TeamShortName + "</color>");
+                            }
+                            else
+                            {
+                                HelperMethods.ReplyToCommand_Player(player, "has taken command of " + HelperMethods.GetTeamColor(team) + team.TeamShortName + "</color>");
+                            }
+                        }
+                    }
+                }
+            }
+            // player is null
+            else
+            {
+                // check if there is a current commander
+                Player? teamCommander = gameModeInstance.GetCommanderForTeam(team);
+                if (teamCommander != null)
+                {
+                    CommanderApplications.teamswapCommanderChecks[team.Index] = teamCommander;
+                }
+            }
+
+            return true;
         }
     }
 }
