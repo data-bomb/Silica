@@ -36,7 +36,7 @@ using Si_RepairFacility;
 using System.Collections.Generic;
 using System.Text;
 
-[assembly: MelonInfo(typeof(RepairFacility), "Repair Facility", "1.1.2", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(RepairFacility), "Repair Facility", "1.2.0", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -55,6 +55,7 @@ namespace Si_RepairFacility
         static MelonPreferences_Entry<float> _Pref_Aliens_Structure_HealRate = null!;
         static MelonPreferences_Entry<float> _Pref_Aliens_Queen_HealRate = null!;
         static MelonPreferences_Entry<float> _Pref_Humans_Infantry_HealRate = null!;
+        static MelonPreferences_Entry<float> _Pref_SiegeDefenders_Structure_HealRate = null!;
         static MelonPreferences_Entry<bool> _Pref_Repair_Notification = null!;
 
         public override void OnInitializeMelon()
@@ -70,6 +71,7 @@ namespace Si_RepairFacility
             _Pref_Aliens_Queen_HealRate ??= _modCategory.CreateEntry<float>("RepairFacility_Alien_Queen_HealRate", 0.01f);
 
             _Pref_Aliens_Structure_HealRate ??= _modCategory.CreateEntry<float>("RepairFacility_Alien_Structure_HealRate", 0.01f);
+            _Pref_SiegeDefenders_Structure_HealRate ??= _modCategory.CreateEntry<float>("RepairFacility_SiegeDefender_Structure_HealRate", 0.025f);
 
             _Pref_Repair_Notification ??= _modCategory.CreateEntry<bool>("RepairFacility_ChatNotifications", false);
 
@@ -94,6 +96,7 @@ namespace Si_RepairFacility
 
                         CleanRepairList();
 
+                        // repair vehicles for all gamemodes
                         foreach (Unit vehicle in vehiclesAtRepairShop)
                         {
                             float healAmount = vehicle.DamageManager.MaxHealth * (vehicle.IsFlyingType ? _Pref_Humans_Aircraft_HealRate.Value : _Pref_Humans_Vehicle_HealRate.Value);
@@ -102,7 +105,7 @@ namespace Si_RepairFacility
                             {
                                 if (_Pref_Repair_Notification.Value && vehicle.ControlledBy != null)
                                 {
-                                    HelperMethods.SendChatMessageToPlayer(vehicle.ControlledBy, HelperMethods.chatPrefix, " Debug Info: (Skipping) Health[" + vehicle.DamageManager.Health + "] MaxHP[" + vehicle.DamageManager.MaxHealth + "] HealAmt[" + healAmount + "]");
+                                    //HelperMethods.SendChatMessageToPlayer(vehicle.ControlledBy, HelperMethods.chatPrefix, " Debug Info: (Skipping) Health[" + vehicle.DamageManager.Health + "] MaxHP[" + vehicle.DamageManager.MaxHealth + "] HealAmt[" + healAmount + "]");
                                 }
 
                                 continue;
@@ -116,7 +119,7 @@ namespace Si_RepairFacility
 
                                 if (_Pref_Repair_Notification.Value && vehicle.ControlledBy != null)
                                 {
-                                    HelperMethods.SendChatMessageToPlayer(vehicle.ControlledBy, HelperMethods.chatPrefix, " Debug Info: (Max) Health[" + vehicle.DamageManager.Health + "] MaxHP[" + vehicle.DamageManager.MaxHealth + "] HealAmt[" + healAmount + "]");
+                                    //HelperMethods.SendChatMessageToPlayer(vehicle.ControlledBy, HelperMethods.chatPrefix, " Debug Info: (Max) Health[" + vehicle.DamageManager.Health + "] MaxHP[" + vehicle.DamageManager.MaxHealth + "] HealAmt[" + healAmount + "]");
                                 }
                             }
                             else
@@ -127,9 +130,41 @@ namespace Si_RepairFacility
 
                                 if (_Pref_Repair_Notification.Value && vehicle.ControlledBy != null)
                                 {
-                                    HelperMethods.SendChatMessageToPlayer(vehicle.ControlledBy, HelperMethods.chatPrefix, " Debug Info: (Incremental) Health[" + vehicle.DamageManager.Health + "] MaxHP[" + vehicle.DamageManager.MaxHealth + "] HealAmt[" + healAmount + "]");
+                                    //HelperMethods.SendChatMessageToPlayer(vehicle.ControlledBy, HelperMethods.chatPrefix, " Debug Info: (Incremental) Health[" + vehicle.DamageManager.Health + "] MaxHP[" + vehicle.DamageManager.MaxHealth + "] HealAmt[" + healAmount + "]");
                                 }
                             }
+                        }
+
+                        // repair defending structures for Siege
+                        if (GameMode.CurrentGameMode is MP_TowerDefense)
+                        {
+                            foreach (Structure structure in Team.Teams[(int)SiConstants.ETeam.Sol].Structures)
+                            {
+                                if (!structure.DamageManager || structure.DamageManager.IsDestroyed)
+                                {
+                                    continue;
+                                }
+
+                                float healAmount = structure.DamageManager.MaxHealth * _Pref_SiegeDefenders_Structure_HealRate.Value;
+
+                                if (structure.DamageManager.Health == structure.DamageManager.MaxHealth)
+                                {
+                                    continue;
+                                }
+
+                                float newHealthUnclamped = structure.DamageManager.Health + healAmount;
+
+                                if (newHealthUnclamped >= structure.DamageManager.MaxHealth)
+                                {
+                                    structure.DamageManager.SetHealth01(1f);
+                                }
+                                else
+                                {
+                                    float newHealth = Mathf.Clamp(newHealthUnclamped, 0.0f, structure.DamageManager.MaxHealth);
+
+                                    structure.DamageManager.SetHealth(newHealth);
+                                }
+                            }    
                         }
                     }
                 }
