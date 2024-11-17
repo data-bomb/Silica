@@ -37,8 +37,9 @@ using UnityEngine;
 using System;
 using SilicaAdminMod;
 using System.Linq;
+using static MelonLoader.MelonLogger;
 
-[assembly: MelonInfo(typeof(BasicTeamBalance), "Basic Team Balance", "1.3.10", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(BasicTeamBalance), "Basic Team Balance", "1.4.0", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -55,8 +56,8 @@ namespace Si_BasicTeamBalance
         static MelonPreferences_Entry<int> _AllowTeamSwitchAfterTime = null!;
 
         #if !NET6_0
-        static byte ERPC_ClearRequest = HelperMethods.FindByteValueInEnum(typeof(MP_Strategy), "ERPCs", "CLEAR_REQUEST");
-        static byte ERPC_RequestJoinTeam = HelperMethods.FindByteValueInEnum(typeof(MP_Strategy), "ERPCs", "REQUEST_JOIN_TEAM");
+        static byte ERPC_ClearRequest = HelperMethods.FindByteValueInEnum(typeof(GameModeExt), "ERPCs", "CLEAR_REQUEST");
+        static byte ERPC_RequestJoinTeam = HelperMethods.FindByteValueInEnum(typeof(GameModeExt), "ERPCs", "REQUEST_JOIN_TEAM");
         #endif
 
         static Player? LastPlayerChatMessage;
@@ -127,13 +128,13 @@ namespace Si_BasicTeamBalance
             }
         }
 
-        public static int GetNumberOfActiveTeams(MP_Strategy strategyInstance)
+        public static int GetNumberOfActiveTeams<T>(T gameModeInstance) where T : GameModeExt
         {
             int activeTeams = 0;
 
-            foreach (BaseTeamSetup baseTeamSetup in strategyInstance.TeamSetups)
+            foreach (BaseTeamSetup baseTeamSetup in gameModeInstance.BaseTeamSetups)
             {
-                if (strategyInstance.GetTeamSetupActive(baseTeamSetup) && !baseTeamSetup.GetHasLost())
+                if (gameModeInstance.GetTeamSetupActive(baseTeamSetup) && !baseTeamSetup.GetHasLost())
                 {
                     activeTeams++;
                 }
@@ -142,14 +143,14 @@ namespace Si_BasicTeamBalance
             return activeTeams;
         }
 
-        public static Team? FindLowestPopulationTeam(MP_Strategy strategyInstance)
+        public static Team? FindLowestPopulationTeam<T>(T gameModeInstance) where T : GameModeExt
         {
             int lowestPlayerCount = NetworkGameServer.GetPlayersMax() + 1;
             Team? lowestPopTeam = null;
 
-            foreach (BaseTeamSetup baseTeamSetup in strategyInstance.TeamSetups)
+            foreach (BaseTeamSetup baseTeamSetup in gameModeInstance.BaseTeamSetups)
             {
-                if (strategyInstance.GetTeamSetupActive(baseTeamSetup) && !baseTeamSetup.GetHasLost())
+                if (gameModeInstance.GetTeamSetupActive(baseTeamSetup) && !baseTeamSetup.GetHasLost())
                 {
                     int playerCount = baseTeamSetup.Team.GetNumPlayers();
                     if (playerCount < lowestPlayerCount)
@@ -163,18 +164,18 @@ namespace Si_BasicTeamBalance
             return lowestPopTeam;
         }
         
-        public static bool JoinCausesImbalance(Team? targetTeam, MP_Strategy strategyInstance)
+        public static bool JoinCausesImbalance<T>(Team? targetTeam, T gameModeInstance) where T : GameModeExt
         {
             if (targetTeam == null)
             {
                 return false;
             }
 
-            GameModeExt.ETeamsVersus versusMode = strategyInstance.TeamsVersus;
+            GameModeExt.ETeamsVersus versusMode = gameModeInstance.TeamsVersus;
 
             Team? lowestPopTeam = null;
-            int activeTeams = GetNumberOfActiveTeams(strategyInstance);
-            lowestPopTeam = FindLowestPopulationTeam(strategyInstance);
+            int activeTeams = GetNumberOfActiveTeams(gameModeInstance);
+            lowestPopTeam = FindLowestPopulationTeam(gameModeInstance);
 
             // are we already trying to join the team with lowest pop or did we have an error?
             if (lowestPopTeam == null || lowestPopTeam == targetTeam)
@@ -290,6 +291,145 @@ namespace Si_BasicTeamBalance
             GameMode.CurrentGameMode.SpawnUnitForPlayer(player, team);
         }
 
+        [HarmonyPatch(typeof(MP_TowerDefense), nameof(MP_TowerDefense.ProcessNetRPC))]
+        private static class ApplyPatch_MPTowerDefense_JoinTeam
+        {
+            public static bool Prefix(MP_TowerDefense __instance, GameByteStreamReader __0, byte __1)
+            {
+                try
+                {
+                    return ProcessJoinTeam(__instance, __0, __1);
+                }
+                catch (Exception error)
+                {
+                    HelperMethods.PrintError(error, "Failed to run MP_TowerDefense::ProcessNetRPC");
+                }
+
+                return true;
+            }
+        }
+
+        public static bool ProcessJoinTeam<T>(T gameModeInstance, GameByteStreamReader reader, byte rpcIndex) where T: GameModeExt
+        {
+            if (gameModeInstance == null || reader == null)
+            {
+                return true;
+            }
+
+            // only look at RPC_RequestJoinTeam bytes
+            #if NET6_0
+            if (rpcIndex != (byte)GameModeExt.ERPCs.REQUEST_JOIN_TEAM)
+            #else
+            if (rpcIndex != ERPC_RequestJoinTeam)
+            #endif
+            {
+                return true;
+            }
+
+            // if the game is over then don't run any balance checks
+            if (GameMode.CurrentGameMode.GameOver)
+            {
+                return true;
+            }
+
+            // after this point we will modify the read pointers so we have to return false
+            ulong playerSteam64 = reader.ReadUInt64();
+            NetworkID playerNetworkID = new NetworkID(playerSteam64);
+            int playerChannel = reader.ReadByte();
+            Player joiningPlayer = Player.FindPlayer(playerNetworkID, playerChannel);
+            Team? targetTeam = reader.ReadTeam();
+
+            if (joiningPlayer == null)
+            {
+                Debug.LogError("MP_Strategy::ProcessNetRPC - Player was NULL for REQUEST_JOIN_TEAM, ID: " + playerSteam64.ToString() + ", channel: " + playerChannel.ToString());
+                return false;
+            }
+
+            Team mTeam = joiningPlayer.Team;
+
+            // requests to rejoin the same team
+            if (UnityEngine.Object.Equals(mTeam, targetTeam))
+            {
+                SendClearRequest(playerSteam64, playerChannel);
+                return false;
+            }
+
+            // these would normally get processed at this point but check if early team switching is being stopped and the player already has a team
+            // if re-joining the current team would be considered as imbalanced, then override the prevention - player is trying to help
+            if (_PreventEarlyTeamSwitches.Value && GameMode.CurrentGameMode.GameOngoing && preventTeamSwitches && mTeam != null && !JoinCausesImbalance(mTeam, gameModeInstance))
+            {
+                // avoid chat spam
+                if (LastPlayerChatMessage != joiningPlayer)
+                {
+                    HelperMethods.ReplyToCommand_Player(joiningPlayer, "'s switch was denied due to early game team lock");
+                    LastPlayerChatMessage = joiningPlayer;
+                }
+
+                MelonLogger.Msg(joiningPlayer.PlayerName + "'s team switch was denied due to early game team lock");
+
+                SendClearRequest(playerSteam64, playerChannel);
+                return false;
+            }
+
+            // if there is some kind of game bug and the player is on an invalid team then let the change occur
+            if (joiningPlayer.Team != null && Event_Roles.GetTeamSetup(gameModeInstance, joiningPlayer.Team) == null)
+            {
+                MelonLogger.Warning("Found player on invalid team. Allowing role change.");
+                joiningPlayer.Team = targetTeam;
+                NetworkLayer.SendPlayerSelectTeam(joiningPlayer, targetTeam);
+                return false;
+            }
+
+            // the team change should be permitted as it doesn't impact balance
+            if (!JoinCausesImbalance(targetTeam, gameModeInstance))
+            {
+                joiningPlayer.Team = targetTeam;
+                NetworkLayer.SendPlayerSelectTeam(joiningPlayer, targetTeam);
+                return false;
+            }
+
+            // if the player hasn't joined a team yet, force them to the team that needs it the most
+            if (joiningPlayer.Team == null)
+            {
+                GameModeExt.ETeamsVersus versusMode = gameModeInstance.TeamsVersus;
+                Team? ForcedTeam = FindLowestPopulationTeam(gameModeInstance);
+                if (ForcedTeam != null)
+                {
+                    // avoid chat spam
+                    if (LastPlayerChatMessage != joiningPlayer)
+                    {
+                        HelperMethods.ReplyToCommand_Player(joiningPlayer, " was forced to " + HelperMethods.GetTeamColor(ForcedTeam) + ForcedTeam.TeamShortName + "</color> to fix imbalance");
+                        LastPlayerChatMessage = joiningPlayer;
+                    }
+
+                    MelonLogger.Msg(joiningPlayer.PlayerName + " was forced to " + ForcedTeam.TeamShortName + " to fix imbalance");
+
+                    joiningPlayer.Team = ForcedTeam;
+                    NetworkLayer.SendPlayerSelectTeam(joiningPlayer, ForcedTeam);
+
+                    return false;
+                }
+
+                MelonLogger.Warning("Error in FindLowestPopulationTeam(). Could not find a valid team.");
+                SendClearRequest(playerSteam64, playerChannel);
+                return false;
+            }
+
+            // the player has already joined a team but the change would cause an imbalance
+
+            // avoid chat spam
+            if (LastPlayerChatMessage != joiningPlayer)
+            {
+                HelperMethods.ReplyToCommand_Player(joiningPlayer, "'s switch was denied due to imbalance");
+                LastPlayerChatMessage = joiningPlayer;
+            }
+
+            MelonLogger.Msg(joiningPlayer.PlayerName + "'s team switch was denied due to team imbalance");
+
+            SendClearRequest(playerSteam64, playerChannel);
+            return false;
+        }
+
         [HarmonyPatch(typeof(MP_Strategy), nameof(MP_Strategy.ProcessNetRPC))]
         private static class ApplyPatch_MPStrategy_JoinTeam
         {
@@ -297,123 +437,7 @@ namespace Si_BasicTeamBalance
             {
                 try
                 {
-                    if (__instance == null || __0 == null)
-                    {
-                        return true;
-                    }
-
-                    // only look at RPC_RequestJoinTeam bytes
-                    #if NET6_0
-                    if (__1 != (byte)GameModeExt.ERPCs.REQUEST_JOIN_TEAM)
-                    #else
-                    if (__1 != ERPC_RequestJoinTeam)
-                    #endif
-                    {
-                        return true;
-                    }
-
-                    // if the game is over then don't run any balance checks
-                    if (GameMode.CurrentGameMode.GameOver)
-                    {
-                        return true;
-                    }
-
-                    // after this point we will modify the read pointers so we have to return false
-                    ulong playerSteam64 = __0.ReadUInt64();
-                    NetworkID playerNetworkID = new NetworkID(playerSteam64);
-                    int playerChannel = __0.ReadByte();
-                    Player joiningPlayer = Player.FindPlayer(playerNetworkID, playerChannel);
-                    Team? targetTeam = __0.ReadTeam();
-
-                    if (joiningPlayer == null)
-                    {
-                        Debug.LogError("MP_Strategy::ProcessNetRPC - Player was NULL for REQUEST_JOIN_TEAM, ID: " + playerSteam64.ToString() + ", channel: " + playerChannel.ToString());
-                        return false;
-                    }
-
-                    Team mTeam = joiningPlayer.Team;
-
-                    // requests to rejoin the same team
-                    if (UnityEngine.Object.Equals(mTeam, targetTeam))
-                    {
-                        SendClearRequest(playerSteam64, playerChannel);
-                        return false;
-                    }
-
-                    // these would normally get processed at this point but check if early team switching is being stopped and the player already has a team
-                    // if re-joining the current team would be considered as imbalanced, then override the prevention - player is trying to help
-                    if (_PreventEarlyTeamSwitches.Value && GameMode.CurrentGameMode.GameOngoing && preventTeamSwitches && mTeam != null && !JoinCausesImbalance(mTeam, __instance))
-                    {
-                        // avoid chat spam
-                        if (LastPlayerChatMessage != joiningPlayer)
-                        {
-                            HelperMethods.ReplyToCommand_Player(joiningPlayer, "'s switch was denied due to early game team lock");
-                            LastPlayerChatMessage = joiningPlayer;
-                        }
-
-                        MelonLogger.Msg(joiningPlayer.PlayerName + "'s team switch was denied due to early game team lock");
-
-                        SendClearRequest(playerSteam64, playerChannel);
-                        return false;
-                    }
-
-                    // if there is some kind of game bug and the player is on an invalid team then let the change occur
-                    if (joiningPlayer.Team != null && __instance.GetTeamSetup(joiningPlayer.Team) == null)
-                    {
-                        MelonLogger.Warning("Found player on invalid team. Allowing role change.");
-                        joiningPlayer.Team = targetTeam;
-                        NetworkLayer.SendPlayerSelectTeam(joiningPlayer, targetTeam);
-                        return false;
-                    }
-
-                    // the team change should be permitted as it doesn't impact balance
-                    if (!JoinCausesImbalance(targetTeam, __instance))
-                    {
-                        joiningPlayer.Team = targetTeam;
-                        NetworkLayer.SendPlayerSelectTeam(joiningPlayer, targetTeam);
-                        return false;
-                    }
-
-                    // if the player hasn't joined a team yet, force them to the team that needs it the most
-                    if (joiningPlayer.Team == null)
-                    {
-                        GameModeExt.ETeamsVersus versusMode = __instance.TeamsVersus;
-                        Team? ForcedTeam = FindLowestPopulationTeam(__instance);
-                        if (ForcedTeam != null)
-                        {
-                            // avoid chat spam
-                            if (LastPlayerChatMessage != joiningPlayer)
-                            {
-                                HelperMethods.ReplyToCommand_Player(joiningPlayer, " was forced to " + HelperMethods.GetTeamColor(ForcedTeam) + ForcedTeam.TeamShortName + "</color> to fix imbalance");
-                                LastPlayerChatMessage = joiningPlayer;
-                            }
-
-                            MelonLogger.Msg(joiningPlayer.PlayerName + " was forced to " + ForcedTeam.TeamShortName + " to fix imbalance");
-
-                            joiningPlayer.Team = ForcedTeam;
-                            NetworkLayer.SendPlayerSelectTeam(joiningPlayer, ForcedTeam);
-
-                            return false;
-                        }
-
-                        MelonLogger.Warning("Error in FindLowestPopulationTeam(). Could not find a valid team.");
-                        SendClearRequest(playerSteam64, playerChannel);
-                        return false;
-                    }
-                        
-                    // the player has already joined a team but the change would cause an imbalance
-                                        
-                    // avoid chat spam
-                    if (LastPlayerChatMessage != joiningPlayer)
-                    {
-                        HelperMethods.ReplyToCommand_Player(joiningPlayer, "'s switch was denied due to imbalance");
-                        LastPlayerChatMessage = joiningPlayer;
-                    }
-
-                    MelonLogger.Msg(joiningPlayer.PlayerName + "'s team switch was denied due to team imbalance");
-
-                    SendClearRequest(playerSteam64, playerChannel);
-                    return false;
+                    return ProcessJoinTeam(__instance, __0, __1);
                 }
                 catch (Exception error)
                 {
