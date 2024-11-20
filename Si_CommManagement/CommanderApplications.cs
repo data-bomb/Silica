@@ -231,7 +231,13 @@ namespace Si_CommanderManagement
                         MelonLogger.Msg("Clearing commander lottery for team " + Team.Teams[i].TeamShortName);
                     }
 
-                    // we want to remove the oldest commanders from the list
+                    // we want to remove the oldest commanders from the list, if we have any
+                    if (previousCommanders == null || previousCommanders.Count == 0)
+                    {
+                        MelonLogger.Msg("Skipping clearing previous commanders. Nothing to do.");
+                        return;
+                    }
+
                     List<PreviousCommander>? stalePreviousCommanders = new List<PreviousCommander>();
                     foreach (PreviousCommander previousCommander in previousCommanders)
                     {
@@ -326,6 +332,7 @@ namespace Si_CommanderManagement
                     FieldInfo timerField = strategyType.GetField("Timer", BindingFlags.NonPublic | BindingFlags.Instance);
                     timerField.SetValue(strategyInstance, value);
                     #endif
+                    return;
                 }
                 else if (GameMode.CurrentGameMode is MP_TowerDefense defenseInstance)
                 {
@@ -336,6 +343,7 @@ namespace Si_CommanderManagement
                     FieldInfo timerField = strategyType.GetField("Timer", BindingFlags.NonPublic | BindingFlags.Instance);
                     timerField.SetValue(defenseInstance, value);
                     #endif
+                    return;
                 }
                 throw new ArgumentException("Cannot set gamemode timer");
             }
