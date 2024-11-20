@@ -35,7 +35,7 @@ using System;
 using SilicaAdminMod;
 using System.Linq;
 
-[assembly: MelonInfo(typeof(DefaultUnits), "Default Spawn Units", "1.0.3", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(DefaultUnits), "Default Spawn Units", "1.0.4", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -126,12 +126,16 @@ namespace Si_DefaultUnits
             {
                 try
                 {
-                    if (teamTechTiers == null || teamFirstSpawn == null)
+                    if (teamTechTiers == null || teamFirstSpawn == null || __0 == null)
                     {
                         return;
                     }
 
                     Team playerTeam = __0.Team;
+                    if (playerTeam == null)
+                    {
+                        return;
+                    }
 
                     // was there a change in tech tier or is it the first spawn of the round for this team?
                     if (!TechTierUpdated(playerTeam) && !teamFirstSpawn[playerTeam.Index])
