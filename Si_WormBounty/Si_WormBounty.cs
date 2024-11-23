@@ -37,7 +37,7 @@ using UnityEngine;
 using Si_WormBounty;
 
 
-[assembly: MelonInfo(typeof(WormBounty), "Worm Bounty", "1.0.0", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(WormBounty), "Worm Bounty", "1.1.0", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -50,14 +50,16 @@ namespace Si_WormBounty
         static MelonPreferences_Entry<float> _Pref_GreatWorms_SpawnChance = null!;
         static MelonPreferences_Entry<int> _Pref_GreatWorms_Bounty_BaseAmount = null!;
         static MelonPreferences_Entry<int> _Pref_GreatWorms_Bounty_RandomBonusMax = null!;
+        static MelonPreferences_Entry<bool> _Pref_GreatWorms_Bounty_TechScaling = null!;
 
 
         public override void OnInitializeMelon()
         {
             _modCategory ??= MelonPreferences.CreateCategory("Silica");
             _Pref_GreatWorms_MaxNumber ??= _modCategory.CreateEntry<int>("GreatWorms_MaxNumber", 2);
-            _Pref_GreatWorms_Bounty_BaseAmount ??= _modCategory.CreateEntry<int>("GreatWorms_Bounty_BaseAmount", 500);
+            _Pref_GreatWorms_Bounty_BaseAmount ??= _modCategory.CreateEntry<int>("GreatWorms_Bounty_BaseAmount", 1250);
             _Pref_GreatWorms_Bounty_RandomBonusMax ??= _modCategory.CreateEntry<int>("GreatWorms_Bounty_Bonus_RandomMax", 750);
+            _Pref_GreatWorms_Bounty_TechScaling ??= _modCategory.CreateEntry<bool>("GreatWorms_Bounty_TechScaling", true);
             _Pref_GreatWorms_SpawnChance ??= _modCategory.CreateEntry<float>("GreatWorms_SpawnChance", 0.25f);
         }
 
@@ -195,7 +197,7 @@ namespace Si_WormBounty
                     }
 
                     // determine bounty amount
-                    int bountyAmount = FindBounty();
+                    int bountyAmount = FindBounty(attackerPlayer.Team);
 
                     // award bounty
                     AwardBounty(attackerPlayer, bountyAmount);
@@ -207,23 +209,38 @@ namespace Si_WormBounty
             }
         }
 
-        private static int FindBounty()
+        private static int FindBounty(Team team)
         {
             // explosion kills earn a bit less
-            int baseAmount = _Pref_GreatWorms_Bounty_BaseAmount.Value;
+            int baseBounty = _Pref_GreatWorms_Bounty_BaseAmount.Value;
 
             // give a little more, perhaps
-            int varyingAmount = 0;
+            int varyingBounty = 0;
             if (_Pref_GreatWorms_Bounty_RandomBonusMax.Value > 0)
             {
                 System.Random randomIndex = new System.Random();
-                varyingAmount = randomIndex.Next(0, _Pref_GreatWorms_Bounty_RandomBonusMax.Value);
-
-                // round down to nearest ten
-                varyingAmount = (int)Math.Round(varyingAmount / 10.0) * 10;
+                varyingBounty = randomIndex.Next(0, _Pref_GreatWorms_Bounty_RandomBonusMax.Value);
             }
 
-            return baseAmount + varyingAmount;
+            int bountyTotal = baseBounty + varyingBounty;
+
+            // scale up for later tech tiers, perhaps
+            if (_Pref_GreatWorms_Bounty_TechScaling.Value)
+            {
+                bountyTotal = (int)Math.Round(bountyTotal * FindTechScalingFactor(team));
+            }
+
+            // round down to nearest ten
+            bountyTotal = (int)Math.Round(bountyTotal / 10.0) * 10;
+
+            return bountyTotal;
+        }
+
+        // map the technology tier to a multiplier between 1 and 3
+        private static float FindTechScalingFactor(Team team)
+        {
+            float techTierPercentage = (float)team.CurrentTechnologyTier / (float)team.MaximumTechnologyTier;
+            return 1f + techTierPercentage * (2f);
         }
 
         private static void AwardBounty(Player player, int bounty)
