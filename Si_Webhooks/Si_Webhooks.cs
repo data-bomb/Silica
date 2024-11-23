@@ -37,7 +37,7 @@ using System.Text.RegularExpressions;
 using System.Collections.Generic;
 using Newtonsoft.Json;
 
-[assembly: MelonInfo(typeof(Webhooks), "Webhooks", "1.2.7", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(Webhooks), "Webhooks", "1.2.8", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -58,7 +58,8 @@ namespace Si_Webhooks
         static MelonPreferences_Entry<string> _Server_Avatar_URL = null!;
         static MelonPreferences_Entry<string> _Default_Avatar_URL = null!;
 
-        static CallResult<HTTPRequestCompleted_t> OnHTTPRequestCompletedCallResult = null!;
+        static CallResult<HTTPRequestCompleted_t> OnHTTPRequestCompletedCallResultAvatar = null!;
+        static CallResult<HTTPRequestCompleted_t> OnHTTPRequestCompletedCallResultDiscord = null!;
 
         static Dictionary<ulong, string> CacheAvatarURLs = null!;
 
@@ -72,13 +73,14 @@ namespace Si_Webhooks
             _Server_Avatar_URL ??= _modCategory.CreateEntry<string>("Webhooks_Server_Avatar_URL", "https://cdn.discordapp.com/icons/824561906277810187/d2f40915db72206f36abb46975655434.webp");
             _Default_Avatar_URL ??= _modCategory.CreateEntry<string>("Webhooks_Default_Avatar_URL", "https://cdn.discordapp.com/icons/663449315876012052/9e482a81d84ee8e750d07c8dbe5b78e4.webp");
 
-            OnHTTPRequestCompletedCallResult = CallResult<HTTPRequestCompleted_t>.Create((CallResult<HTTPRequestCompleted_t>.APIDispatchDelegate)OnHTTPRequestCompleted);
+            OnHTTPRequestCompletedCallResultAvatar = CallResult<HTTPRequestCompleted_t>.Create((CallResult<HTTPRequestCompleted_t>.APIDispatchDelegate)OnHTTPRequestCompletedAvatar);
+            OnHTTPRequestCompletedCallResultDiscord = CallResult<HTTPRequestCompleted_t>.Create((CallResult<HTTPRequestCompleted_t>.APIDispatchDelegate)OnHTTPRequestCompletedDiscord);
 
             CacheAvatarURLs = new Dictionary<ulong, string>();
 
             try
             {
-                SteamAPI.Init();
+                //SteamAPI.Init();
             }
             catch (Exception error)
             {
@@ -130,7 +132,7 @@ namespace Si_Webhooks
                     // cache the Steam avatar, if it's needed
                     if (!CacheAvatarURLs.ContainsKey(__0.PlayerID.SteamID.m_SteamID))
                     {
-                        //MelonLogger.Msg("Missing Avatar URL for " + username + ". Grabbing it...");
+                        MelonLogger.Msg("Missing Avatar URL for " + username + ". Grabbing it...");
                         RequestSteamAvatar(__0);
                     }
                     else
@@ -181,12 +183,7 @@ namespace Si_Webhooks
                 return;
             }
 
-            if (!SteamAPI.IsSteamRunning())
-            {
-                SteamAPI.Init();
-            }
-
-            HTTPRequestHandle request = SteamHTTP.CreateHTTPRequest(EHTTPMethod.k_EHTTPMethodPOST, _Webhooks_URL.Value);
+            HTTPRequestHandle request = SteamGameServerHTTP.CreateHTTPRequest(EHTTPMethod.k_EHTTPMethodPOST, _Webhooks_URL.Value);
             string payload = "{\"content\": \"" + message + "\", \"username\": \"" + username + "\", \"avatar_url\": \"" + avatar + "\", \"allowed_mentions\": { \"parse\": [] } }";
 
             if (mentionsAllowed)
@@ -194,13 +191,15 @@ namespace Si_Webhooks
                 payload = "{\"content\": \"" + message + "\", \"username\": \"" + username + "\", \"avatar_url\": \"" + avatar + "\"}";
             }
 
-            //MelonLogger.Msg("Payload: " + payload);
+            MelonLogger.Msg("Request: " + request + " " + _Webhooks_URL.Value);
+            MelonLogger.Msg("Payload: " + payload);
 
             byte[] bytes = Encoding.ASCII.GetBytes(payload);
 
-            SteamHTTP.SetHTTPRequestRawPostBody(request, "application/json", bytes, (uint)bytes.Length);
+            SteamGameServerHTTP.SetHTTPRequestRawPostBody(request, "application/json", bytes, (uint)bytes.Length));
             SteamAPICall_t webhookCall = new SteamAPICall_t();
-            SteamHTTP.SendHTTPRequest(request, out webhookCall);
+            SteamGameServerHTTP.SendHTTPRequest(request, out webhookCall));
+            OnHTTPRequestCompletedCallResultDiscord.Set(webhookCall);
         }
 
         static void RequestSteamAvatar(Player player)
@@ -211,19 +210,21 @@ namespace Si_Webhooks
             }
 
             string avatarRequestURL = "http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=" + _SteamAPI_Key.Value + "&steamids=" + player.PlayerID.ToString();
-            //MelonLogger.Msg(avatarRequestURL);
-            HTTPRequestHandle avatarRequest = SteamHTTP.CreateHTTPRequest(EHTTPMethod.k_EHTTPMethodGET, avatarRequestURL);
+            MelonLogger.Msg(avatarRequestURL);
+            HTTPRequestHandle avatarRequest = SteamGameServerHTTP.CreateHTTPRequest(EHTTPMethod.k_EHTTPMethodGET, avatarRequestURL);
             SteamAPICall_t avatarCall = new SteamAPICall_t();
-            SteamHTTP.SendHTTPRequest(avatarRequest, out avatarCall);
-            OnHTTPRequestCompletedCallResult.Set(avatarCall);
+            SteamGameServerHTTP.SendHTTPRequest(avatarRequest, out avatarCall);
+            OnHTTPRequestCompletedCallResultAvatar.Set(avatarCall);
         }
 
-        public void OnHTTPRequestCompleted(HTTPRequestCompleted_t pCallback, bool bIOFailure)
+        public void OnHTTPRequestCompletedAvatar(HTTPRequestCompleted_t pCallback, bool bIOFailure)
         {
+            MelonLogger.Msg("[" + HTTPRequestCompleted_t.k_iCallback + " - HTTPRequestCompleted] - " + pCallback.m_hRequest + " -- " + pCallback.m_ulContextValue + " -- " + pCallback.m_bRequestSuccessful + " -- " + pCallback.m_eStatusCode + " -- " + pCallback.m_unBodySize);
+
             HTTPRequestHandle request = pCallback.m_hRequest;
 
             uint size = 0;
-            SteamHTTP.GetHTTPResponseBodySize(request, out size);
+            SteamGameServerHTTP.GetHTTPResponseBodySize(request, out size);
 
             if (size <= 0)
             {
@@ -231,9 +232,9 @@ namespace Si_Webhooks
             }
 
             byte[] dataBuffer = new byte[size];
-            SteamHTTP.GetHTTPResponseBodyData(request, dataBuffer, size);
+            SteamGameServerHTTP.GetHTTPResponseBodyData(request, dataBuffer, size);
 
-            //MelonLogger.Msg("Data: " + System.Text.Encoding.UTF8.GetString(dataBuffer));
+            MelonLogger.Msg("Data: " + System.Text.Encoding.UTF8.GetString(dataBuffer));
 
             GetPlayerSummaries_Root? rootResponse = JsonConvert.DeserializeObject<GetPlayerSummaries_Root>(Encoding.UTF8.GetString(dataBuffer));
             if (rootResponse == null || rootResponse.response == null || rootResponse.response.players == null)
@@ -248,7 +249,7 @@ namespace Si_Webhooks
             }
 
             string? avatarURL = rootResponse.response.players[0].AvatarMedium;
-            //MelonLogger.Msg("Adding avatar URL: " + avatarURL);
+            MelonLogger.Msg("Adding avatar URL: " + avatarURL);
 
             if (avatarURL == null || avatarURL == string.Empty)
             {
@@ -256,6 +257,30 @@ namespace Si_Webhooks
             }
 
             CacheAvatarURLs.Add(rootResponse.response.players[0].SteamID, avatarURL);
+        }
+
+        public void OnHTTPRequestCompletedDiscord(HTTPRequestCompleted_t pCallback, bool bIOFailure)
+        {
+            MelonLogger.Msg("[" + HTTPRequestCompleted_t.k_iCallback + " - HTTPRequestCompleted] - " + pCallback.m_hRequest + " -- " + 
+              pCallback.m_ulContextValue + " -- " +
+              pCallback.m_bRequestSuccessful + " -- " + 
+              pCallback.m_eStatusCode + " -- " + 
+              pCallback.m_unBodySize);
+
+            HTTPRequestHandle request = pCallback.m_hRequest;
+
+            uint size = 0;
+            SteamGameServerHTTP.GetHTTPResponseHeaderSize(request, "host", out size);
+
+            if (size <= 0)
+            {
+                return;
+            }
+
+            byte[] dataBuffer = new byte[size];
+            SteamGameServerHTTP.GetHTTPResponseHeaderValue(request, "host", dataBuffer, size);
+
+            MelonLogger.Msg("Data: " + System.Text.Encoding.UTF8.GetString(dataBuffer));
         }
 
         static string ConvertHTML(string html)
