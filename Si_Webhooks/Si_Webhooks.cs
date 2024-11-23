@@ -196,9 +196,9 @@ namespace Si_Webhooks
 
             byte[] bytes = Encoding.ASCII.GetBytes(payload);
 
-            SteamGameServerHTTP.SetHTTPRequestRawPostBody(request, "application/json", bytes, (uint)bytes.Length));
+            SteamGameServerHTTP.SetHTTPRequestRawPostBody(request, "application/json", bytes, (uint)bytes.Length);
             SteamAPICall_t webhookCall = new SteamAPICall_t();
-            SteamGameServerHTTP.SendHTTPRequest(request, out webhookCall));
+            SteamGameServerHTTP.SendHTTPRequest(request, out webhookCall);
             OnHTTPRequestCompletedCallResultDiscord.Set(webhookCall);
         }
 
