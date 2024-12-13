@@ -34,7 +34,7 @@ using SilicaAdminMod;
 using System.Linq;
 using System.Collections.Generic;
 
-[assembly: MelonInfo(typeof(CommanderManager), "Commander Management", "1.9.1", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(CommanderManager), "Commander Management", "1.9.2", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -45,6 +45,7 @@ namespace Si_CommanderManagement
         static MelonPreferences_Category _modCategory = null!;
         public static MelonPreferences_Entry<bool> _BlockRoundStartUntilEnoughApplicants = null!;
         public static MelonPreferences_Entry<bool> _TeamOnlyResponses = null!;
+        public static MelonPreferences_Entry<float> _MutinyVotePercent = null!;
 
         public static List<Player>[] mutineerPlayers = null!;
 
@@ -53,6 +54,7 @@ namespace Si_CommanderManagement
             _modCategory ??= MelonPreferences.CreateCategory("Silica");
             _BlockRoundStartUntilEnoughApplicants ??= _modCategory.CreateEntry<bool>("BlockRoundStartUntilCommandersApplied", true);
             _TeamOnlyResponses ??= _modCategory.CreateEntry<bool>("CmdrMgr_CommanderResponses_TeamOnly", false);
+            _MutinyVotePercent ??= _modCategory.CreateEntry<float>("CmdrMgr_Mutiny_Vote_PercentNeeded", 0.54f);
 
             try
             {

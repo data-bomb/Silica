@@ -107,7 +107,7 @@ namespace Si_CommanderManagement
             // don't count the commander as a player here
             playerCount -= (CommanderPrimitives.GetCommander(team) != null ? 1 : 0);
 
-            int teammatesNeeded = (int)Math.Ceiling(playerCount * 0.54f);
+            int teammatesNeeded = (int)Math.Ceiling(playerCount * CommanderManager._MutinyVotePercent.Value);
             if (teammatesNeeded < 1)
             {
                 return 1;
