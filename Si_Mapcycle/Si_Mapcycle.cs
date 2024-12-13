@@ -39,7 +39,7 @@ using SilicaAdminMod;
 using System.Linq;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(MapCycleMod), "Mapcycle", "1.6.7", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(MapCycleMod), "Mapcycle", "1.7.0", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -74,41 +74,17 @@ namespace Si_Mapcycle
                 Pref_Mapcycle_EndgameDelay ??= _modCategory.CreateEntry<int>("Mapcycle_DelayBeforeEndgameMapChange_Seconds", 9);
                 Pref_Mapcycle_RockTheVote_Percent ??= _modCategory.CreateEntry<float>("Mapcycle_RockTheVote_PercentNeeded", 0.31f);
 
-                String mapCycleFile = MelonEnvironment.UserDataDirectory + "\\mapcycle.txt";
+                string mapCycleFile = MelonEnvironment.UserDataDirectory + "\\mapcycle.txt";
 
                 rockers = new List<Player>();
                 mapNominations = new List<String>();
 
                 if (!File.Exists(mapCycleFile))
                 {
-                    // Create simple mapcycle.txt file
-                    using FileStream mapcycleFileStream = File.Create(mapCycleFile);
-                    mapcycleFileStream.Close();
-                    File.WriteAllText(mapCycleFile, "RiftBasin\nGreatErg\nBadlands\nNarakaCity\n");
+                    CreateDefaultMapcycle(mapCycleFile);
                 }
 
-                // Open the stream and read it back.
-                using StreamReader mapcycleStreamReader = File.OpenText(mapCycleFile);
-                List<string> sMapList = new List<string>();
-                string? sMap = "";
-
-                while ((sMap = mapcycleStreamReader.ReadLine()) != null)
-                {
-                    sMapList.Add(sMap);
-                }
-
-                sMapCycle = sMapList.ToArray();
-                
-                for (int i = 0; i < sMapCycle.Length; i++)
-                {
-                    MelonLogger.Msg("Added map to mapcycle: " + sMapCycle[i]);
-                }
-
-                // check for empty mapcycle
-                if (sMapCycle.Length <= 0)
-                {
-                    MelonLogger.Error("Mapcycle Mod has empty mapcycle file.");
-                }
+                ParseMapcycle(mapCycleFile);
             }
             catch (Exception exception)
             {
@@ -797,7 +773,9 @@ namespace Si_Mapcycle
                 return;
             }
 
-            int matchIndex = Array.IndexOf(sMapCycle, mapName);
+            int currentArrayIndex = iMapLoadCount % (sMapCycle.Length);
+            int matchIndex = Array.IndexOf(sMapCycle, mapName, currentArrayIndex);
+
             if (matchIndex == -1)
             {
                 MelonLogger.Warning("Could not find map in mapcycle array: ", mapName);
@@ -805,14 +783,17 @@ namespace Si_Mapcycle
             }
 
             // increase iMapLoadCount by the amount needed to reach the current array index of the current map
-            int currentArrayIndex = iMapLoadCount % (sMapCycle.Length);
             if (matchIndex > currentArrayIndex)
             {
-                iMapLoadCount += (matchIndex - currentArrayIndex);
+                int adjustment = matchIndex - currentArrayIndex;
+                iMapLoadCount += adjustment;
+                MelonLogger.Msg("Adjusted forward " + adjustment + " positions for map " + mapName);
             }
             else if (matchIndex < currentArrayIndex)
             {
-                iMapLoadCount += (sMapCycle.Length) - (currentArrayIndex - matchIndex); 
+                int adjustment = (sMapCycle.Length) - (currentArrayIndex - matchIndex);
+                iMapLoadCount += adjustment;
+                MelonLogger.Msg("Adjusted forward " + adjustment + " positions (and looped) for map " + mapName);
             }
             // if matchIndex == currentArrayIndex, no need to do anything
         }
@@ -847,6 +828,40 @@ namespace Si_Mapcycle
             }
 
             return false;
+        }
+
+        private static void CreateDefaultMapcycle(string mapCycleFile)
+        {
+            // Create simple mapcycle.txt file
+            using FileStream mapcycleFileStream = File.Create(mapCycleFile);
+            mapcycleFileStream.Close();
+            File.WriteAllText(mapCycleFile, "RiftBasin\nGreatErg\nBadlands\nNarakaCity\n");
+        }
+
+        private static void ParseMapcycle(string mapCycleFile)
+        {
+            // Open the stream and read it back.
+            using StreamReader mapcycleStreamReader = File.OpenText(mapCycleFile);
+            List<string> sMapList = new List<string>();
+            string? sMap = "";
+
+            while ((sMap = mapcycleStreamReader.ReadLine()) != null)
+            {
+                sMapList.Add(sMap);
+            }
+
+            sMapCycle = sMapList.ToArray();
+
+            for (int i = 0; i < sMapCycle.Length; i++)
+            {
+                MelonLogger.Msg("Added map to mapcycle: " + sMapCycle[i]);
+            }
+
+            // check for empty mapcycle
+            if (sMapCycle.Length <= 0)
+            {
+                MelonLogger.Error("Mapcycle Mod has empty mapcycle file.");
+            }
         }
     }
 }
