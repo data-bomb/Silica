@@ -40,7 +40,7 @@ using System.Linq;
 using System.Diagnostics;
 using System.IO;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.5.1", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.5.2", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -684,27 +684,7 @@ namespace Si_Logging
 
                     string structTeam = __0.Team.TeamShortName;
 
-                    string structName;
-                    if (__0.ToString().Contains('_'))
-                    {
-                        // is this a construction site or not?
-                        if (__0.OwnerConstructionSite == null)
-                        {
-                            structName = __0.ToString().Split('_')[0];
-                        }
-                        else
-                        {
-                            structName = __0.ToString().Split('_')[1].Split('(')[0];
-                        }
-                    }
-                    else if (__0.ToString().Contains('('))
-                    {
-                        structName = __0.ToString().Split('(')[0];
-                    }
-                    else
-                    {
-                        structName = __0.ToString();
-                    }
+                    string structName = GetStructureName(__0);
 
                     string LogLine = "\"" + attackerPlayer.PlayerName + "<" + userID + "><" + GetPlayerID(attackerPlayer) + "><" + attackerPlayer.Team.TeamShortName + ">\" triggered \"structure_kill\" (structure \"" + structName + "\") (struct_team \"" + structTeam + "\") (construction \"" + (__0.OwnerConstructionSite == null ? "no" : "yes") + "\")";
                     PrintLogLine(LogLine);
@@ -751,6 +731,18 @@ namespace Si_Logging
                     HelperMethods.PrintError(error, "Failed to run OnStructureDestroyed");
                 }
             }
+        }
+        
+        public static string GetStructureName(Target target)
+        {
+            if (target == null || target.ObjectInfo == null)
+            {
+                return "";
+            }
+
+            // remove any spaces or dashes from the display name
+            // this is still slightly different than calling ToString() but this should be more reliable with game updates
+            return target.ObjectInfo.DisplayName.Replace(" ", "").Replace("-", "");
         }
 
         // TODO: 060. Player Objectives/Actions
