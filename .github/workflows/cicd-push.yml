@@ -262,6 +262,9 @@ jobs:
           # Tech Glitch is disabled because the discrepancy is happening on the server side (not client side)
           mv release/dedi/Mods/Si_TechGlitch.dll release/dedi/Mods/disabled
           mv release/listen/Mods/Si_TechGlitch.dll release/listen/Mods/disabled
+          # Better Spawns is disabled because the game added a spawn selection mechanic
+          mv release/dedi/Mods/Si_BetterSpawns.dll release/dedi/Mods/disabled
+          mv release/listen/Mods/Si_BetterSpawns.dll release/listen/Mods/disabled
 
       - name: Zip Builds
         run: |
