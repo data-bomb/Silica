@@ -35,7 +35,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-[assembly: MelonInfo(typeof(BasicBanlist), "Basic Banlist", "1.5.2", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(BasicBanlist), "Basic Banlist", "1.5.3", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -200,7 +200,7 @@ namespace Si_BasicBanlist
             // validate argument contents
             string targetID = args.Split(' ')[1];
             int spaceCharacter = args.IndexOf(' ', commandName.Length+1);
-            string targetName = args.Substring(spaceCharacter);
+            string targetName = args.Substring(spaceCharacter+1);
             bool isNumber = ulong.TryParse(targetID, out ulong steamid);
             if (!isNumber)
             {
