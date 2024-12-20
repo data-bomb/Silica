@@ -39,7 +39,7 @@ using SilicaAdminMod;
 using System.Linq;
 using static MelonLoader.MelonLogger;
 
-[assembly: MelonInfo(typeof(BasicTeamBalance), "Basic Team Balance", "1.4.0", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(BasicTeamBalance), "Basic Team Balance", "1.4.1", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -56,8 +56,10 @@ namespace Si_BasicTeamBalance
         static MelonPreferences_Entry<int> _AllowTeamSwitchAfterTime = null!;
 
         #if !NET6_0
-        static byte ERPC_ClearRequest = HelperMethods.FindByteValueInEnum(typeof(GameModeExt), "ERPCs", "CLEAR_REQUEST");
-        static byte ERPC_RequestJoinTeam = HelperMethods.FindByteValueInEnum(typeof(GameModeExt), "ERPCs", "REQUEST_JOIN_TEAM");
+        static byte ERPC_Strategy_ClearRequest = HelperMethods.FindByteValueInEnum(typeof(MP_Strategy), "ERPCs", "CLEAR_REQUEST");
+        static byte ERPC_Strategy_RequestJoinTeam = HelperMethods.FindByteValueInEnum(typeof(MP_Strategy), "ERPCs", "REQUEST_JOIN_TEAM");
+        static byte ERPC_TowerDefense_ClearRequest = HelperMethods.FindByteValueInEnum(typeof(MP_TowerDefense), "ERPCs", "CLEAR_REQUEST");
+        static byte ERPC_TowerDefense_RequestJoinTeam = HelperMethods.FindByteValueInEnum(typeof(MP_TowerDefense), "ERPCs", "REQUEST_JOIN_TEAM");
         #endif
 
         static Player? LastPlayerChatMessage;
@@ -111,15 +113,33 @@ namespace Si_BasicTeamBalance
             #endif
         }
 
+        private static byte GetClearRequestValue(GameMode gameMode)
+        {
+            if (GameMode.CurrentGameMode is MP_TowerDefense)
+            {
+                #if NET6_0
+                return (byte)MP_TowerDefense.ERPCs.CLEAR_REQUEST;
+                #else
+                return ERPC_TowerDefense_ClearRequest;
+                #endif
+            }
+            else if (GameMode.CurrentGameMode is MP_Strategy)
+            {
+                #if NET6_0
+                return (byte)MP_Strategy.ERPCs.CLEAR_REQUEST;
+                #else
+                return ERPC_Strategy_ClearRequest;
+                #endif
+            }
+
+            return 0;
+        }
 
         public static void SendClearRequest(ulong thisPlayerSteam64, int thisPlayerChannel)
         {
-            // send RPC_ClearRequest (3)
-            #if NET6_0
-            GameByteStreamWriter clearWriteInstance = GameMode.CurrentGameMode.CreateRPCPacket((byte)GameModeExt.ERPCs.CLEAR_REQUEST);
-            #else
+            // send RPC_ClearRequest
+            byte ERPC_ClearRequest = GetClearRequestValue(GameMode.CurrentGameMode);
             GameByteStreamWriter clearWriteInstance = GameMode.CurrentGameMode.CreateRPCPacket(ERPC_ClearRequest);
-            #endif
             if (clearWriteInstance != null)
             {
                 clearWriteInstance.WriteUInt64(thisPlayerSteam64);
@@ -316,20 +336,34 @@ namespace Si_BasicTeamBalance
                 return true;
             }
 
-            // only look at RPC_RequestJoinTeam bytes
-            #if NET6_0
-            if (rpcIndex != (byte)GameModeExt.ERPCs.REQUEST_JOIN_TEAM)
-            #else
-            if (rpcIndex != ERPC_RequestJoinTeam)
-            #endif
-            {
-                return true;
-            }
-
             // if the game is over then don't run any balance checks
             if (GameMode.CurrentGameMode.GameOver)
             {
                 return true;
+            }
+
+            // only look at RPC_RequestJoinTeam bytes
+            if (GameMode.CurrentGameMode is MP_TowerDefense)
+            {
+                #if NET6_0
+                if (rpcIndex != (byte)MP_TowerDefense.ERPCs.REQUEST_JOIN_TEAM)
+                #else
+                if (rpcIndex != ERPC_TowerDefense_RequestJoinTeam)
+                #endif
+                {
+                    return true;
+                }
+            }
+            else if (GameMode.CurrentGameMode is MP_Strategy)
+            {
+                #if NET6_0
+                if (rpcIndex != (byte)MP_Strategy.ERPCs.REQUEST_JOIN_TEAM)
+                #else
+                if (rpcIndex != ERPC_Strategy_RequestJoinTeam)
+                #endif
+                {
+                    return true;
+                }
             }
 
             // after this point we will modify the read pointers so we have to return false
@@ -470,11 +504,11 @@ namespace Si_BasicTeamBalance
             }
         }
 
-#if NET6_0
+        #if NET6_0
         [HarmonyPatch(typeof(MusicJukeboxHandler), nameof(MusicJukeboxHandler.Update))]
-#else
+        #else
         [HarmonyPatch(typeof(MusicJukeboxHandler), "Update")]
-#endif
+        #endif
         private static class ApplyPatch_MusicJukeboxHandlerUpdate
         {
             private static void Postfix(MusicJukeboxHandler __instance)
