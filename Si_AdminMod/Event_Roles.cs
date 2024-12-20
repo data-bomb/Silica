@@ -23,13 +23,7 @@ using System.Linq;
 using MelonLoader;
 using UnityEngine;
 using Newtonsoft.Json.Linq;
-using MelonLoader.ICSharpCode.SharpZipLib.Core;
-using System.Runtime.CompilerServices;
 using System.Reflection;
-using System.Data;
-using System.Globalization;
-using static MelonLoader.MelonLogger;
-
 
 #if NET6_0
 using Il2Cpp;
@@ -210,7 +204,6 @@ namespace SilicaAdminMod
             GameByteStreamWriter gameByteStreamWriter = GameByteStreamWriter.GetGameByteStreamWriter(0U, "Si_AdminMod::RestoreRPC_RequestRoleReader", true);
             gameByteStreamWriter.WriteByte((byte)ENetworkPacketType.GameModeRPC);
             gameByteStreamWriter.WriteByte(0);
-            //#if NET6_0
             if (gameModeInstance is MP_Strategy)
             {
                 #if NET6_0
@@ -227,9 +220,6 @@ namespace SilicaAdminMod
                 gameByteStreamWriter.WriteByte((byte)ERPC_TowerDefense_RequestRole);
                 #endif
             }
-            //#else
-            //gameByteStreamWriter.WriteByte(ERPC_Strategy_RequestRole);
-            //#endif
             gameByteStreamWriter.WriteUInt64((ulong)requestingPlayer.PlayerID);
             gameByteStreamWriter.WriteByte((byte)requestingPlayer.PlayerChannel);
             gameByteStreamWriter.WriteByte((byte)role);
