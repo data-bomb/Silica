@@ -35,7 +35,7 @@ using SilicaAdminMod;
 using System.Linq;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(AntiGrief), "Anti-Grief", "1.3.8", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(AntiGrief), "Anti-Grief", "1.4.0", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -177,11 +177,6 @@ namespace Si_AntiGrief
                     return;
                 }
 
-                if (!_BlockShrimpControllers.Value)
-                {
-                    return;
-                }
-
                 Player player = args.Player;
                 Unit unit = args.Unit;
 
@@ -190,24 +185,60 @@ namespace Si_AntiGrief
                     return;
                 }
 
-                // if the player isn't on the alien team, we can skip this check
-                if (player.Team.Index != (int)SiConstants.ETeam.Alien)
+                if (_BlockShrimpControllers.Value)
                 {
-                    return;
+                    // if the player isn't on the alien team, we can skip this check
+                    if (player.Team.Index != (int)SiConstants.ETeam.Alien)
+                    {
+                        return;
+                    }
+
+                    // is it a shrimp?
+                    if (unit.IsResourceHolder)
+                    {
+                        MelonLogger.Msg("Found " + player.PlayerName + " trying to use an Alien shrimp.");
+                        HelperMethods.SendChatMessageToPlayer(player, HelperMethods.chatPrefix, " use of shrimp is not permitted on this server.");
+                        args.Block = true;
+                        return;
+                    }
                 }
 
-                // is it a shrimp?
-                if (unit.IsResourceHolder)
+                // check if the unit the player is in right now needs to get deleted
+                if (ShouldDeletePriorUnit(player))
                 {
-                    MelonLogger.Msg("Found " + player.PlayerName + " trying to use an Alien shrimp.");
-                    HelperMethods.SendChatMessageToPlayer(player, HelperMethods.chatPrefix, " use of shrimp is not permitted on this server.");
-                    args.Block = true;
+                    MelonLogger.Msg("Player " + player.PlayerName + " found switching from spawn unit. Taking action to prevent inf creatures.");
+                    DeletePriorUnit(player, player.ControlledUnit);
                 }
             }
             catch (Exception error)
             {
                 HelperMethods.PrintError(error, "Failed to run OnRequestEnterUnit");
             }
+        }
+
+        public static void DeletePriorUnit(Player player, Unit unit)
+        {
+            for (int i = NetworkComponent.NetworkComponents.Count - 1; i >= 0; i--)
+            {
+                NetworkComponent networkComponent = NetworkComponent.NetworkComponents[i];
+                if (networkComponent != null && networkComponent.OwnerPlayer == player && networkComponent.IsValid && networkComponent == unit.NetworkComponent)
+                {
+                    MelonLogger.Msg("Removing old unit (" + unit.name + ") from " + player.PlayerName + " before allowing transfer.");
+                    UnityEngine.Object.Destroy(networkComponent.gameObject);
+                }
+            }
+        }
+
+        public static bool ShouldDeletePriorUnit(Player player)
+        {
+            Unit? currentUnit = player.ControlledUnit;
+            Team? playerTeam = player.Team;
+            if (currentUnit == null || playerTeam == null)
+            {
+                return false;
+            }
+
+            return GameMode.CurrentGameMode.GetCanDeletePlayerControlledUnit(player, currentUnit);
         }
 
         // hook DestroyAllUnitsForPlayer pre and override game code to prevent aliens from dying
