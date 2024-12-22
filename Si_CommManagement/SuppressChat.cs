@@ -45,12 +45,11 @@ namespace Si_CommanderManagement
                     // for routine map restarts cheats is disabled through the Game.ClearAll() or OnEnable methods
                     // if that's how cheats is getting disabled then no need to replicate that message here
                     string callingMethod = new StackFrame(2, true).GetMethod().Name;
-                    MelonLogger.Msg("Found SendServerChatMessage calling method: " + callingMethod);
-                    if (CommanderManager._SuppressRoundStartCommanderChat.Value && string.Equals(callingMethod, "OnMissionStateChanged"))
+                    if (CommanderManager._SuppressRoundStartCommanderChat.Value && callingMethod.Contains("OnMissionStateChanged"))
                     {
                         return false;
                     }
-                    else if (CommanderManager._SuppressChangeCommanderChat.Value && string.Equals(callingMethod, "SetCommander"))
+                    else if (CommanderManager._SuppressChangeCommanderChat.Value && callingMethod.Contains("SetCommander"))
                     {
                         return false;
                     }
