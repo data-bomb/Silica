@@ -143,11 +143,11 @@ namespace Si_CommanderManagement
         #endif
         private static class ApplyPatch_Strategy_OnMissionStateChanged
         {
-            public static void Prefix(MP_Strategy __instance, MP_Strategy.EMissionState __0)
+            public static void Postfix(MP_Strategy __instance, MP_Strategy.EMissionState __0)
             {
                 try
                 {
-                    // run just before round starts
+                    // run just after round starts
                     if (__0 == MP_Strategy.EMissionState.STARTED)
                     {
                         HoldCommanderLottery();
@@ -167,11 +167,11 @@ namespace Si_CommanderManagement
         #endif
         private static class ApplyPatch_TowerDefense_OnMissionStateChanged
         {
-            public static void Prefix(MP_TowerDefense __instance, MP_TowerDefense.EMissionState __0)
+            public static void Postfix(MP_TowerDefense __instance, MP_TowerDefense.EMissionState __0)
             {
                 try
                 {
-                    // run just before round starts
+                    // run just after round starts
                     if (__0 == MP_TowerDefense.EMissionState.STARTED)
                     {
                         HoldCommanderLottery();
