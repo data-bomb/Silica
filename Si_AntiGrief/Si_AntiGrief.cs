@@ -35,7 +35,7 @@ using SilicaAdminMod;
 using System.Linq;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(AntiGrief), "Anti-Grief", "1.4.0", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(AntiGrief), "Anti-Grief", "1.4.1", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -49,6 +49,8 @@ namespace Si_AntiGrief
         static MelonPreferences_Entry<bool> _StructureAntiGrief_IgnoreNodes = null!;
         static MelonPreferences_Entry<bool> _BlockShrimpControllers = null!;
 
+        static uint[] playerTransferCount = new uint[] {};
+
         private const string ModCategory = "Silica";
 
         public override void OnInitializeMelon()
@@ -58,6 +60,9 @@ namespace Si_AntiGrief
             _NegativeKills_Penalty_Ban ??= _modCategory.CreateEntry<bool>("Grief_NegativeKills_Penalty_Ban", true);
             _StructureAntiGrief_IgnoreNodes ??= _modCategory.CreateEntry<bool>("Grief_IgnoreFriendlyNodesDestroyed", true);
             _BlockShrimpControllers ??= _modCategory.CreateEntry<bool>("Grief_BlockShrimpTakeOver", false);
+
+            playerTransferCount = new uint[NetworkGameServer.GetPlayersMax()+1];
+            Array.Fill(playerTransferCount, 0u);
         }
 
         public override void OnLateInitializeMelon()
@@ -168,6 +173,27 @@ namespace Si_AntiGrief
             }
         }
 
+        [HarmonyPatch(typeof(GameMode), nameof(GameMode.SpawnUnitForPlayer), new Type[] { typeof(Player), typeof(GameObject), typeof(Vector3), typeof(Quaternion) })]
+        private static class CommanderManager_Patch_GameMode_SpawnUnitForPlayer
+        {
+            public static void Postfix(GameMode __instance, Unit __result, Player __0, UnityEngine.GameObject __1, UnityEngine.Vector3 __2, UnityEngine.Quaternion __3)
+            {
+                try
+                {
+                    if (__0 == null)
+                    {
+                        return;
+                    }
+
+                    playerTransferCount[__0.GetIndex()] = 0;
+                }
+                catch (Exception error)
+                {
+                    HelperMethods.PrintError(error, "Failed to run GameMode::SpawnUnitForPlayer");
+                }
+            }
+        }
+
         public void OnRequestEnterUnit(object? sender, OnRequestEnterUnitArgs args)
         {
             try
@@ -209,6 +235,8 @@ namespace Si_AntiGrief
                     MelonLogger.Msg("Player " + player.PlayerName + " found switching from spawn unit. Taking action to prevent inf creatures.");
                     DeletePriorUnit(player, player.ControlledUnit);
                 }
+
+                playerTransferCount[player.GetIndex()]++;
             }
             catch (Exception error)
             {
@@ -238,7 +266,18 @@ namespace Si_AntiGrief
                 return false;
             }
 
-            return GameMode.CurrentGameMode.GetCanDeletePlayerControlledUnit(player, currentUnit);
+            if (GameMode.CurrentGameMode.GetCanDeletePlayerControlledUnit(player, currentUnit))
+            {
+                // we don't want the user to be able to delete an endless supply of starting units
+                if (playerTransferCount[player.GetIndex()] >= 1)
+                {
+                    return false;
+                }
+
+                return true;
+            }
+
+            return false;
         }
 
         // hook DestroyAllUnitsForPlayer pre and override game code to prevent aliens from dying
