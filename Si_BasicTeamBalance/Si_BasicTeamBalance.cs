@@ -39,7 +39,7 @@ using SilicaAdminMod;
 using System.Linq;
 using static MelonLoader.MelonLogger;
 
-[assembly: MelonInfo(typeof(BasicTeamBalance), "Basic Team Balance", "1.4.1", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(BasicTeamBalance), "Basic Team Balance", "1.4.2", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -422,9 +422,26 @@ namespace Si_BasicTeamBalance
                 return false;
             }
 
-            // if the player hasn't joined a team yet, force them to the team that needs it the most
+            // if the player hasn't joined a team yet
             if (joiningPlayer.Team == null)
             {
+                // check if the requested team doesn't have a commander yet, after a game start
+                if (gameModeInstance.GetCommanderForTeam(targetTeam) == null && GameMode.CurrentGameMode.GameOngoing)
+                {
+                    // avoid chat spam
+                    if (LastPlayerChatMessage != joiningPlayer)
+                    {
+                        HelperMethods.ReplyToCommand_Player(joiningPlayer, "'s switch was denied due to team imbalance");
+                        LastPlayerChatMessage = joiningPlayer;
+                    }
+
+                    MelonLogger.Msg(joiningPlayer.PlayerName + "'s team switch was denied due to team imbalance");
+
+                    SendClearRequest(playerSteam64, playerChannel);
+                    return false;
+                }
+
+                // force them to the team that needs it the most
                 GameModeExt.ETeamsVersus versusMode = gameModeInstance.TeamsVersus;
                 Team? ForcedTeam = FindLowestPopulationTeam(gameModeInstance);
                 if (ForcedTeam != null)
