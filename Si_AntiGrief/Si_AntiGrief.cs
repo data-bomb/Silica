@@ -35,7 +35,7 @@ using SilicaAdminMod;
 using System.Linq;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(AntiGrief), "Anti-Grief", "1.4.2", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(AntiGrief), "Anti-Grief", "1.4.3", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -187,9 +187,9 @@ namespace Si_AntiGrief
 
                     // GetIndex() will return -1 if this is not a valid player on the list
                     int playerIndex = __0.GetIndex();
-                    if (IsPlayerIndexValid(playerIndex))
+                    if (!IsPlayerIndexValid(playerIndex))
                     {
-                        MelonLogger.Error("player index found outside of bounds: " + playerIndex);
+                        MelonLogger.Error("Player Index found outside of bounds (SpawnUnitForPlayer): " + playerIndex);
                         return;
                     }
 
@@ -246,9 +246,9 @@ namespace Si_AntiGrief
 
                 // GetIndex() will return -1 if this is not a valid player on the list
                 int playerIndex = player.GetIndex();
-                if (IsPlayerIndexValid(playerIndex))
+                if (!IsPlayerIndexValid(playerIndex))
                 {
-                    MelonLogger.Error("Player index found outside of bounds: " + playerIndex);
+                    MelonLogger.Error("Player Index found outside of bounds (OnRequestEnterUnit): " + playerIndex);
                     return;
                 }
 
@@ -287,9 +287,9 @@ namespace Si_AntiGrief
             {
                 // GetIndex() will return -1 if this is not a valid player on the list
                 int playerIndex = player.GetIndex();
-                if (IsPlayerIndexValid(playerIndex))
+                if (!IsPlayerIndexValid(playerIndex))
                 {
-                    MelonLogger.Error("Player Index found outside of bounds: " + playerIndex);
+                    MelonLogger.Error("Player Index found outside of bounds (ShouldDeletePriorUnit): " + playerIndex);
                     return false;
                 }
 
