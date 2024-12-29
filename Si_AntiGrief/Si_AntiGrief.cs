@@ -35,7 +35,7 @@ using SilicaAdminMod;
 using System.Linq;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(AntiGrief), "Anti-Grief", "1.4.1", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(AntiGrief), "Anti-Grief", "1.4.2", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -174,7 +174,7 @@ namespace Si_AntiGrief
         }
 
         [HarmonyPatch(typeof(GameMode), nameof(GameMode.SpawnUnitForPlayer), new Type[] { typeof(Player), typeof(GameObject), typeof(Vector3), typeof(Quaternion) })]
-        private static class CommanderManager_Patch_GameMode_SpawnUnitForPlayer
+        private static class AntiGrief_Patch_GameMode_SpawnUnitForPlayer
         {
             public static void Postfix(GameMode __instance, Unit __result, Player __0, UnityEngine.GameObject __1, UnityEngine.Vector3 __2, UnityEngine.Quaternion __3)
             {
@@ -182,6 +182,14 @@ namespace Si_AntiGrief
                 {
                     if (__0 == null)
                     {
+                        return;
+                    }
+
+                    // GetIndex() will return -1 if this is not a valid player on the list
+                    int playerIndex = __0.GetIndex();
+                    if (IsPlayerIndexValid(playerIndex))
+                    {
+                        MelonLogger.Error("player index found outside of bounds: " + playerIndex);
                         return;
                     }
 
@@ -236,7 +244,15 @@ namespace Si_AntiGrief
                     DeletePriorUnit(player, player.ControlledUnit);
                 }
 
-                playerTransferCount[player.GetIndex()]++;
+                // GetIndex() will return -1 if this is not a valid player on the list
+                int playerIndex = player.GetIndex();
+                if (IsPlayerIndexValid(playerIndex))
+                {
+                    MelonLogger.Error("Player index found outside of bounds: " + playerIndex);
+                    return;
+                }
+
+                playerTransferCount[playerIndex]++;
             }
             catch (Exception error)
             {
@@ -266,10 +282,18 @@ namespace Si_AntiGrief
                 return false;
             }
 
+            // we don't want the user to be able to delete an endless supply of starting units
             if (GameMode.CurrentGameMode.GetCanDeletePlayerControlledUnit(player, currentUnit))
             {
-                // we don't want the user to be able to delete an endless supply of starting units
-                if (playerTransferCount[player.GetIndex()] >= 1)
+                // GetIndex() will return -1 if this is not a valid player on the list
+                int playerIndex = player.GetIndex();
+                if (IsPlayerIndexValid(playerIndex))
+                {
+                    MelonLogger.Error("Player Index found outside of bounds: " + playerIndex);
+                    return false;
+                }
+
+                if (playerTransferCount[playerIndex] >= 1)
                 {
                     return false;
                 }
@@ -380,6 +404,16 @@ namespace Si_AntiGrief
             }
 
             if (unitConstructionData.ResourceCost >= 500)
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        private static bool IsPlayerIndexValid(int playerIndex)
+        {
+            if (playerIndex >= 0 && playerIndex <= NetworkGameServer.GetPlayersMax())
             {
                 return true;
             }
