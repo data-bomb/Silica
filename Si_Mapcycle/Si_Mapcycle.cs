@@ -1,6 +1,8 @@
 ﻿/*
 Silica Map Cycle
-Copyright (C) 2023-2024 by databomb
+Copyright (C) 2023-2025 by databomb
+
+01/11/2025: DrMuck: Added Option to specify GameModes for maps in mapcycle.txt and rtv
 
 * Description *
 Provides map management and cycles to a server.
@@ -38,13 +40,12 @@ using System.Collections.Generic;
 using SilicaAdminMod;
 using System.Linq;
 using UnityEngine;
-using System.ComponentModel.Design;
-using Harmony;
 using static SilicaAdminMod.SiConstants;
 using System.Numerics;
 
 
-[assembly: MelonInfo(typeof(MapCycleMod), "Mapcycle", "1.7.0", "databomb", "https://github.com/data-bomb/Silica")]
+
+[assembly: MelonInfo(typeof(MapCycleMod), "Mapcycle", "1.8.0", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -57,11 +58,12 @@ namespace Si_Mapcycle
         static int iMapLoadCount;
         static bool firedRoundEndOnce;
         static int roundsOnSameMap;
-        static List<Player> rockers = new List<Player>()!;
+        static List<Player> rockers = new List<Player>();
         static List<VotingOption> mapNominations = new List<VotingOption>();
         static List<VotingOption> defaultRtvStrategyList = new List<VotingOption>();
         static List<string> gameModes = new List<string>();
         static string rockthevoteWinningMap = "";
+        static readonly string mapCycleFile = Path.Combine(MelonEnvironment.UserDataDirectory, "mapcycle.txt");
         // Global or static variable to save the map index before RTV
         static int savedMapIndex = -1;  // Initialize to -1 to indicate it's unset initially
 
@@ -69,6 +71,7 @@ namespace Si_Mapcycle
         static MelonPreferences_Entry<int> Pref_Mapcycle_RoundsBeforeChange = null!;
         static MelonPreferences_Entry<int> Pref_Mapcycle_EndgameDelay = null!;
         static MelonPreferences_Entry<float> Pref_Mapcycle_RockTheVote_Percent = null!;
+        static MelonPreferences_Entry<int> Pref_Mapcycle_RockTheVote_MaximumMaps = null!;
 
         static float Timer_EndRoundDelay = HelperMethods.Timer_Inactive;
         static float Timer_InitialPostVoteDelay = HelperMethods.Timer_Inactive;
@@ -76,62 +79,64 @@ namespace Si_Mapcycle
 
         static List<VotingOption> mapCycleEntries = new List<VotingOption>();
 
-        static List<string> strategyMaps = new List<string>
-            {
-                "CrimsonPeak"
-            };
+
 
         public override void OnLateInitializeMelon()
         {
-            string mapCycleFile = MelonEnvironment.UserDataDirectory + "\\mapcycle.txt";
-
-            if (!File.Exists(mapCycleFile))
+            try
             {
-                CreateDefaultMapcycle(mapCycleFile);
-            }
-
-            ParseMapcycle(mapCycleFile);
-
-            defaultRtvStrategyList = CreateVotingOptions();
-
-            foreach (var votingOption in mapCycleEntries)
-            {
-                if (!IsMapNameValid(votingOption.MapName))
+                if (!File.Exists(mapCycleFile))
                 {
-                    MelonLogger.Error("Invalid map found in mapcycle.txt: " + votingOption.MapName);
+                    CreateDefaultMapcycle(mapCycleFile);
                 }
+
+                ParseMapcycle(mapCycleFile);
+
+                defaultRtvStrategyList = CreateVotingOptions();
+
+                foreach (var votingOption in mapCycleEntries)
+                {
+                    if (!IsMapNameValid(votingOption.MapName))
+                    {
+                        MelonLogger.Error("Invalid map found in mapcycle.txt: " + votingOption.MapName);
+                    }
+                }
+
+                HelperMethods.CommandCallback mapCallback = Command_ChangeMap;
+                HelperMethods.RegisterAdminCommand("map", mapCallback, Power.Map);
+
+                HelperMethods.CommandCallback rockthevoteCallback = Command_RockTheVote;
+                HelperMethods.RegisterPlayerPhrase("rtv", rockthevoteCallback, true);
+                HelperMethods.RegisterPlayerCommand("rtv", rockthevoteCallback, true);
+                HelperMethods.RegisterPlayerPhrase("rockthevote", rockthevoteCallback, true);
+                HelperMethods.RegisterPlayerCommand("rockthevote", rockthevoteCallback, true);
+
+                HelperMethods.CommandCallback nominateCallback = Command_Nominate;
+                HelperMethods.RegisterPlayerCommand("nominate", nominateCallback, true);
+
+                HelperMethods.CommandCallback currentmapCallback = Command_CurrentMap;
+                HelperMethods.RegisterPlayerPhrase("currentmap", currentmapCallback, true);
+
+                HelperMethods.CommandCallback nextmapCallback = Command_NextMap;
+                HelperMethods.RegisterPlayerPhrase("nextmap", nextmapCallback, true);
             }
-
-            HelperMethods.CommandCallback mapCallback = Command_ChangeMap;
-            HelperMethods.RegisterAdminCommand("map", mapCallback, Power.Map);
-
-            HelperMethods.CommandCallback rockthevoteCallback = Command_RockTheVote;
-            HelperMethods.RegisterPlayerPhrase("rtv", rockthevoteCallback, true);
-            HelperMethods.RegisterPlayerCommand("rtv", rockthevoteCallback, true);
-            HelperMethods.RegisterPlayerPhrase("rockthevote", rockthevoteCallback, true);
-            HelperMethods.RegisterPlayerCommand("rockthevote", rockthevoteCallback, true);
-
-            HelperMethods.CommandCallback nominateCallback = Command_Nominate;
-            HelperMethods.RegisterPlayerCommand("nominate", nominateCallback, true);
-
-            HelperMethods.CommandCallback currentmapCallback = Command_CurrentMap;
-            HelperMethods.RegisterPlayerPhrase("currentmap", currentmapCallback, true);
-
-            HelperMethods.CommandCallback nextmapCallback = Command_NextMap;
-            HelperMethods.RegisterPlayerPhrase("nextmap", nextmapCallback, true);
-
+            catch (Exception ex)
+            {
+                MelonLogger.Error(ex.ToString());
+            }
         }
 
         public static List<string> InitializeGameModeList(bool enabledModesOnly = false)
         {
+            var gameModes = new List<string>();
+
             if (GameDatabase.Database == null || GameDatabase.Database.AllGameModes == null)
             {
-                MelonLogger.Msg("InitializeGameModeList: GameDatabase.Database or .AllGameModes is null");
-                return null;
+                MelonLogger.Error("InitializeGameModeList: GameDatabase.Database or .AllGameModes is null");
+                return gameModes;
             }
 
-            gameModes = new List<string>();
-            foreach (var gameModeInfo in GameDatabase.Database?.AllGameModes)
+            foreach (var gameModeInfo in GameDatabase.Database.AllGameModes)
             {
                 if (enabledModesOnly && !gameModeInfo.Enabled)
                 {
@@ -153,18 +158,17 @@ namespace Si_Mapcycle
             // Replace spaces with underscores to standardize the input for comparison
             string standardizedInput = gameMode.Replace(" ", "_");
 
-
-
             // Find a matching game mode ignoring case
             var correctGameMode = gameModeList.FirstOrDefault(gm => string.Equals(gm, standardizedInput, StringComparison.OrdinalIgnoreCase));
             if (correctGameMode != null)
             {
                 return correctGameMode; // Return the correctly cased version
             }
-
-            MelonLogger.Warning($"No matching correct game mode found for: {gameMode}");
-
-            return gameMode; // Return the original if no match was found
+            else
+            {
+                MelonLogger.Warning($"Gamemode: {gameMode} not found. Setting gamemode to Default");
+                return "";
+            }
         }
 
         public override void OnInitializeMelon()
@@ -175,8 +179,7 @@ namespace Si_Mapcycle
                 Pref_Mapcycle_RoundsBeforeChange ??= _modCategory.CreateEntry<int>("Mapcycle_RoundsBeforeMapChange", 2);
                 Pref_Mapcycle_EndgameDelay ??= _modCategory.CreateEntry<int>("Mapcycle_DelayBeforeEndgameMapChange_Seconds", 9);
                 Pref_Mapcycle_RockTheVote_Percent ??= _modCategory.CreateEntry<float>("Mapcycle_RockTheVote_PercentNeeded", 0.31f);
-
-
+                Pref_Mapcycle_RockTheVote_MaximumMaps ??= _modCategory.CreateEntry<int>("Mapcycle_RockTheVote_MaximumMaps", 5);
             }
             catch (Exception exception)
             {
@@ -239,48 +242,63 @@ namespace Si_Mapcycle
         }
 
 
-
         public static List<VotingOption> CreateVotingOptions()
         {
             List<VotingOption> currentVotingOptions = new List<VotingOption>();
+            System.Random rnd = new System.Random();
 
-            var distinctMapCycle =
-              mapCycleEntries
-              .GroupBy(s => s.MapName, StringComparer.OrdinalIgnoreCase)
-              .Select(g => g.First())
-              .ToList();
-
-            foreach (var entry in distinctMapCycle)
-            {
-                string gameMode;
-                if (strategyMaps.Contains(entry.MapName, StringComparer.OrdinalIgnoreCase))
-                {
-                    gameMode = "MP_Strategy";
-                }
-                else
-                {
-                    var gameModeInfo = GetGameModeInfo(entry.MapName);  // Assume this method returns the highest priority game mode
-                    gameMode = gameModeInfo?.ObjectName ?? "MP_Strategy";  // Ensure fallback if null
-                }
-
-                currentVotingOptions.Add(new VotingOption(entry.MapName, gameMode));
-            }
-
+            // Step 1: Add nominated maps with priority
             foreach (VotingOption nominatedMap in mapNominations)
             {
-                // Create a new instance for each nomination
-                var existingOption = currentVotingOptions.FirstOrDefault(option =>
+                if (!currentVotingOptions.Any(option =>
                     option.MapName.Equals(nominatedMap.MapName, StringComparison.OrdinalIgnoreCase) &&
-                    option.GameMode.Equals(nominatedMap.GameMode, StringComparison.OrdinalIgnoreCase));
-
-                if (existingOption == null)  // Ensure unique
+                    option.GameMode.Equals(nominatedMap.GameMode, StringComparison.OrdinalIgnoreCase)))
                 {
                     currentVotingOptions.Add(new VotingOption(nominatedMap.MapName, nominatedMap.GameMode));
                 }
             }
 
+            // Step 2: Prepare the list of default maps ensuring uniqueness
+            var distinctMapCycle = mapCycleEntries
+                .GroupBy(s => new { s.MapName, s.GameMode }, (key, g) => g.First())
+                .ToList();
+
+            // Randomize the default map list
+            var randomizedMapCycle = distinctMapCycle.OrderBy(x => rnd.Next()).ToList();
+
+            // Step 3: Add default maps if there's space left, maintaining total count within maxMaps
+            foreach (var entry in randomizedMapCycle)
+            {
+                if (currentVotingOptions.Count >= Pref_Mapcycle_RockTheVote_MaximumMaps.Value - 1)
+                {
+                    break;
+                }
+
+                if (!currentVotingOptions.Any(option => option.MapName.Equals(entry.MapName, StringComparison.OrdinalIgnoreCase) &&
+                                                        option.GameMode.Equals(entry.GameMode, StringComparison.OrdinalIgnoreCase)))
+                {
+                    currentVotingOptions.Add(new VotingOption(entry.MapName, entry.GameMode));
+                }
+            }
+
+            // Step 4: Ensure the list does not exceed maxMaps, remove excess default maps if necessary
+            if (currentVotingOptions.Count > (Pref_Mapcycle_RockTheVote_MaximumMaps.Value - 1))
+            {
+                var excess = currentVotingOptions.Count - (Pref_Mapcycle_RockTheVote_MaximumMaps.Value - 1);
+                var defaultMapsToRemove = currentVotingOptions.Where(option => !mapNominations.Any(nom => nom.MapName.Equals(option.MapName, StringComparison.OrdinalIgnoreCase) &&
+                                                                                                         nom.GameMode.Equals(option.GameMode, StringComparison.OrdinalIgnoreCase)))
+                                                              .Take(excess)
+                                                              .ToList();
+
+                foreach (var remove in defaultMapsToRemove)
+                {
+                    currentVotingOptions.Remove(remove);
+                }
+            }
+
             return currentVotingOptions;
         }
+
 
         public static ChatVoteBallot? CreateRTVBallot()
         {
@@ -307,7 +325,7 @@ namespace Si_Mapcycle
                 VotingOption option = currentVotingOptions[i];
                 string description = option.GameMode.Equals("MP_Strategy", StringComparison.OrdinalIgnoreCase)
                                      ? option.MapName
-                                     : $"{option.MapName} - {option.GameMode}";
+                                     : $"{option.MapName} {option.GameMode}";
 
                 rtvOptions[i + 1] = new OptionPair
                 {
@@ -321,7 +339,7 @@ namespace Si_Mapcycle
             MelonLogger.Msg("1 - Keep Current Map");  // Ensure this is always logged
             foreach (var option in rtvOptions.Skip(1))  // Skip the first option as it's already logged
             {
-                MelonLogger.Msg($"{option.Command} - {option.Description}");
+                MelonLogger.Msg($"{option.Command} {option.Description}");
             }
 
             ChatVoteBallot rtvBallot = new ChatVoteBallot
@@ -370,7 +388,6 @@ namespace Si_Mapcycle
 
             currentVotingOptions.Clear();
             mapNominations.Clear();
-
 
             ResetRTVStatus();
             MelonLogger.Msg("RTV Ballot has been reset.");
@@ -433,6 +450,7 @@ namespace Si_Mapcycle
 
             if (string.IsNullOrEmpty(gameMode))
             {
+                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, $"Gamemode {gameMode} cannot be found or empty. Using highest priority gamemode");
                 gameMode = GetGameModeInfo(mapName)?.ObjectName;
             }
 
@@ -518,16 +536,18 @@ namespace Si_Mapcycle
             HelperMethods.ReplyToCommand_Player(callerPlayer, ": The next map is " + GetDisplayName(GetNextMap()) + ". " + roundsLeft.ToString() + " more round" + (roundsLeft == 1 ? "" : "s") + " before map changes.");
         }
 
-        public static string? GetNextMap()
+        public static string GetNextMap()
         {
-            // check for empty mapcycle
+            return mapCycleEntries[(iMapLoadCount + 1) % (mapCycleEntries.Count)].MapName;
+        }
+
+        public static bool IsMapCycleValid()
+        {
             if (mapCycleEntries == null || !mapCycleEntries.Any())
             {
-                MelonLogger.Warning("Mapcycle Mod has empty mapcycle file.");
-                return string.Empty;
+                return false;
             }
-
-            return mapCycleEntries[(iMapLoadCount + 1) % (mapCycleEntries.Count)]?.MapName;
+            return true;
         }
 
         public static void Command_ChangeMap(Player? callerPlayer, String args)
@@ -548,7 +568,7 @@ namespace Si_Mapcycle
             }
 
             // validate argument
-            if (mapCycleEntries == null || !mapCycleEntries.Any())
+            if (!IsMapCycleValid())
             {
                 return;
             }
@@ -604,9 +624,9 @@ namespace Si_Mapcycle
             return null;
         }
 
-        public static void QueueChangeMap(string? mapName, bool fromRTV = false, string gamemodertv = "MP_Strategy")
+        public static void QueueChangeMap(string mapName, bool fromRTV = false, string gamemodertv = "MP_Strategy")
         {
-            if (mapCycleEntries == null || !mapCycleEntries.Any() || mapName == null)
+            if (!IsMapCycleValid())
                 return;
 
             GameModeInfo? gameModeInfo = null;
@@ -640,32 +660,29 @@ namespace Si_Mapcycle
                 string selectedGameMode = mapCycleEntries[iMapLoadCount].GameMode;
                 gameModeInfo = GameModeInfo.GetByName(selectedGameMode);
 
-
-
                 if (gameModeInfo == null)
                 {
 
                     gameModeInfo = GetGameModeInfo(mapName);
                 }
 
-
                 MelonLogger.Msg($"Queueing next map: {mapCycleEntries[iMapLoadCount % mapCycleEntries.Count]?.MapName}");
-
             }
 
+            LevelInfo? levelInfo = GetLevelInfo(mapName);
 
             // Set the game server's queue depending on the runtime environment
 #if NET6_0
             NetworkGameServer.Instance.m_QueueGameMode = gameModeInfo;
-            NetworkGameServer.Instance.m_QueueMap = mapName;
-            MelonLogger.Msg($"[NET6] Queued map: {mapName} with game mode: {gameModeInfo?.ObjectName}");
+            NetworkGameServer.Instance.m_QueueMap = levelInfo?.FileName;
+            MelonLogger.Msg($"[NET6] Queued map: {levelInfo?.FileName} with game mode: {gameModeInfo?.ObjectName}");
 #else
             FieldInfo queueMapField = typeof(NetworkGameServer).GetField("m_QueueMap", BindingFlags.NonPublic | BindingFlags.Instance);
             FieldInfo queueGameModeInfoField = typeof(NetworkGameServer).GetField("m_QueueGameMode", BindingFlags.NonPublic | BindingFlags.Instance);
 
             queueGameModeInfoField.SetValue(NetworkGameServer.Instance, gameModeInfo);
-            queueMapField.SetValue(NetworkGameServer.Instance, mapName);
-            MelonLogger.Msg($"[NET Framework] Queued map: {mapName} with game mode: {gameModeInfo?.ObjectName}");
+            queueMapField.SetValue(NetworkGameServer.Instance, levelInfo?.FileName);
+            MelonLogger.Msg($"[NET Framework] Queued map: {levelInfo?.FileName} with game mode: {gameModeInfo?.ObjectName}");
 #endif
         }
 
@@ -683,13 +700,15 @@ namespace Si_Mapcycle
                 return;
             }
 
-            HelperMethods.SendChatMessageToAll("Current Mapcycle:");
+
+            var resultText = "Current Mapcycle: ";
+
             foreach (var entry in mapCycleEntries)
             {
-
-                HelperMethods.SendChatMessageToAll($"{entry.MapName} {entry.GameMode}");
-
+                resultText += $"{entry.MapName} {entry.GameMode}, ";
             }
+
+            HelperMethods.SendChatMessageToAll($"{resultText}");
 
             // re-index the mapycle so the same maps don't appear on the next vote
             IndexToMapInCycle(sceneName);
@@ -713,11 +732,6 @@ namespace Si_Mapcycle
                         if (Timer_EndRoundDelay > Pref_Mapcycle_EndgameDelay.Value)
                         {
                             Timer_EndRoundDelay = HelperMethods.Timer_Inactive;
-
-                            if (mapCycleEntries == null || !mapCycleEntries.Any())
-                            {
-                                return;
-                            }
 
                             string? nextMap = GetNextMap();
 
@@ -784,7 +798,7 @@ namespace Si_Mapcycle
 
                     firedRoundEndOnce = true;
 
-                    if (mapCycleEntries == null || !mapCycleEntries.Any())
+                    if (!IsMapCycleValid())
                     {
                         MelonLogger.Warning("sMapCycle is null. Skipping end-round routines.");
                         return;
@@ -847,7 +861,7 @@ namespace Si_Mapcycle
         {
             // the highest priority for any given level is the preferred mode
             // currently this should resolve to MP_Strategy or MP_Siege for most maps
-            LevelInfo levelInfo = GetLevelInfo(mapName);
+            LevelInfo? levelInfo = GetLevelInfo(mapName);
 
             if (levelInfo == null)
             {
@@ -869,6 +883,8 @@ namespace Si_Mapcycle
                     continue;
                 }
 
+
+
                 if (highestPriority < gameModeInfo.Priority)
                 {
                     highestPriority = gameModeInfo.Priority;
@@ -879,16 +895,26 @@ namespace Si_Mapcycle
             return priorityGameMode;
         }
 
-        private static bool IsMapNameValid(string mapName) =>
-        GetLevelInfo(mapName) != null;
+        private static bool IsMapNameValid(string mapName)
+        {
+            var levelInfo = GetLevelInfo(mapName);
+
+            if (levelInfo == null)
+            {
+                MelonLogger.Warning("IsMapNameValid: levelinfo is null.");
+                return false;
+            }
+
+            return true;
+        }
 
 
-        private static LevelInfo GetLevelInfo(string name, bool displayNameSearch = false)
+        private static LevelInfo? GetLevelInfo(string mapName)
         {
             if (GameDatabase.Database == null || GameDatabase.Database.AllLevels == null)
             {
                 MelonLogger.Warning("Found game database null.");
-                return new LevelInfo();
+                return null;
             }
 
             foreach (LevelInfo? levelInfo in GameDatabase.Database.AllLevels)
@@ -908,28 +934,20 @@ namespace Si_Mapcycle
                     continue;
                 }
 
-                if (!displayNameSearch)
+                if (String.Equals(mapName, levelInfo.FileName, StringComparison.OrdinalIgnoreCase))
                 {
-                    if (String.Equals(name, levelInfo.FileName, StringComparison.OrdinalIgnoreCase))
-                    {
-                        return levelInfo;
-                    }
+
+                    return levelInfo;
                 }
-                else
-                {
-                    if (String.Equals(name, levelInfo.DisplayName, StringComparison.OrdinalIgnoreCase))
-                    {
-                        return levelInfo;
-                    }
-                }
+
             }
 
-            return new LevelInfo();
+            return null;
         }
 
         private static void IndexToMapInCycle(string mapName)
         {
-            if (mapCycleEntries == null || !mapCycleEntries.Any() || String.IsNullOrWhiteSpace(mapName))
+            if (!IsMapCycleValid() || String.IsNullOrWhiteSpace(mapName))
             {
                 MelonLogger.Warning("Mapcycle is empty or map name is not provided.");
                 return;
@@ -948,20 +966,6 @@ namespace Si_Mapcycle
                     }
                 }
             }
-
-            if (matchIndex == -1)
-            {
-                MelonLogger.Warning($"Could not find map '{mapName}' in mapcycle array. Checking for case-sensitive mismatch...");
-                // Check for case-sensitive mismatches and log them
-                foreach (var entry in mapCycleEntries)
-                {
-                    if (entry.MapName.Equals(mapName, StringComparison.Ordinal))
-                    {
-                        MelonLogger.Msg($"Case-sensitive mismatch found. Map in array: '{entry}', Searched map name: '{mapName}'");
-                    }
-                }
-                return;
-            }
         }
 
         private static string? GetDisplayName(string? mapName) =>
@@ -970,10 +974,10 @@ namespace Si_Mapcycle
         private static void CreateDefaultMapcycle(string mapCycleFile)
         {
             // Create simple mapcycle.txt file
-            using (var mapcycleFileStream = File.Create(mapCycleFile))
+            using (FileStream mapcycleFileStream = File.Create(mapCycleFile))
             {
                 mapcycleFileStream.Close();
-                File.WriteAllText(mapCycleFile, "RiftBasin\nNorthPolarCap\nTheMaw\nGreatErg\nBadlands\nNarakaCity\n");
+                File.WriteAllText(mapCycleFile, "RiftBasin MP_Strategy\nNorthPolarCap MP_Strategy\nCrimsonPeak MP_Strategy\nTheMaw MP_Strategy\nGreatErg MP_Strategy\nBadlands MP_Strategy\nNarakaCity MP_Strategy\n");
             }
         }
 
@@ -1008,7 +1012,6 @@ namespace Si_Mapcycle
                 MelonLogger.Error(ex.ToString());
             }
         }
-
     }
 }
 
