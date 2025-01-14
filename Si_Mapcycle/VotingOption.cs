@@ -1,6 +1,8 @@
 ﻿/*
 Silica Map Cycle
-Copyright (C) 2023-2024 by DrMuck
+Copyright (C) 2023-2025 by databomb
+
+01/11/2025: DrMuck: Added Option to specify GameModes for maps in mapcycle.txt and rtv
 
 * Description *
 Provides map management and cycles to a server.
