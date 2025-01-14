@@ -451,7 +451,6 @@ namespace Si_Mapcycle
             var mapName = argumentList.Item1;
             var gameMode = argumentList.Item2;
 
-
             if (!IsMapNameValid(mapName))
             {
                 HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, "Invalid map name.");
@@ -462,8 +461,13 @@ namespace Si_Mapcycle
             {
                 HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, $"Gamemode {gameMode} cannot be found or empty. Using highest priority gamemode");
                 gameMode = GetGameModeInfo(mapName)?.ObjectName;
-            }
 
+                if (gameMode == null)
+                {
+                    HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, $"Gamemode {gameMode} cannot be found or empty for map {mapName}");
+                    return;
+                }
+            }
 
             if (mapCycleEntries.Count == 0)
             {
@@ -507,9 +511,6 @@ namespace Si_Mapcycle
                 HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, "Can't nominate a map yet. Game not started.");
                 return;
             }
-
-            if (String.IsNullOrWhiteSpace(gameMode))
-                return;
 
             // Add the nomination
             mapNominations.Add(new VotingOption(mapName, gameMode));
@@ -691,10 +692,6 @@ namespace Si_Mapcycle
             {
                 return;
             }
-
-
-            // re-index the mapycle so the same maps don't appear on the next vote
-            IndexToMapInCycle(sceneName);
         }
 
 #if NET6_0
@@ -925,29 +922,7 @@ namespace Si_Mapcycle
             return null;
         }
 
-        private static void IndexToMapInCycle(string mapName)
-        {
-            if (!IsMapCycleValid() || String.IsNullOrWhiteSpace(mapName))
-            {
-                MelonLogger.Warning("Mapcycle is empty or map name is not provided.");
-                return;
-            }
-
-            int currentArrayIndex = iMapLoadCount % mapCycleEntries.Count;
-            int matchIndex = -1;
-            for (int i = 0; i < mapCycleEntries.Count; i++)
-            {
-                if (string.Equals(mapCycleEntries[i]?.MapName, mapName, StringComparison.OrdinalIgnoreCase))
-                {
-                    if (i >= currentArrayIndex)
-                    {
-                        matchIndex = i;
-                        break;
-                    }
-                }
-            }
-        }
-
+        
         private static string? GetDisplayName(string? mapName) =>
             mapName == null ? string.Empty : GetLevelInfo(mapName)?.DisplayName ?? mapName;
 
