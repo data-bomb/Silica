@@ -58,14 +58,11 @@ namespace Si_Mapcycle
         static int iMapLoadCount;
         static bool firedRoundEndOnce;
         static int roundsOnSameMap;
-        static List<Player> rockers = new List<Player>();
-        static List<VotingOption> mapNominations = new List<VotingOption>();
-        static List<VotingOption> defaultRtvStrategyList = new List<VotingOption>();
-        static List<string> gameModes = new List<string>();
         static string rockthevoteWinningMap = "";
         static readonly string mapCycleFile = Path.Combine(MelonEnvironment.UserDataDirectory, "mapcycle.txt");
-        // Global or static variable to save the map index before RTV
-        static int savedMapIndex = -1;  // Initialize to -1 to indicate it's unset initially
+        static float Timer_EndRoundDelay = HelperMethods.Timer_Inactive;
+        static float Timer_InitialPostVoteDelay = HelperMethods.Timer_Inactive;
+        static float Timer_FinalPostVoteDelay = HelperMethods.Timer_Inactive;
 
         static MelonPreferences_Category _modCategory = null!;
         static MelonPreferences_Entry<int> Pref_Mapcycle_RoundsBeforeChange = null!;
@@ -73,13 +70,11 @@ namespace Si_Mapcycle
         static MelonPreferences_Entry<float> Pref_Mapcycle_RockTheVote_Percent = null!;
         static MelonPreferences_Entry<int> Pref_Mapcycle_RockTheVote_MaximumMaps = null!;
 
-        static float Timer_EndRoundDelay = HelperMethods.Timer_Inactive;
-        static float Timer_InitialPostVoteDelay = HelperMethods.Timer_Inactive;
-        static float Timer_FinalPostVoteDelay = HelperMethods.Timer_Inactive;
-
+        static List<Player> rockers = new List<Player>();
+        static List<VotingOption> mapNominations = new List<VotingOption>();
+        static List<VotingOption> defaultRtvStrategyList = new List<VotingOption>();
+        static List<string> gameModes = new List<string>();
         static List<VotingOption> mapCycleEntries = new List<VotingOption>();
-
-
 
         public override void OnLateInitializeMelon()
         {
@@ -119,6 +114,10 @@ namespace Si_Mapcycle
 
                 HelperMethods.CommandCallback nextmapCallback = Command_NextMap;
                 HelperMethods.RegisterPlayerPhrase("nextmap", nextmapCallback, true);
+
+                HelperMethods.CommandCallback mapcycleCallback = Command_showmapcycle;
+                HelperMethods.RegisterPlayerPhrase("mapcycle", mapcycleCallback, true);
+
             }
             catch (Exception ex)
             {
@@ -187,6 +186,19 @@ namespace Si_Mapcycle
             }
         }
 
+        public static void Command_showmapcycle(Player? callerplayer, String args)
+        {
+            var resultText = "Current Mapcycle: \n";
+
+            foreach (var entry in mapCycleEntries)
+            {
+                resultText += (entry.GameMode.Equals("MP_Strategy", StringComparison.OrdinalIgnoreCase)
+                                    ? " - " + entry.MapName + "\n"
+                                    : $" - {entry.MapName} {entry.GameMode}\n");
+            }
+
+            HelperMethods.SendChatMessageToPlayer(callerplayer, resultText);
+        }
 
         public static void Command_RockTheVote(Player? callerPlayer, String args)
         {
@@ -240,7 +252,6 @@ namespace Si_Mapcycle
             HelperMethods.ReplyToCommand_Player(callerPlayer, "rocked the vote.");
             ChatVotes.HoldVote(rtvBallot);
         }
-
 
         public static List<VotingOption> CreateVotingOptions()
         {
@@ -298,7 +309,6 @@ namespace Si_Mapcycle
 
             return currentVotingOptions;
         }
-
 
         public static ChatVoteBallot? CreateRTVBallot()
         {
@@ -402,6 +412,7 @@ namespace Si_Mapcycle
         {
             int rocksNeeded = RocksNeededForVote();
             int moreNeeded = rocksNeeded - rockers.Count;
+
             if (moreNeeded < 1)
             {
                 return 1;
@@ -421,7 +432,7 @@ namespace Si_Mapcycle
             return rocksNeeded;
         }
 
-        public static void Command_Nominate(Player? callerPlayer, string args)
+        public static void Command_Nominate(Player? callerPlayer, String args)
         {
             if (callerPlayer == null)
             {
@@ -429,17 +440,16 @@ namespace Si_Mapcycle
                 return;
             }
 
-            var parts = args.Split(new[] { ' ' }, 3);
+            var argumentList = ArgsToMapAndGamemode(args);
 
-            if (parts == null || parts.Length < 2)
+            if (argumentList == null)
             {
                 HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, "Too few arguments.");
                 return;
             }
 
-            string mapName = parts[1].Trim();
-            string wsParts2 = parts.Length > 2 ? parts[2].Trim() : string.Empty;
-            var gameMode = parts.Length > 2 ? NormalizeGameMode(wsParts2) : string.Empty;  // Will determine game mode later if not specified
+            var mapName = argumentList.Item1;
+            var gameMode = argumentList.Item2;
 
 
             if (!IsMapNameValid(mapName))
@@ -506,7 +516,6 @@ namespace Si_Mapcycle
             HelperMethods.ReplyToCommand_Player(callerPlayer, "Nominated " + mapName + " with game mode " + gameMode + ".");
         }
 
-
         public static void Command_CurrentMap(Player? callerPlayer, String args)
         {
             if (callerPlayer == null)
@@ -550,33 +559,53 @@ namespace Si_Mapcycle
             return true;
         }
 
+        private static Tuple<string, string>? ArgsToMapAndGamemode(string args)
+        {
+            var parts = args.Split(new[] { ' ' });
+
+            if (parts == null || parts.Length < 2)
+            {
+                return null;
+            }
+
+            string mapName = parts[1].Trim();
+            string wsParts2 = parts.Length > 2 ? parts[2].Trim() : string.Empty;
+            var gameMode = parts.Length > 2 ? NormalizeGameMode(wsParts2) : string.Empty;  // Will determine game mode later if not specified
+
+            return Tuple.Create(mapName, gameMode);
+        }
+
         public static void Command_ChangeMap(Player? callerPlayer, String args)
         {
-            string commandName = args.Split(' ')[0];
+            var argumentList = ArgsToMapAndGamemode(args);
 
-            // validate argument count
-            int argumentCount = args.Split(' ').Length - 1;
-            if (argumentCount > 1)
+            if (argumentList == null)
             {
-                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": Too many arguments");
+                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, "Too few arguments.");
                 return;
             }
-            else if (argumentCount < 1)
+
+            var mapName = argumentList.Item1;
+            var gameMode = argumentList.Item2;
+
+            if (!IsMapNameValid(mapName))
             {
-                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": Too few arguments");
+                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, "Invalid map name.");
                 return;
             }
+
+            if (string.IsNullOrEmpty(gameMode))
+            {
+                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, $"Gamemode {gameMode} cannot be found or empty. Using highest priority gamemode");
+                gameMode = GetGameModeInfo(mapName)?.ObjectName;
+            }
+
+            if (gameMode == null)
+                return;
 
             // validate argument
             if (!IsMapCycleValid())
             {
-                return;
-            }
-
-            String targetMapName = args.Split(' ')[1];
-            if (!IsMapNameValid(targetMapName))
-            {
-                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": Invalid map name");
                 return;
             }
 
@@ -593,35 +622,10 @@ namespace Si_Mapcycle
                 MelonLogger.Warning("Admin changed map while initial RTV timer was in progress. Forcing timer to expire.");
             }
 
-            HelperMethods.AlertAdminAction(callerPlayer, "changing map to " + GetDisplayName(targetMapName) + "...");
-            MelonLogger.Msg("Changing map to " + targetMapName + "...");
+            HelperMethods.AlertAdminAction(callerPlayer, "changing map to " + GetDisplayName(mapName) + "...");
+            MelonLogger.Msg("Changing map to " + mapName + " with Gamemode " + gameMode + "...");
 
-            QueueChangeMap(targetMapName);
-        }
-
-        public static GameModeInfo? GetByName(string gameMode)
-        {
-            if (GameDatabase.Database.AllGameModes == null)
-            {
-                MelonLogger.Warning("No game modes available in the database.");
-                return null;
-            }
-
-            MelonLogger.Msg("Available game modes:");
-            foreach (GameModeInfo mode in GameDatabase.Database.AllGameModes)
-            {
-                MelonLogger.Msg("Game Mode: " + mode.ObjectName);
-            }
-
-            foreach (GameModeInfo mode in GameDatabase.Database.AllGameModes)
-            {
-                if (string.Equals(mode.ObjectName, gameMode, StringComparison.OrdinalIgnoreCase))
-                {
-                    return mode;
-                }
-            }
-
-            return null;
+            QueueChangeMap(mapName, true, gameMode);
         }
 
         public static void QueueChangeMap(string mapName, bool fromRTV = false, string gamemodertv = "MP_Strategy")
@@ -629,33 +633,25 @@ namespace Si_Mapcycle
             if (!IsMapCycleValid())
                 return;
 
+            LevelInfo? levelInfo = GetLevelInfo(mapName);
+            if (levelInfo == null)
+            {
+                MelonLogger.Error("Could not find LevelInfo for map name: " + mapName);
+                return;
+            }
+
             GameModeInfo? gameModeInfo = null;
 
             if (fromRTV)
             {
-
                 gameModeInfo = GameModeInfo.GetByName(gamemodertv);
-                savedMapIndex = iMapLoadCount; // Save the current index
 
                 HelperMethods.SendChatMessageToAll($"Changing to Winning map: {mapName} with Gamemode {gameModeInfo}.");
             }
             else
             {
-
-
-                if (savedMapIndex != -1)
-                {
-                    iMapLoadCount = (savedMapIndex + 1) % mapCycleEntries.Count; ; // Set next map to be the one after the saved index
-
-                    MelonLogger.Msg($"Post-RTV: Resuming map cycle from index {iMapLoadCount}, Map: {mapCycleEntries[iMapLoadCount % mapCycleEntries.Count]}");
-                    savedMapIndex = -1; // Reset saved index after changing to the correct map
-
-                }
-                else
-                {
-                    iMapLoadCount = iMapLoadCount + 1;
-                    MelonLogger.Msg($"Regular map cycle load. Checking game mode settings for map: {mapName}");
-                }
+                iMapLoadCount = iMapLoadCount + 1 % mapCycleEntries.Count;
+                MelonLogger.Msg($"Post-RTV: Resuming map cycle from index {iMapLoadCount}, Map: {mapCycleEntries[iMapLoadCount]}");
 
                 string selectedGameMode = mapCycleEntries[iMapLoadCount].GameMode;
                 gameModeInfo = GameModeInfo.GetByName(selectedGameMode);
@@ -668,8 +664,6 @@ namespace Si_Mapcycle
 
                 MelonLogger.Msg($"Queueing next map: {mapCycleEntries[iMapLoadCount % mapCycleEntries.Count]?.MapName}");
             }
-
-            LevelInfo? levelInfo = GetLevelInfo(mapName);
 
             // Set the game server's queue depending on the runtime environment
 #if NET6_0
@@ -686,8 +680,6 @@ namespace Si_Mapcycle
 #endif
         }
 
-
-
         public override void OnSceneWasLoaded(int buildIndex, string sceneName)
         {
             rockers.Clear();
@@ -700,15 +692,6 @@ namespace Si_Mapcycle
                 return;
             }
 
-
-            var resultText = "Current Mapcycle: ";
-
-            foreach (var entry in mapCycleEntries)
-            {
-                resultText += $"{entry.MapName} {entry.GameMode}, ";
-            }
-
-            HelperMethods.SendChatMessageToAll($"{resultText}");
 
             // re-index the mapycle so the same maps don't appear on the next vote
             IndexToMapInCycle(sceneName);
@@ -883,8 +866,6 @@ namespace Si_Mapcycle
                     continue;
                 }
 
-
-
                 if (highestPriority < gameModeInfo.Priority)
                 {
                     highestPriority = gameModeInfo.Priority;
@@ -907,7 +888,6 @@ namespace Si_Mapcycle
 
             return true;
         }
-
 
         private static LevelInfo? GetLevelInfo(string mapName)
         {
@@ -981,7 +961,6 @@ namespace Si_Mapcycle
             }
         }
 
-
         private static void ParseMapcycle(string mapCycleFile)
         {
             try
@@ -996,7 +975,24 @@ namespace Si_Mapcycle
                         var mapName = parts[0].Trim();
                         var gameMode = parts.Length > 1 ? NormalizeGameMode(parts[1].Trim()) : "";
 
-                        mapCycleEntries.Add(new VotingOption(mapName, gameMode));
+                        if (gameMode == string.Empty)
+                        {
+                            GameModeInfo? gameModeInfo = GetGameModeInfo(mapName);
+
+                            if (gameModeInfo != null)
+                            {
+                                gameMode = gameModeInfo.ObjectName;
+                                mapCycleEntries.Add(new VotingOption(mapName, gameMode ?? string.Empty));
+                            }
+                            else
+                            {
+                                MelonLogger.Warning($"GameMode is null for map {mapName}.");
+                            }
+                        }
+                        else
+                        {
+                            mapCycleEntries.Add(new VotingOption(mapName, gameMode ?? string.Empty));
+                        }
                     }
 
                     // Log the loaded mapcycle list
@@ -1014,4 +1010,3 @@ namespace Si_Mapcycle
         }
     }
 }
-
