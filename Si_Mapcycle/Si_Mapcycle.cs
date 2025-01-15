@@ -562,7 +562,7 @@ namespace Si_Mapcycle
 
         private static Tuple<string, string>? ArgsToMapAndGamemode(string args)
         {
-            var parts = args.Split(new[] { ' ' });
+            var parts = args.Split(new[] { ' ' }, 3);
 
             if (parts == null || parts.Length < 2)
             {
