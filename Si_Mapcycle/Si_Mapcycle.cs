@@ -459,14 +459,15 @@ namespace Si_Mapcycle
 
             if (string.IsNullOrEmpty(gameMode))
             {
-                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, $"Gamemode {gameMode} cannot be found or empty. Using highest priority gamemode");
                 gameMode = GetGameModeInfo(mapName)?.ObjectName;
-
+                
                 if (gameMode == null)
                 {
-                    HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, $"Gamemode {gameMode} cannot be found or empty for map {mapName}");
+                    MelonLogger.Warning($"No (highest priority) Gamemode found for map. Input Gamemode was null or empty");
                     return;
                 }
+
+                HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, $"Gamemode was not specified or rubbish and is set to highest priority Gamemode: {gameMode}");
             }
 
             if (mapCycleEntries.Count == 0)
