@@ -652,8 +652,8 @@ namespace Si_Mapcycle
             }
             else
             {
-                iMapLoadCount = iMapLoadCount + 1 % mapCycleEntries.Count;
-                MelonLogger.Msg($"Post-RTV: Resuming map cycle from index {iMapLoadCount}, Map: {mapCycleEntries[iMapLoadCount]}");
+                iMapLoadCount = (iMapLoadCount + 1) % mapCycleEntries.Count;
+                MelonLogger.Msg($"Post-RTV: Resuming map cycle from index {iMapLoadCount}, Map: {mapCycleEntries[iMapLoadCount].MapName}");
 
                 string selectedGameMode = mapCycleEntries[iMapLoadCount].GameMode;
                 gameModeInfo = GameModeInfo.GetByName(selectedGameMode);
