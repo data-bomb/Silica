@@ -45,7 +45,7 @@ using System.Numerics;
 
 
 
-[assembly: MelonInfo(typeof(MapCycleMod), "Mapcycle", "1.8.0", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(MapCycleMod), "Mapcycle", "1.8.1", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
