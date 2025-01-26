@@ -75,7 +75,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Beta References
-        if: ${{ needs.branch-ident.outputs.branch_identifier != "main" }}
+        if: needs.branch-ident.outputs.branch_identifier != 'main'
         uses: actions/checkout@v4
         with:
           repository: ${{ secrets.PRIV_R }}
@@ -84,7 +84,7 @@ jobs:
           path: references
           run: echo "Copying non-standard references"
       - name: Main References
-        if: ${{ needs.branch-ident.outputs.branch_identifier == "main" }}
+        if: needs.branch-ident.outputs.branch_identifier == 'main'
         uses: actions/checkout@v4
         with:
           repository: ${{ secrets.PRIV_R }}
@@ -159,7 +159,7 @@ jobs:
     - uses: actions/checkout@v4
     
     - name: Beta References
-      if: ${{ needs.branch-ident.outputs.branch_identifier != "main" }}
+      if: needs.branch-ident.outputs.branch_identifier != 'main'
       uses: actions/checkout@v4
       with:
         repository: ${{ secrets.PRIV_R }}
@@ -168,7 +168,7 @@ jobs:
         path: references
         run: echo "Copying non-standard references"
     - name: Main References
-      if: ${{ needs.branch-ident.outputs.branch_identifier == "main" }}
+      if: needs.branch-ident.outputs.branch_identifier == 'main'
       uses: actions/checkout@v4
       with:
         repository: ${{ secrets.PRIV_R }}
