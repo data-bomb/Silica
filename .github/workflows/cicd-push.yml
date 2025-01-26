@@ -24,10 +24,10 @@ jobs:
         run: echo "branch_identifier=$(echo ${GITHUB_REF#refs/heads/})" >> "$GITHUB_OUTPUT"
       - name: beta branch detected
         if: ${{ github.ref == 'refs/heads/beta' }}
-        run: echo "Using non-standard reference package for branch $GITHUB_REF"
+        run: echo "Using non-standard reference package for branch ${{ steps.branch-ident.outputs.branch_identifier }}"
       - name: non-beta branch detected
         if: ${{ github.ref != 'refs/heads/beta' }}
-        run: echo "Using standard reference package for branch $GITHUB_REF"
+        run: echo "Using standard reference package for branch ${{ steps.branch-ident.outputs.branch_identifier }}"
     outputs:
       branch_identifier: ${{ steps.branch-ident.outputs.branch_identifier }}
 
