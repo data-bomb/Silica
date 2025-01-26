@@ -19,7 +19,7 @@ jobs:
   beta-check:
     runs-on: ubuntu-latest
     steps:
-      - name: generate new branch variable for checkoutv4
+      - name: generate new branch variable for checkout@v4
         id: branch-ident
         run: echo "branch_identifier=$(echo ${GITHUB_REF#refs/heads/})" >> "$GITHUB_OUTPUT"
       - name: beta branch detected
@@ -74,23 +74,13 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Beta References
-        if: needs.branch-ident.outputs.branch_identifier != 'main'
+      - name: References
         uses: actions/checkout@v4
         with:
           repository: ${{ secrets.PRIV_R }}
           token: ${{ secrets.FGAT_PRIV_R }}
           ref: ${{ needs.branch-ident.outputs.branch_identifier }}
           path: references
-          run: echo "Copying non-standard references"
-      - name: Main References
-        if: needs.branch-ident.outputs.branch_identifier == 'main'
-        uses: actions/checkout@v4
-        with:
-          repository: ${{ secrets.PRIV_R }}
-          token: ${{ secrets.FGAT_PRIV_R }}
-          path: references
-          run: echo "Copying standard references"
       - name: Copy References
         run: |
           cp -r references/. include
@@ -158,24 +148,14 @@ jobs:
       
     - uses: actions/checkout@v4
     
-    - name: Beta References
-      if: needs.branch-ident.outputs.branch_identifier != 'main'
+    - name: References
       uses: actions/checkout@v4
       with:
         repository: ${{ secrets.PRIV_R }}
         token: ${{ secrets.FGAT_PRIV_R }}
         ref: ${{ needs.branch-ident.outputs.branch_identifier }}
         path: references
-        run: echo "Copying non-standard references"
-    - name: Main References
-      if: needs.branch-ident.outputs.branch_identifier == 'main'
-      uses: actions/checkout@v4
-      with:
-        repository: ${{ secrets.PRIV_R }}
-        token: ${{ secrets.FGAT_PRIV_R }}
-        path: references
-        run: echo "Copying standard references"
-        
+
     - name: Copy References
       run: |
         cp -r references/. include
