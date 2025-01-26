@@ -16,6 +16,21 @@ env:
   
 jobs:
 
+  beta-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: generate new branch variable for checkoutv4
+        id: branch-ident
+        run: echo "branch_identifier=$(echo ${GITHUB_REF#refs/heads/})" >> "$GITHUB_OUTPUT"
+      - name: beta branch detected
+        if: ${{ github.ref == 'refs/heads/beta' }}
+        run: echo "Using non-standard reference package for branch $GITHUB_REF"
+      - name: non-beta branch detected
+        if: ${{ github.ref != 'refs/heads/beta' }}
+        run: echo "Using standard reference package for branch $GITHUB_REF"
+    outputs:
+      branch_identifier: ${{ steps.branch-ident.outputs.branch_identifier }}
+
   get-commit-number:
     runs-on: ubuntu-latest
     steps:
@@ -53,7 +68,7 @@ jobs:
       admin-updated: ${{ steps.checkAdminMod.outputs.admin-updated }}
 
   create-package:
-    needs: [ find-if-nuget-update-is-needed, get-commit-number ]
+    needs: [ find-if-nuget-update-is-needed, get-commit-number, beta-check ]
     if: needs.find-if-nuget-update-is-needed.outputs.admin-updated == 'true'
     runs-on: ubuntu-latest
     steps:
