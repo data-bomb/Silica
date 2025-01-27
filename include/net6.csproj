@@ -11,8 +11,8 @@
     <Reference Include="Il2Cppcom.rlabrecque.steamworks.net">
       <HintPath>..\include\net6.0\Il2Cppcom.rlabrecque.steamworks.net.dll</HintPath>
     </Reference>
-    <Reference Include="Assembly-CSharp">
-      <HintPath>..\include\net6.0\Assembly-CSharp.dll</HintPath>
+    <Reference Include="Il2CppSilicaCore">
+      <HintPath>..\include\net6.0\Il2CppSilicaCore.dll</HintPath>
     </Reference>
     <Reference Include="Il2CppInterop.Runtime">
       <HintPath>..\include\net6.0\Il2CppInterop.Runtime.dll</HintPath>

@@ -6,8 +6,8 @@
     <Reference Include="com.rlabrecque.steamworks.net">
       <HintPath>..\include\netstandard2.1\com.rlabrecque.steamworks.net.dll</HintPath>
     </Reference>
-    <Reference Include="Assembly-CSharp">
-      <HintPath>..\include\netstandard2.1\Assembly-CSharp.dll</HintPath>
+    <Reference Include="SilicaCore">
+      <HintPath>..\include\netstandard2.1\SilicaCore.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.CoreModule">
       <HintPath>..\include\netstandard2.1\UnityEngine.CoreModule.dll</HintPath>
