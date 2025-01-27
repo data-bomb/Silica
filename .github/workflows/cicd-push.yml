@@ -296,6 +296,9 @@ jobs:
           (cd release/dedi && zip -qq -r ../../DedicatedServer-v${{ needs.get-commit-number.outputs.comnum }}-${{ env.GITHUB_SHA_SHORT }}.zip *)
           (cd release/listen && zip -qq -r ../../ListenServer-v${{ needs.get-commit-number.outputs.comnum }}-${{ env.GITHUB_SHA_SHORT }}.zip *)
 
+      - name: Print Branch
+        run: echo "current branch_identifier=$(echo ${{needs.branch-ident.outputs.branch_identifier}})"
+        
       - name: Rename for Beta
         if: needs.branch-ident.outputs.branch_identifier == 'beta'
         run: |
