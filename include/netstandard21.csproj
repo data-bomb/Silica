@@ -3,7 +3,7 @@
     <Reference Include="0Harmony">
       <HintPath>..\include\netstandard2.1\0Harmony.dll</HintPath>
     </Reference>
-    <Reference Include="Assembly-CSharp-firstpass">
+    <Reference Include="com.rlabrecque.steamworks.net">
       <HintPath>..\include\netstandard2.1\com.rlabrecque.steamworks.net.dll</HintPath>
     </Reference>
     <Reference Include="Assembly-CSharp">
