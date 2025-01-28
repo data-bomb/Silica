@@ -60,7 +60,7 @@ jobs:
           ref: ${{ needs.beta-check.outputs.branch_identifier }}
           filters: |
             admin-updated:
-              - 'Si_AdminMod/**'
+              - 'Si_AdminModdd/**'
       # run only if 'workflows' files were changed
       - name: adminmod updated
         if: steps.checkAdminMod.outputs.admin-updated == 'true'
