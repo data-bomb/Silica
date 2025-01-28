@@ -169,11 +169,13 @@ jobs:
     - uses: actions/checkout@v4
       with:
         ref: ${{ needs.beta-check.outputs.branch_identifier }}
+    - name: Print branch name
+      run: echo "$(echo ${GITHUB_REF#refs/heads/})"
     - name: beta branch detected
-      if: needs.beta-check.outputs.branch_identifier == 'beta'
+      if: ${{ github.ref == 'refs/heads/beta' }}
       run: echo "Using beta branch"
     - name: main branch detected
-      if: needs.beta-check.outputs.branch_identifier == 'main'
+      if: ${{ github.ref == 'refs/heads/main' }}
       run: echo "Using main branch"
     - name: Game References
       uses: actions/checkout@v4
