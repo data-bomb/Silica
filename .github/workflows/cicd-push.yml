@@ -81,7 +81,7 @@ jobs:
         with:
           repository: ${{ secrets.PRIV_R }}
           token: ${{ secrets.FGAT_PRIV_R }}
-          ref: ${{ needs.branch-ident.outputs.branch_identifier }}
+          ref: ${{ needs.beta-check.outputs.branch_identifier }}
           path: references
       - name: Copy References
         run: |
