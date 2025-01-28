@@ -76,6 +76,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.beta-check.outputs.branch_identifier }}
       - name: Game References
         uses: actions/checkout@v4
         with:
