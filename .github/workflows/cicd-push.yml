@@ -166,9 +166,6 @@ jobs:
       shell: bash
       run: echo "START_DIR=`pwd`" >> $GITHUB_ENV
       
-    - uses: actions/checkout@v4
-      with:
-        ref: ${{ needs.beta-check.outputs.branch_identifier }}
     - name: Print branch name
       run: echo "$(echo ${GITHUB_REF#refs/heads/})"
     - name: beta branch detected
@@ -177,12 +174,15 @@ jobs:
     - name: main branch detected
       if: ${{ github.ref == 'refs/heads/main' }}
       run: echo "Using main branch"
+    - uses: actions/checkout@v4
+      with:
+        ref: ${GITHUB_REF#refs/heads/}
     - name: Game References
       uses: actions/checkout@v4
       with:
         repository: ${{ secrets.PRIV_R }}
         token: ${{ secrets.FGAT_PRIV_R }}
-        ref: ${{ needs.beta-check.outputs.branch_identifier }}
+        ref: ${GITHUB_REF#refs/heads/}
         path: references
 
     - name: Copy References
