@@ -324,14 +324,14 @@ jobs:
         run: echo "current branch_identifier=$(echo ${{needs.branch-ident.outputs.branch_identifier}})"
         
       - name: Rename for Beta
-        if: needs.branch-ident.outputs.branch_identifier == 'beta'
+        if: needs.beta-check.outputs.branch_identifier == 'beta'
         run: |
           mv DedicatedServer-v${{ needs.get-commit-number.outputs.comnum }}-${{ env.GITHUB_SHA_SHORT }}.zip Beta_DedicatedServer-v${{ needs.get-commit-number.outputs.comnum }}-${{ env.GITHUB_SHA_SHORT }}.zip
           mv ListenServer-v${{ needs.get-commit-number.outputs.comnum }}-${{ env.GITHUB_SHA_SHORT }}.zip Beta_ListenServer-v${{ needs.get-commit-number.outputs.comnum }}-${{ env.GITHUB_SHA_SHORT }}.zip
           
       - name: Main Release
         uses: softprops/action-gh-release@975c1b265e11dd76618af1c374e7981f9a6ff44a
-        if: needs.branch-ident.outputs.branch_identifier == 'main'
+        if: needs.beta-check.outputs.branch_identifier == 'main'
         with:
           tag_name: v${{ needs.get-commit-number.outputs.comnum }}
           prerelease: false
@@ -341,7 +341,7 @@ jobs:
 
       - name: Beta Release
         uses: softprops/action-gh-release@975c1b265e11dd76618af1c374e7981f9a6ff44a
-        if: needs.branch-ident.outputs.branch_identifier == 'beta'
+        if: needs.beta-check.outputs.branch_identifier == 'beta'
         with:
           tag_name: v${{ needs.get-commit-number.outputs.comnum }}
           prerelease: true
