@@ -5,7 +5,7 @@
     <Nullable>enable</Nullable>
     <PackageId>Silica-MelonLoader-AdminMod</PackageId>
     <Authors>databomb</Authors>
-    <Copyright>Copyright (C) 2024 by databomb</Copyright>
+    <Copyright>Copyright (C) 2023-2025 by databomb</Copyright>
     <PackageProjectUrl>https://github.com/data-bomb/Silica</PackageProjectUrl>
     <PackageReadmeFile>readme.md</PackageReadmeFile>
     <PackageIcon>SilicaModding.png</PackageIcon>
