@@ -169,6 +169,12 @@ jobs:
     - uses: actions/checkout@v4
       with:
         ref: ${{ needs.beta-check.outputs.branch_identifier }}
+    - name: beta branch detected
+      if: ${{ github.ref == 'refs/heads/beta' }}
+      run: echo "Using non-standard reference package for branch ${{ steps.branch-ident.outputs.branch_identifier }}"
+    - name: non-beta branch detected
+      if: ${{ github.ref != 'refs/heads/beta' }}
+      run: echo "Using standard reference package for branch ${{ steps.branch-ident.outputs.branch_identifier }}"
     - name: Game References
       uses: actions/checkout@v4
       with:
