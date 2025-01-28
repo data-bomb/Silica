@@ -176,13 +176,13 @@ jobs:
       run: echo "Using main branch"
     - uses: actions/checkout@v4
       with:
-        ref: ${GITHUB_REF#refs/heads/}
+        ref: $(echo ${GITHUB_REF#refs/heads/})
     - name: Game References
       uses: actions/checkout@v4
       with:
         repository: ${{ secrets.PRIV_R }}
         token: ${{ secrets.FGAT_PRIV_R }}
-        ref: ${GITHUB_REF#refs/heads/}
+        ref: $(echo ${GITHUB_REF#refs/heads/})
         path: references
 
     - name: Copy References
