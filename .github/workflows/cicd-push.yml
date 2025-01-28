@@ -76,16 +76,27 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: References
+      - name: Game References
         uses: actions/checkout@v4
         with:
           repository: ${{ secrets.PRIV_R }}
           token: ${{ secrets.FGAT_PRIV_R }}
-          ref: ${{ needs.branch-ident.outputs.branch_identifier }}
+          ref: ${{ needs.beta-check.outputs.branch_identifier }}
           path: references
       - name: Copy References
         run: |
           cp -r references/. include
+      - name: Download FixNullableAttribute
+        uses: robinraju/release-downloader@v1.9
+        with:
+          repository: "data-bomb/FixNullableAttribute"
+          latest: true
+          fileName: "FixNullableAttribute.dll"
+          tarBall: false
+          zipBall: false
+      - name: Move FixNullableAttribute
+        run: |
+          mv FixNullableAttribute.dll include/net6.0/
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v4
         with:
@@ -150,7 +161,7 @@ jobs:
       
     - uses: actions/checkout@v4
     
-    - name: References
+    - name: Game References
       uses: actions/checkout@v4
       with:
         repository: ${{ secrets.PRIV_R }}
@@ -162,6 +173,19 @@ jobs:
       run: |
         cp -r references/. include
         
+    - name: Download FixNullableAttribute
+      uses: robinraju/release-downloader@v1.9
+      with:
+        repository: "data-bomb/FixNullableAttribute"
+        latest: true
+        fileName: "FixNullableAttribute.dll"
+        tarBall: false
+        zipBall: false
+
+    - name: Move FixNullableAttribute
+      run: |
+        mv FixNullableAttribute.dll include/net6.0/
+
     - name: Download QList
       uses: robinraju/release-downloader@v1.9
       with:
@@ -300,14 +324,14 @@ jobs:
         run: echo "current branch_identifier=$(echo ${{needs.branch-ident.outputs.branch_identifier}})"
         
       - name: Rename for Beta
-        if: needs.branch-ident.outputs.branch_identifier == 'beta'
+        if: needs.beta-check.outputs.branch_identifier == 'beta'
         run: |
           mv DedicatedServer-v${{ needs.get-commit-number.outputs.comnum }}-${{ env.GITHUB_SHA_SHORT }}.zip Beta_DedicatedServer-v${{ needs.get-commit-number.outputs.comnum }}-${{ env.GITHUB_SHA_SHORT }}.zip
           mv ListenServer-v${{ needs.get-commit-number.outputs.comnum }}-${{ env.GITHUB_SHA_SHORT }}.zip Beta_ListenServer-v${{ needs.get-commit-number.outputs.comnum }}-${{ env.GITHUB_SHA_SHORT }}.zip
           
       - name: Main Release
         uses: softprops/action-gh-release@975c1b265e11dd76618af1c374e7981f9a6ff44a
-        if: needs.branch-ident.outputs.branch_identifier == 'main'
+        if: needs.beta-check.outputs.branch_identifier == 'main'
         with:
           tag_name: v${{ needs.get-commit-number.outputs.comnum }}
           prerelease: false
@@ -317,9 +341,9 @@ jobs:
 
       - name: Beta Release
         uses: softprops/action-gh-release@975c1b265e11dd76618af1c374e7981f9a6ff44a
-        if: needs.branch-ident.outputs.branch_identifier == 'beta'
+        if: needs.beta-check.outputs.branch_identifier == 'beta'
         with:
-          tag_name: v${{ needs.get-commit-number.outputs.comnum }}
+          tag_name: v${{ needs.get-commit-number.outputs.comnum }}-Beta
           prerelease: true
           files: |
             Beta_DedicatedServer-v${{ needs.get-commit-number.outputs.comnum }}-${{ env.GITHUB_SHA_SHORT }}.zip
