@@ -5,6 +5,9 @@
     <Reference Include="QList">
       <HintPath>..\include\QList.dll</HintPath>
     </Reference>
+    <Reference Include="FixNullableAttribute">
+      <HintPath>..\include\net6.0\FixNullableAttribute.dll</HintPath>
+    </Reference>
     <Reference Include="0Harmony">
       <HintPath>..\include\net6.0\0Harmony.dll</HintPath>
     </Reference>
