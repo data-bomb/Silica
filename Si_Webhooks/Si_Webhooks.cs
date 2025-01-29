@@ -1,6 +1,6 @@
 ﻿/*
  Silica Webhooks Mod
- Copyright (C) 2024 by databomb
+ Copyright (C) 2024-2025 by databomb
  
  * Description *
  Adds webhook integrations for Silica servers.
@@ -20,12 +20,7 @@
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#if NET6_0
-using Il2Cpp;
-using Il2CppSteamworks;
-#else
 using Steamworks;
-#endif
 
 using HarmonyLib;
 using MelonLoader;
@@ -37,7 +32,7 @@ using System.Text.RegularExpressions;
 using System.Collections.Generic;
 using Newtonsoft.Json;
 
-[assembly: MelonInfo(typeof(Webhooks), "Webhooks", "1.2.8", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(Webhooks), "Webhooks", "1.2.9", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -88,18 +83,10 @@ namespace Si_Webhooks
             }
         }
 
-        #if NET6_0
-        [HarmonyPatch(typeof(Il2CppSilica.UI.Chat), nameof(Il2CppSilica.UI.Chat.MessageReceived))]
-        #else
         [HarmonyPatch(typeof(Silica.UI.Chat), "MessageReceived")]
-        #endif
         private static class TechGlitch_Chat_MessageReceived
         {
-            #if NET6_0
-            public static void Postfix(Il2CppSilica.UI.Chat __instance, Player __0, string __1, bool __2)
-            #else
             public static void Postfix(Silica.UI.Chat __instance, Player __0, string __1, bool __2)
-            #endif
             {
                 try
                 {
