@@ -328,7 +328,6 @@ jobs:
           mv release/listen/Mods/Si_BetterSpawns.dll release/listen/Mods/disabled
           # Webhooks encounters issues/conflicts with the game and the Steam API
           mv release/dedi/Mods/Si_Webhooks.dll release/dedi/Mods/disabled
-          mv release/listen/Mods/Si_Webhooks.dll release/listen/Mods/disabled
           # Default Units is disabled because a game update for spawn selection prevented this from working properly
           mv release/dedi/Mods/Si_DefaultUnits.dll release/dedi/Mods/disabled
           mv release/listen/Mods/Si_DefaultUnits.dll release/listen/Mods/disabled
