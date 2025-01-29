@@ -50,14 +50,17 @@ jobs:
   find-if-nuget-update-is-needed:
     runs-on: ubuntu-latest
     steps:
+      - name: Save branch name
+        shell: bash
+        run: echo "BRANCH_NAME=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
       - uses: actions/checkout@v4
         with:
-          ref: ${{ needs.beta-check.outputs.branch_identifier }}
+          ref: ${{ env.BRANCH_NAME }}
       - uses: dorny/paths-filter@v3
         id: checkAdminMod
         with:
-          base: ${{ needs.beta-check.outputs.branch_identifier }}
-          ref: ${{ needs.beta-check.outputs.branch_identifier }}
+          base: ${{ env.BRANCH_NAME }}
+          ref: ${{ env.BRANCH_NAME }}
           filters: |
             admin-updated:
               - 'Si_AdminModdd/**'
@@ -165,7 +168,6 @@ jobs:
     - name: Prepare environment pwd
       shell: bash
       run: echo "START_DIR=`pwd`" >> $GITHUB_ENV
-      
     - name: Save branch name
       shell: bash
       run: echo "BRANCH_NAME=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
