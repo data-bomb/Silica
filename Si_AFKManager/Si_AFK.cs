@@ -35,7 +35,7 @@ using System;
 using System.Collections;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(AwayFromKeyboard), "AFK Manager", "1.3.2", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(AwayFromKeyboard), "AFK Manager", "1.3.3", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -259,7 +259,7 @@ namespace Si_AFKManager
                     {
                         Timer_AFKCheck = 0.0f;
 
-                        if (!GameMode.CurrentGameMode.GameOngoing)
+                        if (GameMode.CurrentGameMode && !GameMode.CurrentGameMode.GameOngoing)
                         {
                             return;
                         }
@@ -313,7 +313,7 @@ namespace Si_AFKManager
 
                             int afkIndex = AFKTracker.FindIndex(p => p.Player == player);
 
-                            Player serverPlayer = NetworkGameServer.GetServerPlayer();
+                            Player? serverPlayer = NetworkGameServer.GetServerPlayer();
                             if (player == serverPlayer)
                             {
                                 continue;
