@@ -63,7 +63,7 @@ jobs:
           ref: ${{ env.BRANCH_NAME }}
           filters: |
             admin-updated:
-              - 'Si_AdminModdd/**'
+              - 'Si_AdminMod/**'
       # run only if 'workflows' files were changed
       - name: adminmod updated
         if: steps.checkAdminMod.outputs.admin-updated == 'true'
