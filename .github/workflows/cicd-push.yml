@@ -349,21 +349,23 @@ jobs:
           mv ListenServer-v${{ needs.get-commit-number.outputs.comnum }}-${{ env.GITHUB_SHA_SHORT }}.zip Beta_ListenServer-v${{ needs.get-commit-number.outputs.comnum }}-${{ env.GITHUB_SHA_SHORT }}.zip
           
       - name: Main Release
-        uses: softprops/action-gh-release@975c1b265e11dd76618af1c374e7981f9a6ff44a
+        uses: softprops/action-gh-release@v2
         if: needs.beta-check.outputs.branch_identifier == 'main'
         with:
           tag_name: v${{ needs.get-commit-number.outputs.comnum }}
           prerelease: false
+          generate_release_notes: true
           files: |
             DedicatedServer-v${{ needs.get-commit-number.outputs.comnum }}-${{ env.GITHUB_SHA_SHORT }}.zip
             ListenServer-v${{ needs.get-commit-number.outputs.comnum }}-${{ env.GITHUB_SHA_SHORT }}.zip
 
       - name: Beta Release
-        uses: softprops/action-gh-release@975c1b265e11dd76618af1c374e7981f9a6ff44a
+        uses: softprops/action-gh-release@v2
         if: needs.beta-check.outputs.branch_identifier == 'beta'
         with:
           tag_name: v${{ needs.get-commit-number.outputs.comnum }}-Beta
           prerelease: true
+          generate_release_notes: true
           files: |
             Beta_DedicatedServer-v${{ needs.get-commit-number.outputs.comnum }}-${{ env.GITHUB_SHA_SHORT }}.zip
             Beta_ListenServer-v${{ needs.get-commit-number.outputs.comnum }}-${{ env.GITHUB_SHA_SHORT }}.zip
