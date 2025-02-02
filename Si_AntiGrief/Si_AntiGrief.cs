@@ -35,7 +35,7 @@ using SilicaAdminMod;
 using System.Linq;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(AntiGrief), "Anti-Grief", "1.4.5", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(AntiGrief), "Anti-Grief", "1.4.6", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -229,14 +229,14 @@ namespace Si_AntiGrief
                     return;
                 }
 
+                // if the player isn't on the alien team, we can skip these checks
+                if (player.Team.Index != (int)SiConstants.ETeam.Alien)
+                {
+                    return;
+                }
+
                 if (_BlockShrimpControllers.Value)
                 {
-                    // if the player isn't on the alien team, we can skip this check
-                    if (player.Team.Index != (int)SiConstants.ETeam.Alien)
-                    {
-                        return;
-                    }
-
                     // is it a shrimp?
                     if (unit.IsResourceHolder)
                     {
