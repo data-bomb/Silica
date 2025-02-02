@@ -828,6 +828,12 @@ namespace Si_Logging
                         for (int i = 0; i < SiConstants.MaxPlayableTeams; i++)
                         {
                             Team? thisTeam = Team.Teams[i];
+                            // skip GameMaster team
+                            if (thisTeam == null || thisTeam.IsSpecial)
+                            {
+                                continue;
+                            }
+
                             if (versusMode == GameModeExt.ETeamsVersus.HUMANS_VS_HUMANS && i == (int)SiConstants.ETeam.Alien)
                             {
                                 continue;
