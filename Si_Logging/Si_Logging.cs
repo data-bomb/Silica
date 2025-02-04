@@ -40,14 +40,14 @@ using System.Linq;
 using System.Diagnostics;
 using System.IO;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.5.4", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.5.5", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
 namespace Si_Logging
 {
     // https://developer.valvesoftware.com/wiki/HL_Log_Standard
-    public class HL_Logging : MelonMod
+    public partial class HL_Logging : MelonMod
     {
         static int[] teamResourcesCollected = new int[SiConstants.MaxPlayableTeams + 1];
         static Player?[]? lastCommander;
@@ -128,11 +128,6 @@ namespace Si_Logging
         }
 
         static String CurrentLogFile = GetLogFilePath();
-
-        public static string GetPlayerID(Player player)
-        {
-            return player.PlayerID.SteamID.m_SteamID.ToString();
-        }
 
         public override void OnInitializeMelon()
         {
@@ -253,7 +248,7 @@ namespace Si_Logging
                     if (__0 != null)
                     {
                         // TODO: Find current name
-                        int userID = Math.Abs(__0.GetInstanceID());
+                        int userID = GetUserId(__0);
                         string LogLine = "\"" + __0.PlayerName + "<" + userID + "><" + GetPlayerID(__0) + "><>\" entered the game";
                         PrintLogLine(LogLine);
                     }
@@ -275,7 +270,7 @@ namespace Si_Logging
                 {
                     if (__0 != null)
                     {
-                        int userID = Math.Abs(__0.GetInstanceID());
+                        int userID = GetUserId(__0);
                         string teamName;
                         if (__0.Team == null)
                         {
@@ -311,7 +306,7 @@ namespace Si_Logging
             {
                 try
                 {
-                    int userID = Math.Abs(__0.GetInstanceID());
+                    int userID = GetUserId(__0);
                     string teamName;
                     if ( __0.Team == null)
                     {
@@ -365,7 +360,7 @@ namespace Si_Logging
                     if (isVictimHuman)
                     {
 
-                        int victimUserID = Math.Abs(victimPlayer.GetInstanceID());
+                        int victimUserID = GetUserId(victimPlayer);
 
                         if (attackerNetComp == null)
                         {
@@ -391,13 +386,19 @@ namespace Si_Logging
                             // human-controlled player killed another human-controlled player
                             else
                             {
-                                int attackerUserID = Math.Abs(attackerPlayer.GetInstanceID());
-                                string LogLine = "\"" + attackerPlayer.PlayerName + "<" + attackerUserID + "><" + GetPlayerID(attackerPlayer) + "><" + attackerPlayer.Team.TeamShortName + ">\" killed \"" + victimPlayer.PlayerName + "<" + victimUserID + "><" + GetPlayerID(victimPlayer) + "><" + victimPlayer.Team.TeamShortName + ">\" with \"" + __1.ToString().Split('(')[0] + "\" (dmgtype \"\") (victim \"" + __0.ToString().Split('(')[0] + "\")";
+                                string attackerEntry = AddPlayerLogEntry(attackerPlayer);
+                                string victimEntry = AddPlayerLogEntry(victimPlayer);
+                                string withEntry = AddKilledWithEntry(__0, __1);
+
+                                string LogLine = $"{attackerEntry} killed {victimEntry} with {withEntry}";
                                 PrintLogLine(LogLine);
 
                                 if (Pref_Log_PlayerConsole_Enable.Value)
                                 {
-                                    string ConsoleLine = "<b>" + HelperMethods.GetTeamColor(attackerPlayer) + attackerPlayer.PlayerName + "</color></b> (" + __1.ToString().Split('(')[0] + ") killed <b>" + HelperMethods.GetTeamColor(victimPlayer) + victimPlayer.PlayerName + "</color></b> (" + __0.ToString().Split('(')[0] + ")";
+                                    string attackerConsoleEntry = AddPlayerConsoleEntry(attackerPlayer);
+                                    string victimConsoleEntry = AddPlayerConsoleEntry(victimPlayer);
+
+                                    string ConsoleLine = $"{attackerConsoleEntry} ({GetNameFromObject(__1)}) killed {victimConsoleEntry} ({GetNameFromUnit(__0)})";
                                     HelperMethods.SendConsoleMessage(ConsoleLine);
                                 }
                             }
@@ -418,7 +419,7 @@ namespace Si_Logging
                     else if (isAttackerHuman && Pref_Log_Kills_Include_AI_vs_Player.Value)
                     // Attacker is a human, Victim is an AI
                     {
-                        int attackerUserID = Math.Abs(attackerPlayer.GetInstanceID());
+                        int attackerUserID = GetUserId(attackerPlayer);
                         string LogLine = "\"" + attackerPlayer.PlayerName + "<" + attackerUserID + "><" + GetPlayerID(attackerPlayer) + "><" + attackerPlayer.Team.TeamShortName + ">\" killed \"" + __0.ToString().Split('(')[0] + "<><><" + __0.Team.TeamShortName + ">\" with \"" + __1.ToString().Split('(')[0] + "\" (dmgtype \"\") (victim \"" + __0.ToString().Split('(')[0] + "\")";
                         PrintLogLine(LogLine);
 
@@ -462,7 +463,7 @@ namespace Si_Logging
             }
 
 
-            int userID = Math.Abs(player.GetInstanceID());
+            int userID = GetUserId(player);
             string LogLine = "\"" + player.PlayerName + "<" + userID + "><" + GetPlayerID(player) + "><" + theOldTeamName + ">\" joined team \"" + newTeam.TeamShortName + "\"";
             PrintLogLine(LogLine);
 
@@ -517,7 +518,7 @@ namespace Si_Logging
                 Player player = args.Player;
                 
                 if (player == null || player.Team == null) return;
-                int userID = Math.Abs(player.GetInstanceID());
+                int userID = GetUserId(player);
                 string role;
 
                 if (args.Role == GameModeExt.ETeamRole.COMMANDER)
@@ -628,8 +629,8 @@ namespace Si_Logging
                     return;
                 }
 
-                int attackerUserID = Math.Abs(attackerPlayer.GetInstanceID());
-                int victimUserID = Math.Abs(victimPlayer.GetInstanceID());
+                int attackerUserID = GetUserId(attackerPlayer);
+                int victimUserID = GetUserId(victimPlayer);
                 string LogLine = "\"" + attackerPlayer.PlayerName + "<" + attackerUserID + "><" + GetPlayerID(attackerPlayer) + "><" + attackerPlayer.Team.TeamShortName + ">\" attacked \"" + victimPlayer.PlayerName + "<" + victimUserID + "><" + GetPlayerID(victimPlayer) + "><" + victimPlayer.Team.TeamShortName + ">\" with \"" + __1.ToString().Split('(')[0] + "\"" + " (damage \"" + damage.ToString() + "\")";
                 PrintLogLine(LogLine, true);
             }
@@ -680,7 +681,7 @@ namespace Si_Logging
                         return;
                     }
 
-                    int userID = Math.Abs(attackerPlayer.GetInstanceID());
+                    int userID = GetUserId(attackerPlayer);
 
                     string structTeam = __0.Team.TeamShortName;
 
@@ -852,7 +853,7 @@ namespace Si_Logging
                             if (Player.Players[i] != null)
                             {
                                 Player thisPlayer = Player.Players[i];
-                                int userID = Math.Abs(thisPlayer.GetInstanceID());
+                                int userID = GetUserId(thisPlayer);
 
                                 string playerTeam;
                                 if (thisPlayer.Team == null)
@@ -997,7 +998,7 @@ namespace Si_Logging
                     // each faction has its own chat manager but by looking at alien and only global messages this catches commands only once
                     if (__instance != null && __0 != null && __instance.ToString().Contains("alien"))
                     {
-                        int userID = Math.Abs(__0.GetInstanceID());
+                        int userID = GetUserId(__0);
 
                         string teamName;
                         if (__0.Team == null)
