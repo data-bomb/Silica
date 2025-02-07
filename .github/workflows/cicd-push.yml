@@ -247,6 +247,8 @@ jobs:
       with:
         name: listen-server-${{ matrix.path }}-build-${{ env.GITHUB_SHA_SHORT }}
         path: ${{ matrix.path }}/bin/${{env.BUILD_TYPE}}/net6.0/${{ matrix.path }}.dll
+        # ignore for mods which don't have a Listen Server build (Webhooks, etc.)
+        if-no-files-found: ignore
         
   publish:
     if: github.event_name == 'push' && ${{ !failure() && !cancelled() }}
