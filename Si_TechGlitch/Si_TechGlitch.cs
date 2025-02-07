@@ -35,7 +35,7 @@ using SilicaAdminMod;
 using System;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(TechGlitch), "Tech Glitch Command", "1.0.2", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(TechGlitch), "Tech Glitch Command", "1.0.3", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -56,7 +56,7 @@ namespace Si_TechGlitch
                 return false;
             }
 
-            MP_Strategy strategyInstance = GameObject.FindObjectOfType<MP_Strategy>();
+            MP_Strategy strategyInstance = GameObject.FindFirstObjectByType<MP_Strategy>();
             Player teamCommander = strategyInstance.GetCommanderForTeam(theTeam);
 
             if (teamCommander == thePlayer)

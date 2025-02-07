@@ -33,7 +33,7 @@ using UnityEngine;
 using System;
 using SilicaAdminMod;
 
-[assembly: MelonInfo(typeof(HQlessHumansLose), "HQless Humans Lose", "1.3.10", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HQlessHumansLose), "HQless Humans Lose", "1.3.11", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -105,7 +105,7 @@ namespace Si_HQlessHumansLose
 
         public static void EliminateTeam(Team team)
         {
-            MP_Strategy strategyInstance = GameObject.FindObjectOfType<MP_Strategy>();
+            MP_Strategy strategyInstance = GameObject.FindFirstObjectByType<MP_Strategy>();
             MP_Strategy.ETeamsVersus versusMode = strategyInstance.TeamsVersus;
 
             MelonLogger.Msg("Eliminating team " + team.TeamShortName + " on versus mode " + versusMode.ToString());

@@ -38,7 +38,7 @@ using System.Linq;
 using System.IO;
 using Newtonsoft.Json;
 
-[assembly: MelonInfo(typeof(SpawnConfigs), "Admin Spawn Configs", "0.9.2", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(SpawnConfigs), "Admin Spawn Configs", "0.9.3", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -421,7 +421,7 @@ namespace Si_SpawnConfigs
                     return;
                 }
 
-                MP_Strategy strategyInstance = GameObject.FindObjectOfType<MP_Strategy>();
+                MP_Strategy strategyInstance = GameObject.FindFirstObjectByType<MP_Strategy>();
                 if (spawnSetup.VersusMode != null && spawnSetup.VersusMode != strategyInstance.TeamsVersus.ToString())
                 {
                     HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": incompatible mode specified");
@@ -508,7 +508,7 @@ namespace Si_SpawnConfigs
                     return;
                 }
 
-                MP_Strategy strategyInstance = GameObject.FindObjectOfType<MP_Strategy>();
+                MP_Strategy strategyInstance = GameObject.FindFirstObjectByType<MP_Strategy>();
                 if (spawnSetup.VersusMode != null && spawnSetup.VersusMode != strategyInstance.TeamsVersus.ToString())
                 {
                     HelperMethods.SendChatMessageToPlayer(callerPlayer, HelperMethods.chatPrefix, commandName, ": incompatible mode specified");
@@ -772,7 +772,7 @@ namespace Si_SpawnConfigs
             {
                 Map = NetworkGameServer.GetServerMap()
             };
-            MP_Strategy strategyInstance = GameObject.FindObjectOfType<MP_Strategy>();
+            MP_Strategy strategyInstance = GameObject.FindFirstObjectByType<MP_Strategy>();
             spawnSetup.VersusMode = strategyInstance.TeamsVersus.ToString();
 
             // create a list of all structures and units

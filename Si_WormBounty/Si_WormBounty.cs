@@ -37,7 +37,7 @@ using UnityEngine;
 using Si_WormBounty;
 
 
-[assembly: MelonInfo(typeof(WormBounty), "Worm Bounty", "1.1.0", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(WormBounty), "Worm Bounty", "1.1.1", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -103,7 +103,7 @@ namespace Si_WormBounty
             }
 
             // do the devouring
-            AmbientLife wildLifeInstance = GameObject.FindObjectOfType<AmbientLife>();
+            AmbientLife wildLifeInstance = GameObject.FindFirstObjectByType<AmbientLife>();
             Vector3 targetPosition = targetPlayer.ControlledUnit.WorldPhysicalCenter;
             Quaternion rotatedQuaternion = GameMath.GetRotatedQuaternion(Quaternion.identity, Vector3.up * UnityEngine.Random.Range(-180f, 180f));
             Target target = Target.GetTargetByNetID(targetPlayer.ControlledUnit.NetworkComponent.NetID);
