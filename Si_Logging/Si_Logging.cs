@@ -39,7 +39,7 @@ using System.Linq;
 using System.Diagnostics;
 using System.IO;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.6.0", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.6.1", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -52,12 +52,13 @@ namespace Si_Logging
         static Player?[]? lastCommander;
 
         static MelonPreferences_Category _modCategory = null!;
-        static MelonPreferences_Entry<bool> Pref_Log_Damage = null!;
-        static MelonPreferences_Entry<bool> Pref_Log_Kills_Include_AI_vs_Player = null!;
-        static MelonPreferences_Entry<string> Pref_Log_ParserExe = null!;
+        public static MelonPreferences_Entry<bool> Pref_Log_Damage = null!;
+        public static MelonPreferences_Entry<bool> Pref_Log_Kills_Include_AI_vs_Player = null!;
+        public static MelonPreferences_Entry<string> Pref_Log_ParserExe = null!;
         public static MelonPreferences_Entry<float> Pref_Log_PerfMonitor_Interval = null!;
         public static MelonPreferences_Entry<bool> Pref_Log_PerfMonitor_Enable = null!;
         public static MelonPreferences_Entry<bool> Pref_Log_PlayerConsole_Enable = null!;
+        public static MelonPreferences_Entry<int> Pref_Log_MinDamageCutoff = null!;
 
         public override void OnInitializeMelon()
         {
@@ -65,6 +66,7 @@ namespace Si_Logging
             {
                 _modCategory ??= MelonPreferences.CreateCategory("Silica");
                 Pref_Log_Damage ??= _modCategory.CreateEntry<bool>("Logging_LogDamage", false);
+                Pref_Log_MinDamageCutoff ??= _modCategory.CreateEntry<int>("Logging_LogDamage_MinDmgCutoff", 1);
                 Pref_Log_Kills_Include_AI_vs_Player ??= _modCategory.CreateEntry<bool>("Logging_LogKills_IncludeAIvsPlayer", true);
                 Pref_Log_ParserExe ??= _modCategory.CreateEntry<string>("Logging_ParserExePath", "parser.exe");
                 Pref_Log_PerfMonitor_Interval ??= _modCategory.CreateEntry<float>("Logging_PerfMonitor_LogInterval", 60f);
@@ -540,9 +542,9 @@ namespace Si_Logging
                     return;
                 }
 
-                // was damage less than (or equal to) 1?
+                // was damage less than (or equal to) the minimum cut-off value?
                 int damage = (int)Math.Ceiling(__0);
-                if (damage <= 1)
+                if (damage <= Pref_Log_MinDamageCutoff.Value)
                 {
                     return;
                 }
