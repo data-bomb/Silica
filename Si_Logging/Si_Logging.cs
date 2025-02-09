@@ -53,6 +53,7 @@ namespace Si_Logging
 
         static MelonPreferences_Category _modCategory = null!;
         public static MelonPreferences_Entry<bool> Pref_Log_Damage = null!;
+        public static MelonPreferences_Entry<bool> Pref_Display_Damage = null!;
         public static MelonPreferences_Entry<bool> Pref_Log_Kills_Include_AI_vs_Player = null!;
         public static MelonPreferences_Entry<string> Pref_Log_ParserExe = null!;
         public static MelonPreferences_Entry<float> Pref_Log_PerfMonitor_Interval = null!;
@@ -66,6 +67,7 @@ namespace Si_Logging
             {
                 _modCategory ??= MelonPreferences.CreateCategory("Silica");
                 Pref_Log_Damage ??= _modCategory.CreateEntry<bool>("Logging_LogDamage", false);
+                Pref_Display_Damage ??= _modCategory.CreateEntry<bool>("Logging_DisplayDamage", true);
                 Pref_Log_MinDamageCutoff ??= _modCategory.CreateEntry<int>("Logging_LogDamage_MinDmgCutoff", 1);
                 Pref_Log_Kills_Include_AI_vs_Player ??= _modCategory.CreateEntry<bool>("Logging_LogKills_IncludeAIvsPlayer", true);
                 Pref_Log_ParserExe ??= _modCategory.CreateEntry<string>("Logging_ParserExePath", "parser.exe");
@@ -494,7 +496,7 @@ namespace Si_Logging
             public static void Postfix(DamageManager __instance, float __0, GameObject __1, byte __2, bool __3)
             {
                 // should we log the damage?
-                if (!Pref_Log_Damage.Value)
+                if (!Pref_Log_Damage.Value && !Pref_Display_Damage.Value)
                 {
                     return;
                 }
