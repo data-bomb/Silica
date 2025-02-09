@@ -38,6 +38,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Diagnostics;
 using System.IO;
+using static MelonLoader.MelonLogger;
 
 [assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.6.1", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
@@ -485,6 +486,87 @@ namespace Si_Logging
             }
         }
 
+        public static Player? GetPlayer(BaseGameObject? baseGameObject)
+        {
+            if (baseGameObject == null)
+            {
+                return null;
+            }
+
+            NetworkComponent? networkComponent = baseGameObject.NetworkComponent;
+            if (networkComponent == null)
+            {
+                return null;
+            }
+
+            Player? player = networkComponent.OwnerPlayer;
+            if (player == null)
+            {
+                return null;
+            }
+
+            return player;
+        }
+
+        public static Player? GetPlayer(DamageManager? damageManager)
+        {
+            if (damageManager == null)
+            {
+                return null;
+            }
+
+            BaseGameObject baseObject = damageManager.Owner;
+            if (baseObject == null)
+            {
+                return null;
+            }
+
+            return GetPlayer(baseObject);
+        }
+
+        public static Player? GetPlayer(GameObject? gameObject)
+        {
+            // was it a non-player-controlled object?
+            if (gameObject == null)
+            {
+                return null;
+            }
+
+            BaseGameObject? baseObject = GameFuncs.GetBaseGameObject(gameObject);
+            if (baseObject == null)
+            {
+                return null;
+            }
+
+            return GetPlayer(baseObject);
+        }
+
+        public static bool ShouldHandleDamage(Player? attacker, Player? victim, float damage)
+        {
+            // was it a non-player-controlled instigator?
+            if (attacker == null)
+            {
+                return false;
+            }
+
+            // was it a non-player-controlled victim?
+            if (victim == null)
+            {
+                return false;
+            }
+
+            // at this point we have confirmed it was PvP damage
+
+            // was damage less than (or equal to) the minimum cut-off value?
+            int damageRounded = (int)Math.Ceiling(damage);
+            if (damageRounded <= Pref_Log_MinDamageCutoff.Value)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
         // 058. Injuring
         #if NET6_0
         [HarmonyPatch(typeof(DamageManager), nameof(DamageManager.OnDamageReceived))]
@@ -495,67 +577,34 @@ namespace Si_Logging
         {
             public static void Postfix(DamageManager __instance, float __0, GameObject __1, byte __2, bool __3)
             {
-                // should we log the damage?
+                // are there any damage-related settings that are enabled?
                 if (!Pref_Log_Damage.Value && !Pref_Display_Damage.Value)
                 {
                     return;
                 }
 
-                // was it a non-human-controlled instigator?
-                if (__1 == null)
+                Player? attackerPlayer = GetPlayer(__1);
+                Player? victimPlayer = GetPlayer(__instance);
+
+                // should we continue handling the damage?
+                if (!ShouldHandleDamage(attackerPlayer, victimPlayer, __0))
                 {
                     return;
                 }
 
-                BaseGameObject attackerBase = GameFuncs.GetBaseGameObject(__1);
-                if (attackerBase == null)
+                if (Pref_Display_Damage.Value)
                 {
-                    return;
+
                 }
 
-                NetworkComponent attackerNetComp = attackerBase.NetworkComponent;
-                if (attackerNetComp == null)
+                if (Pref_Log_Damage.Value)
                 {
-                    return;
+                    string attacker = AddPlayerLogEntry(attackerPlayer);
+                    string victim = AddPlayerLogEntry(victimPlayer);
+                    string weapon = GetNameFromObject(__1);
+
+                    PrintLogLine($"{attackerPlayer} attacked {victimPlayer} with \"{weapon}\" (damage \"{__0.ToString("#.#")}\")", true);
                 }
-
-                Player attackerPlayer = attackerNetComp.OwnerPlayer;
-                if (attackerPlayer == null)
-                {
-                    return;
-                }
-
-                // was it a non-human-controlled victim?
-                BaseGameObject victimBase = __instance.Owner;
-                if (victimBase == null)
-                {
-                    return;
-                }
-
-                NetworkComponent victimNetComp = victimBase.NetworkComponent;
-                if (victimNetComp == null)
-                {
-                    return;
-                }
-
-                Player victimPlayer = victimNetComp.OwnerPlayer;
-                if (victimPlayer == null)
-                {
-                    return;
-                }
-
-                // was damage less than (or equal to) the minimum cut-off value?
-                int damage = (int)Math.Ceiling(__0);
-                if (damage <= Pref_Log_MinDamageCutoff.Value)
-                {
-                    return;
-                }
-
-                string attacker = AddPlayerLogEntry(attackerPlayer);
-                string victim = AddPlayerLogEntry(victimPlayer);
-                string weapon = GetNameFromObject(__1);
-
-                PrintLogLine($"{attackerPlayer} attacked {victimPlayer} with \"{weapon}\" (damage \"{damage}\")", true);
             }
         }
 
