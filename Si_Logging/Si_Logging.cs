@@ -40,7 +40,7 @@ using System.Diagnostics;
 using System.IO;
 using static MelonLoader.MelonLogger;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.6.1", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.7.0", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -133,6 +133,8 @@ namespace Si_Logging
                 }
                 
                 PrintLogLine($"Loading map \"{sceneName}\"");
+
+                DamageDatabase.ResetRound();
 
                 if (Pref_Log_PlayerConsole_Enable.Value)
                 {
@@ -274,9 +276,11 @@ namespace Si_Logging
                     bool isVictimHuman = (victimPlayer != null);
                     bool isAttackerHuman = (attackerPlayer != null);
 
-                    #pragma warning disable CS8602 // Dereference of a possibly null reference.
+                    #pragma warning disable CS8604 // Dereference of a possibly null reference.
                     if (isVictimHuman)
                     {
+                        DamageDatabase.OnPlayerDeath(victimPlayer);
+
                         if (attackerNetComp == null)
                         {
                             return;
@@ -359,7 +363,7 @@ namespace Si_Logging
                             HelperMethods.SendConsoleMessage($"{attackerPretty} ({instigator}) killed {AIPretty} ({victimUnit})");
                         }
                     }
-                    #pragma warning restore CS8602 // Dereference of a possibly null reference.
+                    #pragma warning restore CS8604 // Dereference of a possibly null reference.
                 }
                 catch (Exception error)
                 {
@@ -594,7 +598,7 @@ namespace Si_Logging
 
                 if (Pref_Display_Damage.Value)
                 {
-
+                    DamageDatabase.AddDamage(victimPlayer, attackerPlayer, __0);
                 }
 
                 if (Pref_Log_Damage.Value)
@@ -754,6 +758,8 @@ namespace Si_Logging
                     if (!firedRoundEndOnce)
                     {
                         firedRoundEndOnce = true;
+
+                        DamageDatabase.ResetRound();
 
                         GameModeExt gameModeInstance = GameObject.FindFirstObjectByType<GameModeExt>();
 
