@@ -30,6 +30,7 @@ using SilicaAdminMod;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using MelonLoader;
 
 namespace Si_Logging
 {
@@ -43,24 +44,32 @@ namespace Si_Logging
             public static void AddDamage(Player victim, Player attacker, float amount)
             {
                 int index = victim.GetIndex();
-                bool alreadyLogged = VictimDamage[index].Any(info => info.AttackerName == attacker.PlayerName);
+                int attackerIndex = VictimDamage[index].FindIndex(info => info.SteamId == attacker.PlayerID.SteamID.m_SteamID);
 
-                if (!alreadyLogged)
+                MelonLogger.Msg($"Adding damage with victim index {index} and attacker index {attackerIndex}");
+
+                // -1: no steamID found in VictimDamage
+                if (attackerIndex < 0)
                 {
                     AttackerInfo newAttacker = new AttackerInfo
                     {
                         AttackerName = attacker.PlayerName,
+                        SteamId = attacker.PlayerID.SteamID.m_SteamID,
                         Quantity = 1,
                         TotalDamage = amount
                     };
 
                     VictimDamage[index].Add(newAttacker);
+
+                    MelonLogger.Msg($"Added new attacker {newAttacker.AttackerName} to victim index {index}");
+
                     return;
                 }
 
-                // supplement record
-                VictimDamage[index].Find(info => info.AttackerName == attacker.PlayerName).TotalDamage += amount;
-                VictimDamage[index].Find(info => info.AttackerName == attacker.PlayerName).Quantity++;
+                MelonLogger.Msg($"Updated victim index {index} with additional damage for {VictimDamage[index][attackerIndex].AttackerName}");
+
+                VictimDamage[index][attackerIndex].TotalDamage += amount;
+                VictimDamage[index][attackerIndex].Quantity++;
             }
 
             public static void OnPlayerDeath(Player victim)
@@ -96,8 +105,7 @@ namespace Si_Logging
 
             public static string Break()
             {
-                // emulate same number of dashes as existing game console commands
-                return "-------------------------------------------------------";
+                return string.Concat(Enumerable.Repeat("-", 42));
             }
 
             public static void ClearIndex(int i)
@@ -127,6 +135,11 @@ namespace Si_Logging
             {
                 get => _attackerName;
                 set => _attackerName = value ?? throw new ArgumentNullException("Attacker name is required.");
+            }
+            public ulong SteamId
+            {
+                get;
+                set;
             }
 
             public int Quantity

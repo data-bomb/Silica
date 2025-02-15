@@ -38,9 +38,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Diagnostics;
 using System.IO;
-using static MelonLoader.MelonLogger;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.7.0", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.7.1", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -545,22 +544,8 @@ namespace Si_Logging
             return GetPlayer(baseObject);
         }
 
-        public static bool ShouldHandleDamage(Player? attacker, Player? victim, float damage)
+        public static bool ShouldHandleDamage(float damage)
         {
-            // was it a non-player-controlled instigator?
-            if (attacker == null)
-            {
-                return false;
-            }
-
-            // was it a non-player-controlled victim?
-            if (victim == null)
-            {
-                return false;
-            }
-
-            // at this point we have confirmed it was PvP damage
-
             // was damage less than (or equal to) the minimum cut-off value?
             int damageRounded = (int)Math.Ceiling(damage);
             if (damageRounded <= Pref_Log_MinDamageCutoff.Value)
@@ -587,14 +572,28 @@ namespace Si_Logging
                     return;
                 }
 
-                Player? attackerPlayer = GetPlayer(__1);
-                Player? victimPlayer = GetPlayer(__instance);
-
                 // should we continue handling the damage?
-                if (!ShouldHandleDamage(attackerPlayer, victimPlayer, __0))
+                if (!ShouldHandleDamage(__0))
                 {
                     return;
                 }
+
+                Player? attackerPlayer = GetPlayer(__1);
+                Player? victimPlayer = GetPlayer(__instance);
+
+                // was it a non-player-controlled instigator?
+                if (attackerPlayer == null)
+                {
+                    return;
+                }
+
+                // was it a non-player-controlled victim?
+                if (victimPlayer == null)
+                {
+                    return;
+                }
+
+                // at this point we have confirmed it was PvP damage
 
                 if (Pref_Display_Damage.Value)
                 {
