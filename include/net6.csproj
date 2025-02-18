@@ -4,37 +4,51 @@
     <PackageReference Include="LavaGang.MelonLoader" Version="0.6.6" />
     <Reference Include="QList">
       <HintPath>..\include\QList.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="FixNullableAttribute">
       <HintPath>..\include\net6.0\FixNullableAttribute.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="0Harmony">
       <HintPath>..\include\net6.0\0Harmony.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="Il2Cppcom.rlabrecque.steamworks.net">
       <HintPath>..\include\net6.0\Il2Cppcom.rlabrecque.steamworks.net.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="com.rlabrecque.steamworks.net">
+      <HintPath>..\include\netstandard2.1\com.rlabrecque.steamworks.net.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="Il2CppSilicaCore">
       <HintPath>..\include\net6.0\Il2CppSilicaCore.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="Il2CppInterop.Runtime">
       <HintPath>..\include\net6.0\Il2CppInterop.Runtime.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="Il2Cppmscorlib">
       <HintPath>..\include\net6.0\Il2Cppmscorlib.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="UnityEngine.CoreModule">
       <HintPath>..\include\net6.0\UnityEngine.CoreModule.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="UnityEngine.InputLegacyModule">
       <HintPath>..\include\net6.0\UnityEngine.InputLegacyModule.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="UnityEngine.PhysicsModule">
       <HintPath>..\include\net6.0\UnityEngine.PhysicsModule.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="UnityEngine">
       <HintPath>..\include\net6.0\UnityEngine.dll</HintPath>
+      <Private>False</Private>
     </Reference>
   </ItemGroup>
-
 </Project>

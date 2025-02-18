@@ -2,27 +2,35 @@
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.1'">
     <Reference Include="0Harmony">
       <HintPath>..\include\netstandard2.1\0Harmony.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="com.rlabrecque.steamworks.net">
       <HintPath>..\include\netstandard2.1\com.rlabrecque.steamworks.net.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="SilicaCore">
       <HintPath>..\include\netstandard2.1\SilicaCore.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="UnityEngine.CoreModule">
       <HintPath>..\include\netstandard2.1\UnityEngine.CoreModule.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="UnityEngine">
       <HintPath>..\include\netstandard2.1\UnityEngine.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="UnityEngine.InputLegacyModule">
       <HintPath>..\include\netstandard2.1\UnityEngine.InputLegacyModule.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="UnityEngine.PhysicsModule">
       <HintPath>..\include\netstandard2.1\UnityEngine.PhysicsModule.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="MelonLoader">
       <HintPath>..\include\netstandard2.1\MelonLoader.dll</HintPath>
+      <Private>False</Private>
     </Reference>
   </ItemGroup>
 </Project>
