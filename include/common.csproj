@@ -1,11 +1,12 @@
 <Project>
-
+  
   <PropertyGroup>
     <TargetFrameworks>net6.0;netstandard2.1</TargetFrameworks>
     <Nullable>enable</Nullable>
     <Deterministic>true</Deterministic>
+    <MSBuildWarningsAsMessages>MSB3270</MSBuildWarningsAsMessages>
   </PropertyGroup>
-
+  
   <ItemGroup>
     <PackageReference Include="Silica-MelonLoader-AdminMod" Version="*" />
   </ItemGroup>

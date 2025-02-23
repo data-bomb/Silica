@@ -9,6 +9,7 @@
     <PackageReadmeFile>readme.md</PackageReadmeFile>
     <PackageIcon>SilicaModding.png</PackageIcon>
     <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
+    <MSBuildWarningsAsMessages>MSB3270</MSBuildWarningsAsMessages>
   </PropertyGroup>
   
   <ItemGroup>
