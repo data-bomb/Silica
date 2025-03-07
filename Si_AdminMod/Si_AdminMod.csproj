@@ -11,25 +11,25 @@
     <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
     <MSBuildWarningsAsMessages>MSB3270</MSBuildWarningsAsMessages>
   </PropertyGroup>
-  
+
   <ItemGroup>
     <None Include="docs\readme.md">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
   </ItemGroup>
-  
+
   <ItemGroup>
     <None Include="lib\SilicaModding.png">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
   </ItemGroup>
-  
+
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="*"/>
   </ItemGroup>
-  
+
   <Import Project="..\include\net6.csproj" Condition="'$(TargetFramework)' == 'net6.0'"/>
   <Import Project="..\include\netstandard21.csproj" Condition="'$(TargetFramework)' == 'netstandard2.1'"/>
 </Project>
