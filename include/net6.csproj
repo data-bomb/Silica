@@ -1,6 +1,6 @@
 <Project>
   <ItemGroup Condition="'$(TargetFramework)' == 'net6.0'">
-    <PackageReference Include="LavaGang.MelonLoader" Version="0.6.6" />
+    <PackageReference Include="LavaGang.MelonLoader" Version="0.7.0" />
     <Reference Include="QList">
       <HintPath>..\include\QList.dll</HintPath>
       <Private>False</Private>
