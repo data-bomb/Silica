@@ -1,6 +1,6 @@
 ﻿/*
 Silica No Unit Limits
-Copyright (C) 2024 by databomb
+Copyright (C) 2024-2025 by databomb
 
 * Description *
 Automatically set servers for no unit limits when hosting.
@@ -33,7 +33,7 @@ using SilicaAdminMod;
 using System;
 using Newtonsoft.Json;
 
-[assembly: MelonInfo(typeof(NoUnitLimits), "No Unit Limits", "1.1.0", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(NoUnitLimits), "No Unit Limits", "1.1.1", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -50,10 +50,10 @@ namespace Si_NoUnitLimits
             _UnitCap = _modCategory.CreateEntry<int>("UnitCap", 0);
         }
 
-        [HarmonyPatch(typeof(MP_Strategy), nameof(MP_Strategy.UpdateUnitCapMultFromSetting))]
-        private static class ApplyPatch_Strategy_UpdateUnitCapMultFromSetting
+        [HarmonyPatch(typeof(GameModeExt), nameof(GameModeExt.UpdateUnitCapMultFromSetting))]
+        private static class ApplyPatch_GameModeExt_UpdateUnitCapMultFromSetting
         {
-            static void Postfix(MP_Strategy __instance)
+            static void Postfix(GameModeExt __instance)
             {
                 try
                 {
@@ -68,10 +68,10 @@ namespace Si_NoUnitLimits
                         unitCap = 0;
                     }
 
-#if NET6_0
+                    #if NET6_0
                     __instance.UnitCapMultiplier = unitCap;
                     #else
-                    PropertyInfo unitCapProperty = typeof(MP_Strategy).GetProperty("UnitCapMultiplier", BindingFlags.NonPublic | BindingFlags.Instance);
+                    PropertyInfo unitCapProperty = typeof(GameModeExt).GetProperty("UnitCapMultiplier");
                     unitCapProperty.SetValue(__instance, (int)unitCap);
                     #endif
 
