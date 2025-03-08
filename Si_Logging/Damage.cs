@@ -44,6 +44,13 @@ namespace Si_Logging
             public static void AddDamage(Player victim, Player attacker, float amount)
             {
                 int index = victim.GetIndex();
+
+                if (VictimDamage[index] == null)
+                {
+                    MelonLogger.Msg($"Creating new damage database entry for {victim.PlayerName}");
+                    VictimDamage[index] = new List<AttackerInfo>();
+                }
+
                 int attackerIndex = VictimDamage[index].FindIndex(info => info.SteamId == attacker.PlayerID.SteamID.m_SteamID);
 
                 MelonLogger.Msg($"Adding damage with victim index {index} and attacker index {attackerIndex}");
@@ -77,8 +84,9 @@ namespace Si_Logging
                 int index = victim.GetIndex();
 
                 // skip if there's nothing to print
-                if (VictimDamage[index].Count <= 0)
+                if (VictimDamage[index] == null || VictimDamage[index].Count <= 0)
                 {
+                    MelonLogger.Msg($"Skipping printing of damage statistics for player: {victim.PlayerName}");
                     return;
                 }
 
