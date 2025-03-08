@@ -338,23 +338,11 @@ namespace Si_CommanderManagement
             {
                 if (GameMode.CurrentGameMode is MP_Strategy strategyInstance)
                 {
-                    #if NET6_0
                     return strategyInstance.Timer;
-                    #else
-                    Type strategyType = strategyInstance.GetType();
-                    FieldInfo timerField = strategyType.GetField("Timer", BindingFlags.NonPublic | BindingFlags.Instance);
-                    return (float)timerField.GetValue(strategyInstance);
-                    #endif
                 }
                 else if (GameMode.CurrentGameMode is MP_TowerDefense defenseInstance)
                 {
-                    #if NET6_0
                     return defenseInstance.Timer;
-                    #else
-                    Type defenseType = defenseInstance.GetType();
-                    FieldInfo timerField = defenseType.GetField("Timer", BindingFlags.NonPublic | BindingFlags.Instance);
-                    return (float)timerField.GetValue(defenseInstance);
-                    #endif
                 }
                 throw new ArgumentException("Cannot access gamemode timer");
             }
@@ -366,7 +354,7 @@ namespace Si_CommanderManagement
                     strategyInstance.Timer = value;
                     #else
                     Type strategyType = strategyInstance.GetType();
-                    FieldInfo timerField = strategyType.GetField("Timer", BindingFlags.NonPublic | BindingFlags.Instance);
+                    FieldInfo timerField = strategyType.GetField("Timer");
                     timerField.SetValue(strategyInstance, value);
                     #endif
                     return;
@@ -377,7 +365,7 @@ namespace Si_CommanderManagement
                     defenseInstance.Timer = value;
                     #else
                     Type strategyType = defenseInstance.GetType();
-                    FieldInfo timerField = strategyType.GetField("Timer", BindingFlags.NonPublic | BindingFlags.Instance);
+                    FieldInfo timerField = strategyType.GetField("Timer");
                     timerField.SetValue(defenseInstance, value);
                     #endif
                     return;
