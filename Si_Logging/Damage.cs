@@ -110,6 +110,11 @@ namespace Si_Logging
 
             public static void ClearIndex(int i)
             {
+                if (VictimDamage[i] == null)
+                {
+                    return;
+                }
+
                 VictimDamage[i].Clear();
             }
 
