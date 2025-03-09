@@ -114,7 +114,7 @@ namespace Si_Logging
 
             public static string Header()
             {
-                return "------------------- DAMAGE REPORT -------------------";
+                return "------ <b>PvP Damage Report</b> ------";
             }
 
             public static string Break()
