@@ -53,7 +53,7 @@ namespace Si_Logging
 
                 int attackerIndex = VictimDamage[index].FindIndex(info => info.SteamId == attacker.PlayerID.SteamID.m_SteamID);
 
-                MelonLogger.Msg($"Adding damage with victim index {index} and attacker index {attackerIndex}");
+                // MelonLogger.Msg($"Adding damage with victim index {index} and attacker index {attackerIndex}");
 
                 // -1: no steamID found in VictimDamage
                 if (attackerIndex < 0)
@@ -73,7 +73,7 @@ namespace Si_Logging
                     return;
                 }
 
-                MelonLogger.Msg($"Updated victim index {index} with additional damage for {VictimDamage[index][attackerIndex].AttackerName}");
+                //MelonLogger.Msg($"Updated victim index {index} with additional damage for {VictimDamage[index][attackerIndex].AttackerName}");
 
                 VictimDamage[index][attackerIndex].TotalDamage += amount;
                 VictimDamage[index][attackerIndex].Quantity++;
@@ -95,25 +95,31 @@ namespace Si_Logging
                 HelperMethods.SendConsoleMessageToPlayer(victim, stats);
 
                 // reset stats
-                ClearIndex(victim.GetIndex());
+                ClearIndex(index);
             }
 
             public static string[] GenerateStats(int index)
             {
                 List<string> stats = new List<string>();
-                stats.Add(Break());
+
+                stats.Add(Header());
                 foreach (AttackerInfo attackerInfo in VictimDamage[index])
                 {
-                    stats.Add($"{attackerInfo.AttackerName} caused {attackerInfo.TotalDamage.ToString("#.#")} over {attackerInfo.Quantity} hits");
+                    stats.Add($"{attackerInfo.AttackerName} caused {attackerInfo.TotalDamage.ToString("#.#")} dmg in {attackerInfo.Quantity} {(attackerInfo.Quantity > 1 ? "hits" : "hit")}");
                 }
                 stats.Add(Break());
 
                 return stats.ToArray();
             }
 
+            public static string Header()
+            {
+                return "------------------- DAMAGE REPORT -------------------";
+            }
+
             public static string Break()
             {
-                return string.Concat(Enumerable.Repeat("-", 42));
+                return string.Concat(Enumerable.Repeat("-", 53));
             }
 
             public static void ClearIndex(int i)
