@@ -1,6 +1,6 @@
 ﻿/*
 Silica Chat Silence
-Copyright (C) 2023-2024 by databomb
+Copyright (C) 2023-2025 by databomb
 
 * Description *
 Provides an admin command to silence a player, which prevents that 
@@ -313,9 +313,9 @@ namespace Si_ChatSilence
         private static class Mute_Patch_GameMode_RelayVoiceStreamPacket
         {
             #if NET6_0
-            public static bool Prefix(Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppStructArray<byte> __0, uint __1, EP2PSend __2, Player __3, bool __4)
+            public static bool Prefix(Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppStructArray<byte> __0, uint __1, ENetworkPacketSend  __2, Player __3, bool __4)
             #else
-            public static bool Prefix(byte[] __0, uint __1, EP2PSend __2, Player __3, bool __4)
+            public static bool Prefix(byte[] __0, uint __1, ENetworkPacketSend __2, Player __3, bool __4)
             #endif
             {
                 if (IsPlayerMuted(__3))

@@ -1,6 +1,6 @@
 ﻿/*
  Silica Anti-Grief Mod
- Copyright (C) 2023-2024 by databomb
+ Copyright (C) 2023-2025 by databomb
  
  * Description *
  For Silica servers, automatically identifies players who fall below a 
@@ -35,7 +35,7 @@ using SilicaAdminMod;
 using System.Linq;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(AntiGrief), "Anti-Grief", "1.4.3", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(AntiGrief), "Anti-Grief", "1.4.6", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -60,8 +60,18 @@ namespace Si_AntiGrief
             _NegativeKills_Penalty_Ban ??= _modCategory.CreateEntry<bool>("Grief_NegativeKills_Penalty_Ban", true);
             _StructureAntiGrief_IgnoreNodes ??= _modCategory.CreateEntry<bool>("Grief_IgnoreFriendlyNodesDestroyed", true);
             _BlockShrimpControllers ??= _modCategory.CreateEntry<bool>("Grief_BlockShrimpTakeOver", false);
+        }
 
-            playerTransferCount = new uint[NetworkGameServer.GetPlayersMax()+1];
+        public override void OnSceneWasLoaded(int buildIndex, string sceneName)
+        {
+            InitializeTransferCountArray();
+        }
+
+        public void InitializeTransferCountArray()
+        {
+            int maxValue = NetworkGameServer.GetPlayersMax() + 1;
+            playerTransferCount = new uint[maxValue];
+            MelonLogger.Msg("Setting Anti-Grief transfer count array using max array index of: " + maxValue.ToString());
             Array.Fill(playerTransferCount, 0u);
         }
 
@@ -193,7 +203,7 @@ namespace Si_AntiGrief
                         return;
                     }
 
-                    playerTransferCount[__0.GetIndex()] = 0;
+                    playerTransferCount[playerIndex] = 0;
                 }
                 catch (Exception error)
                 {
@@ -219,14 +229,14 @@ namespace Si_AntiGrief
                     return;
                 }
 
+                // if the player isn't on the alien team, we can skip these checks
+                if (player.Team.Index != (int)SiConstants.ETeam.Alien)
+                {
+                    return;
+                }
+
                 if (_BlockShrimpControllers.Value)
                 {
-                    // if the player isn't on the alien team, we can skip this check
-                    if (player.Team.Index != (int)SiConstants.ETeam.Alien)
-                    {
-                        return;
-                    }
-
                     // is it a shrimp?
                     if (unit.IsResourceHolder)
                     {
@@ -413,12 +423,12 @@ namespace Si_AntiGrief
 
         private static bool IsPlayerIndexValid(int playerIndex)
         {
-            if (playerIndex >= 0 && playerIndex <= NetworkGameServer.GetPlayersMax())
+            if (playerIndex == -1)
             {
-                return true;
+                return false;
             }
 
-            return false;
+            return true;
         }
 
         private static bool DisplayTeamKillForStructure(string structureName)

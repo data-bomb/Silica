@@ -1,6 +1,6 @@
 ﻿/*
  Silica Logging Mod
- Copyright (C) 2023-2024 by databomb
+ Copyright (C) 2023-2025 by databomb
  
  * Description *
  For Silica servers, creates a log file with console replication
@@ -30,7 +30,6 @@ using Steamworks;
 
 using HarmonyLib;
 using MelonLoader;
-using MelonLoader.Utils;
 using Si_Logging;
 using UnityEngine;
 using System;
@@ -40,99 +39,27 @@ using System.Linq;
 using System.Diagnostics;
 using System.IO;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.5.2", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.7.6", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
 namespace Si_Logging
 {
     // https://developer.valvesoftware.com/wiki/HL_Log_Standard
-    public class HL_Logging : MelonMod
+    public partial class HL_Logging : MelonMod
     {
         static int[] teamResourcesCollected = new int[SiConstants.MaxPlayableTeams + 1];
         static Player?[]? lastCommander;
 
         static MelonPreferences_Category _modCategory = null!;
-        static MelonPreferences_Entry<bool> Pref_Log_Damage = null!;
-        static MelonPreferences_Entry<bool> Pref_Log_Kills_Include_AI_vs_Player = null!;
-        static MelonPreferences_Entry<string> Pref_Log_ParserExe = null!;
+        public static MelonPreferences_Entry<bool> Pref_Log_Damage = null!;
+        public static MelonPreferences_Entry<bool> Pref_Display_Damage = null!;
+        public static MelonPreferences_Entry<bool> Pref_Log_Kills_Include_AI_vs_Player = null!;
+        public static MelonPreferences_Entry<string> Pref_Log_ParserExe = null!;
         public static MelonPreferences_Entry<float> Pref_Log_PerfMonitor_Interval = null!;
         public static MelonPreferences_Entry<bool> Pref_Log_PerfMonitor_Enable = null!;
         public static MelonPreferences_Entry<bool> Pref_Log_PlayerConsole_Enable = null!;
-
-        public static bool ParserExePresent()
-        {
-            return System.IO.File.Exists(GetParserPath());
-        }
-        public static string GetParserPath()
-        {
-            return System.IO.Path.Combine(MelonEnvironment.UserDataDirectory, Pref_Log_ParserExe.Value);
-        }
-
-        public static void PrintLogLine(string LogMessage, bool suppressConsoleOutput = false)
-        {
-            if (LogMessage != null)
-            {
-                string TempLogFile = GetLogFilePath();
-                if (TempLogFile != CurrentLogFile)
-                {
-                    System.IO.File.AppendAllText(CurrentLogFile, GetLogPrefix() + "Log file closed" + Environment.NewLine);
-                    CurrentLogFile = TempLogFile;
-                    AddFirstLogLine();
-                }
-                string LogLine = GetLogPrefix() + LogMessage;
-
-                if (!suppressConsoleOutput)
-                {
-                    MelonLogger.Msg(LogLine);
-                }
-
-                System.IO.File.AppendAllText(CurrentLogFile, LogLine + Environment.NewLine);
-            }
-        }
-
-        public static void AddFirstLogLine()
-        {
-            string FirstLine = "Log file started (file \"" + GetLogSubPath() + "\") (game \"" + MelonEnvironment.GameExecutablePath + "\") (version \"" + MelonLoader.InternalUtils.UnityInformationHandler.GameVersion + "\") (hostid \"" + NetworkGameServer.GetServerID().ToString() + "\")";
-            System.IO.File.AppendAllText(CurrentLogFile, GetLogPrefix() + FirstLine + Environment.NewLine);
-        }
-
-        // Generate prefix in format "L mm/dd/yyyy - hh:mm:ss:"
-        public static string GetLogPrefix()
-        {
-            DateTime currentDateTime = DateTime.Now;
-            string LogPrefix = "L " + currentDateTime.ToString("MM/dd/yyyy - HH:mm:ss: ");
-            return LogPrefix;
-        }
-
-        public static string GetLogFileDirectory()
-        {
-            return System.IO.Path.Combine(MelonEnvironment.UserDataDirectory, @"logs\");
-        }
-
-        public static string GetLogSubPath()
-        {
-            return @"logs\" + GetLogName();
-        }
-
-        public static string GetLogFilePath()
-        {
-            string LogSubPath = GetLogSubPath();
-            return System.IO.Path.Combine(MelonEnvironment.UserDataDirectory, LogSubPath);
-        }
-
-        public static string GetLogName()
-        {
-            DateTime currentDateTime = DateTime.Now;
-            return "L" + currentDateTime.ToString("yyyyMMdd") + ".log";
-        }
-
-        static String CurrentLogFile = GetLogFilePath();
-
-        public static string GetPlayerID(Player player)
-        {
-            return player.PlayerID.SteamID.m_SteamID.ToString();
-        }
+        public static MelonPreferences_Entry<int> Pref_Log_MinDamageCutoff = null!;
 
         public override void OnInitializeMelon()
         {
@@ -140,6 +67,8 @@ namespace Si_Logging
             {
                 _modCategory ??= MelonPreferences.CreateCategory("Silica");
                 Pref_Log_Damage ??= _modCategory.CreateEntry<bool>("Logging_LogDamage", false);
+                Pref_Display_Damage ??= _modCategory.CreateEntry<bool>("Logging_DisplayDamage", true);
+                Pref_Log_MinDamageCutoff ??= _modCategory.CreateEntry<int>("Logging_LogDamage_MinDmgCutoff", 1);
                 Pref_Log_Kills_Include_AI_vs_Player ??= _modCategory.CreateEntry<bool>("Logging_LogKills_IncludeAIvsPlayer", true);
                 Pref_Log_ParserExe ??= _modCategory.CreateEntry<string>("Logging_ParserExePath", "parser.exe");
                 Pref_Log_PerfMonitor_Interval ??= _modCategory.CreateEntry<float>("Logging_PerfMonitor_LogInterval", 60f);
@@ -201,14 +130,14 @@ namespace Si_Logging
                 {
                     return;
                 }
+                
+                PrintLogLine($"Loading map \"{sceneName}\"");
 
-                string LogLine = "Loading map \"" + sceneName + "\"";
-                PrintLogLine(LogLine);
+                DamageDatabase.ResetRound();
 
                 if (Pref_Log_PlayerConsole_Enable.Value)
                 {
-                    string ConsoleLine = "<b>Loading map \"" + sceneName + "\"</b>";
-                    HelperMethods.SendConsoleMessage(ConsoleLine);
+                    HelperMethods.SendConsoleMessage($"<b>Loading map \"{sceneName}\"</b>");
                 }
             }
             catch (Exception error)
@@ -230,8 +159,9 @@ namespace Si_Logging
                 try
                 {
                     // TODO: Find IP address and port of client
-                    string LogLine = "\"...<><" + __0.m_steamIDRemote.ToString() + "><> connected, address \"127.0.0.1:27015\"";
-                    PrintLogLine(LogLine);
+                    string connectionID = GetConnectionString(__0);
+
+                    PrintLogLine($"{connectionID} connected, address \"127.0.0.1:27015\"");
                 }
                 catch (Exception error)
                 {
@@ -250,13 +180,15 @@ namespace Si_Logging
             {
                 try
                 {
-                    if (__0 != null)
+                    if (__0 == null)
                     {
-                        // TODO: Find current name
-                        int userID = Math.Abs(__0.GetInstanceID());
-                        string LogLine = "\"" + __0.PlayerName + "<" + userID + "><" + GetPlayerID(__0) + "><>\" entered the game";
-                        PrintLogLine(LogLine);
+                        return;
                     }
+
+                    // TODO: Find current name
+                    string connectingPlayer = AddPlayerLogEntry(__0);
+
+                    PrintLogLine($"{connectingPlayer} entered the game");
                 }
                 catch (Exception error)
                 {
@@ -273,27 +205,19 @@ namespace Si_Logging
             {
                 try
                 {
-                    if (__0 != null)
+                    if (__0 == null)
                     {
-                        int userID = Math.Abs(__0.GetInstanceID());
-                        string teamName;
-                        if (__0.Team == null)
-                        {
-                            teamName = "";
-                        }
-                        else
-                        {
-                            teamName = __0.Team.TeamShortName;
-                        }
+                        return;
+                    }
 
-                        string LogLine = "\"" + __0.PlayerName + "<" + userID + "><" + GetPlayerID(__0) + "><" + teamName + ">\" disconnected";
-                        PrintLogLine(LogLine);
+                    string disconnectingPlayer = AddPlayerLogEntry(__0);
 
-                        if (Pref_Log_PlayerConsole_Enable.Value)
-                        {
-                            string ConsoleLine = "<b>" + HelperMethods.GetTeamColor(__0) + __0.PlayerName + "</color></b> disconnected.";
-                            HelperMethods.SendConsoleMessage(ConsoleLine);
-                        }
+                    PrintLogLine($"{disconnectingPlayer} disconnected");
+
+                    if (Pref_Log_PlayerConsole_Enable.Value)
+                    {
+                        string disconnectingPretty = AddPlayerConsoleEntry(__0);
+                        HelperMethods.SendConsoleMessage($"{disconnectingPretty} disconnected.");
                     }
                 }
                 catch (Exception error)
@@ -311,19 +235,9 @@ namespace Si_Logging
             {
                 try
                 {
-                    int userID = Math.Abs(__0.GetInstanceID());
-                    string teamName;
-                    if ( __0.Team == null)
-                    {
-                        teamName = "";
-                    }
-                    else
-                    {
-                        teamName = __0.Team.TeamShortName;
-                    }
+                    string kickedPlayer = AddPlayerLogEntry(__0);
 
-                    string LogLine = "Kick: \"" + __0.PlayerName + "<" + userID + "><" + GetPlayerID(__0) + "><" + teamName + "\" was kicked by \"Console\" (message \"\")";
-                    PrintLogLine(LogLine);
+                    PrintLogLine($"Kick: {kickedPlayer} was kicked by \"Console\" (message \"\")");
                 }
                 catch (Exception error)
                 {
@@ -361,11 +275,10 @@ namespace Si_Logging
                     bool isVictimHuman = (victimPlayer != null);
                     bool isAttackerHuman = (attackerPlayer != null);
 
-                    #pragma warning disable CS8602 // Dereference of a possibly null reference.
+                    #pragma warning disable CS8604 // Dereference of a possibly null reference.
                     if (isVictimHuman)
                     {
-
-                        int victimUserID = Math.Abs(victimPlayer.GetInstanceID());
+                        DamageDatabase.OnPlayerDeath(victimPlayer);
 
                         if (attackerNetComp == null)
                         {
@@ -378,57 +291,78 @@ namespace Si_Logging
                             bool isSuicide = (attackerPlayer == victimPlayer);
                             if (isSuicide)
                             {
+                                string victim = AddPlayerLogEntry(victimPlayer);
+                                string instigator = GetNameFromObject(__1);
 
-                                string LogLine = "\"" + victimPlayer.PlayerName + "<" + victimUserID + "><" + GetPlayerID(victimPlayer) + "><" + victimPlayer.Team.TeamShortName + ">\" committed suicide with \"" + __1.ToString().Split('(')[0] + "\" (dmgtype \"\")";
-                                PrintLogLine(LogLine);
+                                PrintLogLine($"{victim} committed suicide with \"{instigator}\" (dmgtype \"\")");
 
                                 if (Pref_Log_PlayerConsole_Enable.Value)
                                 {
-                                    string ConsoleLine = "<b>" + HelperMethods.GetTeamColor(victimPlayer) + victimPlayer.PlayerName + "</color></b> (" + __1.ToString().Split('(')[0] + ") committed suicide";
-                                    HelperMethods.SendConsoleMessage(ConsoleLine);
+                                    string victimPretty = AddPlayerConsoleEntry(victimPlayer);
+
+                                    HelperMethods.SendConsoleMessage($"{victimPretty} ({instigator}) committed suicide");
                                 }
                             }
                             // human-controlled player killed another human-controlled player
                             else
                             {
-                                int attackerUserID = Math.Abs(attackerPlayer.GetInstanceID());
-                                string LogLine = "\"" + attackerPlayer.PlayerName + "<" + attackerUserID + "><" + GetPlayerID(attackerPlayer) + "><" + attackerPlayer.Team.TeamShortName + ">\" killed \"" + victimPlayer.PlayerName + "<" + victimUserID + "><" + GetPlayerID(victimPlayer) + "><" + victimPlayer.Team.TeamShortName + ">\" with \"" + __1.ToString().Split('(')[0] + "\" (dmgtype \"\") (victim \"" + __0.ToString().Split('(')[0] + "\")";
-                                PrintLogLine(LogLine);
+                                string attacker = AddPlayerLogEntry(attackerPlayer);
+                                string victim = AddPlayerLogEntry(victimPlayer);
+                                string weapon = AddKilledWithEntry(__0, __1);
+
+                                PrintLogLine($"{attacker} killed {victim} with {weapon}");
 
                                 if (Pref_Log_PlayerConsole_Enable.Value)
                                 {
-                                    string ConsoleLine = "<b>" + HelperMethods.GetTeamColor(attackerPlayer) + attackerPlayer.PlayerName + "</color></b> (" + __1.ToString().Split('(')[0] + ") killed <b>" + HelperMethods.GetTeamColor(victimPlayer) + victimPlayer.PlayerName + "</color></b> (" + __0.ToString().Split('(')[0] + ")";
-                                    HelperMethods.SendConsoleMessage(ConsoleLine);
+                                    string attackerPretty = AddPlayerConsoleEntry(attackerPlayer);
+                                    string victimPretty = AddPlayerConsoleEntry(victimPlayer);
+                                    string attackerWeapon = GetNameFromObject(__1);
+                                    string victimUnit = GetNameFromUnit(__0);
+
+                                    HelperMethods.SendConsoleMessage($"{attackerPretty} ({attackerWeapon}) killed {victimPretty} ({victimUnit})");
                                 }
                             }
                         }
                         else if (Pref_Log_Kills_Include_AI_vs_Player.Value)
                         // Attacker is an AI, Victim is a human
                         {
-                            string LogLine = "\"" + __1.ToString().Split('(')[0] + "<><><" + attackerBase.Team.TeamShortName + ">\" killed \"" + victimPlayer.PlayerName + "<" + victimUserID + "><" + GetPlayerID(victimPlayer) + "><" + victimPlayer.Team.TeamShortName + ">\" with \"" + __1.ToString().Split('(')[0] + "\" (dmgtype \"\") (victim \"" + __0.ToString().Split('(')[0] + "\")";
-                            PrintLogLine(LogLine);
+                            string attacker = AddAIAttackerLogEntry(__1, attackerBase.Team);
+                            string victim = AddPlayerLogEntry(victimPlayer);
+                            string weapon = AddKilledWithEntry(__0, __1);
+                            string victimUnit = GetNameFromUnit(__0);
+
+                            PrintLogLine($"{attacker} killed {victim} with {weapon}");
 
                             if (Pref_Log_PlayerConsole_Enable.Value)
                             {
-                                string ConsoleLine = "<b>AI</b> (" + __1.ToString().Split('(')[0] + ")" + " killed <b>" + HelperMethods.GetTeamColor(victimPlayer) + victimPlayer.PlayerName + "</color></b> (" + __0.ToString().Split('(')[0] + ")";
-                                HelperMethods.SendConsoleMessage(ConsoleLine);
+                                string AIPretty = AddAIConsoleEntry();
+                                string instigator = GetNameFromObject(__1);
+                                string victimPretty = AddPlayerConsoleEntry(victimPlayer);
+
+                                HelperMethods.SendConsoleMessage($"{AIPretty} ({instigator}) killed {victimPretty} ({victimUnit})");
                             }
                         }
                     }
                     else if (isAttackerHuman && Pref_Log_Kills_Include_AI_vs_Player.Value)
                     // Attacker is a human, Victim is an AI
                     {
-                        int attackerUserID = Math.Abs(attackerPlayer.GetInstanceID());
-                        string LogLine = "\"" + attackerPlayer.PlayerName + "<" + attackerUserID + "><" + GetPlayerID(attackerPlayer) + "><" + attackerPlayer.Team.TeamShortName + ">\" killed \"" + __0.ToString().Split('(')[0] + "<><><" + __0.Team.TeamShortName + ">\" with \"" + __1.ToString().Split('(')[0] + "\" (dmgtype \"\") (victim \"" + __0.ToString().Split('(')[0] + "\")";
-                        PrintLogLine(LogLine);
+                        string attacker = AddPlayerLogEntry(attackerPlayer);
+                        string victim = AddAIVictimLogEntry(__0);
+                        string weapon = AddKilledWithEntry(__0, __1);
+
+                        PrintLogLine($"{attacker} killed {victim} with {weapon}");
 
                         if (Pref_Log_PlayerConsole_Enable.Value)
                         {
-                            string ConsoleLine = "<b>" + HelperMethods.GetTeamColor(attackerPlayer) + attackerPlayer.PlayerName + "</color></b> (" + __1.ToString().Split('(')[0] + ") killed " + "<b>AI</b> (" + __0.ToString().Split('(')[0] + ")";
-                            HelperMethods.SendConsoleMessage(ConsoleLine);
+                            string AIPretty = AddAIConsoleEntry();
+                            string attackerPretty = AddPlayerConsoleEntry(attackerPlayer);
+                            string instigator = GetNameFromObject(__1);
+                            string victimUnit = GetNameFromUnit(__0);
+
+                            HelperMethods.SendConsoleMessage($"{attackerPretty} ({instigator}) killed {AIPretty} ({victimUnit})");
                         }
                     }
-                    #pragma warning restore CS8602 // Dereference of a possibly null reference.
+                    #pragma warning restore CS8604 // Dereference of a possibly null reference.
                 }
                 catch (Exception error)
                 {
@@ -443,7 +377,7 @@ namespace Si_Logging
             string theOldTeamName;
             if (oldTeam == null)
             {
-                theOldTeamName = "";
+                theOldTeamName = string.Empty;
             }
             else
             {
@@ -461,17 +395,16 @@ namespace Si_Logging
                 return;
             }
 
-
-            int userID = Math.Abs(player.GetInstanceID());
-            string LogLine = "\"" + player.PlayerName + "<" + userID + "><" + GetPlayerID(player) + "><" + theOldTeamName + ">\" joined team \"" + newTeam.TeamShortName + "\"";
-            PrintLogLine(LogLine);
+            string playerEntry = AddPlayerLogEntry(player, theOldTeamName);
+            
+            PrintLogLine($"{playerEntry} joined team \"{newTeam.TeamShortName}\"");
 
             if (Pref_Log_PlayerConsole_Enable.Value)
             {
-                string ConsoleLine = string.Empty;
-                ConsoleLine = "<b>" + HelperMethods.GetTeamColor(player) + player.PlayerName + "</color></b> " + (oldTeam == null ? "joined team " : "changed to team ") + HelperMethods.GetTeamColor(newTeam) + newTeam.TeamShortName + "</color>";
+                string playerPretty = AddPlayerConsoleEntry(player);
+                string action = (oldTeam == null ? "joined team " : "changed to team ");
 
-                HelperMethods.SendConsoleMessage(ConsoleLine);
+                HelperMethods.SendConsoleMessage($"{playerPretty} {action} {HelperMethods.GetTeamColor(newTeam)}{newTeam.TeamShortName}</color>");
             }
         }
 
@@ -512,28 +445,22 @@ namespace Si_Logging
         {
             try
             {
-                if (args == null) return;
+                if (args == null)
+                {
+                    return;
+                }
 
                 Player player = args.Player;
-                
-                if (player == null || player.Team == null) return;
-                int userID = Math.Abs(player.GetInstanceID());
-                string role;
 
-                if (args.Role == GameModeExt.ETeamRole.COMMANDER)
+                if (player == null || player.Team == null)
                 {
-                    role = "Commander";
-                }
-                else if (args.Role == GameModeExt.ETeamRole.INFANTRY)
-                {
-                    role = "Infantry";
-                } else
-                {
-                    role = "None";
+                    return;
                 }
 
-                string LogLine = "\"" + player.PlayerName + "<" + userID + "><" + GetPlayerID(player) + "><" + player.Team.TeamShortName + ">\" changed role to \"" + role + "\"";
-                PrintLogLine(LogLine);
+                string role = GetRoleName(args.Role);
+                string playerEntry = AddPlayerLogEntry(player);
+
+                PrintLogLine($"{playerEntry} changed role to \"{role}\"");
             }
             catch (Exception error)
             {
@@ -552,14 +479,81 @@ namespace Si_Logging
                 {
                     // Player player = GetPlayerFromSteamID(__0);
                     // TODO: grab old name and current team
-                    string LogLine = "\"...<><" + __0.SteamID.ToString() + "><>\" changed name to \"" + __2 + "\"";
-                    PrintLogLine(LogLine);
+                    string steamID = GetPlayerID(__0);
+                    PrintLogLine($"\"...<><{steamID}><>\" changed name to \"{__2}\"");
                 }
                 catch (Exception error)
                 {
                     HelperMethods.PrintError(error, "Failed to run SendPlayerChangeName");
                 }
             }
+        }
+
+        public static Player? GetPlayer(BaseGameObject? baseGameObject)
+        {
+            if (baseGameObject == null)
+            {
+                return null;
+            }
+
+            NetworkComponent? networkComponent = baseGameObject.NetworkComponent;
+            if (networkComponent == null)
+            {
+                return null;
+            }
+
+            Player? player = networkComponent.OwnerPlayer;
+            if (player == null)
+            {
+                return null;
+            }
+
+            return player;
+        }
+
+        public static Player? GetPlayer(DamageManager? damageManager)
+        {
+            if (damageManager == null)
+            {
+                return null;
+            }
+
+            BaseGameObject baseObject = damageManager.Owner;
+            if (baseObject == null)
+            {
+                return null;
+            }
+
+            return GetPlayer(baseObject);
+        }
+
+        public static Player? GetPlayer(GameObject? gameObject)
+        {
+            // was it a non-player-controlled object?
+            if (gameObject == null)
+            {
+                return null;
+            }
+
+            BaseGameObject? baseObject = GameFuncs.GetBaseGameObject(gameObject);
+            if (baseObject == null)
+            {
+                return null;
+            }
+
+            return GetPlayer(baseObject);
+        }
+
+        public static bool ShouldHandleDamage(float damage)
+        {
+            // was damage less than (or equal to) the minimum cut-off value?
+            int damageRounded = (int)Math.Ceiling(damage);
+            if (damageRounded <= Pref_Log_MinDamageCutoff.Value)
+            {
+                return false;
+            }
+
+            return true;
         }
 
         // 058. Injuring
@@ -572,66 +566,47 @@ namespace Si_Logging
         {
             public static void Postfix(DamageManager __instance, float __0, GameObject __1, byte __2, bool __3)
             {
-                // should we log the damage?
-                if (!Pref_Log_Damage.Value)
+                // are there any damage-related settings that are enabled?
+                if (!Pref_Log_Damage.Value && !Pref_Display_Damage.Value)
                 {
                     return;
                 }
 
-                // was it a non-human-controlled instigator?
-                if (__1 == null)
+                // should we continue handling the damage?
+                if (!ShouldHandleDamage(__0))
                 {
                     return;
                 }
 
-                BaseGameObject attackerBase = GameFuncs.GetBaseGameObject(__1);
-                if (attackerBase == null)
-                {
-                    return;
-                }
+                Player? attackerPlayer = GetPlayer(__1);
+                Player? victimPlayer = GetPlayer(__instance);
 
-                NetworkComponent attackerNetComp = attackerBase.NetworkComponent;
-                if (attackerNetComp == null)
-                {
-                    return;
-                }
-
-                Player attackerPlayer = attackerNetComp.OwnerPlayer;
+                // was it a non-player-controlled instigator?
                 if (attackerPlayer == null)
                 {
                     return;
                 }
 
-                // was it a non-human-controlled victim?
-                BaseGameObject victimBase = __instance.Owner;
-                if (victimBase == null)
-                {
-                    return;
-                }
-
-                NetworkComponent victimNetComp = victimBase.NetworkComponent;
-                if (victimNetComp == null)
-                {
-                    return;
-                }
-
-                Player victimPlayer = victimNetComp.OwnerPlayer;
+                // was it a non-player-controlled victim?
                 if (victimPlayer == null)
                 {
                     return;
                 }
 
-                // was damage less than (or equal to) 1?
-                int damage = (int)Math.Ceiling(__0);
-                if (damage <= 1)
+                // at this point we have confirmed it was PvP damage
+                if (Pref_Display_Damage.Value)
                 {
-                    return;
+                    DamageDatabase.AddDamage(victimPlayer, attackerPlayer, __0);
                 }
 
-                int attackerUserID = Math.Abs(attackerPlayer.GetInstanceID());
-                int victimUserID = Math.Abs(victimPlayer.GetInstanceID());
-                string LogLine = "\"" + attackerPlayer.PlayerName + "<" + attackerUserID + "><" + GetPlayerID(attackerPlayer) + "><" + attackerPlayer.Team.TeamShortName + ">\" attacked \"" + victimPlayer.PlayerName + "<" + victimUserID + "><" + GetPlayerID(victimPlayer) + "><" + victimPlayer.Team.TeamShortName + ">\" with \"" + __1.ToString().Split('(')[0] + "\"" + " (damage \"" + damage.ToString() + "\")";
-                PrintLogLine(LogLine, true);
+                if (Pref_Log_Damage.Value)
+                {
+                    string attacker = AddPlayerLogEntry(attackerPlayer);
+                    string victim = AddPlayerLogEntry(victimPlayer);
+                    string weapon = GetNameFromObject(__1);
+
+                    PrintLogLine($"{attackerPlayer} attacked {victimPlayer} with \"{weapon}\" (damage \"{__0.ToString("#.#")}\")", true);
+                }
             }
         }
 
@@ -680,19 +655,20 @@ namespace Si_Logging
                         return;
                     }
 
-                    int userID = Math.Abs(attackerPlayer.GetInstanceID());
-
-                    string structTeam = __0.Team.TeamShortName;
-
+                    string playerEntry = AddPlayerLogEntry(attackerPlayer);
                     string structName = GetStructureName(__0);
+                    string structTeam = __0.Team.TeamShortName;
+                    string weapon = GetNameFromObject(__1);
+                    string construction = (__0.OwnerConstructionSite == null ? "no" : "yes");
 
-                    string LogLine = "\"" + attackerPlayer.PlayerName + "<" + userID + "><" + GetPlayerID(attackerPlayer) + "><" + attackerPlayer.Team.TeamShortName + ">\" triggered \"structure_kill\" (structure \"" + structName + "\") (struct_team \"" + structTeam + "\") (construction \"" + (__0.OwnerConstructionSite == null ? "no" : "yes") + "\")";
-                    PrintLogLine(LogLine);
+                    PrintLogLine($"{playerEntry} triggered \"structure_kill\" (structure \"{structName}\") (weapon \"{weapon}\") (struct_team \"{structTeam}\") (construction \"{construction}\")");
 
                     if (Pref_Log_PlayerConsole_Enable.Value)
                     {
-                        string ConsoleLine = "<b>" + HelperMethods.GetTeamColor(attackerPlayer) + attackerPlayer.PlayerName + "</color></b> destroyed a " + (__0.OwnerConstructionSite == null ? "structure" : "construction site") + " (" + HelperMethods.GetTeamColor(__0.Team) + structName + "</color>)";
-                        HelperMethods.SendConsoleMessageToTeam(attackerPlayer.Team, ConsoleLine);
+                        string playerPretty = AddPlayerConsoleEntry(attackerPlayer);
+                        string type = (__0.OwnerConstructionSite == null ? "structure" : "construction site");
+
+                        HelperMethods.SendConsoleMessageToTeam(attackerPlayer.Team, $"{playerPretty} ({weapon}) destroyed a {type} ({HelperMethods.GetTeamColor(__0.Team)}{structName}</color>)");
                     }
                 }
                 catch (Exception error)
@@ -731,18 +707,6 @@ namespace Si_Logging
                     HelperMethods.PrintError(error, "Failed to run OnStructureDestroyed");
                 }
             }
-        }
-        
-        public static string GetStructureName(Target target)
-        {
-            if (target == null || target.ObjectInfo == null)
-            {
-                return "";
-            }
-
-            // remove any spaces or dashes from the display name
-            // this is still slightly different than calling ToString() but this should be more reliable with game updates
-            return target.ObjectInfo.DisplayName.Replace(" ", "").Replace("-", "");
         }
 
         // TODO: 060. Player Objectives/Actions
@@ -793,41 +757,54 @@ namespace Si_Logging
                     {
                         firedRoundEndOnce = true;
 
-                        GameModeExt gameModeInstance = GameObject.FindObjectOfType<GameModeExt>();
+                        if (VictimDamage != null)
+                        {
+                            DamageDatabase.ResetRound();
+                        }
+
+                        GameModeExt gameModeInstance = GameObject.FindFirstObjectByType<GameModeExt>();
 
                         if (gameModeInstance == null)
                         {
                             return;
                         }
 
-                        GameModeExt.ETeamsVersus versusMode = gameModeInstance.TeamsVersus;
+                        string gametype = GetGameType(gameModeInstance);
 
                         if (__1 == null)
                         {
-                            string RoundWinLogEarlyLine = "World triggered \"Round_Win\" (gamemode \"" + GameMode.CurrentGameMode.ToString().Split(' ')[0] + "\") (gametype \"" + versusMode.ToString() + "\")";
-                            PrintLogLine(RoundWinLogEarlyLine);
+                            string gamemode = GetGameMode();
+
+                            PrintLogLine($"World triggered \"Round_Win\" (gamemode \"{gamemode}\") (gametype \"{gametype}\")");
 
                             if (Pref_Log_PlayerConsole_Enable.Value)
                             {
-                                string ConsoleLine = "<b>Round is over. Game is a draw.</b>";
-                                HelperMethods.SendConsoleMessage(ConsoleLine);
+                                HelperMethods.SendConsoleMessage($"<b>Round is over. Game is a draw.</b>");
                             }
 
                             return;
                         }
 
-                        string VictoryLogLine = "Team \"" + __1.TeamShortName + "\" triggered \"Victory\"";
-                        PrintLogLine(VictoryLogLine);
+                        string teamName = GetTeamName(__1);
+                        PrintLogLine($"Team \"{teamName}\" triggered \"Victory\"");
 
                         if (Pref_Log_PlayerConsole_Enable.Value)
                         {
-                            string ConsoleLine = "<b>Team " + HelperMethods.GetTeamColor(__1) + __1.TeamShortName + "</color> is victorious!</b>";
-                            HelperMethods.SendConsoleMessage(ConsoleLine);
+                            HelperMethods.SendConsoleMessage($"<b>Team {HelperMethods.GetTeamColor(__1)}{teamName}</color> is victorious!</b>");
                         }
+
+                        GameModeExt.ETeamsVersus versusMode = gameModeInstance.TeamsVersus;
 
                         for (int i = 0; i < SiConstants.MaxPlayableTeams; i++)
                         {
                             Team? thisTeam = Team.Teams[i];
+                            // skip GameMaster team
+                            if (thisTeam == null || thisTeam.IsSpecial)
+                            {
+                                continue;
+                            }
+
+                            // skip disabled teams
                             if (versusMode == GameModeExt.ETeamsVersus.HUMANS_VS_HUMANS && i == (int)SiConstants.ETeam.Alien)
                             {
                                 continue;
@@ -836,35 +813,27 @@ namespace Si_Logging
                             {
                                 continue;
                             }
-                            
-                            string TeamLogLine = "Team \"" + thisTeam.TeamShortName + "\" scored \"" + teamResourcesCollected[thisTeam.Index].ToString() + "\" with \"" + thisTeam.GetNumPlayers().ToString() + "\" players";
-                            PrintLogLine(TeamLogLine);
+
+                            string resourcesCollected = teamResourcesCollected[thisTeam.Index].ToString();
+                            string playerCount = thisTeam.GetNumPlayers().ToString();
+
+                            PrintLogLine($"Team \"{teamName}\" scored \"{resourcesCollected}\" with \"{playerCount}\" players");
                         }
 
                         for (int i = 0; i < Player.Players.Count; i++)
                         {
-                            if (Player.Players[i] != null)
+                            if (Player.Players[i] == null)
                             {
-                                Player thisPlayer = Player.Players[i];
-                                int userID = Math.Abs(thisPlayer.GetInstanceID());
-
-                                string playerTeam;
-                                if (thisPlayer.Team == null)
-                                {
-                                    playerTeam = "";
-                                }
-                                else
-                                {
-                                    playerTeam = thisPlayer.Team.TeamShortName;
-                                }
-
-                                string PlayerLogLine = "Player \"" + thisPlayer.PlayerName + "<" + userID + "><" + GetPlayerID(thisPlayer) + "><" + playerTeam + ">\" scored \"" + thisPlayer.Score + "\" (kills \"" + thisPlayer.Kills + "\") (deaths \"" + thisPlayer.Deaths + "\")";
-                                PrintLogLine(PlayerLogLine);
+                                continue;
                             }
+
+                            Player thisPlayer = Player.Players[i];
+                            string playerEntry = AddPlayerLogEntry(thisPlayer);
+
+                            PrintLogLine($"Player {playerEntry} scored \"{thisPlayer.Score}\" (kills \"{thisPlayer.Kills}\") (deaths \"{thisPlayer.Deaths}\")");
                         }
 
-                        string RoundWinLogLine = "World triggered \"Round_Win\" (gametype \"" + versusMode.ToString() + "\")";
-                        PrintLogLine(RoundWinLogLine);
+                        PrintLogLine($"World triggered \"Round_Win\" (gametype \"{gametype}\")");
 
                         // call parser
                         if (!ParserExePresent())
@@ -930,7 +899,6 @@ namespace Si_Logging
                     {
                         currTiers[siteTeam.name] = tier;
                         LogTierChange(siteTeam, tier);
-
                     }
                 } 
 
@@ -943,8 +911,8 @@ namespace Si_Logging
 
         public static void LogTierChange(Team team, int tier)
         {
-                string LogLine = "Team \"" + team.TeamShortName + "\" triggered \"technology_change\" (tier \"" + tier.ToString() + "\")";
-                PrintLogLine(LogLine);
+            string teamName = GetTeamName(team);
+            PrintLogLine($"Team \"{teamName}\" triggered \"technology_change\" (tier \"{tier}\")");
         }
         
         // 062. World Objectives/Actions - Round_Start
@@ -955,14 +923,14 @@ namespace Si_Logging
             {
                 try
                 {
-                    GameModeExt gameModeInstance = GameObject.FindObjectOfType<GameModeExt>();
-                    GameModeExt.ETeamsVersus versusMode = gameModeInstance.TeamsVersus;
+                    GameModeExt gameModeInstance = GameObject.FindFirstObjectByType<GameModeExt>();
 
-                    string RoundStartLogLine = "World triggered \"Round_Start\" (gamemode \"" + GameMode.CurrentGameMode.ToString().Split(' ')[0] + "\") (gametype \"" + versusMode.ToString() + "\")";
+                    string gamemode = GetGameMode();
+                    string gametype = GetGameType(gameModeInstance);
                     
-                    PrintLogLine(RoundStartLogLine);
-                    initializeRound(ref currTiers);
+                    PrintLogLine($"World triggered \"Round_Start\" (gamemode \"{gamemode}\") (gametype \"{gametype}\")");
 
+                    initializeRound(ref currTiers);
                     firedRoundEndOnce = false;
                 }
                 catch (Exception error)
@@ -991,32 +959,12 @@ namespace Si_Logging
                     // each faction has its own chat manager but by looking at alien and only global messages this catches commands only once
                     if (__instance != null && __0 != null && __instance.ToString().Contains("alien"))
                     {
-                        int userID = Math.Abs(__0.GetInstanceID());
-
-                        string teamName;
-                        if (__0.Team == null)
-                        {
-                            teamName = "";
-                        }
-                        else
-                        {
-                            teamName = __0.Team.TeamShortName;
-                        }
-
+                        string playerEntry = AddPlayerLogEntry(__0);
                         // __2 true = team-only message
-                        if (__2 == false)
-                        {
-                            string LogLine = "\"" + __0.PlayerName + "<" + userID + "><" + GetPlayerID(__0) + "><" + teamName + ">\" say \"" + __1 + "\"";
-                            PrintLogLine(LogLine);
-                            
-                        }
-                        else
-                        {
-                            string LogLine = "\"" + __0.PlayerName + "<" + userID + "><" + GetPlayerID(__0) + "><" + teamName + ">\" say_team \"" + __1 + "\"";
-                            PrintLogLine(LogLine);
-                        }
-                    }
+                        string action = (__2 == false ? "say" : "say_team");
 
+                        PrintLogLine($"{playerEntry} {action} \"{__1}\"");
+                    }
                 }
                 catch (Exception error)
                 {

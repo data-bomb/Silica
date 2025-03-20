@@ -1,2 +1,2 @@
 @ECHO OFF
-Silica.exe --melonloader.hideconsole --melonloader.disablestartscreen
+Silica.exe --melonloader.disablestartscreen

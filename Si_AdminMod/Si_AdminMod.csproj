@@ -1,24 +1,24 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <TargetFrameworks>net6.0;netstandard2.1</TargetFrameworks>
     <Nullable>enable</Nullable>
     <PackageId>Silica-MelonLoader-AdminMod</PackageId>
     <Authors>databomb</Authors>
-    <Copyright>Copyright (C) 2024 by databomb</Copyright>
+    <Copyright>Copyright (C) 2023-2025 by databomb</Copyright>
     <PackageProjectUrl>https://github.com/data-bomb/Silica</PackageProjectUrl>
     <PackageReadmeFile>readme.md</PackageReadmeFile>
     <PackageIcon>SilicaModding.png</PackageIcon>
     <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
+    <MSBuildWarningsAsMessages>MSB3270</MSBuildWarningsAsMessages>
   </PropertyGroup>
-  
+
   <ItemGroup>
     <None Include="docs\readme.md">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
   </ItemGroup>
-  
+
   <ItemGroup>
     <None Include="lib\SilicaModding.png">
       <Pack>True</Pack>
@@ -29,7 +29,7 @@
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="*"/>
   </ItemGroup>
-  
+
   <Import Project="..\include\net6.csproj" Condition="'$(TargetFramework)' == 'net6.0'"/>
   <Import Project="..\include\netstandard21.csproj" Condition="'$(TargetFramework)' == 'netstandard2.1'"/>
 </Project>

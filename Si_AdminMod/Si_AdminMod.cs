@@ -1,6 +1,6 @@
 ﻿/*
 Silica Admin Mod
-Copyright (C) 2023-2024 by databomb
+Copyright (C) 2023-2025 by databomb
 
 * Description *
 Provides basic admin mod system to allow additional admins beyond

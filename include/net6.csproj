@@ -1,37 +1,13 @@
 <Project>
-
   <ItemGroup Condition="'$(TargetFramework)' == 'net6.0'">
-    <PackageReference Include="LavaGang.MelonLoader" Version="0.6.3" />
+    <PackageReference Include="LavaGang.MelonLoader" Version="0.7.0" />
     <Reference Include="QList">
       <HintPath>..\include\QList.dll</HintPath>
+      <Private>False</Private>
     </Reference>
-    <Reference Include="0Harmony">
-      <HintPath>..\include\net6.0\0Harmony.dll</HintPath>
-    </Reference>
-    <Reference Include="Il2Cppcom.rlabrecque.steamworks.net">
-      <HintPath>..\include\net6.0\Il2Cppcom.rlabrecque.steamworks.net.dll</HintPath>
-    </Reference>
-    <Reference Include="Assembly-CSharp">
-      <HintPath>..\include\net6.0\Assembly-CSharp.dll</HintPath>
-    </Reference>
-    <Reference Include="Il2CppInterop.Runtime">
-      <HintPath>..\include\net6.0\Il2CppInterop.Runtime.dll</HintPath>
-    </Reference>
-    <Reference Include="Il2Cppmscorlib">
-      <HintPath>..\include\net6.0\Il2Cppmscorlib.dll</HintPath>
-    </Reference>
-    <Reference Include="UnityEngine.CoreModule">
-      <HintPath>..\include\net6.0\UnityEngine.CoreModule.dll</HintPath>
-    </Reference>
-    <Reference Include="UnityEngine.InputLegacyModule">
-      <HintPath>..\include\net6.0\UnityEngine.InputLegacyModule.dll</HintPath>
-    </Reference>
-    <Reference Include="UnityEngine.PhysicsModule">
-      <HintPath>..\include\net6.0\UnityEngine.PhysicsModule.dll</HintPath>
-    </Reference>
-    <Reference Include="UnityEngine">
-      <HintPath>..\include\net6.0\UnityEngine.dll</HintPath>
+    <!-- https://github.com/data-bomb/Silica/wiki/Creating-New-Server%E2%80%90Side-Mods#gather-references -->
+    <Reference Include="..\include\net6.0\*.dll">
+      <Private>False</Private>
     </Reference>
   </ItemGroup>
-
 </Project>

@@ -336,51 +336,23 @@ namespace Si_CommanderManagement
         {
             get
             {
-                if (GameMode.CurrentGameMode is MP_Strategy strategyInstance)
+                if (GameMode.CurrentGameMode is GameModeExt gameModeExt)
                 {
-                    #if NET6_0
-                    return strategyInstance.Timer;
-                    #else
-                    Type strategyType = strategyInstance.GetType();
-                    FieldInfo timerField = strategyType.GetField("Timer", BindingFlags.NonPublic | BindingFlags.Instance);
-                    return (float)timerField.GetValue(strategyInstance);
-                    #endif
-                }
-                else if (GameMode.CurrentGameMode is MP_TowerDefense defenseInstance)
-                {
-                    #if NET6_0
-                    return defenseInstance.Timer;
-                    #else
-                    Type defenseType = defenseInstance.GetType();
-                    FieldInfo timerField = defenseType.GetField("Timer", BindingFlags.NonPublic | BindingFlags.Instance);
-                    return (float)timerField.GetValue(defenseInstance);
-                    #endif
+                    return gameModeExt.Timer;
                 }
                 throw new ArgumentException("Cannot access gamemode timer");
             }
             set
             {
-                if (GameMode.CurrentGameMode is MP_Strategy strategyInstance)
+                if (GameMode.CurrentGameMode is GameModeExt gameModeExt)
                 {
                     #if NET6_0
-                    strategyInstance.Timer = value;
+                    gameModeExt.Timer = value;
                     #else
-                    Type strategyType = strategyInstance.GetType();
-                    FieldInfo timerField = strategyType.GetField("Timer", BindingFlags.NonPublic | BindingFlags.Instance);
-                    timerField.SetValue(strategyInstance, value);
+                    Type gameModeExtType = gameModeExt.GetType();
+                    PropertyInfo timerProperty = gameModeExtType.GetProperty("Timer");
+                    timerProperty.SetValue(gameModeExt, value);
                     #endif
-                    return;
-                }
-                else if (GameMode.CurrentGameMode is MP_TowerDefense defenseInstance)
-                {
-                    #if NET6_0
-                    defenseInstance.Timer = value;
-                    #else
-                    Type strategyType = defenseInstance.GetType();
-                    FieldInfo timerField = strategyType.GetField("Timer", BindingFlags.NonPublic | BindingFlags.Instance);
-                    timerField.SetValue(defenseInstance, value);
-                    #endif
-                    return;
                 }
                 throw new ArgumentException("Cannot set gamemode timer");
             }
@@ -474,8 +446,8 @@ namespace Si_CommanderManagement
 
             if (timerValue <= 5f && timerValue > 4f)
             {
-                GameModeTimer = 26f;
                 HelperMethods.ReplyToCommand("Round cannot start because all teams don't have a commander. Chat !commander to apply.");
+                GameModeTimer = 26f;
             }
         }
     }

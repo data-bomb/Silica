@@ -1,28 +1,8 @@
 <Project>
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.1'">
-    <Reference Include="0Harmony">
-      <HintPath>..\include\netstandard2.1\0Harmony.dll</HintPath>
-    </Reference>
-    <Reference Include="Assembly-CSharp-firstpass">
-      <HintPath>..\include\netstandard2.1\com.rlabrecque.steamworks.net.dll</HintPath>
-    </Reference>
-    <Reference Include="Assembly-CSharp">
-      <HintPath>..\include\netstandard2.1\Assembly-CSharp.dll</HintPath>
-    </Reference>
-    <Reference Include="UnityEngine.CoreModule">
-      <HintPath>..\include\netstandard2.1\UnityEngine.CoreModule.dll</HintPath>
-    </Reference>
-    <Reference Include="UnityEngine">
-      <HintPath>..\include\netstandard2.1\UnityEngine.dll</HintPath>
-    </Reference>
-    <Reference Include="UnityEngine.InputLegacyModule">
-      <HintPath>..\include\netstandard2.1\UnityEngine.InputLegacyModule.dll</HintPath>
-    </Reference>
-    <Reference Include="UnityEngine.PhysicsModule">
-      <HintPath>..\include\netstandard2.1\UnityEngine.PhysicsModule.dll</HintPath>
-    </Reference>
-    <Reference Include="MelonLoader">
-      <HintPath>..\include\netstandard2.1\MelonLoader.dll</HintPath>
+    <!-- https://github.com/data-bomb/Silica/wiki/Creating-New-Server%E2%80%90Side-Mods#gather-references -->
+    <Reference Include="..\include\netstandard2.1\*.dll">
+      <Private>False</Private>
     </Reference>
   </ItemGroup>
 </Project>

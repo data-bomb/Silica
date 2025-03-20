@@ -1,6 +1,6 @@
 /*
  Silica Logging Mod
- Copyright (C) 2023-2024 by databomb
+ Copyright (C) 2023-2025 by databomb
  
  * Description *
  For Silica servers, creates a log file with console replication
@@ -98,28 +98,8 @@ namespace Si_Logging
                 Structures = (Structure.Structures != null ? Structure.Structures.Count : -1);
                 ConstructionSites = (ConstructionSite.ConstructionSites != null ? ConstructionSite.ConstructionSites.Count : -1);
                 NetworkComponents = (NetworkComponent.NetworkComponents != null ? NetworkComponent.NetworkComponents.Count : -1);
-                LightsOn = 0;
-                if (Unit.Units != null)
-                {
-                    Units = Unit.Units.Count;
-                    
-                    foreach (Unit unit in Unit.Units)
-                    {
-                        if (unit.UnitLights == null)
-                        {
-                            continue;
-                        }
-
-                        if (unit.UnitLights.LightsOn)
-                        {
-                            LightsOn++;
-                        }
-                    }
-                }
-                else
-                {
-                    Units = -1;
-                }
+                Units = (Unit.Units != null ? Unit.Units.Count : -1);
+                LightsOn = GetNumberOfLightsOn();
 
                 UploadRate = (float)Mathf.RoundToInt(NetworkLayer.NetBitsAvgUpload * 0.01f) * 0.1f;
                 DownloadRate = (float)Mathf.RoundToInt(NetworkLayer.NetBitsAvgDownload * 0.01f) * 0.1f;
@@ -166,6 +146,31 @@ namespace Si_Logging
                     HelperMethods.PrintError(exception, "Failed in MusicJukeboxHandler::Update");
                 }
             }
+        }
+
+        private static int GetNumberOfLightsOn()
+        {
+            if (Unit.Units == null)
+            {
+                return -1;
+            }
+
+            int numLightsOn = 0;
+
+            foreach (Unit unit in Unit.Units)
+            {
+                if (unit.UnitLights == null)
+                {
+                    continue;
+                }
+
+                if (unit.UnitLights.LightsOn)
+                {
+                    numLightsOn++;
+                }
+            }
+
+            return numLightsOn;
         }
 
         public static void CapturePerformancePoint()
