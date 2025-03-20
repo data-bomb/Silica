@@ -50,10 +50,17 @@ jobs:
   find-if-nuget-update-is-needed:
     runs-on: ubuntu-latest
     steps:
+      - name: Save branch name
+        shell: bash
+        run: echo "BRANCH_NAME=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.BRANCH_NAME }}
       - uses: dorny/paths-filter@v3
         id: checkAdminMod
         with:
+          base: ${{ env.BRANCH_NAME }}
+          ref: ${{ env.BRANCH_NAME }}
           filters: |
             admin-updated:
               - 'Si_AdminMod/**'
@@ -135,7 +142,8 @@ jobs:
     
     steps:
       - uses: actions/checkout@v4
-          
+        with:
+          ref: ${{ needs.beta-check.outputs.branch_identifier }}
       - name: Generate matrix with all modules of the repo
         id: set-matrix
         run: |
@@ -160,15 +168,24 @@ jobs:
     - name: Prepare environment pwd
       shell: bash
       run: echo "START_DIR=`pwd`" >> $GITHUB_ENV
-      
+    - name: Save branch name
+      shell: bash
+      run: echo "BRANCH_NAME=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
+    - name: beta branch detected
+      if: ${{ github.ref == 'refs/heads/beta' }}
+      run: echo "Using beta branch"
+    - name: main branch detected
+      if: ${{ github.ref == 'refs/heads/main' }}
+      run: echo "Using main branch"
     - uses: actions/checkout@v4
-    
+      with:
+        ref: ${{ env.BRANCH_NAME }}
     - name: Game References
       uses: actions/checkout@v4
       with:
         repository: ${{ secrets.PRIV_R }}
         token: ${{ secrets.FGAT_PRIV_R }}
-        ref: ${{ needs.beta-check.outputs.branch_identifier }}
+        ref: ${{ env.BRANCH_NAME }}
         path: references
 
     - name: Copy References
@@ -230,6 +247,8 @@ jobs:
       with:
         name: listen-server-${{ matrix.path }}-build-${{ env.GITHUB_SHA_SHORT }}
         path: ${{ matrix.path }}/bin/${{env.BUILD_TYPE}}/net6.0/${{ matrix.path }}.dll
+        # ignore for mods which don't have a Listen Server build (Webhooks, etc.)
+        if-no-files-found: ignore
         
   publish:
     if: github.event_name == 'push' && ${{ !failure() && !cancelled() }}
@@ -245,6 +264,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           sparse-checkout: .
+          ref: ${{ needs.beta-check.outputs.branch_identifier }}
           
       - name: Make output paths
         run: |
@@ -312,7 +332,6 @@ jobs:
           mv release/listen/Mods/Si_BetterSpawns.dll release/listen/Mods/disabled
           # Webhooks encounters issues/conflicts with the game and the Steam API
           mv release/dedi/Mods/Si_Webhooks.dll release/dedi/Mods/disabled
-          mv release/listen/Mods/Si_Webhooks.dll release/listen/Mods/disabled
           # Default Units is disabled because a game update for spawn selection prevented this from working properly
           mv release/dedi/Mods/Si_DefaultUnits.dll release/dedi/Mods/disabled
           mv release/listen/Mods/Si_DefaultUnits.dll release/listen/Mods/disabled
@@ -332,21 +351,23 @@ jobs:
           mv ListenServer-v${{ needs.get-commit-number.outputs.comnum }}-${{ env.GITHUB_SHA_SHORT }}.zip Beta_ListenServer-v${{ needs.get-commit-number.outputs.comnum }}-${{ env.GITHUB_SHA_SHORT }}.zip
           
       - name: Main Release
-        uses: softprops/action-gh-release@975c1b265e11dd76618af1c374e7981f9a6ff44a
+        uses: softprops/action-gh-release@v2
         if: needs.beta-check.outputs.branch_identifier == 'main'
         with:
           tag_name: v${{ needs.get-commit-number.outputs.comnum }}
           prerelease: false
+          generate_release_notes: true
           files: |
             DedicatedServer-v${{ needs.get-commit-number.outputs.comnum }}-${{ env.GITHUB_SHA_SHORT }}.zip
             ListenServer-v${{ needs.get-commit-number.outputs.comnum }}-${{ env.GITHUB_SHA_SHORT }}.zip
 
       - name: Beta Release
-        uses: softprops/action-gh-release@975c1b265e11dd76618af1c374e7981f9a6ff44a
+        uses: softprops/action-gh-release@v2
         if: needs.beta-check.outputs.branch_identifier == 'beta'
         with:
           tag_name: v${{ needs.get-commit-number.outputs.comnum }}-Beta
           prerelease: true
+          generate_release_notes: true
           files: |
             Beta_DedicatedServer-v${{ needs.get-commit-number.outputs.comnum }}-${{ env.GITHUB_SHA_SHORT }}.zip
             Beta_ListenServer-v${{ needs.get-commit-number.outputs.comnum }}-${{ env.GITHUB_SHA_SHORT }}.zip
