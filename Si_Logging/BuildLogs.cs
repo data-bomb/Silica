@@ -81,9 +81,33 @@ namespace Si_Logging
                 return "";
             }
 
+            return GetLogNameFromDisplayName(target.ObjectInfo.DisplayName);
+        }
+
+        public static string GetStructureName(ConstructionSite site)
+        {
+            if (site == null || site.ObjectInfo == null)
+            {
+                return "";
+            }
+
+            return GetLogNameFromDisplayName(site.ObjectInfo.DisplayName);
+        }
+
+        public static string GetLogPosition(Vector3 position)
+        {
+            string x = position.x.ToString("F0");
+            string y = position.z.ToString("F0");
+            string z = position.y.ToString("F0");
+
+            return $"{x} {y} {z}";
+        }
+
+        public static string GetLogNameFromDisplayName(string displayName)
+        {
             // remove any spaces or dashes from the display name
             // this is still slightly different than calling ToString() but this should be more reliable with game updates
-            return target.ObjectInfo.DisplayName.Replace(" ", "").Replace("-", "");
+            return displayName.Replace(" ", "").Replace("-", "");
         }
 
         public static string GetPlayerID(P2PSessionRequest_t session)

@@ -39,7 +39,7 @@ using System.Linq;
 using System.Diagnostics;
 using System.IO;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.7.6", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.7.7", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -739,7 +739,58 @@ namespace Si_Logging
             }
         }
 
-        // 061. Team Objectives/Actions - Victory
+        // 061. Team Objectives/Actions - Structure Placement
+        [HarmonyPatch(typeof(ConstructionData), nameof(ConstructionData.RequestConstructionSite))]
+        private static class ApplyPatchRequestConstructionSite
+        {
+            public static void Postfix(ConstructionData __instance, ConstructionSite __result, Structure __0, Vector3 __1, Quaternion __2, Team __3, Transform __4, float __5)
+            {
+                if (__instance == null || __result == null)
+                {
+                    return;
+                }
+
+                if (__instance.ObjectInfo.ObjectType != ObjectInfoType.Structure)
+                {
+                    return;
+                }
+
+                string teamName = GetTeamName(__3);
+                string structName = GetStructureName(__result);
+                string position = GetLogPosition(__1);
+
+                PrintLogLine($"Team \"{teamName}\" triggered \"construction_start\" (building_name \"{structName}\") (building_position \"{position}\")");
+            }
+        }
+
+        // 061. Team Objectives/Actions - Structure Complete
+        #if NET6_0
+        [HarmonyPatch(typeof(ConstructionSite), nameof(ConstructionSite.SpawnObject))]
+        #else
+        [HarmonyPatch(typeof(ConstructionSite), "SpawnObject")]
+        #endif
+        private static class ApplyPatchConstructionSpawned
+        {
+            public static void Postfix(ConstructionSite __instance)
+            {
+                if (__instance == null)
+                {
+                    return;
+                }
+
+                if (__instance.ObjectInfo.ObjectType != ObjectInfoType.Structure)
+                {
+                    return;
+                }
+
+                string teamName = GetTeamName(__instance.Team);
+                string structName = GetStructureName(__instance);
+                string position = GetLogPosition(__instance.transform.position);
+
+                PrintLogLine($"Team \"{teamName}\" triggered \"construction_complete\" (building_name \"{structName}\") (building_position \"{position}\")");
+            }
+        }
+
         // 062. World Objectives/Actions - Round_Win
         // 065. Round-End Team Score Report
         // 067. Round-End Player Score Report
