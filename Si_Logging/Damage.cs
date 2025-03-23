@@ -62,6 +62,7 @@ namespace Si_Logging
                     {
                         AttackerName = attacker.PlayerName,
                         SteamId = attacker.PlayerID.SteamID.m_SteamID,
+                        TeamIndex = (attacker.Team == null ? -1 : attacker.Team.Index),
                         Quantity = 1,
                         TotalDamage = amount
                     };
@@ -83,43 +84,54 @@ namespace Si_Logging
             {
                 int index = victim.GetIndex();
 
-                // skip if there's nothing to print
-                if (VictimDamage[index] == null || VictimDamage[index].Count <= 0)
+                // skip if there's nothing to print or team is invalid
+                if (VictimDamage[index] == null || VictimDamage[index].Count <= 0 || victim.Team == null)
                 {
-                    MelonLogger.Msg($"Skipping printing of damage statistics for player: {victim.PlayerName}");
                     return;
                 }
 
                 // print stats
-                string[] stats = GenerateStats(index);
+                string[] stats = GenerateStats(index, victim.Team.Index);
                 HelperMethods.SendConsoleMessageToPlayer(victim, stats);
 
                 // reset stats
                 ClearIndex(index);
             }
 
-            public static string[] GenerateStats(int index)
+            public static string[] GenerateStats(int index, int teamIndex)
             {
                 List<string> stats = new List<string>();
 
                 stats.Add(Header());
                 foreach (AttackerInfo attackerInfo in VictimDamage[index])
                 {
-                    stats.Add($"{attackerInfo.AttackerName} caused {attackerInfo.TotalDamage.ToString("#.#")} dmg in {attackerInfo.Quantity} {(attackerInfo.Quantity > 1 ? "hits" : "hit")}");
+                    string color = GetConsoleColorCode(teamIndex, attackerInfo.TeamIndex);
+                    stats.Add($"{color}{attackerInfo.AttackerName} caused {attackerInfo.TotalDamage.ToString("#.#")} dmg in {attackerInfo.Quantity} {(attackerInfo.Quantity > 1 ? "hits" : "hit")}</color>");
                 }
                 stats.Add(Break());
 
                 return stats.ToArray();
             }
 
+            public static string GetConsoleColorCode(int victimIndex, int attackerIndex)
+            {
+                // color friendly attackers red
+                if (victimIndex == attackerIndex)
+                {
+                    return "<color=#964545>";
+                }
+
+                return "<color=#FFFFFF>";
+            }
+
             public static string Header()
             {
-                return "---------- <b>PvP Damage Report</b> ----------";
+                return "<color=#FFFFFF>---------- <b>PvP Damage Report</b> ----------</color>";
             }
 
             public static string Break()
             {
-                return string.Concat(Enumerable.Repeat("-", 53));
+                return string.Concat("<color=#FFFFFF>", Enumerable.Repeat("-", 53), "</color>");
             }
 
             public static void ClearIndex(int i)
@@ -156,6 +168,12 @@ namespace Si_Logging
                 set => _attackerName = value ?? throw new ArgumentNullException("Attacker name is required.");
             }
             public ulong SteamId
+            {
+                get;
+                set;
+            }
+
+            public int TeamIndex
             {
                 get;
                 set;
