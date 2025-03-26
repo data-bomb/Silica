@@ -39,7 +39,7 @@ using System.Linq;
 using System.Diagnostics;
 using System.IO;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.7.8", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.7.9", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -293,8 +293,9 @@ namespace Si_Logging
                             {
                                 string victim = AddPlayerLogEntry(victimPlayer);
                                 string instigator = GetNameFromObject(__1);
+                                string position = GetPlayerPosition(__0);
 
-                                PrintLogLine($"{victim} committed suicide with \"{instigator}\" (dmgtype \"\")");
+                                PrintLogLine($"{victim} committed suicide with \"{instigator}\" (dmgtype \"\") {position}");
 
                                 if (Pref_Log_PlayerConsole_Enable.Value)
                                 {
@@ -309,8 +310,9 @@ namespace Si_Logging
                                 string attacker = AddPlayerLogEntry(attackerPlayer);
                                 string victim = AddPlayerLogEntry(victimPlayer);
                                 string weapon = AddKilledWithEntry(__0, __1);
+                                string position = GetPlayerPosition(__0, __1);
 
-                                PrintLogLine($"{attacker} killed {victim} with {weapon}");
+                                PrintLogLine($"{attacker} killed {victim} with {weapon} {position}");
 
                                 if (Pref_Log_PlayerConsole_Enable.Value)
                                 {
@@ -330,8 +332,9 @@ namespace Si_Logging
                             string victim = AddPlayerLogEntry(victimPlayer);
                             string weapon = AddKilledWithEntry(__0, __1);
                             string victimUnit = GetNameFromUnit(__0);
+                            string position = GetPlayerPosition(__0, __1);
 
-                            PrintLogLine($"{attacker} killed {victim} with {weapon}");
+                            PrintLogLine($"{attacker} killed {victim} with {weapon} {position}");
 
                             if (Pref_Log_PlayerConsole_Enable.Value)
                             {
@@ -349,8 +352,9 @@ namespace Si_Logging
                         string attacker = AddPlayerLogEntry(attackerPlayer);
                         string victim = AddAIVictimLogEntry(__0);
                         string weapon = AddKilledWithEntry(__0, __1);
+                        string position = GetPlayerPosition(__0, __1);
 
-                        PrintLogLine($"{attacker} killed {victim} with {weapon}");
+                        PrintLogLine($"{attacker} killed {victim} with {weapon} {position}");
 
                         if (Pref_Log_PlayerConsole_Enable.Value)
                         {
@@ -660,8 +664,9 @@ namespace Si_Logging
                     string structTeam = __0.Team.TeamShortName;
                     string weapon = GetNameFromObject(__1);
                     string construction = (__0.OwnerConstructionSite == null ? "no" : "yes");
+                    string position = GetLogPosition(__0.gameObject.transform.position);
 
-                    PrintLogLine($"{playerEntry} triggered \"structure_kill\" (structure \"{structName}\") (weapon \"{weapon}\") (struct_team \"{structTeam}\") (construction \"{construction}\")");
+                    PrintLogLine($"{playerEntry} triggered \"structure_kill\" (structure \"{structName}\") (weapon \"{weapon}\") (struct_team \"{structTeam}\") (construction \"{construction}\")  (building_position \"{position}\")");
 
                     if (Pref_Log_PlayerConsole_Enable.Value)
                     {

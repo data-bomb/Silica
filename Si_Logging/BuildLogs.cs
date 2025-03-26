@@ -97,10 +97,24 @@ namespace Si_Logging
         public static string GetLogPosition(Vector3 position)
         {
             string x = position.x.ToString("F0");
+            // make z the vertical axis like a sane person
             string y = position.z.ToString("F0");
             string z = position.y.ToString("F0");
 
             return $"{x} {y} {z}";
+        }
+        
+        public static string GetPlayerPosition(Unit victim)
+        {
+            string victimLogPosition = GetLogPosition(victim.transform.position);
+            return $"(victim_position \"{victimLogPosition}\")";
+        }
+
+        public static string GetPlayerPosition(Unit victim, GameObject attacker)
+        {
+            string victimLogPosition = GetLogPosition(victim.transform.position);
+            string attackerLogPosition = GetLogPosition(attacker.transform.position);
+            return $"(attacker_position \"{attackerLogPosition}\") (victim_position \"{victimLogPosition}\")";
         }
 
         public static string GetLogNameFromDisplayName(string displayName)
