@@ -31,8 +31,9 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Collections.Generic;
 using Newtonsoft.Json;
+using static MelonLoader.MelonLogger;
 
-[assembly: MelonInfo(typeof(Webhooks), "Webhooks", "1.2.9", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(Webhooks), "Webhooks", "1.3.0", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -83,83 +84,73 @@ namespace Si_Webhooks
             }
         }
 
-        [HarmonyPatch(typeof(Silica.UI.Chat), "MessageReceived")]
-        private static class TechGlitch_Chat_MessageReceived
+        public void OnRequestPlayerChat(object? sender, OnRequestPlayerChatArgs args)
         {
-            public static void Postfix(Silica.UI.Chat __instance, Player __0, string __1, bool __2)
+            if (args.Player == null)
             {
-                try
+                return;
+            }
+
+            try
+            {
+                string rawMessage = ConvertHTML(args.Text);
+                if (rawMessage == string.Empty)
                 {
-                    // each faction has its own chat manager but by looking at alien and only global messages this catches commands only once
-                    if (!__instance.ToString().Contains("alien") || __2)
-                    {
-                        return;
-                    }
+                    return;
+                }
 
-                    if (__0 == null)
-                    {
-                        return;
-                    }
+                if (rawMessage.StartsWith("**[SAM"))
+                {
+                    rawMessage = rawMessage.Replace("**[SAM]** ", "");
+                    SendMessageToWebhook(rawMessage, _Server_Shortname.Value, _Server_Avatar_URL.Value);
+                    return;
+                }
 
-                    string rawMessage = ConvertHTML(__1);
-                    if (rawMessage == string.Empty)
-                    {
-                        return;
-                    }
+                string username = args.Player.PlayerName;
+                string? avatarURL = string.Empty;
+                // cache the Steam avatar, if it's needed
+                if (!CacheAvatarURLs.ContainsKey(args.Player.PlayerID.SteamID.m_SteamID))
+                {
+                    MelonLogger.Msg("Missing Avatar URL for " + username + ". Grabbing it...");
+                    RequestSteamAvatar(args.Player);
+                }
+                else
+                {
+                    // use the cached avatar
+                    CacheAvatarURLs.TryGetValue(args.Player.PlayerID.SteamID.m_SteamID, out avatarURL);
+                }
 
-                    if (rawMessage.StartsWith("**[SAM"))
-                    {
-                        rawMessage = rawMessage.Replace("**[SAM]** ", "");
-                        SendMessageToWebhook(rawMessage, _Server_Shortname.Value, _Server_Avatar_URL.Value);
-                        return;
-                    }
+                // is this a user report?
+                int spaceCharacter = rawMessage.IndexOf(" ");
+                string commandText = (spaceCharacter == -1) ? rawMessage : rawMessage.Substring(0, spaceCharacter);
 
-                    string username = __0.PlayerName;
-                    string? avatarURL = string.Empty;
-                    // cache the Steam avatar, if it's needed
-                    if (!CacheAvatarURLs.ContainsKey(__0.PlayerID.SteamID.m_SteamID))
+                bool isUserReport = String.Equals(commandText, "!report", StringComparison.OrdinalIgnoreCase);
+                if (isUserReport)
+                {
+                    string reportMessage;
+                    if (spaceCharacter == -1)
                     {
-                        MelonLogger.Msg("Missing Avatar URL for " + username + ". Grabbing it...");
-                        RequestSteamAvatar(__0);
+                        reportMessage = args.Player.PlayerName + " (" + args.Player.PlayerID.ToString() + ") is requesting an admin in the game. <@&" + _RoleToMentionForReports.Value + ">";
                     }
                     else
                     {
-                        // use the cached avatar
-                        CacheAvatarURLs.TryGetValue(__0.PlayerID.SteamID.m_SteamID, out avatarURL);
+                        reportMessage = args.Player.PlayerName + " (" + args.Player.PlayerID.ToString() + ") is requesting an admin in the game. Report:" + rawMessage.Substring(spaceCharacter) + " <@&" + _RoleToMentionForReports.Value + ">";
                     }
 
-                    // is this a user report?
-                    int spaceCharacter = rawMessage.IndexOf(" ");
-                    string commandText = (spaceCharacter == -1) ? rawMessage : rawMessage.Substring(0, spaceCharacter);
-
-                    bool isUserReport = String.Equals(commandText, "!report", StringComparison.OrdinalIgnoreCase);
-                    if (isUserReport)
-                    {
-                        string reportMessage;
-                        if (spaceCharacter == -1)
-                        {
-                            reportMessage = __0.PlayerName + " (" + __0.PlayerID.ToString() + ") is requesting an admin in the game. <@&" + _RoleToMentionForReports.Value + ">";
-                        }
-                        else
-                        {
-                            reportMessage = __0.PlayerName + " (" + __0.PlayerID.ToString() + ") is requesting an admin in the game. Report:" + rawMessage.Substring(spaceCharacter) + " <@&" + _RoleToMentionForReports.Value + ">";
-                        }
-                        
-                        SendMessageToWebhook(reportMessage, _Server_Shortname.Value, _Server_Avatar_URL.Value);
-                        return;
-                    }
-
-                    if (avatarURL == null || avatarURL == string.Empty)
-                    {
-                        avatarURL = _Default_Avatar_URL.Value;
-                    }
-
-                    SendMessageToWebhook(rawMessage, username, avatarURL, isUserReport);
+                    SendMessageToWebhook(reportMessage, _Server_Shortname.Value, _Server_Avatar_URL.Value);
+                    return;
                 }
-                catch (Exception error)
+
+                if (avatarURL == null || avatarURL == string.Empty)
                 {
-                    HelperMethods.PrintError(error, "Failed to run Chat::MessageReceived");
+                    avatarURL = _Default_Avatar_URL.Value;
                 }
+
+                SendMessageToWebhook(rawMessage, username, avatarURL, isUserReport);
+            }
+            catch (Exception error)
+            {
+                HelperMethods.PrintError(error, "Failed to run OnRequestPlayerChat");
             }
         }
 
