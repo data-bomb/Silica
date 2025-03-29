@@ -108,7 +108,7 @@ namespace Si_Logging
                     string color = GetConsoleColorCode(teamIndex, attackerInfo.TeamIndex);
                     stats.Add($"{color}{attackerInfo.AttackerName} caused {attackerInfo.TotalDamage.ToString("#.#")} dmg in {attackerInfo.Quantity} {(attackerInfo.Quantity > 1 ? "hits" : "hit")}</color>");
                 }
-                stats.Add(Break());
+                stats.Add(Footer());
 
                 return stats.ToArray();
             }
@@ -129,9 +129,9 @@ namespace Si_Logging
                 return "<color=#FFFFFF>---------- <b>PvP Damage Report</b> ----------</color>";
             }
 
-            public static string Break()
+            public static string Footer()
             {
-                return string.Concat("<color=#FFFFFF>", Enumerable.Repeat("-", 53), "</color>");
+                return "<color=#FFFFFF>-----------------------------------------------------</color>";
             }
 
             public static void ClearIndex(int i)

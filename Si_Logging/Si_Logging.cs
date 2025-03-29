@@ -39,7 +39,7 @@ using System.Linq;
 using System.Diagnostics;
 using System.IO;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.7.9", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.7.10", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -666,7 +666,7 @@ namespace Si_Logging
                     string construction = (__0.OwnerConstructionSite == null ? "no" : "yes");
                     string position = GetLogPosition(__0.gameObject.transform.position);
 
-                    PrintLogLine($"{playerEntry} triggered \"structure_kill\" (structure \"{structName}\") (weapon \"{weapon}\") (struct_team \"{structTeam}\") (construction \"{construction}\")  (building_position \"{position}\")");
+                    PrintLogLine($"{playerEntry} triggered \"structure_kill\" (structure \"{structName}\") (weapon \"{weapon}\") (struct_team \"{structTeam}\") (construction \"{construction}\") (building_position \"{position}\")");
 
                     if (Pref_Log_PlayerConsole_Enable.Value)
                     {
