@@ -33,7 +33,7 @@ using System.Collections.Generic;
 using Newtonsoft.Json;
 using static MelonLoader.MelonLogger;
 
-[assembly: MelonInfo(typeof(Webhooks), "Webhooks", "1.3.0", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(Webhooks), "Webhooks", "1.3.1", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -82,6 +82,12 @@ namespace Si_Webhooks
             {
                 HelperMethods.PrintError(error, "Failed to call SteamAPI.Init");
             }
+        }
+
+        public override void OnLateInitializeMelon()
+        {
+            // subscribe to the OnRequestPlayerChat event
+            Event_Netcode.OnRequestPlayerChat += OnRequestPlayerChat;
         }
 
         public void OnRequestPlayerChat(object? sender, OnRequestPlayerChatArgs args)
