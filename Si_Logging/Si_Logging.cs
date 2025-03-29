@@ -39,7 +39,7 @@ using System.Linq;
 using System.Diagnostics;
 using System.IO;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.7.10", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.7.11", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -853,8 +853,13 @@ namespace Si_Logging
 
                         for (int i = 0; i < SiConstants.MaxPlayableTeams; i++)
                         {
+                            // skip GameMaster and Wildlife teams
+                            if (i == (int)SiConstants.ETeam.Wildlife || i == (int)SiConstants.ETeam.Gamemaster)
+                            {
+                                continue;
+                            }
+
                             Team? thisTeam = Team.Teams[i];
-                            // skip GameMaster team
                             if (thisTeam == null || thisTeam.IsSpecial)
                             {
                                 continue;
@@ -872,6 +877,7 @@ namespace Si_Logging
 
                             string resourcesCollected = teamResourcesCollected[thisTeam.Index].ToString();
                             string playerCount = thisTeam.GetNumPlayers().ToString();
+                            teamName = GetTeamName(i);
 
                             PrintLogLine($"Team \"{teamName}\" scored \"{resourcesCollected}\" with \"{playerCount}\" players");
                         }

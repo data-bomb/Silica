@@ -190,6 +190,37 @@ namespace Si_Logging
             return team.TeamShortName;
         }
 
+        public static string GetTeamName(int index)
+        {
+            if (index < 0 || index > (int)SiConstants.ETeam.Sol)
+            {
+                return string.Empty;
+            }
+
+            if (index == (int)SiConstants.ETeam.Alien)
+            {
+                return "Alien";
+            }
+            else if (index == (int)SiConstants.ETeam.Wildlife)
+            {
+                return "Wildlife";
+            }
+            else if (index == (int)SiConstants.ETeam.Gamemaster)
+            {
+                return "Gamemaster";
+            }
+            else if (index == (int)SiConstants.ETeam.Centauri)
+            {
+                return "Centauri";
+            }
+            else if (index == (int)SiConstants.ETeam.Sol)
+            {
+                return "Sol";
+            }
+
+            return string.Empty;
+        }
+
         public static string AddAIConsoleEntry()
         {
             return $"<b>AI</b>";
