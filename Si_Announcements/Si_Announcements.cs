@@ -1,6 +1,6 @@
 ﻿/*
  Silica Announcements Mod
- Copyright (C) 2023-2024 by databomb
+ Copyright (C) 2023-2025 by databomb
  
  * Description *
  For Silica listen servers, periodically sends a pre-set announcement
@@ -35,8 +35,9 @@ using System.Collections.Generic;
 using SilicaAdminMod;
 using System.Linq;
 using UnityEngine;
+using static MelonLoader.MelonLogger;
 
-[assembly: MelonInfo(typeof(Announcements), "Server Announcements", "1.1.10", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(Announcements), "Server Announcements", "1.1.11", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -164,37 +165,29 @@ namespace Si_Announcements
                 }
             }
         }
-
-        #if NET6_0
-        [HarmonyPatch(typeof(Il2CppSilica.UI.Chat), nameof(Il2CppSilica.UI.Chat.MessageReceived))]
-        #else
-        [HarmonyPatch(typeof(Silica.UI.Chat), "MessageReceived")]
-        #endif
-        private static class Announcements_Patch_Chat_MessageReceived
+        public void OnRequestPlayerChat(object? sender, OnRequestPlayerChatArgs args)
         {
-            #if NET6_0
-            public static void Postfix(Il2CppSilica.UI.Chat __instance, Player __0, string __1, bool __2)
-            #else
-            public static void Postfix(Silica.UI.Chat __instance, Player __0, string __1, bool __2)
-            #endif
+            if (args.Player == null)
             {
-                try
-                {
-                    if (_Announcements_ShowIfLastChatWasAnnouncement != null && _Announcements_ShowIfLastChatWasAnnouncement.Value)
-                    {
-                        return;
-                    }
+                return;
+            }
 
-                    // each faction has its own chat manager but by looking at alien and only global messages this catches commands only once
-                    if (__instance.ToString().Contains("alien") && __2 == false)
-                    {
-                        lastChatMessage = __1;
-                    }
-                }
-                catch (Exception error)
+            try
+            {
+                if (_Announcements_ShowIfLastChatWasAnnouncement != null && _Announcements_ShowIfLastChatWasAnnouncement.Value)
                 {
-                    HelperMethods.PrintError(error, "Failed to run Chat::MessageReceived");
+                    return;
                 }
+
+                // each faction has its own chat manager but by looking at alien and only global messages this catches commands only once
+                if (args.TeamOnly == false)
+                {
+                    lastChatMessage = args.Text;
+                }
+            }
+            catch (Exception error)
+            {
+                HelperMethods.PrintError(error, "Failed to run OnRequestPlayerChat");
             }
         }
 
