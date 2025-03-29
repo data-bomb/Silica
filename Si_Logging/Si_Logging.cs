@@ -39,7 +39,7 @@ using System.Linq;
 using System.Diagnostics;
 using System.IO;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.7.11", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.7.12", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -1003,36 +1003,17 @@ namespace Si_Logging
         }
 
         // 063. Chat
-        #if NET6_0
-        [HarmonyPatch(typeof(Il2CppSilica.UI.Chat), nameof(Il2CppSilica.UI.Chat.MessageReceived))]
-        #else
-        [HarmonyPatch(typeof(Silica.UI.Chat), "MessageReceived")]
-        #endif
-        private static class ApplyPatchMessageReceived
+        public void OnRequestPlayerChat(object? sender, OnRequestPlayerChatArgs args)
         {
-            #if NET6_0
-            public static void Postfix(Il2CppSilica.UI.Chat __instance, Player __0, string __1, bool __2)
-            #else
-            public static void Postfix(Silica.UI.Chat __instance, Player __0, string __1, bool __2)
-            #endif
+            if (args.Player == null)
             {
-                try
-                {
-                    // each faction has its own chat manager but by looking at alien and only global messages this catches commands only once
-                    if (__instance != null && __0 != null && __instance.ToString().Contains("alien"))
-                    {
-                        string playerEntry = AddPlayerLogEntry(__0);
-                        // __2 true = team-only message
-                        string action = (__2 == false ? "say" : "say_team");
-
-                        PrintLogLine($"{playerEntry} {action} \"{__1}\"");
-                    }
-                }
-                catch (Exception error)
-                {
-                    HelperMethods.PrintError(error, "Failed to run Chat::MessageReceived");
-                }
+                return;
             }
+
+            string playerEntry = AddPlayerLogEntry(args.Player);
+            string action = (args.TeamOnly == false ? "say" : "say_team");
+
+            PrintLogLine($"{playerEntry} {action} \"{args.Text}\"");
         }
 
         // 064. Team Alliances
