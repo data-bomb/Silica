@@ -39,7 +39,7 @@ using System.Linq;
 using System.Diagnostics;
 using System.IO;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.7.13", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.8.0", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -56,6 +56,8 @@ namespace Si_Logging
         public static MelonPreferences_Entry<bool> Pref_Display_Damage = null!;
         public static MelonPreferences_Entry<bool> Pref_Log_Kills_Include_AI_vs_Player = null!;
         public static MelonPreferences_Entry<string> Pref_Log_ParserExe = null!;
+        public static MelonPreferences_Entry<string> Pref_Log_VideoExe = null!;
+        public static MelonPreferences_Entry<int> Pref_Log_VideoPlayerThreshold = null!;
         public static MelonPreferences_Entry<float> Pref_Log_PerfMonitor_Interval = null!;
         public static MelonPreferences_Entry<bool> Pref_Log_PerfMonitor_Enable = null!;
         public static MelonPreferences_Entry<bool> Pref_Log_PlayerConsole_Enable = null!;
@@ -71,6 +73,8 @@ namespace Si_Logging
                 Pref_Log_MinDamageCutoff ??= _modCategory.CreateEntry<int>("Logging_LogDamage_MinDmgCutoff", 1);
                 Pref_Log_Kills_Include_AI_vs_Player ??= _modCategory.CreateEntry<bool>("Logging_LogKills_IncludeAIvsPlayer", true);
                 Pref_Log_ParserExe ??= _modCategory.CreateEntry<string>("Logging_ParserExePath", "parser.exe");
+                Pref_Log_VideoExe ??= _modCategory.CreateEntry<string>("Logging_Video_ExePath", "video-generator.exe");
+                Pref_Log_VideoPlayerThreshold ??= _modCategory.CreateEntry<int>("Logging_Video_MinimumPlayersNeeded", 2);
                 Pref_Log_PerfMonitor_Interval ??= _modCategory.CreateEntry<float>("Logging_PerfMonitor_LogInterval", 60f);
                 Pref_Log_PerfMonitor_Enable ??= _modCategory.CreateEntry<bool>("Logging_PerfMonitor_Enable", true);
                 Pref_Log_PlayerConsole_Enable ??= _modCategory.CreateEntry<bool>("Logging_PlayerConsole_Enable", true);
@@ -883,6 +887,8 @@ namespace Si_Logging
                             PrintLogLine($"Team \"{teamName}\" scored \"{resourcesCollected}\" with \"{playerCount}\" players");
                         }
 
+                        int roundPlayers = 0;
+
                         for (int i = 0; i < Player.Players.Count; i++)
                         {
                             if (Player.Players[i] == null)
@@ -894,26 +900,55 @@ namespace Si_Logging
                             string playerEntry = AddPlayerLogEntry(thisPlayer);
 
                             PrintLogLine($"Player {playerEntry} scored \"{thisPlayer.Score}\" (kills \"{thisPlayer.Kills}\") (deaths \"{thisPlayer.Deaths}\")");
+
+                            roundPlayers++;
                         }
 
                         PrintLogLine($"World triggered \"Round_Win\" (gametype \"{gametype}\")");
 
-                        // call parser
-                        if (!ParserExePresent())
+                        // try and call parser
+                        if (ParserExePresent())
+                        {
+                            // launch parser
+                            MelonLogger.Msg("Launching parser.");
+                            ProcessStartInfo start = new ProcessStartInfo();
+                            start.FileName = Path.GetFullPath(GetParserPath());
+                            string arguments = string.Format("\"{0}", GetLogFileDirectory());
+                            start.Arguments = arguments;
+                            start.UseShellExecute = false;
+                            start.RedirectStandardOutput = false;
+                            using Process? process = Process.Start(start);
+                        }
+                        else
                         {
                             MelonLogger.Msg("Parser file not present.");
-                            return;
                         }
 
-                        // launch parser
-                        MelonLogger.Msg("Launching parser.");
-                        ProcessStartInfo start = new ProcessStartInfo();
-                        start.FileName = Path.GetFullPath(GetParserPath());
-                        string arguments = string.Format("\"{0}", GetLogFileDirectory());
-                        start.Arguments = arguments;
-                        start.UseShellExecute = false;
-                        start.RedirectStandardOutput = false;
-                        using Process? process = Process.Start(start);
+                        // try and make round recap video
+                        if (VideoGeneratorExePresent())
+                        {
+                            // check if the round reached the player threshold
+                            if (roundPlayers >= Pref_Log_VideoPlayerThreshold.Value)
+                            {
+                                // launch video generator
+                                MelonLogger.Msg("Launching video generator.");
+                                ProcessStartInfo start = new ProcessStartInfo();
+                                start.FileName = Path.GetFullPath(GetVideoGeneratorPath());
+                                string arguments = string.Format("\"{0}", GetLogFileDirectory());
+                                start.Arguments = arguments;
+                                start.UseShellExecute = false;
+                                start.RedirectStandardOutput = false;
+                                using Process? process = Process.Start(start);
+                            }
+                            else
+                            {
+                                MelonLogger.Msg("Video generator not called due to low player count.");
+                            }
+                        }
+                        else
+                        {
+                            MelonLogger.Msg("Video generator file not present.");
+                        }
                     }
                 }
                 catch (Exception error)
