@@ -1,6 +1,6 @@
 ﻿/*
 Silica Repair Facility
-Copyright (C) 2024 by databomb
+Copyright (C) 2024-2025 by databomb
 
 * Description *
 Allows vehicles to repair themselves at a friendly Light Vehicle
@@ -36,7 +36,7 @@ using Si_RepairFacility;
 using System.Collections.Generic;
 using System.Text;
 
-[assembly: MelonInfo(typeof(RepairFacility), "Repair Facility", "1.2.0", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(RepairFacility), "Repair Facility", "1.2.1", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -78,100 +78,92 @@ namespace Si_RepairFacility
             vehiclesAtRepairShop = new List<Unit>();
         }
 
-        #if NET6_0
-        [HarmonyPatch(typeof(MusicJukeboxHandler), nameof(MusicJukeboxHandler.Update))]
-        #else
-        [HarmonyPatch(typeof(MusicJukeboxHandler), "Update")]
-        #endif
-        private static class ApplyPatch_MusicJukeboxHandlerUpdate
+        public override void OnUpdate()
         {
-            private static void Postfix(MusicJukeboxHandler __instance)
+            try
             {
-                try
+                Timer_HealVehicles += Time.deltaTime;
+                if (Timer_HealVehicles > 5.0f)
                 {
-                    Timer_HealVehicles += Time.deltaTime;
-                    if (Timer_HealVehicles > 5.0f)
+                    Timer_HealVehicles = 0.0f;
+
+                    CleanRepairList();
+
+                    // repair vehicles for all gamemodes
+                    foreach (Unit vehicle in vehiclesAtRepairShop)
                     {
-                        Timer_HealVehicles = 0.0f;
+                        float healAmount = vehicle.DamageManager.MaxHealth * (vehicle.IsFlyingType ? _Pref_Humans_Aircraft_HealRate.Value : _Pref_Humans_Vehicle_HealRate.Value);
 
-                        CleanRepairList();
-
-                        // repair vehicles for all gamemodes
-                        foreach (Unit vehicle in vehiclesAtRepairShop)
+                        if (vehicle.DamageManager.Health == vehicle.DamageManager.MaxHealth)
                         {
-                            float healAmount = vehicle.DamageManager.MaxHealth * (vehicle.IsFlyingType ? _Pref_Humans_Aircraft_HealRate.Value : _Pref_Humans_Vehicle_HealRate.Value);
-
-                            if (vehicle.DamageManager.Health == vehicle.DamageManager.MaxHealth)
+                            if (_Pref_Repair_Notification.Value && vehicle.ControlledBy != null)
                             {
-                                if (_Pref_Repair_Notification.Value && vehicle.ControlledBy != null)
-                                {
-                                    //HelperMethods.SendChatMessageToPlayer(vehicle.ControlledBy, HelperMethods.chatPrefix, " Debug Info: (Skipping) Health[" + vehicle.DamageManager.Health + "] MaxHP[" + vehicle.DamageManager.MaxHealth + "] HealAmt[" + healAmount + "]");
-                                }
+                                //HelperMethods.SendChatMessageToPlayer(vehicle.ControlledBy, HelperMethods.chatPrefix, " Debug Info: (Skipping) Health[" + vehicle.DamageManager.Health + "] MaxHP[" + vehicle.DamageManager.MaxHealth + "] HealAmt[" + healAmount + "]");
+                            }
 
+                            continue;
+                        }
+
+                        float newHealthUnclamped = vehicle.DamageManager.Health + healAmount;
+
+                        if (newHealthUnclamped >= vehicle.DamageManager.MaxHealth)
+                        {
+                            vehicle.DamageManager.SetHealth01(1f);
+
+                            if (_Pref_Repair_Notification.Value && vehicle.ControlledBy != null)
+                            {
+                                //HelperMethods.SendChatMessageToPlayer(vehicle.ControlledBy, HelperMethods.chatPrefix, " Debug Info: (Max) Health[" + vehicle.DamageManager.Health + "] MaxHP[" + vehicle.DamageManager.MaxHealth + "] HealAmt[" + healAmount + "]");
+                            }
+                        }
+                        else
+                        {
+                            float newHealth = Mathf.Clamp(newHealthUnclamped, 0.0f, vehicle.DamageManager.MaxHealth);
+
+                            vehicle.DamageManager.SetHealth(newHealth);
+
+                            if (_Pref_Repair_Notification.Value && vehicle.ControlledBy != null)
+                            {
+                                //HelperMethods.SendChatMessageToPlayer(vehicle.ControlledBy, HelperMethods.chatPrefix, " Debug Info: (Incremental) Health[" + vehicle.DamageManager.Health + "] MaxHP[" + vehicle.DamageManager.MaxHealth + "] HealAmt[" + healAmount + "]");
+                            }
+                        }
+                    }
+
+                    // repair defending structures for Siege
+                    if (GameMode.CurrentGameMode is MP_TowerDefense)
+                    {
+                        foreach (Structure structure in Team.Teams[(int)SiConstants.ETeam.Sol].Structures)
+                        {
+                            if (!structure.DamageManager || structure.DamageManager.IsDestroyed)
+                            {
                                 continue;
                             }
 
-                            float newHealthUnclamped = vehicle.DamageManager.Health + healAmount;
+                            float healAmount = structure.DamageManager.MaxHealth * _Pref_SiegeDefenders_Structure_HealRate.Value;
 
-                            if (newHealthUnclamped >= vehicle.DamageManager.MaxHealth)
+                            if (structure.DamageManager.Health == structure.DamageManager.MaxHealth)
                             {
-                                vehicle.DamageManager.SetHealth01(1f);
+                                continue;
+                            }
 
-                                if (_Pref_Repair_Notification.Value && vehicle.ControlledBy != null)
-                                {
-                                    //HelperMethods.SendChatMessageToPlayer(vehicle.ControlledBy, HelperMethods.chatPrefix, " Debug Info: (Max) Health[" + vehicle.DamageManager.Health + "] MaxHP[" + vehicle.DamageManager.MaxHealth + "] HealAmt[" + healAmount + "]");
-                                }
+                            float newHealthUnclamped = structure.DamageManager.Health + healAmount;
+
+                            if (newHealthUnclamped >= structure.DamageManager.MaxHealth)
+                            {
+                                structure.DamageManager.SetHealth01(1f);
                             }
                             else
                             {
-                                float newHealth = Mathf.Clamp(newHealthUnclamped, 0.0f, vehicle.DamageManager.MaxHealth);
+                                float newHealth = Mathf.Clamp(newHealthUnclamped, 0.0f, structure.DamageManager.MaxHealth);
 
-                                vehicle.DamageManager.SetHealth(newHealth);
-
-                                if (_Pref_Repair_Notification.Value && vehicle.ControlledBy != null)
-                                {
-                                    //HelperMethods.SendChatMessageToPlayer(vehicle.ControlledBy, HelperMethods.chatPrefix, " Debug Info: (Incremental) Health[" + vehicle.DamageManager.Health + "] MaxHP[" + vehicle.DamageManager.MaxHealth + "] HealAmt[" + healAmount + "]");
-                                }
+                                structure.DamageManager.SetHealth(newHealth);
                             }
-                        }
-
-                        // repair defending structures for Siege
-                        if (GameMode.CurrentGameMode is MP_TowerDefense)
-                        {
-                            foreach (Structure structure in Team.Teams[(int)SiConstants.ETeam.Sol].Structures)
-                            {
-                                if (!structure.DamageManager || structure.DamageManager.IsDestroyed)
-                                {
-                                    continue;
-                                }
-
-                                float healAmount = structure.DamageManager.MaxHealth * _Pref_SiegeDefenders_Structure_HealRate.Value;
-
-                                if (structure.DamageManager.Health == structure.DamageManager.MaxHealth)
-                                {
-                                    continue;
-                                }
-
-                                float newHealthUnclamped = structure.DamageManager.Health + healAmount;
-
-                                if (newHealthUnclamped >= structure.DamageManager.MaxHealth)
-                                {
-                                    structure.DamageManager.SetHealth01(1f);
-                                }
-                                else
-                                {
-                                    float newHealth = Mathf.Clamp(newHealthUnclamped, 0.0f, structure.DamageManager.MaxHealth);
-
-                                    structure.DamageManager.SetHealth(newHealth);
-                                }
-                            }    
-                        }
+                        }    
                     }
                 }
-                catch (Exception error)
-                {
-                    HelperMethods.PrintError(error, "Failed to run MusicJukeboxHandler::Update");
-                }
+            }
+            catch (Exception error)
+            {
+                HelperMethods.PrintError(error, "Failed to run OnUpdate");
             }
         }
 

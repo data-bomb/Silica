@@ -37,7 +37,7 @@ using System.Linq;
 using UnityEngine;
 using static MelonLoader.MelonLogger;
 
-[assembly: MelonInfo(typeof(Announcements), "Server Announcements", "1.1.13", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(Announcements), "Server Announcements", "1.2.0", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 #if NET6_0
 [assembly: MelonOptionalDependencies("Admin Mod", "QList")]
@@ -124,54 +124,47 @@ namespace Si_Announcements
         }
 
 
-        #if NET6_0
-        [HarmonyPatch(typeof(MusicJukeboxHandler), nameof(MusicJukeboxHandler.Update))]
-        #else
-        [HarmonyPatch(typeof(MusicJukeboxHandler), "Update")]
-        #endif
-        private static class ApplyPatch_MusicJukeboxHandlerUpdate
+        public override void OnUpdate()
         {
-            private static void Postfix(MusicJukeboxHandler __instance)
+            try
             {
-                try
-                {
-                    Timer_Announcement += Time.deltaTime;
+                Timer_Announcement += Time.deltaTime;
 
-                    if (Timer_Announcement >= _Announcements_SecondsBetweenMessages.Value)
+                if (Timer_Announcement >= _Announcements_SecondsBetweenMessages.Value)
+                {
+                    Timer_Announcement = 0.0f;
+
+                    if (announcementsText == null)
                     {
-                        Timer_Announcement = 0.0f;
-
-                        if (announcementsText == null)
-                        {
-                            return;
-                        }
-
-                        // skip if game is not ongoign
-                        if (!GameMode.CurrentGameMode.GameOngoing)
-                        {
-                            return;
-                        }
-
-                        if (!_Announcements_ShowIfLastChatWasAnnouncement.Value)
-                        {
-                            // check if the last chat message was an announcement
-                            if (IsPreviousChatMessageAnnouncement(lastChatMessage))
-                            {
-                                MelonLogger.Msg("Skipping Announcement - Repeated Message");
-                                return;
-                            }
-                        }
-
-                        string nextAnnouncement = GetNextAnnouncement();
-                        HelperMethods.SendChatMessageToAll(nextAnnouncement);
+                        return;
                     }
-                }
-                catch (Exception exception)
-                {
-                    HelperMethods.PrintError(exception, "Failed in MusicJukeboxHandler::Update");
+
+                    // skip if game is not ongoign
+                    if (!GameMode.CurrentGameMode.GameOngoing)
+                    {
+                        return;
+                    }
+
+                    if (!_Announcements_ShowIfLastChatWasAnnouncement.Value)
+                    {
+                        // check if the last chat message was an announcement
+                        if (IsPreviousChatMessageAnnouncement(lastChatMessage))
+                        {
+                            MelonLogger.Msg("Skipping Announcement - Repeated Message");
+                            return;
+                        }
+                    }
+
+                    string nextAnnouncement = GetNextAnnouncement();
+                    HelperMethods.SendChatMessageToAll(nextAnnouncement);
                 }
             }
+            catch (Exception exception)
+            {
+                HelperMethods.PrintError(exception, "Failed in OnUpdate");
+            }
         }
+
         public void OnRequestPlayerChat(object? sender, OnRequestPlayerChatArgs args)
         {
             if (args.Player == null)

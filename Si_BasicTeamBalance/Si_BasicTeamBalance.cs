@@ -39,7 +39,7 @@ using SilicaAdminMod;
 using System.Linq;
 using static MelonLoader.MelonLogger;
 
-[assembly: MelonInfo(typeof(BasicTeamBalance), "Basic Team Balance", "1.4.3", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(BasicTeamBalance), "Basic Team Balance", "1.4.4", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 #if NET6_0
 [assembly: MelonOptionalDependencies("Admin Mod", "QList")]
@@ -525,33 +525,25 @@ namespace Si_BasicTeamBalance
             }
         }
 
-        #if NET6_0
-        [HarmonyPatch(typeof(MusicJukeboxHandler), nameof(MusicJukeboxHandler.Update))]
-        #else
-        [HarmonyPatch(typeof(MusicJukeboxHandler), "Update")]
-        #endif
-        private static class ApplyPatch_MusicJukeboxHandlerUpdate
+        public override void OnUpdate()
         {
-            private static void Postfix(MusicJukeboxHandler __instance)
+            try
             {
-                try
+                if (HelperMethods.IsTimerActive(Timer_AllowTeamSwitches))
                 {
-                    if (HelperMethods.IsTimerActive(Timer_AllowTeamSwitches))
+                    Timer_AllowTeamSwitches += Time.deltaTime;
+
+                    if (Timer_AllowTeamSwitches >= _AllowTeamSwitchAfterTime.Value)
                     {
-                        Timer_AllowTeamSwitches += Time.deltaTime;
+                        Timer_AllowTeamSwitches = HelperMethods.Timer_Inactive;
 
-                        if (Timer_AllowTeamSwitches >= _AllowTeamSwitchAfterTime.Value)
-                        {
-                            Timer_AllowTeamSwitches = HelperMethods.Timer_Inactive;
-
-                            preventTeamSwitches = false;
-                        }
+                        preventTeamSwitches = false;
                     }
                 }
-                catch (Exception error)
-                {
-                    HelperMethods.PrintError(error, "Failed to run MusicJukeboxHandler::Update");
-                }
+            }
+            catch (Exception error)
+            {
+                HelperMethods.PrintError(error, "Failed to run OnUpdate");
             }
         }
 

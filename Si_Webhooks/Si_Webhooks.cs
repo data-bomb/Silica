@@ -36,7 +36,7 @@ using UnityEngine;
 using MelonLoader.Utils;
 using System.Linq;
 
-[assembly: MelonInfo(typeof(Webhooks), "Webhooks", "1.4.0", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(Webhooks), "Webhooks", "1.4.1", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -183,45 +183,37 @@ namespace Si_Webhooks
             }
         }
 
-        #if NET6_0
-        [HarmonyPatch(typeof(MusicJukeboxHandler), nameof(MusicJukeboxHandler.Update))]
-        #else
-        [HarmonyPatch(typeof(MusicJukeboxHandler), "Update")]
-        #endif
-        private static class ApplyPatch_MusicJukeboxHandlerUpdate
+        public override void OnUpdate()
         {
-            public static void Postfix(MusicJukeboxHandler __instance)
+            try
             {
-                try
+                if (HelperMethods.IsTimerActive(Timer_CheckForVideo))
                 {
-                    if (HelperMethods.IsTimerActive(Timer_CheckForVideo))
+                    Timer_CheckForVideo += Time.deltaTime;
+
+                    if (Timer_CheckForVideo >= 15f)
                     {
-                        Timer_CheckForVideo += Time.deltaTime;
+                        MelonLogger.Msg("Searching for a new video file.");
+                        Timer_CheckForVideo = HelperMethods.Timer_Inactive;
 
-                        if (Timer_CheckForVideo >= 15f)
+                        // check for new video in the logs directory
+                        string recentVideoFile = CheckForRecentVideoFile(Path.Combine(MelonEnvironment.UserDataDirectory, @"logs\"));
+
+                        if (recentVideoFile == string.Empty)
                         {
-                            MelonLogger.Msg("Searching for a new video file.");
-                            Timer_CheckForVideo = HelperMethods.Timer_Inactive;
-
-                            // check for new video in the logs directory
-                            string recentVideoFile = CheckForRecentVideoFile(Path.Combine(MelonEnvironment.UserDataDirectory, @"logs\"));
-
-                            if (recentVideoFile == string.Empty)
-                            {
-                                MelonLogger.Msg("No recent video files found. Skipping.");
-                                return;
-                            }
-                            
-                            MelonLogger.Msg("Found recent video file: " +  recentVideoFile);
-
-                            SendVideoToWebhook(recentVideoFile, "see latest match");
+                            MelonLogger.Msg("No recent video files found. Skipping.");
+                            return;
                         }
+                            
+                        MelonLogger.Msg("Found recent video file: " +  recentVideoFile);
+
+                        SendVideoToWebhook(recentVideoFile, "see latest match");
                     }
                 }
-                catch (Exception error)
-                {
-                    HelperMethods.PrintError(error, "Failed to run MusicJukeboxHandler::Update");
-                }
+            }
+            catch (Exception error)
+            {
+                HelperMethods.PrintError(error, "Failed to run OnUpdate");
             }
         }
 

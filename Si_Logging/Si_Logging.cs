@@ -39,7 +39,7 @@ using System.Linq;
 using System.Diagnostics;
 using System.IO;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.8.1", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.8.2", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 #if NET6_0
 [assembly: MelonOptionalDependencies("Admin Mod", "QList")]
@@ -108,7 +108,7 @@ namespace Si_Logging
 
         public override void OnLateInitializeMelon()
         {
-            HelperMethods.StartTimer(ref ServerPerfLogger.Timer_PerfMonitorLog);
+            HelperMethods.StartTimer(ref Timer_PerfMonitorLog);
 
             //subscribing to the event
             Event_Roles.OnRoleChanged += OnRoleChanged;

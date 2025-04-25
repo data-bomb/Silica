@@ -45,7 +45,7 @@ using System.Numerics;
 
 
 
-[assembly: MelonInfo(typeof(MapCycleMod), "Mapcycle", "1.8.1", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(MapCycleMod), "Mapcycle", "1.8.2", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -695,73 +695,65 @@ namespace Si_Mapcycle
             }
         }
 
-#if NET6_0
-        [HarmonyPatch(typeof(MusicJukeboxHandler), nameof(MusicJukeboxHandler.Update))]
-#else
-        [HarmonyPatch(typeof(MusicJukeboxHandler), "Update")]
-#endif
-        private static class ApplyPatch_MusicJukeboxHandlerUpdate
+        public override void OnUpdate()
         {
-            private static void Postfix(MusicJukeboxHandler __instance)
+            try
             {
-                try
+                if (HelperMethods.IsTimerActive(Timer_EndRoundDelay))
                 {
-                    if (HelperMethods.IsTimerActive(Timer_EndRoundDelay))
+                    Timer_EndRoundDelay += Time.deltaTime;
+
+                    if (Timer_EndRoundDelay > Pref_Mapcycle_EndgameDelay.Value)
                     {
-                        Timer_EndRoundDelay += Time.deltaTime;
+                        Timer_EndRoundDelay = HelperMethods.Timer_Inactive;
 
-                        if (Timer_EndRoundDelay > Pref_Mapcycle_EndgameDelay.Value)
-                        {
-                            Timer_EndRoundDelay = HelperMethods.Timer_Inactive;
+                        string? nextMap = GetNextMap();
 
-                            string? nextMap = GetNextMap();
-
-                            MelonLogger.Msg($"Changing map to {nextMap} .....");
-                            QueueChangeMap(nextMap);
-                            return;
-                        }
-                    }
-
-                    if (HelperMethods.IsTimerActive(Timer_InitialPostVoteDelay))
-                    {
-                        Timer_InitialPostVoteDelay += Time.deltaTime;
-
-                        if (Timer_InitialPostVoteDelay > 2.0f)
-                        {
-                            Timer_InitialPostVoteDelay = HelperMethods.Timer_Inactive;
-
-                            HelperMethods.SendChatMessageToAll("Rock the vote finished.");
-
-                            if (rockthevoteWinningMap == "")
-                            {
-                                HelperMethods.SendChatMessageToAll("Staying on current map.");
-                                return;
-                            }
-
-                            HelperMethods.SendChatMessageToAll($"Preparing to change map to {GetDisplayName(rockthevoteWinningMap)} ...");
-                            HelperMethods.StartTimer(ref Timer_FinalPostVoteDelay);
-                            return;
-                        }
-                    }
-
-                    if (HelperMethods.IsTimerActive(Timer_FinalPostVoteDelay))
-                    {
-                        Timer_FinalPostVoteDelay += Time.deltaTime;
-
-                        if (Timer_FinalPostVoteDelay > 6.0f)
-                        {
-                            Timer_FinalPostVoteDelay = HelperMethods.Timer_Inactive;
-
-                            MelonLogger.Msg($"Changing map to {rockthevoteWinningMap} ...");
-                            QueueChangeMap(rockthevoteWinningMap);
-                            return;
-                        }
+                        MelonLogger.Msg($"Changing map to {nextMap} .....");
+                        QueueChangeMap(nextMap);
+                        return;
                     }
                 }
-                catch (Exception error)
+
+                if (HelperMethods.IsTimerActive(Timer_InitialPostVoteDelay))
                 {
-                    HelperMethods.PrintError(error, "Failed to run MusicJukeboxHandler::Update");
+                    Timer_InitialPostVoteDelay += Time.deltaTime;
+
+                    if (Timer_InitialPostVoteDelay > 2.0f)
+                    {
+                        Timer_InitialPostVoteDelay = HelperMethods.Timer_Inactive;
+
+                        HelperMethods.SendChatMessageToAll("Rock the vote finished.");
+
+                        if (rockthevoteWinningMap == "")
+                        {
+                            HelperMethods.SendChatMessageToAll("Staying on current map.");
+                            return;
+                        }
+
+                        HelperMethods.SendChatMessageToAll($"Preparing to change map to {GetDisplayName(rockthevoteWinningMap)} ...");
+                        HelperMethods.StartTimer(ref Timer_FinalPostVoteDelay);
+                        return;
+                    }
                 }
+
+                if (HelperMethods.IsTimerActive(Timer_FinalPostVoteDelay))
+                {
+                    Timer_FinalPostVoteDelay += Time.deltaTime;
+
+                    if (Timer_FinalPostVoteDelay > 6.0f)
+                    {
+                        Timer_FinalPostVoteDelay = HelperMethods.Timer_Inactive;
+
+                        MelonLogger.Msg($"Changing map to {rockthevoteWinningMap} ...");
+                        QueueChangeMap(rockthevoteWinningMap);
+                        return;
+                    }
+                }
+            }
+            catch (Exception error)
+            {
+                HelperMethods.PrintError(error, "Failed to run OnUpdate");
             }
         }
 
