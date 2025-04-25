@@ -1,6 +1,6 @@
 ﻿/*
  Silica Basic Team Balance Mod
- Copyright (C) 2023-2024 by databomb
+ Copyright (C) 2023-2025 by databomb
  
  * Description *
  For Silica servers, allows server operators to configure the exact
@@ -39,9 +39,13 @@ using SilicaAdminMod;
 using System.Linq;
 using static MelonLoader.MelonLogger;
 
-[assembly: MelonInfo(typeof(BasicTeamBalance), "Basic Team Balance", "1.4.2", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(BasicTeamBalance), "Basic Team Balance", "1.4.3", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
+#if NET6_0
+[assembly: MelonOptionalDependencies("Admin Mod", "QList")]
+#else
 [assembly: MelonOptionalDependencies("Admin Mod")]
+#endif
 
 namespace Si_BasicTeamBalance
 {

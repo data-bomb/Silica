@@ -1,6 +1,6 @@
 ﻿/*
 Silica Resources Mod
-Copyright (C) 2024 by databomb
+Copyright (C) 2024-2025 by databomb
 
 * Description *
 Provides a server host the ability to configure different starting 
@@ -32,9 +32,13 @@ using SilicaAdminMod;
 using System;
 using System.Linq;
 
-[assembly: MelonInfo(typeof(ResourceConfig), "Resource Configuration", "1.3.1", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(ResourceConfig), "Resource Configuration", "1.3.2", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
+#if NET6_0
+[assembly: MelonOptionalDependencies("Admin Mod", "QList")]
+#else
 [assembly: MelonOptionalDependencies("Admin Mod")]
+#endif
 
 namespace Si_Resources
 {

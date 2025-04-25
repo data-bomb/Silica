@@ -1,6 +1,6 @@
 ﻿/*
 Silica Versus Auto-Select
-Copyright (C) 2024 by databomb
+Copyright (C) 2024-2025 by databomb
 
 * Description *
 For Silica listen servers, automatically sets the versus mode after
@@ -35,9 +35,13 @@ using System.Linq;
 using SilicaAdminMod;
 using System;
 
-[assembly: MelonInfo(typeof(VersusTeamsAutoSelectMod), "Versus Auto-Select Team", "1.1.5", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(VersusTeamsAutoSelectMod), "Versus Auto-Select Team", "1.1.6", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
+#if NET6_0
+[assembly: MelonOptionalDependencies("Admin Mod", "QList")]
+#else
 [assembly: MelonOptionalDependencies("Admin Mod")]
+#endif
 
 namespace VersusTeamsAutoSelect
 {

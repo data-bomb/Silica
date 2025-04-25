@@ -37,9 +37,13 @@ using System.Linq;
 using UnityEngine;
 using static MelonLoader.MelonLogger;
 
-[assembly: MelonInfo(typeof(Announcements), "Server Announcements", "1.1.12", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(Announcements), "Server Announcements", "1.1.13", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
+#if NET6_0
+[assembly: MelonOptionalDependencies("Admin Mod", "QList")]
+#else
 [assembly: MelonOptionalDependencies("Admin Mod")]
+#endif
 
 namespace Si_Announcements
 {

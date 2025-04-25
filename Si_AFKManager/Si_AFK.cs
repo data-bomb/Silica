@@ -1,6 +1,6 @@
 ﻿/*
 Silica AFK Manager
-Copyright (C) 2023-2024 by databomb
+Copyright (C) 2023-2025 by databomb
 
 * Description *
 For Silica listen servers, allows hosts to use the !kick or !afk command
@@ -35,9 +35,13 @@ using System;
 using System.Collections;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(AwayFromKeyboard), "AFK Manager", "1.3.3", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(AwayFromKeyboard), "AFK Manager", "1.3.4", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
+#if NET6_0
+[assembly: MelonOptionalDependencies("Admin Mod", "QList")]
+#else
 [assembly: MelonOptionalDependencies("Admin Mod")]
+#endif
 
 namespace Si_AFKManager
 {
@@ -88,7 +92,7 @@ namespace Si_AFKManager
             HelperMethods.RegisterAdminCommand("kick", kickCallback, Power.Kick, "Kicks target player. Usage: !kick <player>");
             HelperMethods.RegisterAdminCommand("afk", afkCallback, Power.Kick, "Kicks any AFK players immediately. Usage: !afk");
 
-            #if NET6_0
+#if NET6_0
             bool QListLoaded = RegisteredMelons.Any(m => m.Info.Name == "QList");
             if (!QListLoaded)
             {
@@ -102,7 +106,7 @@ namespace Si_AFKManager
 
             QList.Options.AddOption(kickWhenNotFull);
             QList.Options.AddOption(minutesBeforeKick);
-            #endif
+#endif
         }
 
         public static bool ServerAlmostFull()
@@ -237,11 +241,11 @@ namespace Si_AFKManager
             }
         }
 
-        #if NET6_0
+#if NET6_0
         [HarmonyPatch(typeof(MusicJukeboxHandler), nameof(MusicJukeboxHandler.Update))]
-        #else
+#else
         [HarmonyPatch(typeof(MusicJukeboxHandler), "Update")]
-        #endif
+#endif
         private static class ApplyPatch_MusicJukeboxHandler_Update
         {
             private static void Postfix(MusicJukeboxHandler __instance)

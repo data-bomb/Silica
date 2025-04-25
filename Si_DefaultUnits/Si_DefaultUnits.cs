@@ -1,6 +1,6 @@
 ﻿/*
  Silica Default Spawn Units
- Copyright (C) 2024 by databomb
+ Copyright (C) 2024-2025 by databomb
  
  * Description *
  For Silica servers, allows hosts to modify the default spawn units at
@@ -35,9 +35,13 @@ using System;
 using SilicaAdminMod;
 using System.Linq;
 
-[assembly: MelonInfo(typeof(DefaultUnits), "Default Spawn Units", "1.0.4", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(DefaultUnits), "Default Spawn Units", "1.0.5", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
+#if NET6_0
+[assembly: MelonOptionalDependencies("Admin Mod", "QList")]
+#else
 [assembly: MelonOptionalDependencies("Admin Mod")]
+#endif
 
 namespace Si_DefaultUnits
 {
