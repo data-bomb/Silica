@@ -38,7 +38,7 @@ using UnityEngine;
 
 namespace SilicaAdminMod
 {
-    public class SiAdminMod : MelonMod
+    public partial class SiAdminMod : MelonMod
     {
         public static MelonPreferences_Category _modCategory = null!;
         public static MelonPreferences_Entry<bool> Pref_Admin_AcceptTeamChatCommands = null!;
