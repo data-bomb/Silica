@@ -38,8 +38,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Diagnostics;
 using System.IO;
+using System.Runtime.CompilerServices;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.8.2", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.8.3", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 #if NET6_0
 [assembly: MelonOptionalDependencies("Admin Mod", "QList")]
@@ -106,6 +107,7 @@ namespace Si_Logging
             }
         }
 
+        [MethodImpl(MethodImplOptions.NoOptimization)]
         public override void OnLateInitializeMelon()
         {
             HelperMethods.StartTimer(ref Timer_PerfMonitorLog);
@@ -113,13 +115,20 @@ namespace Si_Logging
             //subscribing to the event
             Event_Roles.OnRoleChanged += OnRoleChanged;
             Event_Netcode.OnRequestPlayerChat += OnRequestPlayerChat;
+
             #if NET6_0
             bool QListLoaded = RegisteredMelons.Any(m => m.Info.Name == "QList");
-            if (!QListLoaded)
+            if (QListLoaded)
             {
-                return;
+                QListRegistration();
             }
+            #endif
+        }
 
+        #if NET6_0
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private void QListRegistration()
+        {
             QList.Options.RegisterMod(this);
 
             QList.OptionTypes.BoolOption logDamage = new(Pref_Log_Damage, Pref_Log_Damage.Value);
@@ -127,8 +136,8 @@ namespace Si_Logging
             QList.Options.AddOption(logDamage);
 
             QList.Options.AddOption(logAllKills);
-            #endif
         }
+        #endif
 
         // 003. Change Map
         public override void OnSceneWasLoaded(int buildIndex, string sceneName)

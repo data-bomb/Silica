@@ -34,8 +34,9 @@ using UnityEngine;
 using System;
 using SilicaAdminMod;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
-[assembly: MelonInfo(typeof(DefaultUnits), "Default Spawn Units", "1.0.5", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(DefaultUnits), "Default Spawn Units", "1.0.6", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 #if NET6_0
 [assembly: MelonOptionalDependencies("Admin Mod", "QList")]
@@ -85,15 +86,22 @@ namespace Si_DefaultUnits
             teamFirstSpawn = new bool[SiConstants.MaxPlayableTeams];
         }
 
-        #if NET6_0
+        [MethodImpl(MethodImplOptions.NoOptimization)]
         public override void OnLateInitializeMelon()
         {
+            #if NET6_0
             bool QListLoaded = RegisteredMelons.Any(m => m.Info.Name == "QList");
             if (!QListLoaded)
             {
-                return;
+                QListRegistration();
             }
+            #endif
+        }
 
+        #if NET6_0
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private void QListRegistration()
+        {
             QList.Options.RegisterMod(this);
 
             QList.OptionTypes.StringOption humanTier0 = new(_Human_Unit_Tier_0, _Human_Unit_Tier_0.Value);

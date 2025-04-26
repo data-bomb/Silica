@@ -34,8 +34,9 @@ using SilicaAdminMod;
 using System;
 using System.Collections;
 using UnityEngine;
+using System.Runtime.CompilerServices;
 
-[assembly: MelonInfo(typeof(AwayFromKeyboard), "AFK Manager", "1.3.5", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(AwayFromKeyboard), "AFK Manager", "1.3.6", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 #if NET6_0
 [assembly: MelonOptionalDependencies("Admin Mod", "QList")]
@@ -79,13 +80,14 @@ namespace Si_AFKManager
             Pref_AFK_MinutesBeforeKick ??= _modCategory.CreateEntry<int>("AFK_MinutesBeforeKick", 7);
         }
 
+        [MethodImpl(MethodImplOptions.NoOptimization)]
         public override void OnLateInitializeMelon()
         {
             HelperMethods.StartTimer(ref Timer_AFKCheck);
 
-            AdminModAvailable = RegisteredMelons.Any(m => m.Info.Name == "Admin Mod");
-
             AFKTracker = new List<AFKCount>();
+
+            AdminModAvailable = RegisteredMelons.Any(m => m.Info.Name == "Admin Mod");
 
             HelperMethods.CommandCallback kickCallback = Command_Kick;
             HelperMethods.CommandCallback afkCallback = Command_AFK;
@@ -94,12 +96,17 @@ namespace Si_AFKManager
 
             #if NET6_0
             bool QListLoaded = RegisteredMelons.Any(m => m.Info.Name == "QList");
-            if (!QListLoaded)
+            if (QListLoaded)
             {
-                MelonLogger.Msg("QList not loaded.");
-                return;
+                QListRegistration();
             }
+            #endif
+        }
 
+        #if NET6_0
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private void QListRegistration()
+        {
             QList.Options.RegisterMod(this);
 
             QList.OptionTypes.BoolOption kickWhenNotFull = new(Pref_AFK_KickIfServerNotFull, Pref_AFK_KickIfServerNotFull.Value);
@@ -107,8 +114,8 @@ namespace Si_AFKManager
 
             QList.Options.AddOption(kickWhenNotFull);
             QList.Options.AddOption(minutesBeforeKick);
-            #endif
         }
+        #endif
 
         public static bool ServerAlmostFull()
         {
@@ -268,7 +275,7 @@ namespace Si_AFKManager
                         skippedFirstCheck = true;
                         return;
                     }
-
+                    
                     // track if any players need to be removed from the AFKTracker list after we've finished iterating
                     // we can't kick inside the foreach Players iterator because it modifies the list
                     List<Player>? playersToKick = new List<Player>();
@@ -286,7 +293,7 @@ namespace Si_AFKManager
                         {
                             continue;
                         }
-
+                        
                         int afkIndex = AFKTracker.FindIndex(p => p.Player == player);
                         // if they've joined a team then remove them from the AFK tracker
                         if (afkIndex >= 0)
@@ -295,7 +302,7 @@ namespace Si_AFKManager
                             AFKTracker.RemoveAt(afkIndex);
                         }
                     }
-
+                    
                     foreach (Player player in Player.Players)
                     {
                         if (player == null)
@@ -308,7 +315,7 @@ namespace Si_AFKManager
                         {
                             continue;
                         }
-
+                        
                         int afkIndex = AFKTracker.FindIndex(p => p.Player == player);
 
                         Player? serverPlayer = NetworkGameServer.GetServerPlayer();
@@ -349,7 +356,7 @@ namespace Si_AFKManager
                             AFKTracker.Add(afkPlayer);
                         }
                     }
-
+                    
                     foreach (Player playerToKick in playersToKick)
                     {
                         if (playerToKick == null)
@@ -369,7 +376,7 @@ namespace Si_AFKManager
             }
             catch (Exception exception)
             {
-                HelperMethods.PrintError(exception, "Failed in MusicJukeboxHandler::Update");
+                HelperMethods.PrintError(exception, "Failed in OnUpdate");
             }
         }
 

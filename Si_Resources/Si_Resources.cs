@@ -31,8 +31,9 @@ using Si_Resources;
 using SilicaAdminMod;
 using System;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
-[assembly: MelonInfo(typeof(ResourceConfig), "Resource Configuration", "1.3.2", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(ResourceConfig), "Resource Configuration", "1.3.3", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 #if NET6_0
 [assembly: MelonOptionalDependencies("Admin Mod", "QList")]
@@ -76,7 +77,8 @@ namespace Si_Resources
             Pref_Resources_Attackers_StartingAmount ??= _modCategory.CreateEntry<int>("Resources_Attackers_StartingAmount", defaultSiegeAttackingStartingResources);
             Pref_Resources_Defenders_StartingAmount ??= _modCategory.CreateEntry<int>("Resources_Defenders_StartingAmount", defaultSiegeDefendingStartingResources);
         }
-       
+
+        [MethodImpl(MethodImplOptions.NoOptimization)]
         public override void OnLateInitializeMelon()
         {
             HelperMethods.CommandCallback resourcesCallback = Command_Resources;
@@ -84,11 +86,17 @@ namespace Si_Resources
 
             #if NET6_0
             bool QListLoaded = RegisteredMelons.Any(m => m.Info.Name == "QList");
-            if (!QListLoaded)
+            if (QListLoaded)
             {
-                return;
+                QListRegistration();
             }
+            #endif
+        }
 
+        #if NET6_0
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private void QListRegistration()
+        {
             QList.Options.RegisterMod(this);
 
             QList.OptionTypes.IntOption centauriStartingRes = new(Pref_Resources_Centauri_StartingAmount, true, Pref_Resources_Centauri_StartingAmount.Value, 8000, 50000, 500);
@@ -98,8 +106,8 @@ namespace Si_Resources
             QList.Options.AddOption(centauriStartingRes);
             QList.Options.AddOption(solStartingRes);
             QList.Options.AddOption(alienStartingRes);
-            #endif
         }
+        #endif
 
         public static void Command_Resources(Player? callerPlayer, String args)
         {

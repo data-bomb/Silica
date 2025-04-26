@@ -34,8 +34,9 @@ using SilicaAdminMod;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
-[assembly: MelonInfo(typeof(BasicBanlist), "Basic Banlist", "1.5.5", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(BasicBanlist), "Basic Banlist", "1.5.6", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 #if NET6_0
 [assembly: MelonOptionalDependencies("Admin Mod", "QList")]
@@ -121,7 +122,7 @@ namespace Si_BasicBanlist
             }
         }
 
-
+        [MethodImpl(MethodImplOptions.NoOptimization)]
         public override void OnLateInitializeMelon()
         {
             HelperMethods.CommandCallback banCallback = Command_Ban;
@@ -136,18 +137,24 @@ namespace Si_BasicBanlist
 
             #if NET6_0
             bool QListLoaded = RegisteredMelons.Any(m => m.Info.Name == "QList");
-            if (!QListLoaded)
+            if (QListLoaded)
             {
-                return;
+                QListRegistration();
             }
+            #endif
+        }
 
+        #if NET6_0
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private void QListRegistration()
+        {
             QList.Options.RegisterMod(this);
 
             QList.OptionTypes.BoolOption kickEqualsPermaBan = new(_Pref_Ban_KickButton_PermaBan, _Pref_Ban_KickButton_PermaBan.Value);
 
             QList.Options.AddOption(kickEqualsPermaBan);
-            #endif
         }
+        #endif
 
         public static bool IsPlayerBanned(string name)
         {

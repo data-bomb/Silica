@@ -38,8 +38,9 @@ using System;
 using SilicaAdminMod;
 using System.Linq;
 using static MelonLoader.MelonLogger;
+using System.Runtime.CompilerServices;
 
-[assembly: MelonInfo(typeof(BasicTeamBalance), "Basic Team Balance", "1.4.4", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(BasicTeamBalance), "Basic Team Balance", "1.4.5", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 #if NET6_0
 [assembly: MelonOptionalDependencies("Admin Mod", "QList")]
@@ -86,7 +87,7 @@ namespace Si_BasicTeamBalance
             preventTeamSwitches = false;
         }
 
-        
+        [MethodImpl(MethodImplOptions.NoOptimization)]
         public override void OnLateInitializeMelon()
         {
             HelperMethods.CommandCallback teamCallback = Command_Team;
@@ -94,11 +95,17 @@ namespace Si_BasicTeamBalance
 
             #if NET6_0
             bool QListLoaded = RegisteredMelons.Any(m => m.Info.Name == "QList");
-            if (!QListLoaded)
+            if (QListLoaded)
             {
-                return;
+                QListRegistration();
             }
+            #endif
+        }
 
+        #if NET6_0
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private void QListRegistration()
+        {
             QList.Options.RegisterMod(this);
 
             QList.OptionTypes.FloatOption twoTeamDivisor = new(_TwoTeamBalanceDivisor, false, _TwoTeamBalanceDivisor.Value, 0.1f, 1000.0f);
@@ -114,8 +121,8 @@ namespace Si_BasicTeamBalance
             QList.Options.AddOption(threeTeamAddend);
             QList.Options.AddOption(preventEarlyTeamSwitches);
             QList.Options.AddOption(preventEarlyTeamSwitchDuration);
-            #endif
         }
+        #endif
 
         private static byte GetClearRequestValue(GameMode gameMode)
         {

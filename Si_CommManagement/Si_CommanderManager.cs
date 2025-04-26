@@ -33,8 +33,9 @@ using System;
 using SilicaAdminMod;
 using System.Linq;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 
-[assembly: MelonInfo(typeof(CommanderManager), "Commander Management", "1.9.8", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(CommanderManager), "Commander Management", "1.9.9", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 #if NET6_0
 [assembly: MelonOptionalDependencies("Admin Mod", "QList")]
@@ -78,6 +79,7 @@ namespace Si_CommanderManagement
             }
         }
 
+        [MethodImpl(MethodImplOptions.NoOptimization)]
         public override void OnLateInitializeMelon()
         {
             // register commands
@@ -104,16 +106,24 @@ namespace Si_CommanderManagement
 
             #if NET6_0
             bool QListLoaded = RegisteredMelons.Any(m => m.Info.Name == "QList");
-            if (!QListLoaded)
+            if (QListLoaded)
             {
-                return;
+                QListRegistration();
             }
+            #endif
+        }
 
+        #if NET6_0
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private void QListRegistration()
+        {
             QList.Options.RegisterMod(this);
             QList.OptionTypes.BoolOption dontStartWithoutCommanders = new(_BlockRoundStartUntilEnoughApplicants, _BlockRoundStartUntilEnoughApplicants.Value);
             QList.Options.AddOption(dontStartWithoutCommanders);
-            #endif
         }
+        #endif
+
+
         public override void OnSceneWasLoaded(int buildIndex, string sceneName)
         {
             Mutineer.ClearMutineerList();

@@ -36,8 +36,9 @@ using SilicaAdminMod;
 using System.Linq;
 using UnityEngine;
 using static MelonLoader.MelonLogger;
+using System.Runtime.CompilerServices;
 
-[assembly: MelonInfo(typeof(Announcements), "Server Announcements", "1.2.0", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(Announcements), "Server Announcements", "1.2.1", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 #if NET6_0
 [assembly: MelonOptionalDependencies("Admin Mod", "QList")]
@@ -99,6 +100,8 @@ namespace Si_Announcements
                 HelperMethods.PrintError(exception, "Failed in OnInitializeMelon");
             }
         }
+
+        [MethodImpl(MethodImplOptions.NoOptimization)]
         public override void OnLateInitializeMelon()
         {
             HelperMethods.StartTimer(ref Timer_Announcement);
@@ -108,11 +111,17 @@ namespace Si_Announcements
 
             #if NET6_0
             bool QListLoaded = RegisteredMelons.Any(m => m.Info.Name == "QList");
-            if (!QListLoaded)
+            if (QListLoaded)
             {
-                return;
+                QListRegistration();
             }
+            #endif
+        }
 
+        #if NET6_0
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private void QListRegistration()
+        {
             QList.Options.RegisterMod(this);
 
             QList.OptionTypes.IntOption secondsBeforeAnnouncing = new(_Announcements_SecondsBetweenMessages, true, _Announcements_SecondsBetweenMessages.Value, 60, 1200, 30);
@@ -120,9 +129,8 @@ namespace Si_Announcements
 
             QList.Options.AddOption(secondsBeforeAnnouncing);
             QList.Options.AddOption(showDoubleAnnouncements);
-#endif
         }
-
+        #endif
 
         public override void OnUpdate()
         {
