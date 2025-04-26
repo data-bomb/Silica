@@ -311,8 +311,8 @@ jobs:
   
       - name: Move Plugins into Release
         run: |
-          mv Si_ModUpdater.dll release/dedi/Plugins
-          mv Si_ModUpdater_ListenServer.dll release/listen/Plugins/Si_ModUpdater.dll
+          mv ModUpdater.dll release/dedi/Plugins
+          mv ModUpdater_Il2Cpp.dll release/listen/Plugins
           mv Si_DiscordStatus.dll release/dedi/Plugins
           mv Si_DiscordStatus_ListenServer.dll release/listen/Plugins/Si_DiscordStatus.dll
         
