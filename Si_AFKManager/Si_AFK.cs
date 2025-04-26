@@ -35,7 +35,7 @@ using System;
 using System.Collections;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(AwayFromKeyboard), "AFK Manager", "1.3.4", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(AwayFromKeyboard), "AFK Manager", "1.3.5", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 #if NET6_0
 [assembly: MelonOptionalDependencies("Admin Mod", "QList")]
@@ -92,10 +92,11 @@ namespace Si_AFKManager
             HelperMethods.RegisterAdminCommand("kick", kickCallback, Power.Kick, "Kicks target player. Usage: !kick <player>");
             HelperMethods.RegisterAdminCommand("afk", afkCallback, Power.Kick, "Kicks any AFK players immediately. Usage: !afk");
 
-#if NET6_0
+            #if NET6_0
             bool QListLoaded = RegisteredMelons.Any(m => m.Info.Name == "QList");
             if (!QListLoaded)
             {
+                MelonLogger.Msg("QList not loaded.");
                 return;
             }
 
@@ -106,7 +107,7 @@ namespace Si_AFKManager
 
             QList.Options.AddOption(kickWhenNotFull);
             QList.Options.AddOption(minutesBeforeKick);
-#endif
+            #endif
         }
 
         public static bool ServerAlmostFull()
@@ -241,142 +242,134 @@ namespace Si_AFKManager
             }
         }
 
-#if NET6_0
-        [HarmonyPatch(typeof(MusicJukeboxHandler), nameof(MusicJukeboxHandler.Update))]
-#else
-        [HarmonyPatch(typeof(MusicJukeboxHandler), "Update")]
-#endif
-        private static class ApplyPatch_MusicJukeboxHandler_Update
-        {
-            private static void Postfix(MusicJukeboxHandler __instance)
+        public override void OnUpdate()
+        { 
+            try
             {
-                try
+                if (Pref_AFK_MinutesBeforeKick == null || Pref_AFK_KickIfServerNotFull == null)
                 {
-                    if (Pref_AFK_MinutesBeforeKick == null || Pref_AFK_KickIfServerNotFull == null)
+                    return;
+                }
+
+                // check if timer expired while the game is in-progress
+                Timer_AFKCheck += Time.deltaTime;
+                if (Timer_AFKCheck >= 60.0f)
+                {
+                    Timer_AFKCheck = 0.0f;
+
+                    if (GameMode.CurrentGameMode && !GameMode.CurrentGameMode.GameOngoing)
                     {
                         return;
                     }
 
-                    // check if timer expired while the game is in-progress
-                    Timer_AFKCheck += Time.deltaTime;
-                    if (Timer_AFKCheck >= 60.0f)
+                    // skip the first timer expiration so we're at least a minute into the round
+                    if (!skippedFirstCheck)
                     {
-                        Timer_AFKCheck = 0.0f;
+                        skippedFirstCheck = true;
+                        return;
+                    }
 
-                        if (GameMode.CurrentGameMode && !GameMode.CurrentGameMode.GameOngoing)
+                    // track if any players need to be removed from the AFKTracker list after we've finished iterating
+                    // we can't kick inside the foreach Players iterator because it modifies the list
+                    List<Player>? playersToKick = new List<Player>();
+
+                    // remove players in a seperate loop
+                    foreach (Player player in Player.Players)
+                    {
+                        if (player == null)
                         {
-                            return;
+                            continue;
                         }
 
-                        // skip the first timer expiration so we're at least a minute into the round
-                        if (!skippedFirstCheck)
+                        // for now, we'll only care about people who idle and don't join a team
+                        if (player.Team == null)
                         {
-                            skippedFirstCheck = true;
-                            return;
+                            continue;
                         }
 
-                        // track if any players need to be removed from the AFKTracker list after we've finished iterating
-                        // we can't kick inside the foreach Players iterator because it modifies the list
-                        List<Player>? playersToKick = new List<Player>();
-
-                        // remove players in a seperate loop
-                        foreach (Player player in Player.Players)
+                        int afkIndex = AFKTracker.FindIndex(p => p.Player == player);
+                        // if they've joined a team then remove them from the AFK tracker
+                        if (afkIndex >= 0)
                         {
-                            if (player == null)
-                            {
-                                continue;
-                            }
+                            MelonLogger.Msg("Removing " + player.PlayerName + " from AFK list for being on a team.");
+                            AFKTracker.RemoveAt(afkIndex);
+                        }
+                    }
 
-                            // for now, we'll only care about people who idle and don't join a team
-                            if (player.Team == null)
-                            {
-                                continue;
-                            }
-
-                            int afkIndex = AFKTracker.FindIndex(p => p.Player == player);
-                            // if they've joined a team then remove them from the AFK tracker
-                            if (afkIndex >= 0)
-                            {
-                                MelonLogger.Msg("Removing " + player.PlayerName + " from AFK list for being on a team.");
-                                AFKTracker.RemoveAt(afkIndex);
-                            }
+                    foreach (Player player in Player.Players)
+                    {
+                        if (player == null)
+                        {
+                            continue;
                         }
 
-                        foreach (Player player in Player.Players)
+                        // for now, we'll only care about people who idle and don't join a team
+                        if (player.Team != null)
                         {
-                            if (player == null)
+                            continue;
+                        }
+
+                        int afkIndex = AFKTracker.FindIndex(p => p.Player == player);
+
+                        Player? serverPlayer = NetworkGameServer.GetServerPlayer();
+                        if (player == serverPlayer)
+                        {
+                            continue;
+                        }
+
+                        // they were AFK for another minute
+                        if (afkIndex >= 0)
+                        {
+                            AFKTracker[afkIndex].Minutes += 1;
+
+                            if (AFKTracker[afkIndex].Minutes >= Pref_AFK_MinutesBeforeKick.Value)
                             {
-                                continue;
-                            }
-
-                            // for now, we'll only care about people who idle and don't join a team
-                            if (player.Team != null)
-                            {
-                                continue;
-                            }
-
-                            int afkIndex = AFKTracker.FindIndex(p => p.Player == player);
-
-                            Player? serverPlayer = NetworkGameServer.GetServerPlayer();
-                            if (player == serverPlayer)
-                            {
-                                continue;
-                            }
-
-                            // they were AFK for another minute
-                            if (afkIndex >= 0)
-                            {
-                                AFKTracker[afkIndex].Minutes += 1;
-
-                                if (AFKTracker[afkIndex].Minutes >= Pref_AFK_MinutesBeforeKick.Value)
+                                // kick immediately
+                                if (Pref_AFK_KickIfServerNotFull.Value)
                                 {
-                                    // kick immediately
-                                    if (Pref_AFK_KickIfServerNotFull.Value)
+                                    playersToKick.Add(player);
+                                }
+                                // only kick if server is almost full
+                                else
+                                {
+                                    if (ServerAlmostFull())
                                     {
                                         playersToKick.Add(player);
                                     }
-                                    // only kick if server is almost full
-                                    else
-                                    {
-                                        if (ServerAlmostFull())
-                                        {
-                                            playersToKick.Add(player);
-                                        }
-                                    }
                                 }
                             }
-                            // they weren't being tracked yet
-                            else
-                            {
-                                AFKCount afkPlayer = new AFKCount();
-                                afkPlayer.Player = player;
-                                afkPlayer.Minutes = 1;
+                        }
+                        // they weren't being tracked yet
+                        else
+                        {
+                            AFKCount afkPlayer = new AFKCount();
+                            afkPlayer.Player = player;
+                            afkPlayer.Minutes = 1;
 
-                                AFKTracker.Add(afkPlayer);
-                            }
+                            AFKTracker.Add(afkPlayer);
+                        }
+                    }
+
+                    foreach (Player playerToKick in playersToKick)
+                    {
+                        if (playerToKick == null)
+                        {
+                            continue;
                         }
 
-                        foreach (Player playerToKick in playersToKick)
+                        HelperMethods.KickPlayer(playerToKick);
+                        HelperMethods.ReplyToCommand_Player(playerToKick, "was kicked for being AFK");
+                        int afkIndexToRemove = AFKTracker.FindIndex(p => p.Player == playerToKick);
+                        if (afkIndexToRemove >= 0)
                         {
-                            if (playerToKick == null)
-                            {
-                                continue;
-                            }
-
-                            HelperMethods.KickPlayer(playerToKick);
-                            HelperMethods.ReplyToCommand_Player(playerToKick, "was kicked for being AFK");
-                            int afkIndexToRemove = AFKTracker.FindIndex(p => p.Player == playerToKick);
-                            if (afkIndexToRemove >= 0)
-                            {
-                                AFKTracker.RemoveAt(afkIndexToRemove);
-                            }
+                            AFKTracker.RemoveAt(afkIndexToRemove);
                         }
                     }
                 }
-                catch (Exception exception)
-                {
-                    HelperMethods.PrintError(exception, "Failed in MusicJukeboxHandler::Update");
-                }
+            }
+            catch (Exception exception)
+            {
+                HelperMethods.PrintError(exception, "Failed in MusicJukeboxHandler::Update");
             }
         }
 
