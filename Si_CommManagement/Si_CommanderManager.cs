@@ -34,7 +34,7 @@ using SilicaAdminMod;
 using System.Linq;
 using System.Collections.Generic;
 
-[assembly: MelonInfo(typeof(CommanderManager), "Commander Management", "1.9.7", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(CommanderManager), "Commander Management", "1.9.8", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 #if NET6_0
 [assembly: MelonOptionalDependencies("Admin Mod", "QList")]

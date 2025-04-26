@@ -36,6 +36,7 @@ using UnityEngine;
 
 namespace SilicaAdminMod
 {
+    #if !NET6_0
     public class CheatsNotification
     {
         [HarmonyPatch(typeof(Game), nameof(Game.CheatsEnabled), MethodType.Setter)]
@@ -69,4 +70,5 @@ namespace SilicaAdminMod
 
         }
     }
+    #endif
 }
