@@ -71,6 +71,38 @@ namespace SilicaAdminMod
             return PlayerMethods.UnregisterPlayerPhrase(playerPhrase);
         }
 
+        public static bool IsValidCommandPrefix(char commandFirstCharacter)
+        {
+            if (commandFirstCharacter == '!' || commandFirstCharacter == '/' || commandFirstCharacter == '.')
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        public static AdminCommand? GetAdminCommand(string commandString)
+        {
+            String thisCommandText = commandString.Split(' ')[0];
+            // trim first character
+            thisCommandText = thisCommandText[1..];
+            return AdminMethods.FindAdminCommandFromString(thisCommandText);
+        }
+
+        public static PlayerCommand? GetPlayerCommand(string commandString)
+        {
+            String thisCommandText = commandString.Split(' ')[0];
+            // trim first character
+            thisCommandText = thisCommandText[1..];
+            return PlayerMethods.FindPlayerCommandFromString(thisCommandText);
+        }
+
+        public static PlayerCommand? GetPlayerPhrase(string phraseString)
+        {
+            String thisPhrase = phraseString.Split(' ')[0];
+            return PlayerMethods.FindPlayerPhraseFromString(thisPhrase);
+        }
+
         public static void ReplyToCommand(params string[] messages)
         {
             SendChatMessageToAll(chatPrefix + String.Concat(messages));
