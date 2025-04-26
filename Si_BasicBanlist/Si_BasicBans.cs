@@ -35,7 +35,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-[assembly: MelonInfo(typeof(BasicBanlist), "Basic Banlist", "1.5.4", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(BasicBanlist), "Basic Banlist", "1.5.5", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 #if NET6_0
 [assembly: MelonOptionalDependencies("Admin Mod", "QList")]
@@ -435,7 +435,7 @@ namespace Si_BasicBanlist
                     if (__0 != null)
                     {
                         // check if player was previously banned
-                        ulong JoiningPlayerSteamId = ulong.Parse(__0.ToString().Split('_')[1]);
+                        ulong JoiningPlayerSteamId = ulong.Parse(__0.ToString().Split('_')[1].Split(' ')[0]);
                         if (MasterBanList.Find(i => i.OffenderSteamId == JoiningPlayerSteamId) != null)
                         {
                             MelonLogger.Msg("Kicking " + __0.ToString() + " for matching an entry in the banlist.");
