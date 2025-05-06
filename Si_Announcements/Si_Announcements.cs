@@ -38,7 +38,7 @@ using UnityEngine;
 using static MelonLoader.MelonLogger;
 using System.Runtime.CompilerServices;
 
-[assembly: MelonInfo(typeof(Announcements), "Server Announcements", "1.2.1", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(Announcements), "Server Announcements", "1.2.2", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 #if NET6_0
 [assembly: MelonOptionalDependencies("Admin Mod", "QList")]
@@ -136,6 +136,11 @@ namespace Si_Announcements
         {
             try
             {
+                if (_Announcements_SecondsBetweenMessages == null)
+                {
+                    return;
+                }
+
                 Timer_Announcement += Time.deltaTime;
 
                 if (Timer_Announcement >= _Announcements_SecondsBetweenMessages.Value)
@@ -147,8 +152,8 @@ namespace Si_Announcements
                         return;
                     }
 
-                    // skip if game is not ongoign
-                    if (!GameMode.CurrentGameMode.GameOngoing)
+                    // skip if game is not on-going
+                    if (GameMode.CurrentGameMode == null || !GameMode.CurrentGameMode.GameOngoing)
                     {
                         return;
                     }
