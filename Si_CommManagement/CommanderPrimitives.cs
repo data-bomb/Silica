@@ -61,7 +61,7 @@ namespace Si_CommanderManagement
             SetCommander(TargetTeam, null);
 
             // need to get the player back to Infantry and not stuck in no-clip
-            SendToRole(DemotedCommander, GameModeExt.ETeamRole.INFANTRY);
+            SendToRole(DemotedCommander, GameModeExt.ETeamRole.UNIT);
             // respawn
             GameMode.CurrentGameMode.SpawnUnitForPlayer(DemotedCommander, TargetTeam);
         }
