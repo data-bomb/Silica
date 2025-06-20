@@ -150,7 +150,7 @@ namespace SilicaAdminMod
                         MelonLogger.Msg("Preventing Spawn");
                     }
                     gameModeInstance.SpawnUnitForPlayer(requestingPlayer, requestingPlayer.Team);
-                    FireOnRoleChangedEvent(requestingPlayer, GameModeExt.ETeamRole.INFANTRY);
+                    FireOnRoleChangedEvent(requestingPlayer, GameModeExt.ETeamRole.UNIT);
                 }
 
                 return false;
