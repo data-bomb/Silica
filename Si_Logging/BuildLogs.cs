@@ -81,9 +81,47 @@ namespace Si_Logging
                 return "";
             }
 
+            return GetLogNameFromDisplayName(target.ObjectInfo.DisplayName);
+        }
+
+        public static string GetStructureName(ConstructionSite site)
+        {
+            if (site == null || site.ObjectInfo == null)
+            {
+                return "";
+            }
+
+            return GetLogNameFromDisplayName(site.ObjectInfo.DisplayName);
+        }
+
+        public static string GetLogPosition(Vector3 position)
+        {
+            string x = position.x.ToString("F0");
+            // make z the vertical axis like a sane person
+            string y = position.z.ToString("F0");
+            string z = position.y.ToString("F0");
+
+            return $"{x} {y} {z}";
+        }
+        
+        public static string GetPlayerPosition(Unit victim)
+        {
+            string victimLogPosition = GetLogPosition(victim.transform.position);
+            return $"(victim_position \"{victimLogPosition}\")";
+        }
+
+        public static string GetPlayerPosition(Unit victim, GameObject attacker)
+        {
+            string victimLogPosition = GetLogPosition(victim.transform.position);
+            string attackerLogPosition = GetLogPosition(attacker.transform.position);
+            return $"(attacker_position \"{attackerLogPosition}\") (victim_position \"{victimLogPosition}\")";
+        }
+
+        public static string GetLogNameFromDisplayName(string displayName)
+        {
             // remove any spaces or dashes from the display name
             // this is still slightly different than calling ToString() but this should be more reliable with game updates
-            return target.ObjectInfo.DisplayName.Replace(" ", "").Replace("-", "");
+            return displayName.Replace(" ", "").Replace("-", "");
         }
 
         public static string GetPlayerID(P2PSessionRequest_t session)
@@ -150,6 +188,37 @@ namespace Si_Logging
             }
 
             return team.TeamShortName;
+        }
+
+        public static string GetTeamName(int index)
+        {
+            if (index < 0 || index > (int)SiConstants.ETeam.Sol)
+            {
+                return string.Empty;
+            }
+
+            if (index == (int)SiConstants.ETeam.Alien)
+            {
+                return "Alien";
+            }
+            else if (index == (int)SiConstants.ETeam.Wildlife)
+            {
+                return "Wildlife";
+            }
+            else if (index == (int)SiConstants.ETeam.Gamemaster)
+            {
+                return "Gamemaster";
+            }
+            else if (index == (int)SiConstants.ETeam.Centauri)
+            {
+                return "Centauri";
+            }
+            else if (index == (int)SiConstants.ETeam.Sol)
+            {
+                return "Sol";
+            }
+
+            return string.Empty;
         }
 
         public static string AddAIConsoleEntry()

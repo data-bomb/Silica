@@ -31,8 +31,12 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Collections.Generic;
 using Newtonsoft.Json;
+using System.IO;
+using UnityEngine;
+using MelonLoader.Utils;
+using System.Linq;
 
-[assembly: MelonInfo(typeof(Webhooks), "Webhooks", "1.2.9", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(Webhooks), "Webhooks", "1.4.1", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -57,6 +61,8 @@ namespace Si_Webhooks
         static CallResult<HTTPRequestCompleted_t> OnHTTPRequestCompletedCallResultDiscord = null!;
 
         static Dictionary<ulong, string> CacheAvatarURLs = null!;
+
+        static float Timer_CheckForVideo = HelperMethods.Timer_Inactive;
 
         public override void OnInitializeMelon()
         {
@@ -83,84 +89,155 @@ namespace Si_Webhooks
             }
         }
 
-        [HarmonyPatch(typeof(Silica.UI.Chat), "MessageReceived")]
-        private static class TechGlitch_Chat_MessageReceived
+        public override void OnLateInitializeMelon()
         {
-            public static void Postfix(Silica.UI.Chat __instance, Player __0, string __1, bool __2)
+            // subscribe to the OnRequestPlayerChat event
+            Event_Netcode.OnRequestPlayerChat += OnRequestPlayerChat;
+        }
+
+        public void OnRequestPlayerChat(object? sender, OnRequestPlayerChatArgs args)
+        {
+            if (args.Player == null)
             {
-                try
+                return;
+            }
+
+            try
+            {
+                string rawMessage = ConvertHTML(args.Text);
+                if (rawMessage == string.Empty)
                 {
-                    // each faction has its own chat manager but by looking at alien and only global messages this catches commands only once
-                    if (!__instance.ToString().Contains("alien") || __2)
-                    {
-                        return;
-                    }
+                    return;
+                }
 
-                    if (__0 == null)
-                    {
-                        return;
-                    }
+                if (rawMessage.StartsWith("**[SAM"))
+                {
+                    rawMessage = rawMessage.Replace("**[SAM]** ", "");
+                    SendMessageToWebhook(rawMessage, _Server_Shortname.Value, _Server_Avatar_URL.Value);
+                    return;
+                }
 
-                    string rawMessage = ConvertHTML(__1);
-                    if (rawMessage == string.Empty)
-                    {
-                        return;
-                    }
+                string username = args.Player.PlayerName;
+                string? avatarURL = string.Empty;
+                // cache the Steam avatar, if it's needed
+                if (!CacheAvatarURLs.ContainsKey(args.Player.PlayerID.SteamID.m_SteamID))
+                {
+                    MelonLogger.Msg("Missing Avatar URL for " + username + ". Grabbing it...");
+                    RequestSteamAvatar(args.Player);
+                }
+                else
+                {
+                    // use the cached avatar
+                    CacheAvatarURLs.TryGetValue(args.Player.PlayerID.SteamID.m_SteamID, out avatarURL);
+                }
 
-                    if (rawMessage.StartsWith("**[SAM"))
-                    {
-                        rawMessage = rawMessage.Replace("**[SAM]** ", "");
-                        SendMessageToWebhook(rawMessage, _Server_Shortname.Value, _Server_Avatar_URL.Value);
-                        return;
-                    }
+                // is this a user report?
+                int spaceCharacter = rawMessage.IndexOf(" ");
+                string commandText = (spaceCharacter == -1) ? rawMessage : rawMessage.Substring(0, spaceCharacter);
 
-                    string username = __0.PlayerName;
-                    string? avatarURL = string.Empty;
-                    // cache the Steam avatar, if it's needed
-                    if (!CacheAvatarURLs.ContainsKey(__0.PlayerID.SteamID.m_SteamID))
+                bool isUserReport = String.Equals(commandText, "!report", StringComparison.OrdinalIgnoreCase);
+                if (isUserReport)
+                {
+                    string reportMessage;
+                    if (spaceCharacter == -1)
                     {
-                        MelonLogger.Msg("Missing Avatar URL for " + username + ". Grabbing it...");
-                        RequestSteamAvatar(__0);
+                        reportMessage = args.Player.PlayerName + " (" + args.Player.PlayerID.ToString() + ") is requesting an admin in the game. <@&" + _RoleToMentionForReports.Value + ">";
                     }
                     else
                     {
-                        // use the cached avatar
-                        CacheAvatarURLs.TryGetValue(__0.PlayerID.SteamID.m_SteamID, out avatarURL);
+                        reportMessage = args.Player.PlayerName + " (" + args.Player.PlayerID.ToString() + ") is requesting an admin in the game. Report:" + rawMessage.Substring(spaceCharacter) + " <@&" + _RoleToMentionForReports.Value + ">";
                     }
 
-                    // is this a user report?
-                    int spaceCharacter = rawMessage.IndexOf(" ");
-                    string commandText = (spaceCharacter == -1) ? rawMessage : rawMessage.Substring(0, spaceCharacter);
+                    SendMessageToWebhook(reportMessage, _Server_Shortname.Value, _Server_Avatar_URL.Value);
+                    return;
+                }
 
-                    bool isUserReport = String.Equals(commandText, "!report", StringComparison.OrdinalIgnoreCase);
-                    if (isUserReport)
-                    {
-                        string reportMessage;
-                        if (spaceCharacter == -1)
-                        {
-                            reportMessage = __0.PlayerName + " (" + __0.PlayerID.ToString() + ") is requesting an admin in the game. <@&" + _RoleToMentionForReports.Value + ">";
-                        }
-                        else
-                        {
-                            reportMessage = __0.PlayerName + " (" + __0.PlayerID.ToString() + ") is requesting an admin in the game. Report:" + rawMessage.Substring(spaceCharacter) + " <@&" + _RoleToMentionForReports.Value + ">";
-                        }
-                        
-                        SendMessageToWebhook(reportMessage, _Server_Shortname.Value, _Server_Avatar_URL.Value);
-                        return;
-                    }
+                if (avatarURL == null || avatarURL == string.Empty)
+                {
+                    avatarURL = _Default_Avatar_URL.Value;
+                }
 
-                    if (avatarURL == null || avatarURL == string.Empty)
-                    {
-                        avatarURL = _Default_Avatar_URL.Value;
-                    }
+                SendMessageToWebhook(rawMessage, username, avatarURL, isUserReport);
+            }
+            catch (Exception error)
+            {
+                HelperMethods.PrintError(error, "Failed to run OnRequestPlayerChat");
+            }
+        }
 
-                    SendMessageToWebhook(rawMessage, username, avatarURL, isUserReport);
+        [HarmonyPatch(typeof(MusicJukeboxHandler), nameof(MusicJukeboxHandler.OnGameEnded))]
+        private static class ApplyPatchOnGameEnded
+        {
+            public static void Postfix(MusicJukeboxHandler __instance, GameMode __0, Team __1)
+            {
+                try
+                {
+                    // start a 15 second timer to wait for video to be ready
+                    MelonLogger.Msg("Starting 15 second timer.");
+                    HelperMethods.StartTimer(ref Timer_CheckForVideo);
                 }
                 catch (Exception error)
                 {
-                    HelperMethods.PrintError(error, "Failed to run Chat::MessageReceived");
+                    HelperMethods.PrintError(error, "Failed to run OnGameEnded");
                 }
             }
+        }
+
+        public override void OnUpdate()
+        {
+            try
+            {
+                if (HelperMethods.IsTimerActive(Timer_CheckForVideo))
+                {
+                    Timer_CheckForVideo += Time.deltaTime;
+
+                    if (Timer_CheckForVideo >= 15f)
+                    {
+                        MelonLogger.Msg("Searching for a new video file.");
+                        Timer_CheckForVideo = HelperMethods.Timer_Inactive;
+
+                        // check for new video in the logs directory
+                        string recentVideoFile = CheckForRecentVideoFile(Path.Combine(MelonEnvironment.UserDataDirectory, @"logs\"));
+
+                        if (recentVideoFile == string.Empty)
+                        {
+                            MelonLogger.Msg("No recent video files found. Skipping.");
+                            return;
+                        }
+                            
+                        MelonLogger.Msg("Found recent video file: " +  recentVideoFile);
+
+                        SendVideoToWebhook(recentVideoFile, "see latest match");
+                    }
+                }
+            }
+            catch (Exception error)
+            {
+                HelperMethods.PrintError(error, "Failed to run OnUpdate");
+            }
+        }
+
+        public static string CheckForRecentVideoFile(string directoryPath)
+        {
+            // only check against the latest mp4 file
+            var recentFile = Directory.EnumerateFiles(directoryPath, "*.mp4")
+                .Select(file => new FileInfo(file))
+                .OrderByDescending(fileInfo => fileInfo.LastWriteTime)
+                .FirstOrDefault();
+
+            if (recentFile == null)
+            {
+                return string.Empty;
+            }
+
+            // was the most recent file updated within the last few minutes?
+            DateTime currentTime = DateTime.Now;
+            if ((currentTime - recentFile.LastWriteTime).TotalMinutes <= 3)
+            {
+                return recentFile.FullName;
+            }
+
+            return string.Empty;
         }
 
         static void SendMessageToWebhook(string message, string username, string avatar, bool mentionsAllowed = false)
@@ -184,6 +261,49 @@ namespace Si_Webhooks
             byte[] bytes = Encoding.ASCII.GetBytes(payload);
 
             SteamGameServerHTTP.SetHTTPRequestRawPostBody(request, "application/json", bytes, (uint)bytes.Length);
+            SteamAPICall_t webhookCall = new SteamAPICall_t();
+            SteamGameServerHTTP.SendHTTPRequest(request, out webhookCall);
+            OnHTTPRequestCompletedCallResultDiscord.Set(webhookCall);
+        }
+
+        static void SendVideoToWebhook(string filePath, string message)
+        {
+            if (_Webhooks_URL.Value == string.Empty || string.IsNullOrEmpty(filePath))
+            {
+                return;
+            }
+
+            MelonLogger.Msg("Received request for filepath: " + filePath);
+
+            // Create the HTTP request
+            HTTPRequestHandle request = SteamGameServerHTTP.CreateHTTPRequest(EHTTPMethod.k_EHTTPMethodPOST, _Webhooks_URL.Value);
+
+            // Define the boundary for the multipart/form-data request
+            string boundary = "----------------------------24e78000bd32";
+            string fileName = Path.GetFileName(filePath);
+
+            MelonLogger.Msg("Found filename: " + fileName);
+            // Build the multipart form-data payload
+            string header = $"--{boundary}\r\n" +
+                            $"Content-Disposition: form-data; name=\"file\"; filename=\"{fileName}\"\r\n" +
+                            "Content-Type: application/octet-stream\r\n\r\n";
+            string footer = $"\r\n--{boundary}--";
+
+            // Read the video file into a byte array
+            byte[] videoData = File.ReadAllBytes(filePath);
+
+            // Combine all parts into a single byte array
+            byte[] headerBytes = Encoding.UTF8.GetBytes(header);
+            byte[] footerBytes = Encoding.UTF8.GetBytes(footer);
+
+            byte[] requestBody = new byte[headerBytes.Length + videoData.Length + footerBytes.Length];
+            Buffer.BlockCopy(headerBytes, 0, requestBody, 0, headerBytes.Length);
+            Buffer.BlockCopy(videoData, 0, requestBody, headerBytes.Length, videoData.Length);
+            Buffer.BlockCopy(footerBytes, 0, requestBody, headerBytes.Length + videoData.Length, footerBytes.Length);
+            
+            SteamGameServerHTTP.SetHTTPRequestRawPostBody(request, $"multipart/form-data; boundary={boundary}", requestBody, (uint)requestBody.Length);
+
+            // Send the request
             SteamAPICall_t webhookCall = new SteamAPICall_t();
             SteamGameServerHTTP.SendHTTPRequest(request, out webhookCall);
             OnHTTPRequestCompletedCallResultDiscord.Set(webhookCall);

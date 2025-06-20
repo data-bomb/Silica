@@ -1,6 +1,6 @@
 ﻿/*
 Silica Versus Auto-Select
-Copyright (C) 2024 by databomb
+Copyright (C) 2024-2025 by databomb
 
 * Description *
 For Silica listen servers, automatically sets the versus mode after
@@ -34,10 +34,15 @@ using VersusTeamsAutoSelect;
 using System.Linq;
 using SilicaAdminMod;
 using System;
+using System.Runtime.CompilerServices;
 
-[assembly: MelonInfo(typeof(VersusTeamsAutoSelectMod), "Versus Auto-Select Team", "1.1.5", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(VersusTeamsAutoSelectMod), "Versus Auto-Select Team", "1.1.7", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
+#if NET6_0
+[assembly: MelonOptionalDependencies("Admin Mod", "QList")]
+#else
 [assembly: MelonOptionalDependencies("Admin Mod")]
+#endif
 
 namespace VersusTeamsAutoSelect
 {
@@ -58,6 +63,7 @@ namespace VersusTeamsAutoSelect
         private const string ModCategory = "Silica";
         private const string AutoSelectMode = "VersusAutoSelectMode";
 
+        [MethodImpl(MethodImplOptions.NoOptimization)]
         public override void OnInitializeMelon()
         {
             overrideKey = KeyCode.Space;
@@ -80,19 +86,24 @@ namespace VersusTeamsAutoSelect
 
             #if NET6_0
             bool QListLoaded = RegisteredMelons.Any(m => m.Info.Name == "QList");
-            if (!QListLoaded)
+            if (QListLoaded)
             {
-                return;
+                QListRegistration();
             }
+            #endif
+        }
 
+        #if NET6_0
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private void QListRegistration()
+        {
             QList.Options.RegisterMod(this);
 
             QList.OptionTypes.IntOption negativeThreshold = new(_versusAutoSelectMode, false, (int)_versusAutoSelectMode.Value, 0, 5);
 
             QList.Options.AddOption(negativeThreshold);
-            #endif
         }
-
+        #endif
         public static void Command_ChangeNextMode(Player? callerPlayer, String args)
         {
             string commandName = args.Split(' ')[0];

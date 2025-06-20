@@ -33,6 +33,7 @@ using MelonLoader;
 
 namespace Si_CommanderManagement
 {
+    #if !NET6_0
     public class SuppressChat
     {
         [HarmonyPatch(typeof(Player), nameof(Player.SendServerChatMessage))]
@@ -42,8 +43,6 @@ namespace Si_CommanderManagement
             {
                 try
                 {
-                    // for routine map restarts cheats is disabled through the Game.ClearAll() or OnEnable methods
-                    // if that's how cheats is getting disabled then no need to replicate that message here
                     string callingMethod = new StackFrame(2, true).GetMethod().Name;
                     if (CommanderManager._SuppressRoundStartCommanderChat.Value && callingMethod.Contains("OnMissionStateChanged"))
                     {
@@ -67,4 +66,5 @@ namespace Si_CommanderManagement
             }
         }
     }
+    #endif
 }

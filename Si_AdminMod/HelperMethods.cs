@@ -1,6 +1,6 @@
 ﻿/*
 Silica Admin Mod
-Copyright (C) 2023-2024 by databomb
+Copyright (C) 2023-2025 by databomb
 
 * License *
 This program is free software: you can redistribute it and/or modify
@@ -20,7 +20,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using MelonLoader;
 using System;
 using UnityEngine;
-
 
 #if NET6_0
 using Il2Cpp;
@@ -70,6 +69,38 @@ namespace SilicaAdminMod
         public static bool UnregisterPlayerPhrase(String playerPhrase)
         {
             return PlayerMethods.UnregisterPlayerPhrase(playerPhrase);
+        }
+
+        public static bool IsValidCommandPrefix(char commandFirstCharacter)
+        {
+            if (commandFirstCharacter == '!' || commandFirstCharacter == '/' || commandFirstCharacter == '.')
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        public static AdminCommand? GetAdminCommand(string commandString)
+        {
+            String thisCommandText = commandString.Split(' ')[0];
+            // trim first character
+            thisCommandText = thisCommandText[1..];
+            return AdminMethods.FindAdminCommandFromString(thisCommandText);
+        }
+
+        public static PlayerCommand? GetPlayerCommand(string commandString)
+        {
+            String thisCommandText = commandString.Split(' ')[0];
+            // trim first character
+            thisCommandText = thisCommandText[1..];
+            return PlayerMethods.FindPlayerCommandFromString(thisCommandText);
+        }
+
+        public static PlayerCommand? GetPlayerPhrase(string phraseString)
+        {
+            String thisPhrase = phraseString.Split(' ')[0];
+            return PlayerMethods.FindPlayerPhraseFromString(thisPhrase);
         }
 
         public static void ReplyToCommand(params string[] messages)
@@ -200,6 +231,14 @@ namespace SilicaAdminMod
         
         private static void NetworkSendChat(Player recipient, bool teamOnly, params string[] messages)
         {
+            #if NET6_0
+            if (recipient == NetworkGameServer.GetServerPlayer())
+            {
+                Player.SendServerChatMessage(String.Concat(messages));
+                return;
+            }
+            #endif
+
             GameByteStreamWriter gameByteStreamWriter = GameByteStreamWriter.GetGameByteStreamWriter(0U, "Si_AdminMod::NetworkSendChat", true);
             gameByteStreamWriter.WriteByte((byte)ENetworkPacketType.ChatMessage);
             gameByteStreamWriter.WriteUInt64((ulong)NetworkID.CurrentUserID);
@@ -229,6 +268,14 @@ namespace SilicaAdminMod
 
         private static void NetworkSendConsole(Player recipient, params string[] messages)
         {
+            #if NET6_0
+            if (recipient == NetworkGameServer.GetServerPlayer())
+            {
+                DebugConsole.Log(String.Concat(messages));
+                return;
+            }
+            #endif
+
             GameByteStreamWriter gameByteStreamWriter = GameByteStreamWriter.GetGameByteStreamWriter(0U, "Si_AdminMod::NetworkSendConsole", true);
             gameByteStreamWriter.WriteByte((byte)ENetworkPacketType.RemoteCommandResult);
             gameByteStreamWriter.WriteUInt64((ulong)recipient.PlayerID);
@@ -279,11 +326,11 @@ namespace SilicaAdminMod
             int iTargetCount = 0;
 
             // loop through all players
-#if NET6_0
+            #if NET6_0
             Il2CppSystem.Collections.Generic.List<Player> players = Player.Players;
-#else
+            #else
             List<Player> players = Player.Players;
-#endif
+            #endif
 
             int iPlayerCount = players.Count;
 

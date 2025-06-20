@@ -1,6 +1,6 @@
 ﻿/*
  Silica Friendly-Fire Adjustments Mod
- Copyright (C) 2023-2024 by databomb
+ Copyright (C) 2023-2025 by databomb
  
  * Description *
  For Silica listen servers, adjust the amount of friendly fire damage 
@@ -31,10 +31,15 @@ using Si_FriendlyFireLimits;
 using System;
 using SilicaAdminMod;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
-[assembly: MelonInfo(typeof(FriendlyFireLimits), "Friendly Fire Limits", "1.2.4", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(FriendlyFireLimits), "Friendly Fire Limits", "1.2.6", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
+#if NET6_0
+[assembly: MelonOptionalDependencies("Admin Mod", "QList")]
+#else
 [assembly: MelonOptionalDependencies("Admin Mod")]
+#endif
 
 namespace Si_FriendlyFireLimits
 {
@@ -59,15 +64,22 @@ namespace Si_FriendlyFireLimits
             _HarvesterPassthrough ??= _modCategory.CreateEntry<bool>("FriendlyFire_Passthrough_Harvester_Damage", true);
         }
 
-        #if NET6_0
+        [MethodImpl(MethodImplOptions.NoOptimization)]
         public override void OnLateInitializeMelon()
         {
+            #if NET6_0
             bool QListLoaded = RegisteredMelons.Any(m => m.Info.Name == "QList");
-            if (!QListLoaded)
+            if (QListLoaded)
             {
-                return;
+                QListRegistration();
             }
+            #endif
+        }
 
+        #if NET6_0
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private void QListRegistration()
+        {
             QList.Options.RegisterMod(this);
 
             QList.OptionTypes.FloatOption unitNonExplosion = new(_UnitOnUnitNonExplosionDamageMultipler, false, _UnitOnUnitNonExplosionDamageMultipler.Value, 0.0f, 100.0f);
@@ -82,7 +94,7 @@ namespace Si_FriendlyFireLimits
             QList.Options.AddOption(structureNonExplosion);
             QList.Options.AddOption(harvesterPassthrough);
         }
-        #endif
+#endif
 
         [HarmonyPatch(typeof(GameByteStreamReader), nameof(GameByteStreamReader.GetGameByteStreamReader))]
         static class GetGameByteStreamReaderPrePatch
