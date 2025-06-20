@@ -1,6 +1,6 @@
 /*
 Silica Admin Mod
-Copyright (C) 2024 by databomb
+Copyright (C) 2024-2025 by databomb
 
 * Description *
 Provides basic admin mod system to allow additional admins beyond
@@ -36,13 +36,11 @@ namespace SilicaAdminMod
 {
     public static class ChatVotes
     {
-        private static bool voteInProgress = false;
+        public static bool voteInProgress = false;
 
-        private static ChatVoteResults currentVoteResults = null!;
+        public static ChatVoteResults currentVoteResults = null!;
 
         public delegate void VoteHandler(ChatVoteResults results);
-
-        private static float Timer_TallyVote = HelperMethods.Timer_Inactive;
 
         static HelperMethods.CommandCallback voteChatCallback = Command_VoteChat;
 
@@ -140,73 +138,72 @@ namespace SilicaAdminMod
                 MelonLogger.Msg("Starting vote timer with duration " + SiAdminMod.Pre_Admin_VoteDuration.Value.ToString());
             }
             voteInProgress = true;
-            HelperMethods.StartTimer(ref Timer_TallyVote);
+            HelperMethods.StartTimer(ref SiAdminMod.Timer_TallyVote);
         }
 
-        #if NET6_0
-        [HarmonyPatch(typeof(MusicJukeboxHandler), nameof(MusicJukeboxHandler.Update))]
-        #else
-        [HarmonyPatch(typeof(MusicJukeboxHandler), "Update")]
-        #endif
-        public static class ApplyPatch_MusicJukeboxHandlerUpdate
+
+    }
+
+    public partial class SiAdminMod
+    {
+        public static float Timer_TallyVote = HelperMethods.Timer_Inactive;
+
+        public override void OnUpdate()
         {
-            public static void Postfix(MusicJukeboxHandler __instance)
+            try
             {
-                try
+                // check if timer expired while the game is in-progress
+                if (HelperMethods.IsTimerActive(Timer_TallyVote))
                 {
-                    // check if timer expired while the game is in-progress
-                    if (HelperMethods.IsTimerActive(Timer_TallyVote))
+                    Timer_TallyVote += Time.deltaTime;
+
+                    if (Timer_TallyVote >= SiAdminMod.Pre_Admin_VoteDuration.Value)
                     {
-                        Timer_TallyVote += Time.deltaTime;
+                        Timer_TallyVote = HelperMethods.Timer_Inactive;
 
-                        if (Timer_TallyVote >= SiAdminMod.Pre_Admin_VoteDuration.Value)
+                        if (ChatVotes.currentVoteResults == null)
                         {
-                            Timer_TallyVote = HelperMethods.Timer_Inactive;
-
-                            if (currentVoteResults == null)
-                            {
-                                MelonLogger.Warning("Current vote results unavailable for timer expiration.");
-                                voteInProgress = false;
-                                return;
-                            }
-
-                            OptionVoteResult winningResult = new OptionVoteResult
-                            {
-                                Votes = -1,
-                                Command = "invalid"
-                            };
-
-                            foreach (OptionVoteResult currentVoteResult in currentVoteResults.DetailedResults)
-                            {
-                                // determine winner
-                                if (currentVoteResult.Votes > winningResult.Votes)
-                                {
-                                    winningResult = currentVoteResult;
-                                }
-
-                                if (SiAdminMod.Pref_Admin_DebugLogMessages.Value)
-                                {
-                                    MelonLogger.Msg("Found command " + currentVoteResult.Command + " with votes " + currentVoteResult.Votes);
-                                }
-
-                                // unregister commands for current vote
-                                PlayerMethods.UnregisterPlayerPhrase(currentVoteResult.Command);
-                            }
-
-                            // assign winner
-                            currentVoteResults.WinningCommand = winningResult.Command;
-
-                            // call the vote handler
-                            voteInProgress = false;
-                            currentVoteResults.VoteHandler(currentVoteResults);
+                            MelonLogger.Warning("Current vote results unavailable for timer expiration.");
+                            ChatVotes.voteInProgress = false;
+                            return;
                         }
 
+                        OptionVoteResult winningResult = new OptionVoteResult
+                        {
+                            Votes = -1,
+                            Command = "invalid"
+                        };
+
+                        foreach (OptionVoteResult currentVoteResult in ChatVotes.currentVoteResults.DetailedResults)
+                        {
+                            // determine winner
+                            if (currentVoteResult.Votes > winningResult.Votes)
+                            {
+                                winningResult = currentVoteResult;
+                            }
+
+                            if (SiAdminMod.Pref_Admin_DebugLogMessages.Value)
+                            {
+                                MelonLogger.Msg("Found command " + currentVoteResult.Command + " with votes " + currentVoteResult.Votes);
+                            }
+
+                            // unregister commands for current vote
+                            PlayerMethods.UnregisterPlayerPhrase(currentVoteResult.Command);
+                        }
+
+                        // assign winner
+                        ChatVotes.currentVoteResults.WinningCommand = winningResult.Command;
+
+                        // call the vote handler
+                        ChatVotes.voteInProgress = false;
+                        ChatVotes.currentVoteResults.VoteHandler(ChatVotes.currentVoteResults);
                     }
+
                 }
-                catch (Exception exception)
-                {
-                    HelperMethods.PrintError(exception, "Failed in MusicJukeboxHandler::Update");
-                }
+            }
+            catch (Exception exception)
+            {
+                HelperMethods.PrintError(exception, "Failed in OnUpdate");
             }
         }
     }

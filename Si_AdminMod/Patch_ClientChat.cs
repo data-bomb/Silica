@@ -35,9 +35,9 @@ namespace SilicaAdminMod
                 }
 
                 // check if this even starts with a character that indicates it's a command
-                if (!IsValidCommandPrefix(args.Text[0]))
+                if (!HelperMethods.IsValidCommandPrefix(args.Text[0]))
                 {
-                    PlayerCommand? playerPhrase = GetPlayerPhrase(args.Text);
+                    PlayerCommand? playerPhrase = HelperMethods.GetPlayerPhrase(args.Text);
                     if (playerPhrase == null)
                     {
                         return;
@@ -64,7 +64,7 @@ namespace SilicaAdminMod
                 }
 
                 // check if the first portion matches an admin command
-                AdminCommand? adminCommand = GetAdminCommand(args.Text);
+                AdminCommand? adminCommand = HelperMethods.GetAdminCommand(args.Text);
                 if (adminCommand != null)
                 {
                     if (SiAdminMod.Pref_Admin_DebugLogMessages.Value)
@@ -97,7 +97,7 @@ namespace SilicaAdminMod
                 }
 
                 // check if the first portion matches a player command
-                PlayerCommand? playerCommand = GetPlayerCommand(args.Text);
+                PlayerCommand? playerCommand = HelperMethods.GetPlayerCommand(args.Text);
                 if (playerCommand == null)
                 {
                     return;
@@ -119,37 +119,5 @@ namespace SilicaAdminMod
                 HelperMethods.PrintError(error, "Failed to run AdminMod::OnRequestPlayerChat");
             }
         }
-
-        public static bool IsValidCommandPrefix(char commandFirstCharacter)
-        {
-            if (commandFirstCharacter == '!' || commandFirstCharacter == '/' || commandFirstCharacter == '.')
-            {
-                return true;
-            }
-
-            return false;
-        }
-
-        public static AdminCommand? GetAdminCommand(string commandString)
-        {
-            String thisCommandText = commandString.Split(' ')[0];
-            // trim first character
-            thisCommandText = thisCommandText[1..];
-            return AdminMethods.FindAdminCommandFromString(thisCommandText);
-        }
-
-        public static PlayerCommand? GetPlayerCommand(string commandString)
-        {
-            String thisCommandText = commandString.Split(' ')[0];
-            // trim first character
-            thisCommandText = thisCommandText[1..];
-            return PlayerMethods.FindPlayerCommandFromString(thisCommandText);
-        }
-        public static PlayerCommand? GetPlayerPhrase(string phraseString)
-        {
-            String thisPhrase = phraseString.Split(' ')[0];
-            return PlayerMethods.FindPlayerPhraseFromString(thisPhrase);
-        }
-
     }
 }

@@ -20,6 +20,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using HarmonyLib;
 using System;
 using System.Linq;
+using MelonLoader;
+
 
 #if NET6_0
 using Il2Cpp;
@@ -27,7 +29,7 @@ using Il2Cpp;
 
 namespace SilicaAdminMod
 {
-    // SendChatMessage will only fire for the local user, the host
+    // SendChatMessage will only fire for the local user (i.e., the host of a listen server)
     [HarmonyPatch(typeof(Player), nameof(Player.SendChatMessage))]
     static class Patch_SendChatMessage_AdminCommands
     {
@@ -124,6 +126,72 @@ namespace SilicaAdminMod
 
                     return false;
                 }
+
+                // check if this even starts with a character that indicates it's a command
+                if (!HelperMethods.IsValidCommandPrefix(__0[0]))
+                {
+                    PlayerCommand? playerPhrase = HelperMethods.GetPlayerPhrase(__0);
+                    if (playerPhrase == null)
+                    {
+                        return true;
+                    }
+
+                    // run the callback
+                    playerPhrase.PlayerCommandCallback(__instance, __0);
+
+                    return false;
+                }
+
+                if (SiAdminMod.Pref_Admin_DebugLogMessages.Value)
+                {
+                    MelonLogger.Msg("Processing host admin or player command.");
+                }
+
+                // check if the first portion matches an admin command
+                AdminCommand? adminCommand = HelperMethods.GetAdminCommand(__0);
+                if (adminCommand != null)
+                {
+                    if (SiAdminMod.Pref_Admin_DebugLogMessages.Value)
+                    {
+                        MelonLogger.Msg("Processing host admin command: " + adminCommand.AdminCommandText);
+                    }
+
+                    // are they an admin?
+                    if (!__instance.IsAdmin())
+                    {
+                        HelperMethods.ReplyToCommand_Player(__instance, "is not an admin");
+                        return false;
+                    }
+
+                    // do they have the matching power?
+                    Power callerPowers = __instance.GetAdminPowers();
+
+                    if (!AdminMethods.PowerInPowers(adminCommand.AdminPower, callerPowers))
+                    {
+                        HelperMethods.ReplyToCommand_Player(__instance, "unauthorized command");
+                        return false;
+                    }
+
+                    // run the callback
+                    adminCommand.AdminCallback(__instance, __0);
+
+                    return false;
+                }
+
+                // check if the first portion matches a player command
+                PlayerCommand? playerCommand = HelperMethods.GetPlayerCommand(__0);
+                if (playerCommand == null)
+                {
+                    return true;
+                }
+
+                if (SiAdminMod.Pref_Admin_DebugLogMessages.Value)
+                {
+                    MelonLogger.Msg("Processing host command: " + playerCommand.CommandName);
+                }
+
+                // run the callback
+                playerCommand.PlayerCommandCallback(__instance, __0);
             }
             catch (Exception error)
             {

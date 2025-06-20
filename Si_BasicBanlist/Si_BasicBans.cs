@@ -1,6 +1,6 @@
 ﻿/*
  Silica Basic Banlist Mod
- Copyright (C) 2023-2024 by databomb
+ Copyright (C) 2023-2025 by databomb
  
  * Description *
  For Silica listen servers, retains history of kicked players across
@@ -34,10 +34,15 @@ using SilicaAdminMod;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
-[assembly: MelonInfo(typeof(BasicBanlist), "Basic Banlist", "1.5.3", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(BasicBanlist), "Basic Banlist", "1.5.6", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
+#if NET6_0
+[assembly: MelonOptionalDependencies("Admin Mod", "QList")]
+#else
 [assembly: MelonOptionalDependencies("Admin Mod")]
+#endif
 
 namespace Si_BasicBanlist
 {
@@ -117,7 +122,7 @@ namespace Si_BasicBanlist
             }
         }
 
-
+        [MethodImpl(MethodImplOptions.NoOptimization)]
         public override void OnLateInitializeMelon()
         {
             HelperMethods.CommandCallback banCallback = Command_Ban;
@@ -132,18 +137,24 @@ namespace Si_BasicBanlist
 
             #if NET6_0
             bool QListLoaded = RegisteredMelons.Any(m => m.Info.Name == "QList");
-            if (!QListLoaded)
+            if (QListLoaded)
             {
-                return;
+                QListRegistration();
             }
+            #endif
+        }
 
+        #if NET6_0
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private void QListRegistration()
+        {
             QList.Options.RegisterMod(this);
 
             QList.OptionTypes.BoolOption kickEqualsPermaBan = new(_Pref_Ban_KickButton_PermaBan, _Pref_Ban_KickButton_PermaBan.Value);
 
             QList.Options.AddOption(kickEqualsPermaBan);
-            #endif
         }
+        #endif
 
         public static bool IsPlayerBanned(string name)
         {
@@ -431,7 +442,7 @@ namespace Si_BasicBanlist
                     if (__0 != null)
                     {
                         // check if player was previously banned
-                        ulong JoiningPlayerSteamId = ulong.Parse(__0.ToString().Split('_')[1]);
+                        ulong JoiningPlayerSteamId = ulong.Parse(__0.ToString().Split('_')[1].Split(' ')[0]);
                         if (MasterBanList.Find(i => i.OffenderSteamId == JoiningPlayerSteamId) != null)
                         {
                             MelonLogger.Msg("Kicking " + __0.ToString() + " for matching an entry in the banlist.");

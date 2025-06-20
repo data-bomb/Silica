@@ -38,10 +38,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Diagnostics;
 using System.IO;
+using System.Runtime.CompilerServices;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.7.6", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.8.3", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
+#if NET6_0
+[assembly: MelonOptionalDependencies("Admin Mod", "QList")]
+#else
 [assembly: MelonOptionalDependencies("Admin Mod")]
+#endif
 
 namespace Si_Logging
 {
@@ -56,6 +61,8 @@ namespace Si_Logging
         public static MelonPreferences_Entry<bool> Pref_Display_Damage = null!;
         public static MelonPreferences_Entry<bool> Pref_Log_Kills_Include_AI_vs_Player = null!;
         public static MelonPreferences_Entry<string> Pref_Log_ParserExe = null!;
+        public static MelonPreferences_Entry<string> Pref_Log_VideoExe = null!;
+        public static MelonPreferences_Entry<int> Pref_Log_VideoPlayerThreshold = null!;
         public static MelonPreferences_Entry<float> Pref_Log_PerfMonitor_Interval = null!;
         public static MelonPreferences_Entry<bool> Pref_Log_PerfMonitor_Enable = null!;
         public static MelonPreferences_Entry<bool> Pref_Log_PlayerConsole_Enable = null!;
@@ -71,6 +78,8 @@ namespace Si_Logging
                 Pref_Log_MinDamageCutoff ??= _modCategory.CreateEntry<int>("Logging_LogDamage_MinDmgCutoff", 1);
                 Pref_Log_Kills_Include_AI_vs_Player ??= _modCategory.CreateEntry<bool>("Logging_LogKills_IncludeAIvsPlayer", true);
                 Pref_Log_ParserExe ??= _modCategory.CreateEntry<string>("Logging_ParserExePath", "parser.exe");
+                Pref_Log_VideoExe ??= _modCategory.CreateEntry<string>("Logging_Video_ExePath", "video-generator.exe");
+                Pref_Log_VideoPlayerThreshold ??= _modCategory.CreateEntry<int>("Logging_Video_MinimumPlayersNeeded", 2);
                 Pref_Log_PerfMonitor_Interval ??= _modCategory.CreateEntry<float>("Logging_PerfMonitor_LogInterval", 60f);
                 Pref_Log_PerfMonitor_Enable ??= _modCategory.CreateEntry<bool>("Logging_PerfMonitor_Enable", true);
                 Pref_Log_PlayerConsole_Enable ??= _modCategory.CreateEntry<bool>("Logging_PlayerConsole_Enable", true);
@@ -98,19 +107,28 @@ namespace Si_Logging
             }
         }
 
+        [MethodImpl(MethodImplOptions.NoOptimization)]
         public override void OnLateInitializeMelon()
         {
-            HelperMethods.StartTimer(ref ServerPerfLogger.Timer_PerfMonitorLog);
+            HelperMethods.StartTimer(ref Timer_PerfMonitorLog);
 
             //subscribing to the event
             Event_Roles.OnRoleChanged += OnRoleChanged;
+            Event_Netcode.OnRequestPlayerChat += OnRequestPlayerChat;
+
             #if NET6_0
             bool QListLoaded = RegisteredMelons.Any(m => m.Info.Name == "QList");
-            if (!QListLoaded)
+            if (QListLoaded)
             {
-                return;
+                QListRegistration();
             }
+            #endif
+        }
 
+        #if NET6_0
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private void QListRegistration()
+        {
             QList.Options.RegisterMod(this);
 
             QList.OptionTypes.BoolOption logDamage = new(Pref_Log_Damage, Pref_Log_Damage.Value);
@@ -118,8 +136,8 @@ namespace Si_Logging
             QList.Options.AddOption(logDamage);
 
             QList.Options.AddOption(logAllKills);
-            #endif
         }
+        #endif
 
         // 003. Change Map
         public override void OnSceneWasLoaded(int buildIndex, string sceneName)
@@ -293,8 +311,9 @@ namespace Si_Logging
                             {
                                 string victim = AddPlayerLogEntry(victimPlayer);
                                 string instigator = GetNameFromObject(__1);
+                                string position = GetPlayerPosition(__0);
 
-                                PrintLogLine($"{victim} committed suicide with \"{instigator}\" (dmgtype \"\")");
+                                PrintLogLine($"{victim} committed suicide with \"{instigator}\" (dmgtype \"\") {position}");
 
                                 if (Pref_Log_PlayerConsole_Enable.Value)
                                 {
@@ -309,8 +328,9 @@ namespace Si_Logging
                                 string attacker = AddPlayerLogEntry(attackerPlayer);
                                 string victim = AddPlayerLogEntry(victimPlayer);
                                 string weapon = AddKilledWithEntry(__0, __1);
+                                string position = GetPlayerPosition(__0, __1);
 
-                                PrintLogLine($"{attacker} killed {victim} with {weapon}");
+                                PrintLogLine($"{attacker} killed {victim} with {weapon} {position}");
 
                                 if (Pref_Log_PlayerConsole_Enable.Value)
                                 {
@@ -330,8 +350,9 @@ namespace Si_Logging
                             string victim = AddPlayerLogEntry(victimPlayer);
                             string weapon = AddKilledWithEntry(__0, __1);
                             string victimUnit = GetNameFromUnit(__0);
+                            string position = GetPlayerPosition(__0, __1);
 
-                            PrintLogLine($"{attacker} killed {victim} with {weapon}");
+                            PrintLogLine($"{attacker} killed {victim} with {weapon} {position}");
 
                             if (Pref_Log_PlayerConsole_Enable.Value)
                             {
@@ -349,8 +370,9 @@ namespace Si_Logging
                         string attacker = AddPlayerLogEntry(attackerPlayer);
                         string victim = AddAIVictimLogEntry(__0);
                         string weapon = AddKilledWithEntry(__0, __1);
+                        string position = GetPlayerPosition(__0, __1);
 
-                        PrintLogLine($"{attacker} killed {victim} with {weapon}");
+                        PrintLogLine($"{attacker} killed {victim} with {weapon} {position}");
 
                         if (Pref_Log_PlayerConsole_Enable.Value)
                         {
@@ -660,8 +682,9 @@ namespace Si_Logging
                     string structTeam = __0.Team.TeamShortName;
                     string weapon = GetNameFromObject(__1);
                     string construction = (__0.OwnerConstructionSite == null ? "no" : "yes");
+                    string position = GetLogPosition(__0.gameObject.transform.position);
 
-                    PrintLogLine($"{playerEntry} triggered \"structure_kill\" (structure \"{structName}\") (weapon \"{weapon}\") (struct_team \"{structTeam}\") (construction \"{construction}\")");
+                    PrintLogLine($"{playerEntry} triggered \"structure_kill\" (structure \"{structName}\") (weapon \"{weapon}\") (struct_team \"{structTeam}\") (construction \"{construction}\") (building_position \"{position}\")");
 
                     if (Pref_Log_PlayerConsole_Enable.Value)
                     {
@@ -739,7 +762,58 @@ namespace Si_Logging
             }
         }
 
-        // 061. Team Objectives/Actions - Victory
+        // 061. Team Objectives/Actions - Structure Placement
+        [HarmonyPatch(typeof(ConstructionData), nameof(ConstructionData.RequestConstructionSite))]
+        private static class ApplyPatchRequestConstructionSite
+        {
+            public static void Postfix(ConstructionData __instance, ConstructionSite __result, Structure __0, Vector3 __1, Quaternion __2, Team __3, Transform __4, float __5)
+            {
+                if (__instance == null || __result == null)
+                {
+                    return;
+                }
+
+                if (__instance.ObjectInfo.ObjectType != ObjectInfoType.Structure)
+                {
+                    return;
+                }
+
+                string teamName = GetTeamName(__3);
+                string structName = GetStructureName(__result);
+                string position = GetLogPosition(__1);
+
+                PrintLogLine($"Team \"{teamName}\" triggered \"construction_start\" (building_name \"{structName}\") (building_position \"{position}\")");
+            }
+        }
+
+        // 061. Team Objectives/Actions - Structure Complete
+        #if NET6_0
+        [HarmonyPatch(typeof(ConstructionSite), nameof(ConstructionSite.SpawnObject))]
+        #else
+        [HarmonyPatch(typeof(ConstructionSite), "SpawnObject")]
+        #endif
+        private static class ApplyPatchConstructionSpawned
+        {
+            public static void Postfix(ConstructionSite __instance)
+            {
+                if (__instance == null)
+                {
+                    return;
+                }
+
+                if (__instance.ObjectInfo.ObjectType != ObjectInfoType.Structure)
+                {
+                    return;
+                }
+
+                string teamName = GetTeamName(__instance.Team);
+                string structName = GetStructureName(__instance);
+                string position = GetLogPosition(__instance.transform.position);
+
+                PrintLogLine($"Team \"{teamName}\" triggered \"construction_complete\" (building_name \"{structName}\") (building_position \"{position}\")");
+            }
+        }
+
         // 062. World Objectives/Actions - Round_Win
         // 065. Round-End Team Score Report
         // 067. Round-End Player Score Report
@@ -797,8 +871,13 @@ namespace Si_Logging
 
                         for (int i = 0; i < SiConstants.MaxPlayableTeams; i++)
                         {
+                            // skip GameMaster and Wildlife teams
+                            if (i == (int)SiConstants.ETeam.Wildlife || i == (int)SiConstants.ETeam.Gamemaster)
+                            {
+                                continue;
+                            }
+
                             Team? thisTeam = Team.Teams[i];
-                            // skip GameMaster team
                             if (thisTeam == null || thisTeam.IsSpecial)
                             {
                                 continue;
@@ -816,9 +895,12 @@ namespace Si_Logging
 
                             string resourcesCollected = teamResourcesCollected[thisTeam.Index].ToString();
                             string playerCount = thisTeam.GetNumPlayers().ToString();
+                            teamName = GetTeamName(i);
 
                             PrintLogLine($"Team \"{teamName}\" scored \"{resourcesCollected}\" with \"{playerCount}\" players");
                         }
+
+                        int roundPlayers = 0;
 
                         for (int i = 0; i < Player.Players.Count; i++)
                         {
@@ -831,26 +913,55 @@ namespace Si_Logging
                             string playerEntry = AddPlayerLogEntry(thisPlayer);
 
                             PrintLogLine($"Player {playerEntry} scored \"{thisPlayer.Score}\" (kills \"{thisPlayer.Kills}\") (deaths \"{thisPlayer.Deaths}\")");
+
+                            roundPlayers++;
                         }
 
                         PrintLogLine($"World triggered \"Round_Win\" (gametype \"{gametype}\")");
 
-                        // call parser
-                        if (!ParserExePresent())
+                        // try and call parser
+                        if (ParserExePresent())
+                        {
+                            // launch parser
+                            MelonLogger.Msg("Launching parser.");
+                            ProcessStartInfo start = new ProcessStartInfo();
+                            start.FileName = Path.GetFullPath(GetParserPath());
+                            string arguments = string.Format("\"{0}", GetLogFileDirectory());
+                            start.Arguments = arguments;
+                            start.UseShellExecute = false;
+                            start.RedirectStandardOutput = false;
+                            using Process? process = Process.Start(start);
+                        }
+                        else
                         {
                             MelonLogger.Msg("Parser file not present.");
-                            return;
                         }
 
-                        // launch parser
-                        MelonLogger.Msg("Launching parser.");
-                        ProcessStartInfo start = new ProcessStartInfo();
-                        start.FileName = Path.GetFullPath(GetParserPath());
-                        string arguments = string.Format("\"{0}", GetLogFileDirectory());
-                        start.Arguments = arguments;
-                        start.UseShellExecute = false;
-                        start.RedirectStandardOutput = false;
-                        using Process? process = Process.Start(start);
+                        // try and make round recap video
+                        if (VideoGeneratorExePresent())
+                        {
+                            // check if the round reached the player threshold
+                            if (roundPlayers >= Pref_Log_VideoPlayerThreshold.Value)
+                            {
+                                // launch video generator
+                                MelonLogger.Msg("Launching video generator.");
+                                ProcessStartInfo start = new ProcessStartInfo();
+                                start.FileName = Path.GetFullPath(GetVideoGeneratorPath());
+                                string arguments = string.Format("\"{0}", GetLogFileDirectory());
+                                start.Arguments = arguments;
+                                start.UseShellExecute = false;
+                                start.RedirectStandardOutput = false;
+                                using Process? process = Process.Start(start);
+                            }
+                            else
+                            {
+                                MelonLogger.Msg("Video generator not called due to low player count.");
+                            }
+                        }
+                        else
+                        {
+                            MelonLogger.Msg("Video generator file not present.");
+                        }
                     }
                 }
                 catch (Exception error)
@@ -941,36 +1052,17 @@ namespace Si_Logging
         }
 
         // 063. Chat
-        #if NET6_0
-        [HarmonyPatch(typeof(Il2CppSilica.UI.Chat), nameof(Il2CppSilica.UI.Chat.MessageReceived))]
-        #else
-        [HarmonyPatch(typeof(Silica.UI.Chat), "MessageReceived")]
-        #endif
-        private static class ApplyPatchMessageReceived
+        public void OnRequestPlayerChat(object? sender, OnRequestPlayerChatArgs args)
         {
-            #if NET6_0
-            public static void Postfix(Il2CppSilica.UI.Chat __instance, Player __0, string __1, bool __2)
-            #else
-            public static void Postfix(Silica.UI.Chat __instance, Player __0, string __1, bool __2)
-            #endif
+            if (args.Player == null)
             {
-                try
-                {
-                    // each faction has its own chat manager but by looking at alien and only global messages this catches commands only once
-                    if (__instance != null && __0 != null && __instance.ToString().Contains("alien"))
-                    {
-                        string playerEntry = AddPlayerLogEntry(__0);
-                        // __2 true = team-only message
-                        string action = (__2 == false ? "say" : "say_team");
-
-                        PrintLogLine($"{playerEntry} {action} \"{__1}\"");
-                    }
-                }
-                catch (Exception error)
-                {
-                    HelperMethods.PrintError(error, "Failed to run Chat::MessageReceived");
-                }
+                return;
             }
+
+            string playerEntry = AddPlayerLogEntry(args.Player);
+            string action = (args.TeamOnly == false ? "say" : "say_team");
+
+            PrintLogLine($"{playerEntry} {action} \"{args.Text}\"");
         }
 
         // 064. Team Alliances

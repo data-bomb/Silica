@@ -40,8 +40,8 @@ namespace Si_Logging
         public class PerfMonitorData
         {
             public int UnixTime
-            { 
-                get; 
+            {
+                get;
                 set;
             }
             public int ServerFPS
@@ -106,47 +106,8 @@ namespace Si_Logging
             }
         }
 
-        public static float Timer_PerfMonitorLog = HelperMethods.Timer_Inactive;
+
         static readonly string perfMonitorLogFile = System.IO.Path.Combine(MelonEnvironment.UserDataDirectory, "PerfMonitorData.csv");
-
-        #if NET6_0
-        [HarmonyPatch(typeof(MusicJukeboxHandler), nameof(MusicJukeboxHandler.Update))]
-        #else
-        [HarmonyPatch(typeof(MusicJukeboxHandler), "Update")]
-        #endif
-        private static class ApplyPatch_MusicJukeboxHandler_Update
-        {
-            private static void Postfix(MusicJukeboxHandler __instance)
-            {
-                try
-                {
-                    // is the feature enabled?
-                    if (!HL_Logging.Pref_Log_PerfMonitor_Enable.Value)
-                    {
-                        return;
-                    }
-                    
-                    // check if timer expired while the game is in-progress
-                    Timer_PerfMonitorLog += Time.deltaTime;
-                    if (Timer_PerfMonitorLog >= HL_Logging.Pref_Log_PerfMonitor_Interval.Value)
-                    {
-                        Timer_PerfMonitorLog = 0f;
-
-                        // skip if there are no players on the server
-                        if (Player.Players.Count <= 0)
-                        {
-                            return;
-                        }
-
-                        CapturePerformancePoint();
-                    }
-                }
-                catch (Exception exception)
-                {
-                    HelperMethods.PrintError(exception, "Failed in MusicJukeboxHandler::Update");
-                }
-            }
-        }
 
         private static int GetNumberOfLightsOn()
         {
@@ -204,6 +165,42 @@ namespace Si_Logging
                 $"{dataPoint.DownloadRate}";
 
             System.IO.File.AppendAllText(perfMonitorLogFile, performanceEntryLine + Environment.NewLine);
+        }
+    }
+
+    public partial class HL_Logging
+    {
+        public static float Timer_PerfMonitorLog = HelperMethods.Timer_Inactive;
+
+        public override void OnUpdate()
+        {
+            try
+            {
+                // is the feature enabled?
+                if (!HL_Logging.Pref_Log_PerfMonitor_Enable.Value)
+                {
+                    return;
+                }
+
+                // check if timer expired while the game is in-progress
+                Timer_PerfMonitorLog += Time.deltaTime;
+                if (Timer_PerfMonitorLog >= HL_Logging.Pref_Log_PerfMonitor_Interval.Value)
+                {
+                    Timer_PerfMonitorLog = 0f;
+
+                    // skip if there are no players on the server
+                    if (Player.Players.Count <= 0)
+                    {
+                        return;
+                    }
+
+                    ServerPerfLogger.CapturePerformancePoint();
+                }
+            }
+            catch (Exception exception)
+            {
+                HelperMethods.PrintError(exception, "Failed in OnUpdate");
+            }
         }
     }
 }

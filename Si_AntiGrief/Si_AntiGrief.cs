@@ -34,10 +34,15 @@ using Si_AntiGrief;
 using SilicaAdminMod;
 using System.Linq;
 using UnityEngine;
+using System.Runtime.CompilerServices;
 
-[assembly: MelonInfo(typeof(AntiGrief), "Anti-Grief", "1.4.6", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(AntiGrief), "Anti-Grief", "1.4.8", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
+#if NET6_0
+[assembly: MelonOptionalDependencies("Admin Mod", "QList")]
+#else
 [assembly: MelonOptionalDependencies("Admin Mod")]
+#endif
 
 namespace Si_AntiGrief
 {
@@ -75,6 +80,7 @@ namespace Si_AntiGrief
             Array.Fill(playerTransferCount, 0u);
         }
 
+        [MethodImpl(MethodImplOptions.NoOptimization)]
         public override void OnLateInitializeMelon()
         {
             //subscribing to the events
@@ -83,11 +89,17 @@ namespace Si_AntiGrief
 
             #if NET6_0
             bool QListLoaded = RegisteredMelons.Any(m => m.Info.Name == "QList");
-            if (!QListLoaded)
+            if (QListLoaded)
             {
-                return;
+                QListRegistration();
             }
+            #endif
+        }
 
+        #if NET6_0
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private void QListRegistration()
+        {
             QList.Options.RegisterMod(this);
 
             QList.OptionTypes.IntOption negativeThreshold = new(_NegativeKillsThreshold, true, _NegativeKillsThreshold.Value, -3000, -100, 25);
@@ -95,8 +107,8 @@ namespace Si_AntiGrief
 
             QList.Options.AddOption(negativeThreshold);
             QList.Options.AddOption(banGriefers);
-            #endif
         }
+        #endif
 
         [HarmonyPatch(typeof(Player), nameof(Player.OnTargetDestroyed))]
         private static class ApplyPatch_OnTargetDestroyed

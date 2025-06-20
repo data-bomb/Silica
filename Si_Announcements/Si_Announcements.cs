@@ -1,6 +1,6 @@
 ﻿/*
  Silica Announcements Mod
- Copyright (C) 2023-2024 by databomb
+ Copyright (C) 2023-2025 by databomb
  
  * Description *
  For Silica listen servers, periodically sends a pre-set announcement
@@ -35,10 +35,16 @@ using System.Collections.Generic;
 using SilicaAdminMod;
 using System.Linq;
 using UnityEngine;
+using static MelonLoader.MelonLogger;
+using System.Runtime.CompilerServices;
 
-[assembly: MelonInfo(typeof(Announcements), "Server Announcements", "1.1.10", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(Announcements), "Server Announcements", "1.2.2", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
+#if NET6_0
+[assembly: MelonOptionalDependencies("Admin Mod", "QList")]
+#else
 [assembly: MelonOptionalDependencies("Admin Mod")]
+#endif
 
 namespace Si_Announcements
 {
@@ -94,17 +100,28 @@ namespace Si_Announcements
                 HelperMethods.PrintError(exception, "Failed in OnInitializeMelon");
             }
         }
+
+        [MethodImpl(MethodImplOptions.NoOptimization)]
         public override void OnLateInitializeMelon()
         {
             HelperMethods.StartTimer(ref Timer_Announcement);
 
+            // subscribe to the OnRequestPlayerChat event
+            Event_Netcode.OnRequestPlayerChat += OnRequestPlayerChat;
+
             #if NET6_0
             bool QListLoaded = RegisteredMelons.Any(m => m.Info.Name == "QList");
-            if (!QListLoaded)
+            if (QListLoaded)
             {
-                return;
+                QListRegistration();
             }
+            #endif
+        }
 
+        #if NET6_0
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private void QListRegistration()
+        {
             QList.Options.RegisterMod(this);
 
             QList.OptionTypes.IntOption secondsBeforeAnnouncing = new(_Announcements_SecondsBetweenMessages, true, _Announcements_SecondsBetweenMessages.Value, 60, 1200, 30);
@@ -112,89 +129,78 @@ namespace Si_Announcements
 
             QList.Options.AddOption(secondsBeforeAnnouncing);
             QList.Options.AddOption(showDoubleAnnouncements);
-            #endif
         }
-
-
-        #if NET6_0
-        [HarmonyPatch(typeof(MusicJukeboxHandler), nameof(MusicJukeboxHandler.Update))]
-        #else
-        [HarmonyPatch(typeof(MusicJukeboxHandler), "Update")]
         #endif
-        private static class ApplyPatch_MusicJukeboxHandlerUpdate
+
+        public override void OnUpdate()
         {
-            private static void Postfix(MusicJukeboxHandler __instance)
+            try
             {
-                try
+                if (_Announcements_SecondsBetweenMessages == null)
                 {
-                    Timer_Announcement += Time.deltaTime;
-
-                    if (Timer_Announcement >= _Announcements_SecondsBetweenMessages.Value)
-                    {
-                        Timer_Announcement = 0.0f;
-
-                        if (announcementsText == null)
-                        {
-                            return;
-                        }
-
-                        // skip if game is not ongoign
-                        if (!GameMode.CurrentGameMode.GameOngoing)
-                        {
-                            return;
-                        }
-
-                        if (!_Announcements_ShowIfLastChatWasAnnouncement.Value)
-                        {
-                            // check if the last chat message was an announcement
-                            if (IsPreviousChatMessageAnnouncement(lastChatMessage))
-                            {
-                                MelonLogger.Msg("Skipping Announcement - Repeated Message");
-                                return;
-                            }
-                        }
-
-                        string nextAnnouncement = GetNextAnnouncement();
-                        HelperMethods.SendChatMessageToAll(nextAnnouncement);
-                    }
+                    return;
                 }
-                catch (Exception exception)
-                {
-                    HelperMethods.PrintError(exception, "Failed in MusicJukeboxHandler::Update");
-                }
-            }
-        }
 
-        #if NET6_0
-        [HarmonyPatch(typeof(Il2CppSilica.UI.Chat), nameof(Il2CppSilica.UI.Chat.MessageReceived))]
-        #else
-        [HarmonyPatch(typeof(Silica.UI.Chat), "MessageReceived")]
-        #endif
-        private static class Announcements_Patch_Chat_MessageReceived
-        {
-            #if NET6_0
-            public static void Postfix(Il2CppSilica.UI.Chat __instance, Player __0, string __1, bool __2)
-            #else
-            public static void Postfix(Silica.UI.Chat __instance, Player __0, string __1, bool __2)
-            #endif
-            {
-                try
+                Timer_Announcement += Time.deltaTime;
+
+                if (Timer_Announcement >= _Announcements_SecondsBetweenMessages.Value)
                 {
-                    if (_Announcements_ShowIfLastChatWasAnnouncement != null && _Announcements_ShowIfLastChatWasAnnouncement.Value)
+                    Timer_Announcement = 0.0f;
+
+                    if (announcementsText == null)
                     {
                         return;
                     }
 
-                    // each faction has its own chat manager but by looking at alien and only global messages this catches commands only once
-                    if (__instance.ToString().Contains("alien") && __2 == false)
+                    // skip if game is not on-going
+                    if (GameMode.CurrentGameMode == null || !GameMode.CurrentGameMode.GameOngoing)
                     {
-                        lastChatMessage = __1;
+                        return;
                     }
+
+                    if (!_Announcements_ShowIfLastChatWasAnnouncement.Value)
+                    {
+                        // check if the last chat message was an announcement
+                        if (IsPreviousChatMessageAnnouncement(lastChatMessage))
+                        {
+                            MelonLogger.Msg("Skipping Announcement - Repeated Message");
+                            return;
+                        }
+                    }
+
+                    string nextAnnouncement = GetNextAnnouncement();
+                    HelperMethods.SendChatMessageToAll(nextAnnouncement);
                 }
-                catch (Exception error)
+            }
+            catch (Exception exception)
+            {
+                HelperMethods.PrintError(exception, "Failed in OnUpdate");
+            }
+        }
+
+        public void OnRequestPlayerChat(object? sender, OnRequestPlayerChatArgs args)
+        {
+            if (args.Player == null)
+            {
+                return;
+            }
+
+            try
+            {
+                if (_Announcements_ShowIfLastChatWasAnnouncement != null && _Announcements_ShowIfLastChatWasAnnouncement.Value)
                 {
-                    HelperMethods.PrintError(error, "Failed to run Chat::MessageReceived");
+                    return;
                 }
+
+                // each faction has its own chat manager but by looking at alien and only global messages this catches commands only once
+                if (args.TeamOnly == false)
+                {
+                    lastChatMessage = args.Text;
+                }
+            }
+            catch (Exception error)
+            {
+                HelperMethods.PrintError(error, "Failed to run OnRequestPlayerChat");
             }
         }
 

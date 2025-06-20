@@ -45,6 +45,15 @@ namespace Si_Logging
             return System.IO.Path.Combine(MelonEnvironment.UserDataDirectory, Pref_Log_ParserExe.Value);
         }
 
+        public static bool VideoGeneratorExePresent()
+        {
+            return System.IO.File.Exists(GetVideoGeneratorPath());
+        }
+        public static string GetVideoGeneratorPath()
+        {
+            return System.IO.Path.Combine(MelonEnvironment.UserDataDirectory, Pref_Log_VideoExe.Value);
+        }
+
         public static void PrintLogLine(string LogMessage, bool suppressConsoleOutput = false)
         {
             if (LogMessage != null)
