@@ -346,13 +346,8 @@ namespace Si_CommanderManagement
             {
                 if (GameMode.CurrentGameMode is GameModeExt gameModeExt)
                 {
-                    #if NET6_0
-                    gameModeExt.Timer = value;
-                    #else
-                    Type gameModeExtType = gameModeExt.GetType();
-                    PropertyInfo timerProperty = gameModeExtType.GetProperty("Timer");
-                    timerProperty.SetValue(gameModeExt, value);
-                    #endif
+                    gameModeExt.SetTimer(value);
+                    return;
                 }
                 throw new ArgumentException("Cannot set gamemode timer");
             }
