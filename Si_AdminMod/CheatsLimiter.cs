@@ -72,8 +72,6 @@ namespace SilicaAdminMod
                     // send modified cheats event only to admins
                     SendLimitedCheatsEvent(true);
 
-                    GameInput.SetActionMapEnableOverride("Cheats", true);
-
                     // skip the main setter method
                     return false;
                 }

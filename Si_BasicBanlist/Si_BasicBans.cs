@@ -36,7 +36,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 
-[assembly: MelonInfo(typeof(BasicBanlist), "Basic Banlist", "1.5.6", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(BasicBanlist), "Basic Banlist", "1.5.7", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 #if NET6_0
 [assembly: MelonOptionalDependencies("Admin Mod", "QList")]
@@ -190,7 +190,8 @@ namespace Si_BasicBanlist
             // using game XML
             else
             {
-                return NetworkServerSettings.PlayerIsBanned(steamID);
+                NetworkID networkID = new NetworkID(steamID);
+                return NetworkServerSettings.PlayerIsBanned(networkID);
             }
 
             return false;
@@ -228,7 +229,8 @@ namespace Si_BasicBanlist
 
             if (MasterBanList == null)
             {
-                NetworkServerSettings.PlayerAddBan(steamid, targetName, 0, callerPlayer == null ? "offline banned by SERVER CONSOLE" : "offline banned by " + callerPlayer.PlayerName);
+                NetworkID networkID = new NetworkID(steamid);
+                NetworkServerSettings.PlayerAddBan(networkID, targetName, 0, callerPlayer == null ? "offline banned by SERVER CONSOLE" : "offline banned by " + callerPlayer.PlayerName);
             }
             else
             {
@@ -313,13 +315,13 @@ namespace Si_BasicBanlist
 
             if (MasterBanList == null)
             {
-                NetworkBannedPlayer? bannedPlayer = isNumber ? NetworkServerSettings.GetPlayerBan(steamid) : NetworkServerSettings.GetPlayerBan(target);
+                NetworkBannedPlayer? bannedPlayer = isNumber ? NetworkServerSettings.GetPlayerBan(new NetworkID(steamid)) : NetworkServerSettings.GetPlayerBan(target);
                 if (bannedPlayer == null)
                 {
                     return false;
                 }
 
-                NetworkServerSettings.PlayerRemoveBan(bannedPlayer.m_ID);
+                NetworkServerSettings.PlayerRemoveBan(new NetworkID(steamid));
                 MelonLogger.Msg("Removed player name (" + bannedPlayer.m_Name + ") SteamID (" + bannedPlayer.m_ID.ToString() + ") from the banlist.");
                 HelperMethods.AlertAdminAction(adminPlayer, "unbanned " + bannedPlayer.m_Name);
                 return true;
@@ -351,7 +353,7 @@ namespace Si_BasicBanlist
 
             if (MasterBanList == null)
             {
-                NetworkServerSettings.PlayerAddBan(playerToBan.PlayerID.SteamID.m_SteamID, playerToBan.PlayerName, 0, adminPlayer == null ? "banned by SERVER CONSOLE" : "banned by " + adminPlayer.PlayerName);
+                NetworkServerSettings.PlayerAddBan(playerToBan.PlayerID, playerToBan.PlayerName, 0, adminPlayer == null ? "banned by SERVER CONSOLE" : "banned by " + adminPlayer.PlayerName);
             }
             else
             {

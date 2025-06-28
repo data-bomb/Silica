@@ -270,7 +270,7 @@ namespace Si_Logging
             {
                 return "Commander";
             }
-            else if (role == GameModeExt.ETeamRole.INFANTRY)
+            else if (role == GameModeExt.ETeamRole.UNIT)
             {
                 return "Infantry";
             }

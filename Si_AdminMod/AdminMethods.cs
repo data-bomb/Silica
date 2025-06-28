@@ -97,7 +97,8 @@ namespace SilicaAdminMod
             }
 
             // grant some default powers if they are on the game's admin list but missing from the mod admin list
-            NetworkAdminPlayer gameAdmin = NetworkServerSettings.GetPlayerAdmin((ulong)steamId);
+            NetworkID networkID = new NetworkID((ulong)steamId);
+            NetworkAdminPlayer gameAdmin = NetworkServerSettings.GetPlayerAdmin(networkID);
             if (gameAdmin != null)
             {
                 Admin gameModAdminConversion = new Admin
