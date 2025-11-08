@@ -36,7 +36,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 
-[assembly: MelonInfo(typeof(BasicBanlist), "Basic Banlist", "1.5.7", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(BasicBanlist), "Basic Banlist", "1.5.8", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 #if NET6_0
 [assembly: MelonOptionalDependencies("Admin Mod", "QList")]
@@ -371,7 +371,7 @@ namespace Si_BasicBanlist
         {
             BanEntry thisBan = new BanEntry()
             {
-                OffenderSteamId = ulong.Parse(player.ToString().Split('_')[1]),
+                OffenderSteamId = player.PlayerID.SteamID.m_SteamID,
                 OffenderName = player.PlayerName,
                 UnixBanTime = (int)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds
             };
@@ -403,7 +403,7 @@ namespace Si_BasicBanlist
                     // if we just intended to kick, we can skip the rest
                     if (!_Pref_Ban_KickButton_PermaBan.Value)
                     {
-                        MelonLogger.Msg("Kicked player name (" + __0.PlayerName + ") SteamID (" + __0.ToString() + ")");
+                        MelonLogger.Msg("Kicked player name (" + __0.PlayerName + ") SteamID (" + __0.PlayerID.SteamID.m_SteamID.ToString() + ")");
                         return;
                     }
 
@@ -444,8 +444,7 @@ namespace Si_BasicBanlist
                     if (__0 != null)
                     {
                         // check if player was previously banned
-                        ulong JoiningPlayerSteamId = ulong.Parse(__0.ToString().Split('_')[1].Split(' ')[0]);
-                        if (MasterBanList.Find(i => i.OffenderSteamId == JoiningPlayerSteamId) != null)
+                        if (MasterBanList.Find(i => i.OffenderSteamId == __0.PlayerID.SteamID.m_SteamID) != null)
                         {
                             MelonLogger.Msg("Kicking " + __0.ToString() + " for matching an entry in the banlist.");
                             NetworkGameServer.KickPlayer(__0);
