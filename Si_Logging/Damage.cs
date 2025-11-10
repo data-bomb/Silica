@@ -45,6 +45,13 @@ namespace Si_Logging
             {
                 int index = victim.GetIndex();
 
+                // skip if victim player is invalid (GetIndex could return -1 in odd situations)
+                if (index < 0 || VictimDamage.GetLength(0) <= index)
+                {
+                    MelonLogger.Warning("Could not print player death stats. Attempted to VictimDamage[", index, "] with array size: ", VictimDamage.GetLength(0));
+                    return;
+                }
+
                 if (VictimDamage[index] == null)
                 {
                     MelonLogger.Msg($"Creating new damage database entry for {victim.PlayerName}");
@@ -85,9 +92,9 @@ namespace Si_Logging
                 int index = victim.GetIndex();
 
                 // skip if there's nothing to print or team is invalid (GetIndex could return -1 in odd situations)
-                if (index < 0 || VictimDamage.GetLength(0) > index || VictimDamage[index] == null || VictimDamage[index].Count <= 0 || victim.Team == null)
+                if (index < 0 || VictimDamage.GetLength(0) <= index || VictimDamage[index] == null || VictimDamage[index].Count <= 0 || victim.Team == null)
                 {
-                    MelonLogger.Warning("Could not print player death stats. Index value: ", index, " and VictimDamage Size: ", VictimDamage.GetLength(0));
+                    MelonLogger.Warning("Could not print player death stats. Attempted to VictimDamage[", index, "] with array size: ", VictimDamage.GetLength(0));
                     return;
                 }
 
