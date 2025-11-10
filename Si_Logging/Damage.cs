@@ -84,9 +84,10 @@ namespace Si_Logging
             {
                 int index = victim.GetIndex();
 
-                // skip if there's nothing to print or team is invalid
-                if (VictimDamage[index] == null || VictimDamage[index].Count <= 0 || victim.Team == null)
+                // skip if there's nothing to print or team is invalid (GetIndex could return -1 in odd situations)
+                if (index < 0 || VictimDamage.GetLength(0) > index || VictimDamage[index] == null || VictimDamage[index].Count <= 0 || victim.Team == null)
                 {
+                    MelonLogger.Warning("Could not print player death stats. Index value: ", index, " and VictimDamage Size: ", VictimDamage.GetLength(0));
                     return;
                 }
 
