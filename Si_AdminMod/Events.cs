@@ -1,6 +1,6 @@
 ﻿/*
 Silica Admin Mod
-Copyright (C) 2024 by databomb
+Copyright (C) 2024-2025 by databomb
 
 * License *
 This program is free software: you can redistribute it and/or modify
@@ -56,6 +56,23 @@ namespace SilicaAdminMod
         {
             get;
             set;
+        }
+
+        public bool Block
+        {
+            get;
+            set;
+        }
+    }
+
+    public class OnRequestDestroyStructureArgs : EventArgs
+    {
+        private Structure _structure = null!;
+
+        public Structure Structure
+        {
+            get => _structure;
+            set => _structure = value ?? throw new ArgumentNullException("Structure is required.");
         }
 
         public bool Block
