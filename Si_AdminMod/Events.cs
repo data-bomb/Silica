@@ -65,14 +65,39 @@ namespace SilicaAdminMod
         }
     }
 
-    public class OnRequestDestroyStructureArgs : EventArgs
+    public class OnCommanderDestroyedStructureArgs : EventArgs
     {
         private Structure _structure = null!;
+        private Team _team = null!;
 
         public Structure Structure
         {
             get => _structure;
             set => _structure = value ?? throw new ArgumentNullException("Structure is required.");
+        }
+
+        public Team Team
+        {
+            get => _team;
+            set => _team = value ?? throw new ArgumentNullException("Team is required.");
+        }
+    }
+
+    public class OnRequestDestroyStructureArgs : EventArgs
+    {
+        private Structure _structure = null!;
+        private Team _team = null!;
+
+        public Structure Structure
+        {
+            get => _structure;
+            set => _structure = value ?? throw new ArgumentNullException("Structure is required.");
+        }
+
+        public Team Team
+        {
+            get => _team;
+            set => _team = value ?? throw new ArgumentNullException("Team is required.");
         }
 
         public bool Block

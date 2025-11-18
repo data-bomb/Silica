@@ -40,6 +40,7 @@ namespace SilicaAdminMod
     public static class Event_Structures
     {
         public static event EventHandler<OnRequestDestroyStructureArgs> OnRequestDestroyStructure = delegate { };
+        public static event EventHandler<OnCommanderDestroyedStructureArgs> OnCommanderDestroyedStructure = delegate { };
 
         #if NET6_0
         [HarmonyPatch(typeof(StrategyMode), nameof(StrategyMode.RPC_DestroyStructure))]
@@ -63,7 +64,7 @@ namespace SilicaAdminMod
                         return true;
                     }
 
-                    OnRequestDestroyStructureArgs onRequestDestroyStructureArgs = FireOnRequestDestroyStructureEvent(__0);
+                    OnRequestDestroyStructureArgs onRequestDestroyStructureArgs = FireOnRequestDestroyStructureEvent(__0, __0.Team);
 
                     if (onRequestDestroyStructureArgs.Block)
                     {
@@ -82,17 +83,41 @@ namespace SilicaAdminMod
                 }
                 catch (Exception error)
                 {
-                    HelperMethods.PrintError(error, "Failed to run StrategyMode::RPC_DestroyStructure");
+                    HelperMethods.PrintError(error, "Failed to run StrategyMode::RPC_DestroyStructure(Prefix)");
                 }
 
                 return true;
             }
+
+            public static void Postfix(StrategyMode __instance, Structure __0)
+            {
+                try
+                {
+                    if (__instance == null || __0 == null)
+                    {
+                        return;
+                    }
+
+                    OnCommanderDestroyedStructureArgs onCommanderDestroyedStructureArgs = FireOnCommanderDestroyedStructure(__0, __0.Team);
+
+                    if (SiAdminMod.Pref_Admin_DebugLogMessages.Value)
+                    {
+                        MelonLogger.Msg("Structure (" + __0.name + ") destroyed by commander on team " + __0.Team.TeamShortName);
+                    }
+
+                }
+                catch (Exception error)
+                {
+                    HelperMethods.PrintError(error, "Failed to run StrategyMode::RPC_DestroyStructure(Postfix)");
+                }
+            }
         }
 
-        public static OnRequestDestroyStructureArgs FireOnRequestDestroyStructureEvent(Structure structure)
+        public static OnRequestDestroyStructureArgs FireOnRequestDestroyStructureEvent(Structure structure, Team team)
         {
             OnRequestDestroyStructureArgs onRequestDestroyStructureArgs = new OnRequestDestroyStructureArgs();
             onRequestDestroyStructureArgs.Structure = structure;
+            onRequestDestroyStructureArgs.Team = team;
             EventHandler<OnRequestDestroyStructureArgs> requestDestroyStructureEvent = OnRequestDestroyStructure;
             if (requestDestroyStructureEvent != null)
             {
@@ -100,6 +125,20 @@ namespace SilicaAdminMod
             }
 
             return onRequestDestroyStructureArgs;
+        }
+
+        public static OnCommanderDestroyedStructureArgs FireOnCommanderDestroyedStructure(Structure structure, Team team)
+        {
+            OnCommanderDestroyedStructureArgs onCommanderDestroyedStructureArgs = new OnCommanderDestroyedStructureArgs();
+            onCommanderDestroyedStructureArgs.Structure = structure;
+            onCommanderDestroyedStructureArgs.Team = team;
+            EventHandler<OnCommanderDestroyedStructureArgs> commanderDestroyedStructureEvent = OnCommanderDestroyedStructure;
+            if (commanderDestroyedStructureEvent != null)
+            {
+                commanderDestroyedStructureEvent(null, onCommanderDestroyedStructureArgs);
+            }
+
+            return onCommanderDestroyedStructureArgs;
         }
     }
 }
