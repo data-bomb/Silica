@@ -37,7 +37,7 @@ using System;
 using System.Linq;
 
 
-[assembly: MelonInfo(typeof(ChatSilence), "Chat Silence", "2.0.1", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(ChatSilence), "Chat Silence", "2.0.2", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -71,7 +71,7 @@ namespace Si_ChatSilence
 
 
             // subscribe to the OnRequestPlayerChat event
-            Event_Netcode.OnRequestPlayerChat += OnRequestPlayerChat;
+            Event_Chat.OnRequestPlayerChat += OnRequestPlayerChat;
         }
 
         public static void Command_Silence(Player? callerPlayer, String args)

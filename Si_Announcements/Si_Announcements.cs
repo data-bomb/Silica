@@ -38,7 +38,7 @@ using UnityEngine;
 using static MelonLoader.MelonLogger;
 using System.Runtime.CompilerServices;
 
-[assembly: MelonInfo(typeof(Announcements), "Server Announcements", "1.2.2", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(Announcements), "Server Announcements", "1.2.3", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 #if NET6_0
 [assembly: MelonOptionalDependencies("Admin Mod", "QList")]
@@ -107,7 +107,7 @@ namespace Si_Announcements
             HelperMethods.StartTimer(ref Timer_Announcement);
 
             // subscribe to the OnRequestPlayerChat event
-            Event_Netcode.OnRequestPlayerChat += OnRequestPlayerChat;
+            Event_Chat.OnRequestPlayerChat += OnRequestPlayerChat;
 
             #if NET6_0
             bool QListLoaded = RegisteredMelons.Any(m => m.Info.Name == "QList");

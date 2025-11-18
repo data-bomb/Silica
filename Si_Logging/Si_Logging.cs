@@ -40,7 +40,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.8.6", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.8.7", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 #if NET6_0
 [assembly: MelonOptionalDependencies("Admin Mod", "QList")]
@@ -114,7 +114,7 @@ namespace Si_Logging
 
             //subscribing to the event
             Event_Roles.OnRoleChanged += OnRoleChanged;
-            Event_Netcode.OnRequestPlayerChat += OnRequestPlayerChat;
+            Event_Chat.OnRequestPlayerChat += OnRequestPlayerChat;
 
             #if NET6_0
             bool QListLoaded = RegisteredMelons.Any(m => m.Info.Name == "QList");
