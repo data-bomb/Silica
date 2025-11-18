@@ -82,6 +82,48 @@ namespace SilicaAdminMod
         }
     }
 
+    public class OnRequestBuildStructureArgs : EventArgs
+    {
+        private ConstructionData _constructionData = null!;
+        private Structure _structure = null!;
+
+        public Structure ParentStructure
+        {
+            get => _structure;
+            set => _structure = value ?? throw new ArgumentNullException("Structure is required.");
+        }
+
+        public ConstructionData ConstructionData
+        {
+            get => _constructionData;
+            set => _constructionData = value ?? throw new ArgumentNullException("ConstructionData is required.");
+        }
+
+        public Vector3 Position
+        {
+            get;
+            set;
+        }
+
+        public Quaternion Rotation
+        {
+            get;
+            set;
+        }
+
+        public bool PlayerInitiated
+        {
+            get;
+            set;
+        }
+
+        public bool Block
+        {
+            get;
+            set;
+        }
+    }
+
     public class OnRequestCommanderArgs : EventArgs
     {
         private Player _requester = null!;
