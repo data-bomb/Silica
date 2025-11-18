@@ -121,12 +121,12 @@ namespace Si_Logging
                 return stats.ToArray();
             }
 
-            public static string GetConsoleColorCode(int victimIndex, int attackerIndex)
+            public static string GetConsoleColorCode(int victimTeamIndex, int attackerTeamIndex)
             {
-                // color friendly attackers red
-                if (victimIndex == attackerIndex)
+                // color friendly attackers
+                if (victimTeamIndex == attackerTeamIndex)
                 {
-                    return "<color=#964545>";
+                    return "<color=#FFABAB>";
                 }
 
                 return "<color=#FFFFFF>";
