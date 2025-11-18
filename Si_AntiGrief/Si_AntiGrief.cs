@@ -36,7 +36,7 @@ using System.Linq;
 using UnityEngine;
 using System.Runtime.CompilerServices;
 
-[assembly: MelonInfo(typeof(AntiGrief), "Anti-Grief", "1.4.9", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(AntiGrief), "Anti-Grief", "1.5.0", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 #if NET6_0
 [assembly: MelonOptionalDependencies("Admin Mod", "QList")]
@@ -53,6 +53,7 @@ namespace Si_AntiGrief
         static MelonPreferences_Entry<bool> _NegativeKills_Penalty_Ban = null!;
         static MelonPreferences_Entry<bool> _StructureAntiGrief_IgnoreNodes = null!;
         static MelonPreferences_Entry<bool> _BlockShrimpControllers = null!;
+        static MelonPreferences_Entry<bool> _BlockCommanderRemovingLastSpawn = null!;
 
         static uint[] playerTransferCount = new uint[] {};
 
@@ -65,6 +66,7 @@ namespace Si_AntiGrief
             _NegativeKills_Penalty_Ban ??= _modCategory.CreateEntry<bool>("Grief_NegativeKills_Penalty_Ban", true);
             _StructureAntiGrief_IgnoreNodes ??= _modCategory.CreateEntry<bool>("Grief_IgnoreFriendlyNodesDestroyed", true);
             _BlockShrimpControllers ??= _modCategory.CreateEntry<bool>("Grief_BlockShrimpTakeOver", false);
+            _BlockCommanderRemovingLastSpawn ??= _modCategory.CreateEntry<bool>("Grief_BlockRemoveLastSpawn", true);
         }
 
         public override void OnSceneWasLoaded(int buildIndex, string sceneName)
@@ -86,6 +88,7 @@ namespace Si_AntiGrief
             //subscribing to the events
             Event_Roles.OnRoleChanged += OnRoleChanged;
             Event_Units.OnRequestEnterUnit += OnRequestEnterUnit;
+            Event_Structures.OnRequestDestroyStructure += OnRequestDestroyStructure_GriefCheck;
 
             #if NET6_0
             bool QListLoaded = RegisteredMelons.Any(m => m.Info.Name == "QList");
@@ -93,7 +96,7 @@ namespace Si_AntiGrief
             {
                 QListRegistration();
             }
-            #endif
+#endif
         }
 
         #if NET6_0
@@ -221,6 +224,46 @@ namespace Si_AntiGrief
                 {
                     HelperMethods.PrintError(error, "Failed to run GameMode::SpawnUnitForPlayer");
                 }
+            }
+        }
+
+        public void OnRequestDestroyStructure_GriefCheck(object? sender, OnRequestDestroyStructureArgs args)
+        {
+            try
+            {
+                if (!_BlockCommanderRemovingLastSpawn.Value || args == null)
+                {
+                    return;
+                }
+
+                Structure structure = args.Structure;
+                Team team = args.Team;
+                
+                if (structure == null || team == null)
+                {
+                    return;
+                }
+
+                MelonLogger.Msg("OnRequestDestroyStructure SelectionType: " + structure.ObjectInfo.StructureSelectionType);
+
+                // did the commander try and sell a barracks/lesser spawn?
+                if (structure.ObjectInfo.StructureSelectionType != StructureSelectionType.Units1)
+                {
+                    return;
+                }
+
+                int remainingStructures = team.GetStructureCount(structure.ObjectInfo);
+                MelonLogger.Msg("OnRequestDestroyStructure Remaining Structures: " + remainingStructures);
+
+                // prevent getting rid of the last barracks/lesser spawn
+                if (remainingStructures <= 1)
+                {
+                    args.Block = true;
+                }
+            }
+            catch (Exception error)
+            {
+                HelperMethods.PrintError(error, "Failed to run OnRequestDestroyStructure_GriefCheck");
             }
         }
 
