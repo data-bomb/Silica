@@ -32,8 +32,9 @@ using SilicaAdminMod;
 using System;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using UnityEngine;
 
-[assembly: MelonInfo(typeof(ResourceConfig), "Resource Configuration", "1.3.3", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(ResourceConfig), "Resource Configuration", "1.4.0", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 #if NET6_0
 [assembly: MelonOptionalDependencies("Admin Mod", "QList")]
@@ -83,6 +84,9 @@ namespace Si_Resources
         {
             HelperMethods.CommandCallback resourcesCallback = Command_Resources;
             HelperMethods.RegisterAdminCommand("resources", resourcesCallback, Power.Cheat, "Provides resources to a team. Usage: !resources <amount> [optional:<teamname>]");
+
+            //subscribing to the events
+            Event_Structures.OnCommanderDestroyedStructure += OnCommanderDestroyedStructure_Refund;
 
             #if NET6_0
             bool QListLoaded = RegisteredMelons.Any(m => m.Info.Name == "QList");
@@ -391,6 +395,84 @@ namespace Si_Resources
 
             MelonLogger.Error("Could not determine gamemode. Returning strategy default resources for team: " + team.TeamShortName);
             return defaultStrategyStartingResources;
+        }
+
+        public void OnCommanderDestroyedStructure_Refund(object? sender, OnCommanderDestroyedStructureArgs args)
+        {
+            try
+            {
+                if (args == null)
+                {
+                    return;
+                }
+
+                Structure structure = args.Structure;
+                Team team = args.Team;
+
+                MelonLogger.Msg("Determining structure refund amount..");
+
+                // this event should fire right before the structure is destroyed
+                if (structure == null || team == null || !structure.DamageManager || structure.DamageManager.IsDestroyed)
+                {
+                    return;
+                }
+
+                int refund = DetermineRefundAmount(structure);
+
+                MelonLogger.Msg("Refunding " + refund + " to team " + team.TeamShortName);
+
+                team.StoreResource(refund);
+
+                // find if team has commander
+                Player? commander = null;
+                if (GameMode.CurrentGameMode is GameModeExt gameModeExt)
+                {
+                    commander = gameModeExt.GetCommanderForTeam(team);
+                }
+
+                if (commander != null)
+                {
+                    HelperMethods.SendConsoleMessageToPlayer(commander, $"Sold structure ({structure.ObjectInfo.DisplayName.Replace(" ", "").Replace("-", "")}) for refund of {refund}");
+                }
+            }
+            catch (Exception error)
+            {
+                HelperMethods.PrintError(error, "Failed to run OnCommanderDestroyedStructure_Refund");
+            }
+        }
+
+        static int DetermineRefundAmount(Structure structure)
+        {
+            StructureRepairComponent.StructureRepairSetup repairSetup = StructureRepairComponent.Instance.GetRepairSetup(structure.Team);
+
+            float refundAmount = 0f;
+            float structureHealthPercent = structure.DamageManager.Health01;
+
+            // find refund price based on three structured tiers
+            // tier 1: building is in prestine order
+            if (structureHealthPercent > 0.96f)
+            {
+                // 90% of structure costs
+                refundAmount = structure.ObjectInfo.Cost * 0.90f;
+            }
+            // tier 2: building is above max passive repair threshold -> (%HP - 15%) * resource costs
+            else if (structureHealthPercent >= repairSetup.MaxPassiveRepairPct)
+            {
+                refundAmount = structure.ObjectInfo.Cost * (structureHealthPercent - 0.12f);
+            }
+            // tier 3: building is below max passive repair threshold -> (%HP -  5%) * resource costs
+            else
+            {
+                refundAmount = structure.ObjectInfo.Cost * (structureHealthPercent - 0.15f);
+            }
+
+            // if it's too low then don't return anything
+            if (refundAmount < 50f)
+            {
+                return 0;
+            }
+
+            return (int)(refundAmount);
         }
     }
 }
