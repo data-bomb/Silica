@@ -115,6 +115,11 @@ namespace SilicaAdminMod
             {
                 // find the first instance of calling DamageManager.SetHealth01(0f);
                 var methodSetHealth = AccessTools.Method(typeof(DamageManager), "SetHealth01");
+                if (methodSetHealth == null)
+                {
+                    MelonLogger.Warning("Transpiler failure of StrategyMode::RPC_DestroyStructure. Cannot locate SetHealth01 method. Structure events will not function correctly.");
+                    return -1;
+                }
 
                 int firstSetHealthCall = -1;
                 for (int i = 0; i < opCodes.Count; i++)
@@ -126,10 +131,7 @@ namespace SilicaAdminMod
                     }
                 }
 
-                if (SiAdminMod.Pref_Admin_DebugLogMessages.Value)
-                {
-                    MelonLogger.Msg("(StrategyMode::RPC_DestroyStructure Transpiler) Found first call of SetHealth01 at opCode[" + firstSetHealthCall + "] with total opCode size: " + opCodes.Count);
-                }
+                MelonLogger.Msg("(StrategyMode::RPC_DestroyStructure Transpiler) Found first call of SetHealth01 at opCode[" + firstSetHealthCall + "]");
 
                 // if we couldn't find any calls then the game was updated in an unexpected way
                 if (firstSetHealthCall < 0)
@@ -156,10 +158,7 @@ namespace SilicaAdminMod
                     return -1;
                 }
 
-                if (SiAdminMod.Pref_Admin_DebugLogMessages.Value)
-                {
-                    MelonLogger.Msg("(StrategyMode::RPC_DestroyStructure Transpiler) Found insertion point at opCode[" + insertionPoint + "]");
-                }
+                MelonLogger.Msg("(StrategyMode::RPC_DestroyStructure Transpiler) Found insertion point at opCode[" + insertionPoint + "]");
 
                 return insertionPoint;
             }

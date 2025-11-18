@@ -73,6 +73,11 @@ namespace SilicaAdminMod
             {
                 // find the last instance of calling RequestConstructionSite method
                 var methodRequestConstructionSite = AccessTools.Method(typeof(ConstructionData), "RequestConstructionSite");
+                if (methodRequestConstructionSite == null)
+                {
+                    MelonLogger.Warning("Transpiler failure of Structure::Construct. Cannot locate RequestConstructionSite method. Structure events will not function correctly.");
+                    return -1;
+                }
 
                 int lastConstructionSiteCall = -1;
                 for (int i = 0; i < opCodes.Count; i++)
@@ -82,19 +87,16 @@ namespace SilicaAdminMod
                         lastConstructionSiteCall = i;
                     }
                 }
-
-                if (SiAdminMod.Pref_Admin_DebugLogMessages.Value)
-                {
-                    MelonLogger.Msg("(Structure::Construct Transpiler) Found last call of ReqConSite at opCode[" + lastConstructionSiteCall + "] with total opCode size: " + opCodes.Count);
-                }
-
+                
+                MelonLogger.Msg("(Structure::Construct Transpiler) Found last call of ReqConSite at opCode[" + lastConstructionSiteCall + "]");
+                
                 // if we couldn't find any calls then the game was updated in an unexpected way
                 if (lastConstructionSiteCall < 0)
                 {
                     MelonLogger.Warning("Transpiler failure of Structure::Construct. Cannot locate RequestConstructionSite call. Structure events will not function correctly.");
                     return -1;
                 }
-
+                
                 // scan upwards to the beginning of the call stack for the RequestConstructionSite method
                 int insertionPoint = lastConstructionSiteCall;
                 for (int i = lastConstructionSiteCall; i >= 0; i--)
@@ -105,7 +107,7 @@ namespace SilicaAdminMod
                         break;
                     }
                 }
-
+                
                 // if we're at 0 then the game was updated in an unexpected way
                 if (insertionPoint == 0)
                 {
@@ -113,10 +115,7 @@ namespace SilicaAdminMod
                     return -1;
                 }
 
-                if (SiAdminMod.Pref_Admin_DebugLogMessages.Value)
-                {
-                    MelonLogger.Msg("(Structure::Construct Transpiler) Found insertion point at opCode[" + insertionPoint + "]");
-                }
+                MelonLogger.Msg("(Structure::Construct Transpiler) Found insertion point at opCode[" + insertionPoint + "]");
 
                 return insertionPoint;
             }
