@@ -115,6 +115,7 @@ namespace Si_Logging
             //subscribing to the event
             Event_Roles.OnRoleChanged += OnRoleChanged;
             Event_Chat.OnRequestPlayerChat += OnRequestPlayerChat;
+            Event_Structures.OnCommanderDestroyedStructure += OnCommanderDestroyedStructure_Log;
 
             #if NET6_0
             bool QListLoaded = RegisteredMelons.Any(m => m.Info.Name == "QList");
@@ -759,6 +760,43 @@ namespace Si_Logging
                 {
                     HelperMethods.PrintError(error, "Failed to run OnResourcesChanged");
                 }
+            }
+        }
+
+        // 061. Team Objectives/Actions - Structure Deletion
+        public void OnCommanderDestroyedStructure_Log(object? sender, OnCommanderDestroyedStructureArgs args)
+        {
+            try
+            {
+                if (args == null)
+                {
+                    return;
+                }
+
+                Structure structure = args.Structure;
+                Team team = args.Team;
+
+                if (structure == null || team == null)
+                {
+                    return;
+                }
+
+                string teamName = GetTeamName(team);
+                string structName = GetStructureName(structure);
+                string position = GetLogPosition(structure.transform.position);
+
+                PrintLogLine($"Team \"{teamName}\" triggered \"structure_sold\" (building_name \"{structName}\") (building_position \"{position}\")");
+
+                if (Pref_Log_PlayerConsole_Enable.Value)
+                {
+                    string teamPretty = GetTeamName(team);
+
+                    HelperMethods.SendConsoleMessageToTeam(team, $"{teamPretty} sold a structure ({HelperMethods.GetTeamColor(team)}{structName}</color>)");
+                }
+            }
+            catch (Exception error)
+            {
+                HelperMethods.PrintError(error, "Failed to run OnCommanderDestroyedStructure_Log");
             }
         }
 

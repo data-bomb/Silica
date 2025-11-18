@@ -74,6 +74,16 @@ namespace Si_Logging
             return versusMode.ToString();
         }
 
+        public static string GetStructureName(Structure structure)
+        {
+            if (structure == null || structure.ObjectInfo == null)
+            {
+                return "";
+            }
+
+            return GetLogNameFromDisplayName(structure.ObjectInfo.DisplayName);
+        }
+
         public static string GetStructureName(Target target)
         {
             if (target == null || target.ObjectInfo == null)
