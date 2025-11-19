@@ -81,6 +81,13 @@ namespace SilicaAdminMod
                     {
                         MelonLogger.Msg("Allowing structure (" + __0.name + ") to be destroyed on team " + __0.Team.TeamShortName);
                     }
+
+                    OnCommanderDestroyedStructureArgs onCommanderDestroyedStructureArgs = FireOnCommanderDestroyedStructure(__0, __0.Team);
+
+                    if (SiAdminMod.Pref_Admin_DebugLogMessages.Value)
+                    {
+                        MelonLogger.Msg("Structure (" + __0.name + ") destroyed by commander on team " + __0.Team.TeamShortName);
+                    }
                 }
                 catch (Exception error)
                 {
@@ -88,111 +95,6 @@ namespace SilicaAdminMod
                 }
 
                 return true;
-            }
-
-            // patch right before the call to SetHealth(0f)
-            static void Detour_BeforeStructureDestroyed(Structure structure)
-            {
-                if (SiAdminMod.Pref_Admin_DebugLogMessages.Value)
-                {
-                    MelonLogger.Msg("StrategyMode::RPC_DestroyStructure detour hit");
-                }
-
-                if (structure == null || structure.Team == null)
-                {
-                    return;
-                }
-
-                OnCommanderDestroyedStructureArgs onCommanderDestroyedStructureArgs = FireOnCommanderDestroyedStructure(structure, structure.Team);
-
-                if (SiAdminMod.Pref_Admin_DebugLogMessages.Value)
-                {
-                    MelonLogger.Msg("Structure (" + structure.name + ") destroyed by commander on team " + structure.Team.TeamShortName);
-                }
-            }
-
-            static int FindEntryPoint_StrategyMode_RPC_DestroyStructure(List<CodeInstruction> opCodes)
-            {
-                // find the first instance of calling DamageManager.SetHealth01(0f);
-                var methodSetHealth = AccessTools.Method(typeof(DamageManager), "SetHealth01");
-                if (methodSetHealth == null)
-                {
-                    MelonLogger.Warning("Transpiler failure of StrategyMode::RPC_DestroyStructure. Cannot locate SetHealth01 method. Structure events will not function correctly.");
-                    return -1;
-                }
-
-                int firstSetHealthCall = -1;
-                for (int i = 0; i < opCodes.Count; i++)
-                {
-                    if (opCodes[i].Calls(methodSetHealth))
-                    {
-                        firstSetHealthCall = i;
-                        break;
-                    }
-                }
-
-                MelonLogger.Msg("(StrategyMode::RPC_DestroyStructure Transpiler) Found first call of SetHealth01 at opCode[" + firstSetHealthCall + "]");
-
-                // if we couldn't find any calls then the game was updated in an unexpected way
-                if (firstSetHealthCall < 0)
-                {
-                    MelonLogger.Warning("Transpiler failure of StrategyMode::RPC_DestroyStructure. Cannot locate SetHealth01 call. Structure events will not function correctly.");
-                    return -1;
-                }
-
-                // scan upwards to the beginning of the call stack for the SetHealth01 method
-                int insertionPoint = firstSetHealthCall;
-                for (int i = firstSetHealthCall; i >= 0; i--)
-                {
-                    if (opCodes[i].IsLdarg(1)) // first argument (Structure structure)
-                    {
-                        insertionPoint = i;
-                        break;
-                    }
-                }
-
-                // if we're at 0 then the game was updated in an unexpected way
-                if (insertionPoint == 0)
-                {
-                    MelonLogger.Warning("Transpiler failure of StrategyMode::RPC_DestroyStructure. Cannot locate ldarg1. Structure events will not function correctly.");
-                    return -1;
-                }
-
-                MelonLogger.Msg("(StrategyMode::RPC_DestroyStructure Transpiler) Found insertion point at opCode[" + insertionPoint + "]");
-
-                return insertionPoint;
-            }
-
-            static List<CodeInstruction> GenerateILPatch_Structure_Destroy(ILGenerator generator)
-            {
-                Label skipExit = generator.DefineLabel();
-                var detourStructureDestroyed = AccessTools.Method(typeof(ApplyPatch_StrategyMode_RPC_DestroyStructure), nameof(ApplyPatch_StrategyMode_RPC_DestroyStructure.Detour_BeforeStructureDestroyed));
-
-                return new List<CodeInstruction>()
-                {
-                    new CodeInstruction(OpCodes.Ldarg_1),           // Structure structure
-                    new CodeInstruction(OpCodes.Call, detourStructureDestroyed) // call detour method
-                }; // continue to call SetHealth01(0f)
-            }
-
-            static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
-            {
-                var opCodes = instructions.ToList();
-                int insertionPoint = FindEntryPoint_StrategyMode_RPC_DestroyStructure(opCodes);
-
-                // don't make any modifications without confidence in insertionPoint
-                if (insertionPoint < 0)
-                {
-                    return instructions;
-                }
-
-                // generate the IL we need to insert before the last RequestConstructionSite call
-                var inlineOpCodes = GenerateILPatch_Structure_Destroy(generator);
-
-                // insert code before the stack adjustments start for RequestConstructionSite
-                opCodes.InsertRange(insertionPoint, inlineOpCodes);
-
-                return opCodes.AsEnumerable();
             }
         }
 
