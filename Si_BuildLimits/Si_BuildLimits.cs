@@ -33,7 +33,7 @@ using System;
 using Si_BuildLimits;
 using System.Linq;
 
-[assembly: MelonInfo(typeof(BuildLimits), "Build Limits", "0.9.8", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(BuildLimits), "Build Limits", "0.9.9", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -59,17 +59,17 @@ namespace Si_BuildLimits
         {
             _modCategory ??= MelonPreferences.CreateCategory("Silica");
             _Pref_Block_BotCommanders ??= _modCategory.CreateEntry<bool>("BuildLimits_EnforceLimitsOnAI", true);
-            _Pref_Limit_Bases ??= _modCategory.CreateEntry<int>("BuildLimits_Bases", -1);
-            _Pref_Limit_Turrets ??= _modCategory.CreateEntry<int>("BuildLimits_Turrets", 20);
-            _Pref_Limit_Research ??= _modCategory.CreateEntry<int>("BuildLimits_Research", -1);
-            _Pref_Limit_Nodes ??= _modCategory.CreateEntry<int>("BuildLimits_Nodes", -1);
-            _Pref_Limit_Silos ??= _modCategory.CreateEntry<int>("BuildLimits_Silos", -1);
-            _Pref_Limit_Deposits ??= _modCategory.CreateEntry<int>("BuildLimits_Deposits", -1);
-            _Pref_Limit_Prod1 ??= _modCategory.CreateEntry<int>("BuildLimits_Production_Level1", -1);
-            _Pref_Limit_Prod2 ??= _modCategory.CreateEntry<int>("BuildLimits_Production_Level2", -1);
-            _Pref_Limit_Prod3 ??= _modCategory.CreateEntry<int>("BuildLimits_Production_Level3", -1);
-            _Pref_Limit_Prod4 ??= _modCategory.CreateEntry<int>("BuildLimits_Production_Level4", -1);
-            _Pref_Limit_Prod5 ??= _modCategory.CreateEntry<int>("BuildLimits_Production_Level5", -1);
+            _Pref_Limit_Bases ??= _modCategory.CreateEntry<int>("BuildLimits_Bases",             -1);   // HQ, Nest
+            _Pref_Limit_Turrets ??= _modCategory.CreateEntry<int>("BuildLimits_Turrets",         20);   // Turrets/Spires + RadarStations
+            _Pref_Limit_Research ??= _modCategory.CreateEntry<int>("BuildLimits_Research",       -1);   // ResearchFactory, QuantumCortex
+            _Pref_Limit_Nodes ??= _modCategory.CreateEntry<int>("BuildLimits_Nodes",             -1);   // only Nodes
+            _Pref_Limit_Silos ??= _modCategory.CreateEntry<int>("BuildLimits_Silos",             -1);   // only Silos
+            _Pref_Limit_Deposits ??= _modCategory.CreateEntry<int>("BuildLimits_Deposits",       -1);   // Refinery, BioCache
+            _Pref_Limit_Prod1 ??= _modCategory.CreateEntry<int>("BuildLimits_Production_Level1", -1);   // Barracks, Lesser Spawning Cyst
+            _Pref_Limit_Prod2 ??= _modCategory.CreateEntry<int>("BuildLimits_Production_Level2", -1);   // LVF, Greater Spawning Cyst
+            _Pref_Limit_Prod3 ??= _modCategory.CreateEntry<int>("BuildLimits_Production_Level3", -1);   // HVF, Grand Spawning Cyst
+            _Pref_Limit_Prod4 ??= _modCategory.CreateEntry<int>("BuildLimits_Production_Level4", -1);   // UHVF, Colossal Spawning Cyst
+            _Pref_Limit_Prod5 ??= _modCategory.CreateEntry<int>("BuildLimits_Production_Level5", -1);   // Air Factory
         }
 
         public override void OnLateInitializeMelon()
