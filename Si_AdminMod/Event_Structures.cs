@@ -54,17 +54,6 @@ namespace SilicaAdminMod
             {
                 try
                 {
-                    if (__instance == null || __0 == null)
-                    {
-                        return true;
-                    }
-
-                    // only broadcast valid events (e.g., structure not already destroyed)
-                    if (__0.IsDestroyed)
-                    {
-                        return true;
-                    }
-
                     OnRequestDestroyStructureArgs onRequestDestroyStructureArgs = FireOnRequestDestroyStructureEvent(__0, __0.Team);
 
                     if (onRequestDestroyStructureArgs.Block)
@@ -88,13 +77,16 @@ namespace SilicaAdminMod
                     {
                         MelonLogger.Msg("Structure (" + __0.name + ") destroyed by commander on team " + __0.Team.TeamShortName);
                     }
+
+                    __0.DamageManager.SetHealth01(0f);
                 }
                 catch (Exception error)
                 {
                     HelperMethods.PrintError(error, "Failed to run StrategyMode::RPC_DestroyStructure(Prefix)");
                 }
 
-                return true;
+                // always skip the game function (errors occur for an invalid instance otherwise)
+                return false;
             }
         }
 
