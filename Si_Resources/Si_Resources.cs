@@ -34,7 +34,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(ResourceConfig), "Resource Configuration", "1.4.1", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(ResourceConfig), "Resource Configuration", "1.4.2", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 #if NET6_0
 [assembly: MelonOptionalDependencies("Admin Mod", "QList")]
@@ -59,6 +59,10 @@ namespace Si_Resources
         static MelonPreferences_Category _modCategory = null!;
         // MP_Strategy preferences
         static MelonPreferences_Entry<bool> Pref_Resources_Enable_Structure_Refunds = null!;
+        static MelonPreferences_Entry<float> Pref_Resources_Refund_TopRate = null!;
+        static MelonPreferences_Entry<float> Pref_Resources_Refund_MidRatePenalty = null!;
+        static MelonPreferences_Entry<float> Pref_Resources_Refund_JunkRatePenalty = null!;
+        static MelonPreferences_Entry<int> Pref_Resources_Refund_MinimumAmount = null!;
         static MelonPreferences_Entry<int> Pref_Resources_Centauri_StartingAmount = null!;
         static MelonPreferences_Entry<int> Pref_Resources_Sol_StartingAmount = null!;
         static MelonPreferences_Entry<int> Pref_Resources_Aliens_StartingAmount = null!;
@@ -72,6 +76,10 @@ namespace Si_Resources
         {
             _modCategory ??= MelonPreferences.CreateCategory("Silica");
             Pref_Resources_Enable_Structure_Refunds ??= _modCategory.CreateEntry<bool>("Resources_AllowStructureRefunds", true);
+            Pref_Resources_Refund_TopRate ??= _modCategory.CreateEntry<float>("Resources_Refund_TopRate", 0.875f);
+            Pref_Resources_Refund_MidRatePenalty ??= _modCategory.CreateEntry<float>("Resources_Refund_Midline_PenaltyPct", 0.125f);
+            Pref_Resources_Refund_JunkRatePenalty ??= _modCategory.CreateEntry<float>("Resources_Refund_Junk_PenaltyPct", 0.1875f);
+            Pref_Resources_Refund_MinimumAmount ??= _modCategory.CreateEntry<int>("Resources_Refund_MinimumRefundAmount", 100);
             Pref_Resources_Centauri_StartingAmount ??= _modCategory.CreateEntry<int>("Resources_Centauri_StartingAmount", defaultStrategyStartingResources);
             Pref_Resources_Sol_StartingAmount ??= _modCategory.CreateEntry<int>("Resources_Sol_StartingAmount", defaultStrategyStartingResources);
             Pref_Resources_Aliens_StartingAmount ??= _modCategory.CreateEntry<int>("Resources_Aliens_StartingAmount", defaultStrategyStartingResources);
@@ -452,24 +460,24 @@ namespace Si_Resources
 
             // find refund price based on three structured tiers
             // tier 1: building is in prestine order
-            if (structureHealthPercent > 0.96f)
+            if (structureHealthPercent > 0.96875f)
             {
                 // 90% of structure costs
-                refundAmount = structure.ObjectInfo.Cost * 0.90f;
+                refundAmount = structure.ObjectInfo.Cost * Pref_Resources_Refund_TopRate.Value;
             }
-            // tier 2: building is above max passive repair threshold -> (%HP - 15%) * resource costs
+            // tier 2: building is above max passive repair threshold -> (%HP - MidRate%) * resource costs
             else if (structureHealthPercent >= repairSetup.MaxPassiveRepairPct)
             {
-                refundAmount = structure.ObjectInfo.Cost * (structureHealthPercent - 0.12f);
+                refundAmount = structure.ObjectInfo.Cost * (structureHealthPercent - Pref_Resources_Refund_MidRatePenalty.Value);
             }
-            // tier 3: building is below max passive repair threshold -> (%HP -  5%) * resource costs
+            // tier 3: building is below max passive repair threshold -> (%HP -  Junk%) * resource costs
             else
             {
-                refundAmount = structure.ObjectInfo.Cost * (structureHealthPercent - 0.15f);
+                refundAmount = structure.ObjectInfo.Cost * (structureHealthPercent - Pref_Resources_Refund_JunkRatePenalty.Value);
             }
 
             // if it's too low then don't return anything
-            if (refundAmount < 100f)
+            if ((int)refundAmount < Pref_Resources_Refund_MinimumAmount.Value)
             {
                 return 0;
             }
