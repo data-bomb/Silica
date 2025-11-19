@@ -140,6 +140,9 @@ namespace SilicaAdminMod
                 }; // else.. continue to call ConstructionData::RequestConstructionSite
             }
 
+            // an alternative approach would be needed for il2cpp
+            #if !NET6_0
+            [HarmonyTranspiler]
             static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
             {
                 var opCodes = instructions.ToList();
@@ -159,6 +162,7 @@ namespace SilicaAdminMod
 
                 return opCodes.AsEnumerable();
             }
+            #endif
         }
 
         public static OnRequestBuildStructureArgs FireOnRequestBuildStructureEvent(ConstructionData constructionData, Structure parentStructure, Vector3 position, Quaternion rotation, bool playerInitiated)

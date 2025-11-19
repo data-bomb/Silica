@@ -21,7 +21,7 @@ using MelonLoader;
 using SilicaAdminMod;
 using System.Drawing;
 
-[assembly: MelonInfo(typeof(SiAdminMod), "Admin Mod", "2.12.00", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(SiAdminMod), "Admin Mod", "2.12.06", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 // Color.Cyan
