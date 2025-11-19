@@ -34,7 +34,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(ResourceConfig), "Resource Configuration", "1.4.0", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(ResourceConfig), "Resource Configuration", "1.4.1", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 #if NET6_0
 [assembly: MelonOptionalDependencies("Admin Mod", "QList")]
@@ -58,6 +58,7 @@ namespace Si_Resources
 
         static MelonPreferences_Category _modCategory = null!;
         // MP_Strategy preferences
+        static MelonPreferences_Entry<bool> Pref_Resources_Enable_Structure_Refunds = null!;
         static MelonPreferences_Entry<int> Pref_Resources_Centauri_StartingAmount = null!;
         static MelonPreferences_Entry<int> Pref_Resources_Sol_StartingAmount = null!;
         static MelonPreferences_Entry<int> Pref_Resources_Aliens_StartingAmount = null!;
@@ -70,6 +71,7 @@ namespace Si_Resources
         public override void OnInitializeMelon()
         {
             _modCategory ??= MelonPreferences.CreateCategory("Silica");
+            Pref_Resources_Enable_Structure_Refunds ??= _modCategory.CreateEntry<bool>("Resources_AllowStructureRefunds", true);
             Pref_Resources_Centauri_StartingAmount ??= _modCategory.CreateEntry<int>("Resources_Centauri_StartingAmount", defaultStrategyStartingResources);
             Pref_Resources_Sol_StartingAmount ??= _modCategory.CreateEntry<int>("Resources_Sol_StartingAmount", defaultStrategyStartingResources);
             Pref_Resources_Aliens_StartingAmount ??= _modCategory.CreateEntry<int>("Resources_Aliens_StartingAmount", defaultStrategyStartingResources);
@@ -401,7 +403,7 @@ namespace Si_Resources
         {
             try
             {
-                if (args == null)
+                if (!Pref_Resources_Enable_Structure_Refunds.Value || args == null)
                 {
                     return;
                 }
@@ -467,7 +469,7 @@ namespace Si_Resources
             }
 
             // if it's too low then don't return anything
-            if (refundAmount < 50f)
+            if (refundAmount < 100f)
             {
                 return 0;
             }
