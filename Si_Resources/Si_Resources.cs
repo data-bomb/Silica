@@ -34,7 +34,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(ResourceConfig), "Resource Configuration", "1.4.2", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(ResourceConfig), "Resource Configuration", "1.4.3", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 #if NET6_0
 [assembly: MelonOptionalDependencies("Admin Mod", "QList")]
@@ -77,7 +77,7 @@ namespace Si_Resources
             _modCategory ??= MelonPreferences.CreateCategory("Silica");
             Pref_Resources_Enable_Structure_Refunds ??= _modCategory.CreateEntry<bool>("Resources_AllowStructureRefunds", true);
             Pref_Resources_Refund_TopRate ??= _modCategory.CreateEntry<float>("Resources_Refund_TopRate", 0.875f);
-            Pref_Resources_Refund_MidRatePenalty ??= _modCategory.CreateEntry<float>("Resources_Refund_Midline_PenaltyPct", 0.125f);
+            Pref_Resources_Refund_MidRatePenalty ??= _modCategory.CreateEntry<float>("Resources_Refund_Midline_PenaltyPct", 0.09375f);
             Pref_Resources_Refund_JunkRatePenalty ??= _modCategory.CreateEntry<float>("Resources_Refund_Junk_PenaltyPct", 0.1875f);
             Pref_Resources_Refund_MinimumAmount ??= _modCategory.CreateEntry<int>("Resources_Refund_MinimumRefundAmount", 100);
             Pref_Resources_Centauri_StartingAmount ??= _modCategory.CreateEntry<int>("Resources_Centauri_StartingAmount", defaultStrategyStartingResources);
@@ -465,15 +465,15 @@ namespace Si_Resources
                 // 90% of structure costs
                 refundAmount = structure.ObjectInfo.Cost * Pref_Resources_Refund_TopRate.Value;
             }
-            // tier 2: building is above max passive repair threshold -> (%HP - MidRate%) * resource costs
+            // tier 2: building is above max passive repair threshold
             else if (structureHealthPercent >= repairSetup.MaxPassiveRepairPct)
             {
                 refundAmount = structure.ObjectInfo.Cost * (structureHealthPercent - Pref_Resources_Refund_MidRatePenalty.Value);
             }
-            // tier 3: building is below max passive repair threshold -> (%HP -  Junk%) * resource costs
+            // tier 3: building is below max passive repair threshold
             else
             {
-                refundAmount = structure.ObjectInfo.Cost * (structureHealthPercent - Pref_Resources_Refund_JunkRatePenalty.Value);
+                refundAmount = structure.ObjectInfo.Cost * (1.1875f*structureHealthPercent - Pref_Resources_Refund_JunkRatePenalty.Value);
             }
 
             // if it's too low then don't return anything
