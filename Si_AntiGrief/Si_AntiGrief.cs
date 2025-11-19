@@ -36,7 +36,7 @@ using System.Linq;
 using UnityEngine;
 using System.Runtime.CompilerServices;
 
-[assembly: MelonInfo(typeof(AntiGrief), "Anti-Grief", "1.5.0", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(AntiGrief), "Anti-Grief", "1.5.1", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 #if NET6_0
 [assembly: MelonOptionalDependencies("Admin Mod", "QList")]
@@ -258,6 +258,20 @@ namespace Si_AntiGrief
                 // prevent getting rid of the last barracks/lesser spawn
                 if (remainingStructures <= 1)
                 {
+                    MelonLogger.Msg(team.TeamShortName + "'s commander tried to sell the last Barracks/Lesser Spawn Cyst");
+
+                    // find if team has commander
+                    Player? commander = null;
+                    if (GameMode.CurrentGameMode is GameModeExt gameModeExt)
+                    {
+                        commander = gameModeExt.GetCommanderForTeam(team);
+                    }
+
+                    if (commander != null)
+                    {
+                        HelperMethods.ReplyToCommand_Player(commander, "tried to destroy the last ", (team.Index == (int)SiConstants.ETeam.Alien ? "Lesser Spawning Cyst" : "Barracks"));
+                    }
+
                     args.Block = true;
                 }
             }
