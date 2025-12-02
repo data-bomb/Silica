@@ -270,9 +270,13 @@ jobs:
         run: |
           mkdir -p release/dedi/Plugins
           mkdir -p release/dedi/Mods/~disabled
+          mkdir -p release/dedi/Mods/~disabled/obe
+          mkdir -p release/dedi/Mods/~disabled/unsafe
           mkdir -p release/dedi/UserData
           mkdir -p release/listen/Plugins
           mkdir -p release/listen/Mods/~disabled
+          mkdir -p release/listen/Mods/~disabled/obe
+          mkdir -p release/listen/Mods/~disabled/unsafe
           mkdir -p release/listen/UserData
           cp rungame.bat release/dedi/rungame.bat
           cp launch.bat release/dedi/launch.bat
