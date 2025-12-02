@@ -31,9 +31,8 @@ using MelonLoader;
 using SilicaAdminMod;
 using System;
 using Si_BuildLimits;
-using System.Linq;
 
-[assembly: MelonInfo(typeof(BuildLimits), "Build Limits", "0.9.9", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(BuildLimits), "Build Limits", "1.0.0", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -41,35 +40,55 @@ namespace Si_BuildLimits
 {
     public class BuildLimits : MelonMod
     {
+        const int nolimit = -1;
+
         static MelonPreferences_Category _modCategory = null!;
         static MelonPreferences_Entry<bool> _Pref_Block_BotCommanders = null!;
-        static MelonPreferences_Entry<int> _Pref_Limit_Bases = null!;
-        static MelonPreferences_Entry<int> _Pref_Limit_Turrets = null!;
-        static MelonPreferences_Entry<int> _Pref_Limit_Research = null!;
+        static MelonPreferences_Entry<int> _Pref_Limit_Bases_Humans = null!;
+        static MelonPreferences_Entry<int> _Pref_Limit_Bases_Aliens = null!;
+        static MelonPreferences_Entry<int> _Pref_Limit_Turrets_Humans = null!;
+        static MelonPreferences_Entry<int> _Pref_Limit_Turrets_Aliens = null!;
+        static MelonPreferences_Entry<int> _Pref_Limit_Research_Humans = null!;
+        static MelonPreferences_Entry<int> _Pref_Limit_Research_Alien = null!;
         static MelonPreferences_Entry<int> _Pref_Limit_Nodes = null!;
         static MelonPreferences_Entry<int> _Pref_Limit_Silos = null!;
-        static MelonPreferences_Entry<int> _Pref_Limit_Deposits = null!;
-        static MelonPreferences_Entry<int> _Pref_Limit_Prod1 = null!;
-        static MelonPreferences_Entry<int> _Pref_Limit_Prod2 = null!;
-        static MelonPreferences_Entry<int> _Pref_Limit_Prod3 = null!;
-        static MelonPreferences_Entry<int> _Pref_Limit_Prod4 = null!;
-        static MelonPreferences_Entry<int> _Pref_Limit_Prod5 = null!;
+        static MelonPreferences_Entry<int> _Pref_Limit_Deposits_Humans = null!;
+        static MelonPreferences_Entry<int> _Pref_Limit_Deposits_Aliens = null!;
+        static MelonPreferences_Entry<int> _Pref_Limit_Prod1_Humans = null!;
+        static MelonPreferences_Entry<int> _Pref_Limit_Prod1_Aliens = null!;
+        static MelonPreferences_Entry<int> _Pref_Limit_Prod2_Humans = null!;
+        static MelonPreferences_Entry<int> _Pref_Limit_Prod2_Aliens = null!;
+        static MelonPreferences_Entry<int> _Pref_Limit_Prod3_Humans = null!;
+        static MelonPreferences_Entry<int> _Pref_Limit_Prod3_Aliens = null!;
+        static MelonPreferences_Entry<int> _Pref_Limit_Prod4_Humans = null!;
+        static MelonPreferences_Entry<int> _Pref_Limit_Prod4_Aliens = null!;
+        static MelonPreferences_Entry<int> _Pref_Limit_Prod5_Humans = null!;
+        static MelonPreferences_Entry<int> _Pref_Limit_Prod5_Aliens = null!;
 
         public override void OnInitializeMelon()
         {
             _modCategory ??= MelonPreferences.CreateCategory("Silica");
             _Pref_Block_BotCommanders ??= _modCategory.CreateEntry<bool>("BuildLimits_EnforceLimitsOnAI", true);
-            _Pref_Limit_Bases ??= _modCategory.CreateEntry<int>("BuildLimits_Bases",             -1);   // HQ, Nest
-            _Pref_Limit_Turrets ??= _modCategory.CreateEntry<int>("BuildLimits_Turrets",         20);   // Turrets/Spires + RadarStations
-            _Pref_Limit_Research ??= _modCategory.CreateEntry<int>("BuildLimits_Research",       -1);   // ResearchFactory, QuantumCortex
-            _Pref_Limit_Nodes ??= _modCategory.CreateEntry<int>("BuildLimits_Nodes",             -1);   // only Nodes
-            _Pref_Limit_Silos ??= _modCategory.CreateEntry<int>("BuildLimits_Silos",             -1);   // only Silos
-            _Pref_Limit_Deposits ??= _modCategory.CreateEntry<int>("BuildLimits_Deposits",       -1);   // Refinery, BioCache
-            _Pref_Limit_Prod1 ??= _modCategory.CreateEntry<int>("BuildLimits_Production_Level1", -1);   // Barracks, Lesser Spawning Cyst
-            _Pref_Limit_Prod2 ??= _modCategory.CreateEntry<int>("BuildLimits_Production_Level2", -1);   // LVF, Greater Spawning Cyst
-            _Pref_Limit_Prod3 ??= _modCategory.CreateEntry<int>("BuildLimits_Production_Level3", -1);   // HVF, Grand Spawning Cyst
-            _Pref_Limit_Prod4 ??= _modCategory.CreateEntry<int>("BuildLimits_Production_Level4", -1);   // UHVF, Colossal Spawning Cyst
-            _Pref_Limit_Prod5 ??= _modCategory.CreateEntry<int>("BuildLimits_Production_Level5", -1);   // Air Factory
+            _Pref_Limit_Bases_Humans ??= _modCategory.CreateEntry<int>("BuildLimits_Humans_Bases",         nolimit); // HQ
+            _Pref_Limit_Bases_Aliens ??= _modCategory.CreateEntry<int>("BuildLimits_Aliens_Bases",         nolimit); // Nest
+            _Pref_Limit_Turrets_Humans ??= _modCategory.CreateEntry<int>("BuildLimits_Humans_Turrets",          15); // Turrets + RadarStations
+            _Pref_Limit_Turrets_Aliens ??= _modCategory.CreateEntry<int>("BuildLimits_Aliens_Turrets",          25); // Spires
+            _Pref_Limit_Research_Humans ??= _modCategory.CreateEntry<int>("BuildLimits_Humans_Research",   nolimit); // ResearchFactory
+            _Pref_Limit_Research_Alien ??= _modCategory.CreateEntry<int>("BuildLimits_Aliens_Research",    nolimit); // QuantumCortex
+            _Pref_Limit_Nodes ??= _modCategory.CreateEntry<int>("BuildLimits_Nodes",                       nolimit); // Nodes
+            _Pref_Limit_Silos ??= _modCategory.CreateEntry<int>("BuildLimits_Silos",                       nolimit); // Silos
+            _Pref_Limit_Deposits_Humans ??= _modCategory.CreateEntry<int>("BuildLimits_Humans_Deposits",   nolimit); // Refinery
+            _Pref_Limit_Deposits_Aliens ??= _modCategory.CreateEntry<int>("BuildLimits_Aliens_Deposits",   nolimit); // BioCache
+            _Pref_Limit_Prod1_Humans ??= _modCategory.CreateEntry<int>("BuildLimits_Humans_Production_L1", nolimit); // Barracks
+            _Pref_Limit_Prod1_Aliens ??= _modCategory.CreateEntry<int>("BuildLimits_Aliens_Production_L1", nolimit); // Lesser Spawning Cyst
+            _Pref_Limit_Prod2_Humans ??= _modCategory.CreateEntry<int>("BuildLimits_Humans_Production_L2", nolimit); // LVF
+            _Pref_Limit_Prod2_Aliens ??= _modCategory.CreateEntry<int>("BuildLimits_Aliens_Production_L2", nolimit); // Greater Spawning Cyst
+            _Pref_Limit_Prod3_Humans ??= _modCategory.CreateEntry<int>("BuildLimits_Humans_Production_L3", nolimit); // HVF
+            _Pref_Limit_Prod3_Aliens ??= _modCategory.CreateEntry<int>("BuildLimits_Aliens_Production_L3", nolimit); // Grand Spawning Cyst
+            _Pref_Limit_Prod4_Humans ??= _modCategory.CreateEntry<int>("BuildLimits_Humans_Production_L4", nolimit); // UHVF
+            _Pref_Limit_Prod4_Aliens ??= _modCategory.CreateEntry<int>("BuildLimits_Aliens_Production_L4", nolimit); // Colossal Spawning Cyst
+            _Pref_Limit_Prod5_Humans ??= _modCategory.CreateEntry<int>("BuildLimits_Humans_Production_L5", nolimit); // Air Factory
+            _Pref_Limit_Prod5_Aliens ??= _modCategory.CreateEntry<int>("BuildLimits_Aliens_Production_L5", nolimit); // (undefined)
         }
 
         public override void OnLateInitializeMelon()
@@ -117,27 +136,34 @@ namespace Si_BuildLimits
                     return;
                 }
 
-                // check for base limits (Headquarters, Nest)
-                if (_Pref_Limit_Bases.Value >= 0 && parentStructure.Team.BaseStructure == constructionData.ObjectInfo)
+                // check for Nodes
+                if (_Pref_Limit_Nodes.Value > nolimit && constructionData.ObjectInfo.StructureType == StructureType.Resource &&
+                        !constructionData.ObjectInfo.HasResourceDeposit && !constructionData.ObjectInfo.HasResourceStorage)
                 {
-                    int baseStructureCount = parentStructure.Team.GetStructureCount(constructionData.ObjectInfo);
-                    if (baseStructureCount >= _Pref_Limit_Bases.Value)
+                    int nodeStructureCount = parentStructure.Team.GetStructureCount(constructionData.ObjectInfo);
+                    if (nodeStructureCount >= _Pref_Limit_Nodes.Value)
                     {
-                        NotifyLimitsEnforced(parentStructure.Team, _Pref_Limit_Bases.Value, "Base");
+                        NotifyLimitsEnforced(parentStructure.Team, _Pref_Limit_Nodes.Value, "Node");
                         args.Block = true;
                     }
 
                     return;
                 }
-
                 
                 // check for turret limits (HeavyTurret, ThornSpire, HiveSpire, etc.) [note: includes RadarStation]
-                if (_Pref_Limit_Turrets.Value >= 0 && constructionData.ObjectInfo.StructureType == StructureType.Defense)
+                if (constructionData.ObjectInfo.StructureType == StructureType.Defense)
                 {
-                    int structureTypeCount = GetStructureTypeCount(parentStructure.Team, constructionData.ObjectInfo);
-                    if (structureTypeCount >= _Pref_Limit_Turrets.Value)
+                    int defenseStructureLimit = (parentStructure.Team.Index == (int)SiConstants.ETeam.Alien ? _Pref_Limit_Turrets_Aliens.Value : _Pref_Limit_Turrets_Humans.Value);
+
+                    if (defenseStructureLimit <= nolimit)
                     {
-                        NotifyLimitsEnforced(parentStructure.Team, _Pref_Limit_Turrets.Value, "Turret");
+                        return;
+                    }
+
+                    int structureTypeCount = GetStructureTypeCount(parentStructure.Team, constructionData.ObjectInfo);
+                    if (structureTypeCount >= defenseStructureLimit)
+                    {
+                        NotifyLimitsEnforced(parentStructure.Team, defenseStructureLimit, "Turret");
                         args.Block = true;
                     }
 
@@ -147,88 +173,137 @@ namespace Si_BuildLimits
                 // check for production limits
                 if (constructionData.ObjectInfo.StructureType == StructureType.Production)
                 {
-                    if (_Pref_Limit_Prod1.Value >= 0 && constructionData.ObjectInfo.StructureSelectionType == StructureSelectionType.Units1)
+                    if (constructionData.ObjectInfo.StructureSelectionType == StructureSelectionType.Units1)
                     {
-                        int structureSelectionTypeCount = GetStructureSelectionTypeCount(parentStructure.Team, constructionData.ObjectInfo);
-                        if (structureSelectionTypeCount >= _Pref_Limit_Prod1.Value)
+                        int productionStructureLimit = (parentStructure.Team.Index == (int)SiConstants.ETeam.Alien ? _Pref_Limit_Prod1_Aliens.Value : _Pref_Limit_Prod1_Humans.Value);
+
+                        if (productionStructureLimit <= nolimit)
                         {
-                            NotifyLimitsEnforced(parentStructure.Team, _Pref_Limit_Prod1.Value, (parentStructure.Team.Index == (int)SiConstants.ETeam.Alien ? "Lesser Spawning Cyst" : "Barracks"));
+                            return;
+                        }
+
+                        int structureSelectionTypeCount = GetStructureSelectionTypeCount(parentStructure.Team, constructionData.ObjectInfo);
+                        if (structureSelectionTypeCount >= productionStructureLimit)
+                        {
+                            NotifyLimitsEnforced(parentStructure.Team, productionStructureLimit, (parentStructure.Team.Index == (int)SiConstants.ETeam.Alien ? "Lesser Spawning Cyst" : "Barracks"));
                             args.Block = true;
                         }
 
                         return;
                     }
 
-                    if (_Pref_Limit_Prod2.Value >= 0 && constructionData.ObjectInfo.StructureSelectionType == StructureSelectionType.Units2)
+                    if (constructionData.ObjectInfo.StructureSelectionType == StructureSelectionType.Units2)
                     {
-                        int structureSelectionTypeCount = GetStructureSelectionTypeCount(parentStructure.Team, constructionData.ObjectInfo);
-                        if (structureSelectionTypeCount >= _Pref_Limit_Prod2.Value)
+                        int productionStructureLimit = (parentStructure.Team.Index == (int)SiConstants.ETeam.Alien ? _Pref_Limit_Prod2_Aliens.Value : _Pref_Limit_Prod2_Humans.Value);
+
+                        if (productionStructureLimit <= nolimit)
                         {
-                            NotifyLimitsEnforced(parentStructure.Team, _Pref_Limit_Prod2.Value, (parentStructure.Team.Index == (int)SiConstants.ETeam.Alien ? "Greater Spawning Cyst" : "Light Vehicle Factory"));
+                            return;
+                        }
+
+                        int structureSelectionTypeCount = GetStructureSelectionTypeCount(parentStructure.Team, constructionData.ObjectInfo);
+                        if (structureSelectionTypeCount >= productionStructureLimit)
+                        {
+                            NotifyLimitsEnforced(parentStructure.Team, productionStructureLimit, (parentStructure.Team.Index == (int)SiConstants.ETeam.Alien ? "Greater Spawning Cyst" : "Light Vehicle Factory"));
                             args.Block = true;
                         }
 
                         return;
                     }
 
-                    if (_Pref_Limit_Prod3.Value >= 0 && constructionData.ObjectInfo.StructureSelectionType == StructureSelectionType.Units3)
+                    if (constructionData.ObjectInfo.StructureSelectionType == StructureSelectionType.Units3)
                     {
-                        int structureSelectionTypeCount = GetStructureSelectionTypeCount(parentStructure.Team, constructionData.ObjectInfo);
-                        if (structureSelectionTypeCount >= _Pref_Limit_Prod3.Value)
+                        int productionStructureLimit = (parentStructure.Team.Index == (int)SiConstants.ETeam.Alien ? _Pref_Limit_Prod3_Aliens.Value : _Pref_Limit_Prod3_Humans.Value);
+
+                        if (productionStructureLimit <= nolimit)
                         {
-                            NotifyLimitsEnforced(parentStructure.Team, _Pref_Limit_Prod3.Value, (parentStructure.Team.Index == (int)SiConstants.ETeam.Alien ? "Grand Spawning Cyst" : "Heavy Vehicle Factory"));
+                            return;
+                        }
+
+                        int structureSelectionTypeCount = GetStructureSelectionTypeCount(parentStructure.Team, constructionData.ObjectInfo);
+                        if (structureSelectionTypeCount >= productionStructureLimit)
+                        {
+                            NotifyLimitsEnforced(parentStructure.Team, productionStructureLimit, (parentStructure.Team.Index == (int)SiConstants.ETeam.Alien ? "Grand Spawning Cyst" : "Heavy Vehicle Factory"));
                             args.Block = true;
                         }
 
                         return;
                     }
 
-                    if (_Pref_Limit_Prod4.Value >= 0 && constructionData.ObjectInfo.StructureSelectionType == StructureSelectionType.Units4)
+                    if (constructionData.ObjectInfo.StructureSelectionType == StructureSelectionType.Units4)
                     {
-                        int structureSelectionTypeCount = GetStructureSelectionTypeCount(parentStructure.Team, constructionData.ObjectInfo);
-                        if (structureSelectionTypeCount >= _Pref_Limit_Prod4.Value)
+                        int productionStructureLimit = (parentStructure.Team.Index == (int)SiConstants.ETeam.Alien ? _Pref_Limit_Prod4_Aliens.Value : _Pref_Limit_Prod4_Humans.Value);
+
+                        if (productionStructureLimit <= nolimit)
                         {
-                            NotifyLimitsEnforced(parentStructure.Team, _Pref_Limit_Prod4.Value, (parentStructure.Team.Index == (int)SiConstants.ETeam.Alien ? "Colossal Spawning Cyst" : "Ultra Heavy Vehicle Factory"));
+                            return;
+                        }
+
+                        int structureSelectionTypeCount = GetStructureSelectionTypeCount(parentStructure.Team, constructionData.ObjectInfo);
+                        if (structureSelectionTypeCount >= productionStructureLimit)
+                        {
+                            NotifyLimitsEnforced(parentStructure.Team, productionStructureLimit, (parentStructure.Team.Index == (int)SiConstants.ETeam.Alien ? "Colossal Spawning Cyst" : "Ultra Heavy Vehicle Factory"));
                             args.Block = true;
                         }
 
                         return;
                     }
 
-                    if (_Pref_Limit_Prod5.Value >= 0 && constructionData.ObjectInfo.StructureSelectionType == StructureSelectionType.Units5)
+                    if (constructionData.ObjectInfo.StructureSelectionType == StructureSelectionType.Units5)
                     {
-                        int structureSelectionTypeCount = GetStructureSelectionTypeCount(parentStructure.Team, constructionData.ObjectInfo);
-                        if (structureSelectionTypeCount >= _Pref_Limit_Prod5.Value)
+                        int productionStructureLimit = (parentStructure.Team.Index == (int)SiConstants.ETeam.Alien ? _Pref_Limit_Prod5_Aliens.Value : _Pref_Limit_Prod5_Humans.Value);
+
+                        if (productionStructureLimit <= nolimit)
                         {
-                            NotifyLimitsEnforced(parentStructure.Team, _Pref_Limit_Prod5.Value, (parentStructure.Team.Index == (int)SiConstants.ETeam.Alien ? "tbd" : "Air Factory"));
+                            return;
+                        }
+
+                        int structureSelectionTypeCount = GetStructureSelectionTypeCount(parentStructure.Team, constructionData.ObjectInfo);
+                        if (structureSelectionTypeCount >= productionStructureLimit)
+                        {
+                            NotifyLimitsEnforced(parentStructure.Team, productionStructureLimit, (parentStructure.Team.Index == (int)SiConstants.ETeam.Alien ? "tbd" : "Air Factory"));
                             args.Block = true;
                         }
-                    }
-
-                    return;
-                }
-
-                // check for research (QuantumCortex, ResearchFacility)
-                if (_Pref_Limit_Research.Value >= 0 && constructionData.ObjectInfo.StructureType == StructureType.Research)
-                {
-                    int structureTypeCount = GetStructureTypeCount(parentStructure.Team, constructionData.ObjectInfo);
-                    if (structureTypeCount >= _Pref_Limit_Research.Value)
-                    {
-                        NotifyLimitsEnforced(parentStructure.Team, _Pref_Limit_Research.Value, "Research");
-                        args.Block = true;
                     }
 
                     return;
                 }
 
                 // check for resource deposits (BioCache, Refinery)
-                if (_Pref_Limit_Deposits.Value >= 0 && constructionData.ObjectInfo.StructureType == StructureType.Resource &&
+                if (constructionData.ObjectInfo.StructureType == StructureType.Resource &&
                         constructionData.ObjectInfo.HasResourceDeposit && constructionData.ObjectInfo.HasResourceStorage)
                 {
-                    int depositStructureCount = parentStructure.Team.GetStructureCount(constructionData.ObjectInfo);
-                    if (depositStructureCount >= _Pref_Limit_Deposits.Value)
+                    int depositStructureLimit = (parentStructure.Team.Index == (int)SiConstants.ETeam.Alien ? _Pref_Limit_Deposits_Aliens.Value : _Pref_Limit_Deposits_Humans.Value);
+
+                    if (depositStructureLimit <= nolimit)
                     {
-                        NotifyLimitsEnforced(parentStructure.Team, _Pref_Limit_Deposits.Value, (parentStructure.Team.Index == (int)SiConstants.ETeam.Alien ? "BioCache" : "Refinery"));
+                        return;
+                    }
+
+                    int depositStructureCount = parentStructure.Team.GetStructureCount(constructionData.ObjectInfo);
+                    if (depositStructureCount >= depositStructureLimit)
+                    {
+                        NotifyLimitsEnforced(parentStructure.Team, depositStructureLimit, (parentStructure.Team.Index == (int)SiConstants.ETeam.Alien ? "BioCache" : "Refinery"));
+                        args.Block = true;
+                    }
+
+                    return;
+                }
+
+                // check for research (QuantumCortex, ResearchFacility)
+                if (constructionData.ObjectInfo.StructureType == StructureType.Research)
+                {
+                    int researchStructureLimit = (parentStructure.Team.Index == (int)SiConstants.ETeam.Alien ? _Pref_Limit_Research_Alien.Value : _Pref_Limit_Research_Humans.Value);
+
+                    if (researchStructureLimit <= nolimit)
+                    {
+                        return;
+                    }
+
+                    int structureTypeCount = GetStructureTypeCount(parentStructure.Team, constructionData.ObjectInfo);
+                    if (structureTypeCount >= researchStructureLimit)
+                    {
+                        NotifyLimitsEnforced(parentStructure.Team, researchStructureLimit, "Research");
                         args.Block = true;
                     }
 
@@ -236,7 +311,7 @@ namespace Si_BuildLimits
                 }
 
                 // check for Silos
-                if (_Pref_Limit_Silos.Value >= 0 && constructionData.ObjectInfo.StructureType == StructureType.Resource &&
+                if (_Pref_Limit_Silos.Value > nolimit && constructionData.ObjectInfo.StructureType == StructureType.Resource &&
                         !constructionData.ObjectInfo.HasResourceDeposit && constructionData.ObjectInfo.HasResourceStorage)
                 {
                     int siloStructureCount = parentStructure.Team.GetStructureCount(constructionData.ObjectInfo);
@@ -249,14 +324,20 @@ namespace Si_BuildLimits
                     return;
                 }
 
-                // check for Nodes
-                if (_Pref_Limit_Nodes.Value >= 0 && constructionData.ObjectInfo.StructureType == StructureType.Resource && 
-                        !constructionData.ObjectInfo.HasResourceDeposit && !constructionData.ObjectInfo.HasResourceStorage)
+                // check for base limits (Headquarters, Nest)
+                if (parentStructure.Team.BaseStructure == constructionData.ObjectInfo)
                 {
-                    int nodeStructureCount = parentStructure.Team.GetStructureCount(constructionData.ObjectInfo);
-                    if (nodeStructureCount >= _Pref_Limit_Nodes.Value)
+                    int baseStructureLimit = (parentStructure.Team.Index == (int)SiConstants.ETeam.Alien ? _Pref_Limit_Bases_Aliens.Value : _Pref_Limit_Bases_Humans.Value);
+
+                    if (baseStructureLimit <= nolimit)
                     {
-                        NotifyLimitsEnforced(parentStructure.Team, _Pref_Limit_Nodes.Value, "Node");
+                        return;
+                    }
+
+                    int baseStructureCount = parentStructure.Team.GetStructureCount(constructionData.ObjectInfo);
+                    if (baseStructureCount >= baseStructureLimit)
+                    {
+                        NotifyLimitsEnforced(parentStructure.Team, baseStructureLimit, "Base");
                         args.Block = true;
                     }
 
