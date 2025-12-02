@@ -40,7 +40,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.8.8", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.8.9", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 #if NET6_0
 [assembly: MelonOptionalDependencies("Admin Mod", "QList")]
@@ -662,12 +662,9 @@ namespace Si_Logging
                     }
 
                     Player attackerPlayer = attackerNetComp.OwnerPlayer;
-                    if (attackerPlayer == null)
-                    {
-                        return;
-                    }
+                    bool isAttackerHuman = (attackerPlayer != null);
 
-                    if (__0.Team == null || attackerPlayer.Team == null)
+                    if (__0.Team == null || attackerBase.Team == null)
                     {
                         return;
                     }
@@ -677,8 +674,8 @@ namespace Si_Logging
                     {
                         return;
                     }
-
-                    string playerEntry = AddPlayerLogEntry(attackerPlayer);
+                    
+                    string playerEntry = (isAttackerHuman ? AddPlayerLogEntry(attackerPlayer) : AddAIAttackerLogEntry(__1, attackerBase.Team));
                     string structName = GetStructureName(__0);
                     string structTeam = __0.Team.TeamShortName;
                     string weapon = GetNameFromObject(__1);
@@ -689,10 +686,10 @@ namespace Si_Logging
 
                     if (Pref_Log_PlayerConsole_Enable.Value)
                     {
-                        string playerPretty = AddPlayerConsoleEntry(attackerPlayer);
+                        string playerPretty = (isAttackerHuman ? AddPlayerConsoleEntry(attackerPlayer) : AddAIConsoleEntry());
                         string type = (__0.OwnerConstructionSite == null ? "structure" : "construction site");
 
-                        HelperMethods.SendConsoleMessageToTeam(attackerPlayer.Team, $"{playerPretty} ({weapon}) destroyed a {type} ({HelperMethods.GetTeamColor(__0.Team)}{structName}</color>)");
+                        HelperMethods.SendConsoleMessageToTeam(attackerBase.Team, $"{playerPretty} ({weapon}) destroyed a {type} ({HelperMethods.GetTeamColor(__0.Team)}{structName}</color>)");
                     }
                 }
                 catch (Exception error)
