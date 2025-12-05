@@ -40,7 +40,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.8.9", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.8.10", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 #if NET6_0
 [assembly: MelonOptionalDependencies("Admin Mod", "QList")]
@@ -716,9 +716,9 @@ namespace Si_Logging
                     {
                         Team structureTeam = __0.Team;
                         int tier = getHighestTechTier(structureTeam);
-                        if (tier != currTiers[structureTeam.name])
+                        if (tier != currentTechTier[structureTeam.Index])
                         {
-                            currTiers[structureTeam.name] = tier;
+                            currentTechTier[structureTeam.Index] = tier;
                             LogTierChange(structureTeam, tier);
                         }
                     }
@@ -1007,23 +1007,17 @@ namespace Si_Logging
         }
 
         // 061. Team Objectives/Actions - Research Tier
-        public static Dictionary<string, int> currTiers = new Dictionary<string, int>();
+        public static int[] currentTechTier = new int[SiConstants.MaxPlayableTeams];
         public static int getHighestTechTier(Team team)
         {
-            for (int i = 4; i > 0; i--)
-            {
-                int count = team.GetTechnologyTierStructureCount(i);
-                if (count > 0) { return i; }
-            }
-
-            return 0;
+            return team.TechnologyTier;
         }
 
-        public static void initializeRound(ref Dictionary<string, int> tiers)
+        public static void initializeRound(ref int[] tiers)
         {
             for (int i = 0; i < Team.NumTeams; i++)
             {
-                tiers[Team.Teams[i].name] = 0;
+                tiers[Team.Teams[i].Index] = 0;
                 teamResourcesCollected[i] = 0;
             }
         }
@@ -1041,9 +1035,9 @@ namespace Si_Logging
                 {
                     Team siteTeam = constructionSite.Team;
                     int tier = getHighestTechTier(siteTeam);
-                    if (tier != currTiers[siteTeam.name])
+                    if (tier != currentTechTier[siteTeam.Index])
                     {
-                        currTiers[siteTeam.name] = tier;
+                        currentTechTier[siteTeam.Index] = tier;
                         LogTierChange(siteTeam, tier);
                     }
                 } 
@@ -1076,7 +1070,7 @@ namespace Si_Logging
                     
                     PrintLogLine($"World triggered \"Round_Start\" (gamemode \"{gamemode}\") (gametype \"{gametype}\")");
 
-                    initializeRound(ref currTiers);
+                    initializeRound(ref currentTechTier);
                     firedRoundEndOnce = false;
                 }
                 catch (Exception error)
