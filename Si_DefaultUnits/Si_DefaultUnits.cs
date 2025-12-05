@@ -36,7 +36,7 @@ using SilicaAdminMod;
 using System.Linq;
 using System.Runtime.CompilerServices;
 
-[assembly: MelonInfo(typeof(DefaultUnits), "Default Spawn Units", "1.0.6", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(DefaultUnits), "Default Spawn Units", "1.0.7", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 #if NET6_0
 [assembly: MelonOptionalDependencies("Admin Mod", "QList")]
@@ -162,7 +162,7 @@ namespace Si_DefaultUnits
                     }
 
                     // update the tech tier
-                    teamTechTiers[playerTeam.Index] = playerTeam.CurrentTechnologyTier;
+                    teamTechTiers[playerTeam.Index] = playerTeam.TechnologyTier;
 
                     BaseTeamSetup teamSetup = __instance.GetTeamSetup(playerTeam);
                     if (teamSetup == null)
@@ -218,12 +218,12 @@ namespace Si_DefaultUnits
                             continue;
                         }
 
-                        if (Team.Teams[i].CurrentTechnologyTier != 0)
+                        if (Team.Teams[i].TechnologyTier != 0)
                         {
                             MelonLogger.Warning("Manually resetting tech tier level to 0 for team: " + Team.Teams[i].TeamName);
 
                             #if NET6_0
-                            Team.Teams[i].CurrentTechnologyTier = 0;
+                            Team.Teams[i].TechnologyTier = 0;
                             #else
                             Type teamType = typeof(Team);
                             PropertyInfo currentTechTierProperty = teamType.GetProperty("CurrentTechnologyTier");
@@ -246,7 +246,7 @@ namespace Si_DefaultUnits
                 return false;
             }
 
-            return team.CurrentTechnologyTier != teamTechTiers[team.Index];
+            return team.TechnologyTier != teamTechTiers[team.Index];
         }
 
         static ObjectInfo? GetPlayerSpawnObjInfo(Team team)
@@ -254,14 +254,14 @@ namespace Si_DefaultUnits
             string desiredSpawn = GetDesiredSpawnConfig(team);
             if (desiredSpawn.Length == 0)
             {
-                MelonLogger.Warning("Could not find valid spawn string for team " + team.TeamName + " and tech tier " + team.CurrentTechnologyTier.ToString());
+                MelonLogger.Warning("Could not find valid spawn string for team " + team.TeamName + " and tech tier " + team.TechnologyTier.ToString());
                 return null;
             }
 
             ObjectInfo? updateObject = GetSpawnObject(desiredSpawn);
             if (updateObject == null)
             {
-                MelonLogger.Warning("Could not generate default spawn objectinfo for team " + team.TeamName + " and tech tier " + team.CurrentTechnologyTier.ToString());
+                MelonLogger.Warning("Could not generate default spawn objectinfo for team " + team.TeamName + " and tech tier " + team.TechnologyTier.ToString());
                 return null;
             }
 
