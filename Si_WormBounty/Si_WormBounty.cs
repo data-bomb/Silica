@@ -1,6 +1,6 @@
 ﻿/*
 Silica Worm Bounty
-Copyright (C) 2024 by databomb
+Copyright (C) 2024-2025 by databomb
 
 * Description *
 Allows players who kill a Great Worm to receive a bounty, and allows
@@ -37,7 +37,7 @@ using UnityEngine;
 using Si_WormBounty;
 
 
-[assembly: MelonInfo(typeof(WormBounty), "Worm Bounty", "1.1.1", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(WormBounty), "Worm Bounty", "1.1.2", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -239,7 +239,7 @@ namespace Si_WormBounty
         // map the technology tier to a multiplier between 1 and 3
         private static float FindTechScalingFactor(Team team)
         {
-            float techTierPercentage = (float)team.CurrentTechnologyTier / (float)team.MaximumTechnologyTier;
+            float techTierPercentage = (float)team.TechnologyTier / (float)team.MaximumTechnologyTier;
             return 1f + techTierPercentage * (2f);
         }
 
