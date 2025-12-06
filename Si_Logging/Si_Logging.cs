@@ -40,7 +40,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.8.10", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.8.11", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 #if NET6_0
 [assembly: MelonOptionalDependencies("Admin Mod", "QList")]
@@ -425,7 +425,7 @@ namespace Si_Logging
             if (Pref_Log_PlayerConsole_Enable.Value)
             {
                 string playerPretty = AddPlayerConsoleEntry(player);
-                string action = (oldTeam == null ? "joined team " : "changed to team ");
+                string action = (oldTeam == null ? "joined team" : "changed to team");
 
                 HelperMethods.SendConsoleMessage($"{playerPretty} {action} {HelperMethods.GetTeamColor(newTeam)}{newTeam.TeamShortName}</color>");
             }
