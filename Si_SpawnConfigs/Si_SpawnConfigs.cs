@@ -1,6 +1,6 @@
 ﻿/*
 Silica Spawn Configuration System
-Copyright (C) 2024 by databomb
+Copyright (C) 2024-2025 by databomb
 
 * Description *
 For Silica listen servers, allows admins to build configs of pre-built
@@ -38,7 +38,7 @@ using System.Linq;
 using System.IO;
 using Newtonsoft.Json;
 
-[assembly: MelonInfo(typeof(SpawnConfigs), "Admin Spawn Configs", "0.9.3", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(SpawnConfigs), "Admin Spawn Configs", "0.9.4", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -91,6 +91,12 @@ namespace Si_SpawnConfigs
             }
 
             public int Resources
+            {
+                get;
+                set;
+            }
+
+            public int TechTier
             {
                 get;
                 set;
@@ -708,16 +714,8 @@ namespace Si_SpawnConfigs
                         Structure thisStructure = Structure.GetStructureByNetID(netID);
                         if (thisStructure != null)
                         {
-                            thisStructure.StructureTechnologyTier = (int)spawnEntry.TechTier;
-
-#if NET6_0
-                            thisStructure.RPC_SynchTechnologyTier();
-#else
-                            Type structureType = typeof(Structure);
-                            MethodInfo synchTechMethod = structureType.GetMethod("RPC_SynchTechnologyTier");
-
-                            synchTechMethod.Invoke(thisStructure, null);
-#endif
+                            Team.Teams[spawnEntry.TeamIndex].TechnologyTier = (int)spawnEntry.TechTier;
+                            thisStructure.UpdateTechnologyTier();
                         }
                     }
 
@@ -790,7 +788,8 @@ namespace Si_SpawnConfigs
                 TeamSpawn thisTeamSpawn = new TeamSpawn
                 {
                     Resources = team.StartingResources,
-                    TeamIndex = team.Index
+                    TeamIndex = team.Index,
+                    TechTier = team.TechnologyTier
                 };
                 spawnSetup.Teams.Add(thisTeamSpawn);
 
@@ -831,9 +830,9 @@ namespace Si_SpawnConfigs
                     }
 
                     // if there's a non-default tech tier
-                    if (structure.StructureTechnologyTier > 0)
+                    if (team.TechnologyTier > 0)
                     {
-                        thisSpawnEntry.TechTier = structure.StructureTechnologyTier;
+                        thisSpawnEntry.TechTier = team.TechnologyTier;
                     }
 
                     if (structure.IsResourceHolder)
