@@ -36,7 +36,7 @@ using System.Linq;
 using UnityEngine;
 using System.Runtime.CompilerServices;
 
-[assembly: MelonInfo(typeof(AntiGrief), "Anti-Grief", "1.5.1", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(AntiGrief), "Anti-Grief", "1.5.2", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 #if NET6_0
 [assembly: MelonOptionalDependencies("Admin Mod", "QList")]
@@ -54,6 +54,7 @@ namespace Si_AntiGrief
         static MelonPreferences_Entry<bool> _StructureAntiGrief_IgnoreNodes = null!;
         static MelonPreferences_Entry<bool> _BlockShrimpControllers = null!;
         static MelonPreferences_Entry<bool> _BlockCommanderRemovingLastSpawn = null!;
+        static MelonPreferences_Entry<bool> _BlockCommanderRemovingLastResearch = null!;
 
         static uint[] playerTransferCount = new uint[] {};
 
@@ -67,6 +68,7 @@ namespace Si_AntiGrief
             _StructureAntiGrief_IgnoreNodes ??= _modCategory.CreateEntry<bool>("Grief_IgnoreFriendlyNodesDestroyed", true);
             _BlockShrimpControllers ??= _modCategory.CreateEntry<bool>("Grief_BlockShrimpTakeOver", false);
             _BlockCommanderRemovingLastSpawn ??= _modCategory.CreateEntry<bool>("Grief_BlockRemoveLastSpawn", true);
+            _BlockCommanderRemovingLastResearch ??= _modCategory.CreateEntry<bool>("Grief_BlockRemoveLastResearch", true);
         }
 
         public override void OnSceneWasLoaded(int buildIndex, string sceneName)
@@ -231,7 +233,7 @@ namespace Si_AntiGrief
         {
             try
             {
-                if (!_BlockCommanderRemovingLastSpawn.Value || args == null)
+                if (args == null)
                 {
                     return;
                 }
@@ -244,35 +246,35 @@ namespace Si_AntiGrief
                     return;
                 }
 
-                MelonLogger.Msg("OnRequestDestroyStructure SelectionType: " + structure.ObjectInfo.StructureSelectionType);
+                MelonLogger.Msg("OnRequestDestroyStructure StructureType: " + structure.ObjectInfo.StructureType + " SelectionType: " + structure.ObjectInfo.StructureSelectionType);
 
-                // did the commander try and sell a barracks/lesser spawn?
-                if (structure.ObjectInfo.StructureSelectionType != StructureSelectionType.Units1)
+                // did the commander try and sell a barracks/lesser spawn or research facility?
+                if ((_BlockCommanderRemovingLastSpawn.Value && structure.ObjectInfo.StructureSelectionType == StructureSelectionType.Units1) || 
+                    (_BlockCommanderRemovingLastResearch.Value && structure.ObjectInfo.StructureType == StructureType.Research))
                 {
-                    return;
-                }
+                    int remainingStructures = team.GetStructureCount(structure.ObjectInfo);
+                    MelonLogger.Msg("OnRequestDestroyStructure Remaining Structures: " + remainingStructures);
 
-                int remainingStructures = team.GetStructureCount(structure.ObjectInfo);
-                MelonLogger.Msg("OnRequestDestroyStructure Remaining Structures: " + remainingStructures);
-
-                // prevent getting rid of the last barracks/lesser spawn
-                if (remainingStructures <= 1)
-                {
-                    MelonLogger.Msg(team.TeamShortName + "'s commander tried to sell the last Barracks/Lesser Spawn Cyst");
-
-                    // find if team has commander
-                    Player? commander = null;
-                    if (GameMode.CurrentGameMode is GameModeExt gameModeExt)
+                    // prevent getting rid of the last structure
+                    if (remainingStructures <= 1)
                     {
-                        commander = gameModeExt.GetCommanderForTeam(team);
+                        MelonLogger.Msg(team.TeamShortName + "'s commander tried to sell the last structure: ", structure.ObjectInfo.DisplayName);
+
+                        // find if team has commander
+                        Player? commander = null;
+                        if (GameMode.CurrentGameMode is GameModeExt gameModeExt)
+                        {
+                            commander = gameModeExt.GetCommanderForTeam(team);
+                        }
+
+                        if (commander != null)
+                        {
+                            HelperMethods.ReplyToCommand_Player(commander, "tried to destroy the last ", structure.ObjectInfo.DisplayName);
+                        }
+
+                        args.Block = true;
                     }
 
-                    if (commander != null)
-                    {
-                        HelperMethods.ReplyToCommand_Player(commander, "tried to destroy the last ", (team.Index == (int)SiConstants.ETeam.Alien ? "Lesser Spawning Cyst" : "Barracks"));
-                    }
-
-                    args.Block = true;
                 }
             }
             catch (Exception error)
