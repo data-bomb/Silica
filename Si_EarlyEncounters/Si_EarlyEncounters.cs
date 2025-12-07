@@ -36,7 +36,7 @@ using Si_EarlyEncounters;
 using System.Collections.Generic;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(EarlyEncounters), "Early Encounters", "0.9.5", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(EarlyEncounters), "Early Encounters", "0.9.6", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -175,7 +175,7 @@ namespace Si_EarlyEncounters
                     Unit? wormUnit = wormObject.GetBaseGameObject() as Unit;
                     if (wormUnit == null)
                     {
-                        return "Worm";
+                        return "a Worm";
                     }
                     wormUnit.OnAttackOrder(target, target.transform.position, AgentMoveSpeed.Fast, true);
                     return "a Worm";
@@ -184,9 +184,7 @@ namespace Si_EarlyEncounters
 
         private static void SpawnRandomCrate()
         {
-            float x_coord = UnityEngine.Random.Range(0f, 1f);
-            float y_coord = UnityEngine.Random.Range(0f, 1f);
-            Vector2 mapPercentages = new Vector2(x_coord, y_coord);
+            Vector2 mapPercentages = new Vector2(UnityEngine.Random.Range(0f, 1f), UnityEngine.Random.Range(0f, 1f));
             Vector2 mapCoords = GetWorldMapPositionFromPercentage(mapPercentages);
             Vector3 finalPosition = GetFinalWorldMapPosition(mapCoords);
             string crateTypeName = crateSpawnNames[UnityEngine.Random.Range(0, crateSpawnNames.Length)];
@@ -266,18 +264,18 @@ namespace Si_EarlyEncounters
                         return;
                     }
 
+                    // avoid handling anything but the containers opening. 
+                    if (!__instance.NetworkComponent.Owner.ObjectInfo.DisplayName.Equals("Container"))
+                    {
+                        return;
+                    }
+
                     // avoid any AI-controlled units
                     if (__1.NetworkComponent.OwnerPlayer == null)
                     {
                         // destroy crate
                         UnityEngine.Object.Destroy(__instance.NetworkComponent.gameObject);
 
-                        return;
-                    }
-
-                    // avoid handling anything but the containers opening. 
-                    if (!__instance.NetworkComponent.Owner.ObjectInfo.DisplayName.Equals("Container"))
-                    {
                         return;
                     }
 
