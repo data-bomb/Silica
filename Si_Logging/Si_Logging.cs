@@ -39,8 +39,9 @@ using System.Linq;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
+using static MelonLoader.MelonLogger;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.8.11", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.8.12", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 #if NET6_0
 [assembly: MelonOptionalDependencies("Admin Mod", "QList")]
@@ -1069,6 +1070,7 @@ namespace Si_Logging
                     string gametype = GetGameType(gameModeInstance);
                     
                     PrintLogLine($"World triggered \"Round_Start\" (gamemode \"{gamemode}\") (gametype \"{gametype}\")");
+                    LogStartingStructures();
 
                     initializeRound(ref currentTechTier);
                     firedRoundEndOnce = false;
@@ -1076,6 +1078,21 @@ namespace Si_Logging
                 catch (Exception error)
                 {
                     HelperMethods.PrintError(error, "Failed to run OnGameStarted");
+                }
+            }
+        }
+
+        public static void LogStartingStructures()
+        {
+            foreach (Structure structure in Structure.Structures)
+            {
+                if (structure.Team.BaseStructure == structure.ObjectInfo)
+                {
+                    string teamName = GetTeamName(structure.Team);
+                    string structName = GetStructureName(structure);
+                    string position = GetLogPosition(structure.transform.position);
+
+                    PrintLogLine($"Team \"{teamName}\" triggered \"construction_complete\" (building_name \"{structName}\") (building_position \"{position}\")");
                 }
             }
         }
