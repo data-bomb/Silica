@@ -34,7 +34,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(ResourceConfig), "Resource Configuration", "1.4.3", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(ResourceConfig), "Resource Configuration", "1.4.4", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 #if NET6_0
 [assembly: MelonOptionalDependencies("Admin Mod", "QList")]
@@ -457,23 +457,31 @@ namespace Si_Resources
 
             float refundAmount = 0f;
             float structureHealthPercent = structure.DamageManager.Health01;
+            int baseCost = structure.ObjectInfo.Cost;
+
+            // check for human refinery structures
+            if (structure.Team.Index != (int)SiConstants.ETeam.Alien && structure.ObjectInfo.StructureType == StructureType.Resource && structure.ObjectInfo.HasResourceDeposit)
+            {
+                // reduce base cost so a refund is not the cheapest option for new harvester units
+                baseCost = (int)(baseCost * 0.25);
+            }
 
             // find refund price based on three structured tiers
             // tier 1: building is in prestine order
             if (structureHealthPercent > 0.96875f)
             {
                 // 90% of structure costs
-                refundAmount = structure.ObjectInfo.Cost * Pref_Resources_Refund_TopRate.Value;
+                refundAmount = baseCost * Pref_Resources_Refund_TopRate.Value;
             }
             // tier 2: building is above max passive repair threshold
             else if (structureHealthPercent >= repairSetup.MaxPassiveRepairPct)
             {
-                refundAmount = structure.ObjectInfo.Cost * (structureHealthPercent - Pref_Resources_Refund_MidRatePenalty.Value);
+                refundAmount = baseCost * (structureHealthPercent - Pref_Resources_Refund_MidRatePenalty.Value);
             }
             // tier 3: building is below max passive repair threshold
             else
             {
-                refundAmount = structure.ObjectInfo.Cost * (1.1875f*structureHealthPercent - Pref_Resources_Refund_JunkRatePenalty.Value);
+                refundAmount = baseCost * (1.1875f*structureHealthPercent - Pref_Resources_Refund_JunkRatePenalty.Value);
             }
 
             // if it's too low then don't return anything
