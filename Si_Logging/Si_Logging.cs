@@ -41,7 +41,7 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using static MelonLoader.MelonLogger;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.8.12", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.8.13", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 #if NET6_0
 [assembly: MelonOptionalDependencies("Admin Mod", "QList")]
@@ -1086,6 +1086,11 @@ namespace Si_Logging
         {
             foreach (Structure structure in Structure.Structures)
             {
+                if (structure == null)
+                {
+                    continue;
+                }
+
                 if (structure.Team.BaseStructure == structure.ObjectInfo)
                 {
                     string teamName = GetTeamName(structure.Team);
