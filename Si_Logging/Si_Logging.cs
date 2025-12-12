@@ -39,8 +39,9 @@ using System.Linq;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
+using static MelonLoader.MelonLogger;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.8.4", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.8.12", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 #if NET6_0
 [assembly: MelonOptionalDependencies("Admin Mod", "QList")]
@@ -114,7 +115,8 @@ namespace Si_Logging
 
             //subscribing to the event
             Event_Roles.OnRoleChanged += OnRoleChanged;
-            Event_Netcode.OnRequestPlayerChat += OnRequestPlayerChat;
+            Event_Chat.OnRequestPlayerChat += OnRequestPlayerChat;
+            Event_Structures.OnCommanderDestroyedStructure += OnCommanderDestroyedStructure_Log;
 
             #if NET6_0
             bool QListLoaded = RegisteredMelons.Any(m => m.Info.Name == "QList");
@@ -424,7 +426,7 @@ namespace Si_Logging
             if (Pref_Log_PlayerConsole_Enable.Value)
             {
                 string playerPretty = AddPlayerConsoleEntry(player);
-                string action = (oldTeam == null ? "joined team " : "changed to team ");
+                string action = (oldTeam == null ? "joined team" : "changed to team");
 
                 HelperMethods.SendConsoleMessage($"{playerPretty} {action} {HelperMethods.GetTeamColor(newTeam)}{newTeam.TeamShortName}</color>");
             }
@@ -661,12 +663,9 @@ namespace Si_Logging
                     }
 
                     Player attackerPlayer = attackerNetComp.OwnerPlayer;
-                    if (attackerPlayer == null)
-                    {
-                        return;
-                    }
+                    bool isAttackerHuman = (attackerPlayer != null);
 
-                    if (__0.Team == null || attackerPlayer.Team == null)
+                    if (__0.Team == null || attackerBase.Team == null)
                     {
                         return;
                     }
@@ -676,8 +675,8 @@ namespace Si_Logging
                     {
                         return;
                     }
-
-                    string playerEntry = AddPlayerLogEntry(attackerPlayer);
+                    
+                    string playerEntry = (isAttackerHuman ? AddPlayerLogEntry(attackerPlayer) : AddAIAttackerLogEntry(__1, attackerBase.Team));
                     string structName = GetStructureName(__0);
                     string structTeam = __0.Team.TeamShortName;
                     string weapon = GetNameFromObject(__1);
@@ -688,10 +687,10 @@ namespace Si_Logging
 
                     if (Pref_Log_PlayerConsole_Enable.Value)
                     {
-                        string playerPretty = AddPlayerConsoleEntry(attackerPlayer);
+                        string playerPretty = (isAttackerHuman ? AddPlayerConsoleEntry(attackerPlayer) : AddAIConsoleEntry());
                         string type = (__0.OwnerConstructionSite == null ? "structure" : "construction site");
 
-                        HelperMethods.SendConsoleMessageToTeam(attackerPlayer.Team, $"{playerPretty} ({weapon}) destroyed a {type} ({HelperMethods.GetTeamColor(__0.Team)}{structName}</color>)");
+                        HelperMethods.SendConsoleMessageToTeam(attackerBase.Team, $"{playerPretty} ({weapon}) destroyed a {type} ({HelperMethods.GetTeamColor(__0.Team)}{structName}</color>)");
                     }
                 }
                 catch (Exception error)
@@ -718,9 +717,9 @@ namespace Si_Logging
                     {
                         Team structureTeam = __0.Team;
                         int tier = getHighestTechTier(structureTeam);
-                        if (tier != currTiers[structureTeam.name])
+                        if (tier != currentTechTier[structureTeam.Index])
                         {
-                            currTiers[structureTeam.name] = tier;
+                            currentTechTier[structureTeam.Index] = tier;
                             LogTierChange(structureTeam, tier);
                         }
                     }
@@ -759,6 +758,43 @@ namespace Si_Logging
                 {
                     HelperMethods.PrintError(error, "Failed to run OnResourcesChanged");
                 }
+            }
+        }
+
+        // 061. Team Objectives/Actions - Structure Deletion
+        public void OnCommanderDestroyedStructure_Log(object? sender, OnCommanderDestroyedStructureArgs args)
+        {
+            try
+            {
+                if (args == null)
+                {
+                    return;
+                }
+
+                Structure structure = args.Structure;
+                Team team = args.Team;
+
+                if (structure == null || team == null)
+                {
+                    return;
+                }
+
+                string teamName = GetTeamName(team);
+                string structName = GetStructureName(structure);
+                string position = GetLogPosition(structure.transform.position);
+
+                PrintLogLine($"Team \"{teamName}\" triggered \"structure_sold\" (building_name \"{structName}\") (building_position \"{position}\")");
+
+                if (Pref_Log_PlayerConsole_Enable.Value)
+                {
+                    string teamPretty = GetTeamName(team);
+
+                    HelperMethods.SendConsoleMessageToTeam(team, $"{teamPretty} sold a structure ({HelperMethods.GetTeamColor(team)}{structName}</color>)");
+                }
+            }
+            catch (Exception error)
+            {
+                HelperMethods.PrintError(error, "Failed to run OnCommanderDestroyedStructure_Log");
             }
         }
 
@@ -972,23 +1008,17 @@ namespace Si_Logging
         }
 
         // 061. Team Objectives/Actions - Research Tier
-        public static Dictionary<string, int> currTiers = new Dictionary<string, int>();
+        public static int[] currentTechTier = new int[SiConstants.MaxPlayableTeams];
         public static int getHighestTechTier(Team team)
         {
-            for (int i = 4; i > 0; i--)
-            {
-                int count = team.GetTechnologyTierStructureCount(i);
-                if (count > 0) { return i; }
-            }
-
-            return 0;
+            return team.TechnologyTier;
         }
 
-        public static void initializeRound(ref Dictionary<string, int> tiers)
+        public static void initializeRound(ref int[] tiers)
         {
             for (int i = 0; i < Team.NumTeams; i++)
             {
-                tiers[Team.Teams[i].name] = 0;
+                tiers[Team.Teams[i].Index] = 0;
                 teamResourcesCollected[i] = 0;
             }
         }
@@ -1006,9 +1036,9 @@ namespace Si_Logging
                 {
                     Team siteTeam = constructionSite.Team;
                     int tier = getHighestTechTier(siteTeam);
-                    if (tier != currTiers[siteTeam.name])
+                    if (tier != currentTechTier[siteTeam.Index])
                     {
-                        currTiers[siteTeam.name] = tier;
+                        currentTechTier[siteTeam.Index] = tier;
                         LogTierChange(siteTeam, tier);
                     }
                 } 
@@ -1040,13 +1070,29 @@ namespace Si_Logging
                     string gametype = GetGameType(gameModeInstance);
                     
                     PrintLogLine($"World triggered \"Round_Start\" (gamemode \"{gamemode}\") (gametype \"{gametype}\")");
+                    LogStartingStructures();
 
-                    initializeRound(ref currTiers);
+                    initializeRound(ref currentTechTier);
                     firedRoundEndOnce = false;
                 }
                 catch (Exception error)
                 {
                     HelperMethods.PrintError(error, "Failed to run OnGameStarted");
+                }
+            }
+        }
+
+        public static void LogStartingStructures()
+        {
+            foreach (Structure structure in Structure.Structures)
+            {
+                if (structure.Team.BaseStructure == structure.ObjectInfo)
+                {
+                    string teamName = GetTeamName(structure.Team);
+                    string structName = GetStructureName(structure);
+                    string position = GetLogPosition(structure.transform.position);
+
+                    PrintLogLine($"Team \"{teamName}\" triggered \"construction_complete\" (building_name \"{structName}\") (building_position \"{position}\")");
                 }
             }
         }

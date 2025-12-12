@@ -1,6 +1,6 @@
 ﻿/*
 Silica Admin Mod
-Copyright (C) 2024 by databomb
+Copyright (C) 2024-2025 by databomb
 
 * License *
 This program is free software: you can redistribute it and/or modify
@@ -53,6 +53,90 @@ namespace SilicaAdminMod
         }
 
         public bool AsDriver
+        {
+            get;
+            set;
+        }
+
+        public bool Block
+        {
+            get;
+            set;
+        }
+    }
+
+    public class OnCommanderDestroyedStructureArgs : EventArgs
+    {
+        private Structure _structure = null!;
+        private Team _team = null!;
+
+        public Structure Structure
+        {
+            get => _structure;
+            set => _structure = value ?? throw new ArgumentNullException("Structure is required.");
+        }
+
+        public Team Team
+        {
+            get => _team;
+            set => _team = value ?? throw new ArgumentNullException("Team is required.");
+        }
+    }
+
+    public class OnRequestDestroyStructureArgs : EventArgs
+    {
+        private Structure _structure = null!;
+        private Team _team = null!;
+
+        public Structure Structure
+        {
+            get => _structure;
+            set => _structure = value ?? throw new ArgumentNullException("Structure is required.");
+        }
+
+        public Team Team
+        {
+            get => _team;
+            set => _team = value ?? throw new ArgumentNullException("Team is required.");
+        }
+
+        public bool Block
+        {
+            get;
+            set;
+        }
+    }
+
+    public class OnRequestBuildStructureArgs : EventArgs
+    {
+        private ConstructionData _constructionData = null!;
+        private Structure _structure = null!;
+
+        public Structure ParentStructure
+        {
+            get => _structure;
+            set => _structure = value ?? throw new ArgumentNullException("Structure is required.");
+        }
+
+        public ConstructionData ConstructionData
+        {
+            get => _constructionData;
+            set => _constructionData = value ?? throw new ArgumentNullException("ConstructionData is required.");
+        }
+
+        public Vector3 Position
+        {
+            get;
+            set;
+        }
+
+        public Quaternion Rotation
+        {
+            get;
+            set;
+        }
+
+        public bool PlayerInitiated
         {
             get;
             set;

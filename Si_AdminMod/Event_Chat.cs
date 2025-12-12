@@ -38,7 +38,7 @@ using Steamworks;
 
 namespace SilicaAdminMod
 {
-    public static class Event_Netcode
+    public static class Event_Chat
     {
         public static event EventHandler<OnRequestPlayerChatArgs> OnRequestPlayerChat = delegate { };
 

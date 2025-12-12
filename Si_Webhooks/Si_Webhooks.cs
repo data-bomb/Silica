@@ -36,7 +36,7 @@ using UnityEngine;
 using MelonLoader.Utils;
 using System.Linq;
 
-[assembly: MelonInfo(typeof(Webhooks), "Webhooks", "1.4.1", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(Webhooks), "Webhooks", "1.4.3", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -57,6 +57,8 @@ namespace Si_Webhooks
         static MelonPreferences_Entry<string> _Server_Avatar_URL = null!;
         static MelonPreferences_Entry<string> _Default_Avatar_URL = null!;
 
+        static MelonPreferences_Entry<bool> _Relay_Team_Chat = null!;
+
         static CallResult<HTTPRequestCompleted_t> OnHTTPRequestCompletedCallResultAvatar = null!;
         static CallResult<HTTPRequestCompleted_t> OnHTTPRequestCompletedCallResultDiscord = null!;
 
@@ -73,6 +75,7 @@ namespace Si_Webhooks
             _SteamAPI_Key ??= _modCategory.CreateEntry<string>("Webhooks_Steam_API_Key", "");
             _Server_Avatar_URL ??= _modCategory.CreateEntry<string>("Webhooks_Server_Avatar_URL", "https://cdn.discordapp.com/icons/824561906277810187/d2f40915db72206f36abb46975655434.webp");
             _Default_Avatar_URL ??= _modCategory.CreateEntry<string>("Webhooks_Default_Avatar_URL", "https://cdn.discordapp.com/icons/663449315876012052/9e482a81d84ee8e750d07c8dbe5b78e4.webp");
+            _Relay_Team_Chat ??= _modCategory.CreateEntry<bool>("Webhooks_Relay_Team_Chats", false);
 
             OnHTTPRequestCompletedCallResultAvatar = CallResult<HTTPRequestCompleted_t>.Create((CallResult<HTTPRequestCompleted_t>.APIDispatchDelegate)OnHTTPRequestCompletedAvatar);
             OnHTTPRequestCompletedCallResultDiscord = CallResult<HTTPRequestCompleted_t>.Create((CallResult<HTTPRequestCompleted_t>.APIDispatchDelegate)OnHTTPRequestCompletedDiscord);
@@ -92,12 +95,19 @@ namespace Si_Webhooks
         public override void OnLateInitializeMelon()
         {
             // subscribe to the OnRequestPlayerChat event
-            Event_Netcode.OnRequestPlayerChat += OnRequestPlayerChat;
+            Event_Chat.OnRequestPlayerChat += OnRequestPlayerChat;
         }
 
         public void OnRequestPlayerChat(object? sender, OnRequestPlayerChatArgs args)
         {
+            // ignore invalid players
             if (args.Player == null)
+            {
+                return;
+            }
+
+            // team messages should be ignored in a public channel
+            if (!_Relay_Team_Chat.Value && args.TeamOnly)
             {
                 return;
             }
@@ -115,6 +125,11 @@ namespace Si_Webhooks
                     rawMessage = rawMessage.Replace("**[SAM]** ", "");
                     SendMessageToWebhook(rawMessage, _Server_Shortname.Value, _Server_Avatar_URL.Value);
                     return;
+                }
+
+                if (args.TeamOnly && args.Player.Team != null)
+                {
+                    rawMessage = rawMessage.Insert(0, $"[{args.Player.Team.TeamShortName}] ");
                 }
 
                 string username = args.Player.PlayerName;

@@ -36,7 +36,7 @@ using Si_RepairFacility;
 using System.Collections.Generic;
 using System.Text;
 
-[assembly: MelonInfo(typeof(RepairFacility), "Repair Facility", "1.2.1", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(RepairFacility), "Repair Facility", "1.2.2", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -198,7 +198,8 @@ namespace Si_RepairFacility
 
                     // there are two openablebases in a LightVehicleFactory:
                     // HousingUnit07_MainDoor and LVF_EntryDoor_Part01
-                    if (!__instance.NetworkComponent.ToString().StartsWith("LightVehicleF"))
+                    // v0.8.177 changed NetworkComponent names to Cent_LightFactory and Sol_LightFactory
+                    if (!__instance.NetworkComponent.ToString().Contains("LightFactory"))
                     {
                         return;
                     }
@@ -244,7 +245,8 @@ namespace Si_RepairFacility
 
                     // there are two openablebases in a LightVehicleFactory:
                     // HousingUnit07_MainDoor and LVF_EntryDoor_Part01
-                    if (!__instance.NetworkComponent.ToString().StartsWith("LightVehicleF"))
+                    // v0.8.177 changed NetworkComponent names to Cent_LightFactory and Sol_LightFactory
+                    if (!__instance.NetworkComponent.ToString().Contains("LightFactory"))
                     {
                         return;
                     }

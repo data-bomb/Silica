@@ -106,7 +106,7 @@ namespace SilicaAdminMod
                 #endif
 
                 // subscribe to the OnRequestPlayerChat event
-                Event_Netcode.OnRequestPlayerChat += ClientChatHandler.OnRequestPlayerChat;
+                Event_Chat.OnRequestPlayerChat += ClientChatHandler.OnRequestPlayerChat;
             }
             catch (Exception error)
             {

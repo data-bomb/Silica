@@ -270,9 +270,13 @@ jobs:
         run: |
           mkdir -p release/dedi/Plugins
           mkdir -p release/dedi/Mods/~disabled
+          mkdir -p release/dedi/Mods/~disabled/obe
+          mkdir -p release/dedi/Mods/~disabled/unsafe
           mkdir -p release/dedi/UserData
           mkdir -p release/listen/Plugins
           mkdir -p release/listen/Mods/~disabled
+          mkdir -p release/listen/Mods/~disabled/obe
+          mkdir -p release/listen/Mods/~disabled/unsafe
           mkdir -p release/listen/UserData
           cp rungame.bat release/dedi/rungame.bat
           cp launch.bat release/dedi/launch.bat
@@ -316,25 +320,25 @@ jobs:
           mv Si_DiscordStatus.dll release/dedi/Plugins
           mv Si_DiscordStatus_ListenServer.dll release/listen/Plugins/Si_DiscordStatus.dll
         
-      - name: Disable Deprecated Mods
+      - name: Move Disabled Mods
         run: |
           # AutoTeamsSelect was addressed with a game update to vote on the next mode
-          mv release/dedi/Mods/Si_AutoTeamsSelect.dll release/dedi/Mods/~disabled
-          mv release/listen/Mods/Si_AutoTeamsSelect.dll release/listen/Mods/~disabled
+          mv release/dedi/Mods/Si_AutoTeamsSelect.dll release/dedi/Mods/~disabled/obe
+          mv release/listen/Mods/Si_AutoTeamsSelect.dll release/listen/Mods/~disabled/obe
           # FriendlyFireLimits is disabled by default
-          mv release/dedi/Mods/Si_FriendlyFireLimits.dll release/dedi/Mods/~disabled
-          mv release/listen/Mods/Si_FriendlyFireLimits.dll release/listen/Mods/~disabled
+          mv release/dedi/Mods/Si_FriendlyFireLimits.dll release/dedi/Mods/~disabled/unsafe
+          mv release/listen/Mods/Si_FriendlyFireLimits.dll release/listen/Mods/~disabled/unsafe
           # Tech Glitch is disabled because the discrepancy is happening on the server side (not client side)
-          mv release/dedi/Mods/Si_TechGlitch.dll release/dedi/Mods/~disabled
-          mv release/listen/Mods/Si_TechGlitch.dll release/listen/Mods/~disabled
+          mv release/dedi/Mods/Si_TechGlitch.dll release/dedi/Mods/~disabled/obe
+          mv release/listen/Mods/Si_TechGlitch.dll release/listen/Mods/~disabled/obe
           # Better Spawns is disabled because the game added a spawn selection mechanic
-          mv release/dedi/Mods/Si_BetterSpawns.dll release/dedi/Mods/~disabled
-          mv release/listen/Mods/Si_BetterSpawns.dll release/listen/Mods/~disabled
+          mv release/dedi/Mods/Si_BetterSpawns.dll release/dedi/Mods/~disabled/unsafe
+          mv release/listen/Mods/Si_BetterSpawns.dll release/listen/Mods/~disabled/unsafe
           # Webhooks encounters issues/conflicts with the game and the Steam API
           mv release/dedi/Mods/Si_Webhooks.dll release/dedi/Mods/~disabled
           # Default Units is disabled because a game update for spawn selection prevented this from working properly
-          mv release/dedi/Mods/Si_DefaultUnits.dll release/dedi/Mods/~disabled
-          mv release/listen/Mods/Si_DefaultUnits.dll release/listen/Mods/~disabled
+          mv release/dedi/Mods/Si_DefaultUnits.dll release/dedi/Mods/~disabled/unsafe
+          mv release/listen/Mods/Si_DefaultUnits.dll release/listen/Mods/~disabled/unsafe
          
       - name: Zip Builds
         run: |

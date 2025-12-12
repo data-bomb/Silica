@@ -1,6 +1,6 @@
 ﻿/*
 Silica Tech Glitch Command Mod
-Copyright (C) 2023-2024 by databomb
+Copyright (C) 2023-2025 by databomb
 
 * Description *
 For Silica listen servers, provides a command (!techglitch) which
@@ -35,7 +35,7 @@ using SilicaAdminMod;
 using System;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(TechGlitch), "Tech Glitch Command", "1.0.3", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(TechGlitch), "Tech Glitch Command", "1.0.4", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -110,7 +110,7 @@ namespace Si_TechGlitch
                         return;
                     }
 
-                    HelperMethods.ReplyToCommand(__0.Team.TeamShortName + " is at tech level " + __0.Team.CurrentTechnologyTier.ToString());
+                    HelperMethods.ReplyToCommand(__0.Team.TeamShortName + " is at tech level " + __0.Team.TechnologyTier.ToString());
 
                     // look for ResearchFacility and QuantumCortex
                     String techStructureName = __0.Team.TeamName.Contains("Human") ? "ResearchF" : "QuantumC";
@@ -123,7 +123,7 @@ namespace Si_TechGlitch
                             techStructures++;
 
                             #if NET6_0
-                            __0.Team.Structures[i].RPC_SynchTechnologyTier();
+                            __0.Team.RPC_SynchTechnologyTier();
                             #else
                             Type structureType = typeof(Structure);
                             MethodInfo synchTechMethod = structureType.GetMethod("RPC_SynchTechnologyTier");

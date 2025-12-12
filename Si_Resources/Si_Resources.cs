@@ -32,8 +32,9 @@ using SilicaAdminMod;
 using System;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using UnityEngine;
 
-[assembly: MelonInfo(typeof(ResourceConfig), "Resource Configuration", "1.3.3", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(ResourceConfig), "Resource Configuration", "1.4.4", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 #if NET6_0
 [assembly: MelonOptionalDependencies("Admin Mod", "QList")]
@@ -57,6 +58,11 @@ namespace Si_Resources
 
         static MelonPreferences_Category _modCategory = null!;
         // MP_Strategy preferences
+        static MelonPreferences_Entry<bool> Pref_Resources_Enable_Structure_Refunds = null!;
+        static MelonPreferences_Entry<float> Pref_Resources_Refund_TopRate = null!;
+        static MelonPreferences_Entry<float> Pref_Resources_Refund_MidRatePenalty = null!;
+        static MelonPreferences_Entry<float> Pref_Resources_Refund_JunkRatePenalty = null!;
+        static MelonPreferences_Entry<int> Pref_Resources_Refund_MinimumAmount = null!;
         static MelonPreferences_Entry<int> Pref_Resources_Centauri_StartingAmount = null!;
         static MelonPreferences_Entry<int> Pref_Resources_Sol_StartingAmount = null!;
         static MelonPreferences_Entry<int> Pref_Resources_Aliens_StartingAmount = null!;
@@ -69,6 +75,11 @@ namespace Si_Resources
         public override void OnInitializeMelon()
         {
             _modCategory ??= MelonPreferences.CreateCategory("Silica");
+            Pref_Resources_Enable_Structure_Refunds ??= _modCategory.CreateEntry<bool>("Resources_AllowStructureRefunds", true);
+            Pref_Resources_Refund_TopRate ??= _modCategory.CreateEntry<float>("Resources_Refund_TopRate", 0.875f);
+            Pref_Resources_Refund_MidRatePenalty ??= _modCategory.CreateEntry<float>("Resources_Refund_Midline_PenaltyPct", 0.09375f);
+            Pref_Resources_Refund_JunkRatePenalty ??= _modCategory.CreateEntry<float>("Resources_Refund_Junk_PenaltyPct", 0.1875f);
+            Pref_Resources_Refund_MinimumAmount ??= _modCategory.CreateEntry<int>("Resources_Refund_MinimumRefundAmount", 100);
             Pref_Resources_Centauri_StartingAmount ??= _modCategory.CreateEntry<int>("Resources_Centauri_StartingAmount", defaultStrategyStartingResources);
             Pref_Resources_Sol_StartingAmount ??= _modCategory.CreateEntry<int>("Resources_Sol_StartingAmount", defaultStrategyStartingResources);
             Pref_Resources_Aliens_StartingAmount ??= _modCategory.CreateEntry<int>("Resources_Aliens_StartingAmount", defaultStrategyStartingResources);
@@ -83,6 +94,9 @@ namespace Si_Resources
         {
             HelperMethods.CommandCallback resourcesCallback = Command_Resources;
             HelperMethods.RegisterAdminCommand("resources", resourcesCallback, Power.Cheat, "Provides resources to a team. Usage: !resources <amount> [optional:<teamname>]");
+
+            //subscribing to the events
+            Event_Structures.OnCommanderDestroyedStructure += OnCommanderDestroyedStructure_Refund;
 
             #if NET6_0
             bool QListLoaded = RegisteredMelons.Any(m => m.Info.Name == "QList");
@@ -391,6 +405,92 @@ namespace Si_Resources
 
             MelonLogger.Error("Could not determine gamemode. Returning strategy default resources for team: " + team.TeamShortName);
             return defaultStrategyStartingResources;
+        }
+
+        public void OnCommanderDestroyedStructure_Refund(object? sender, OnCommanderDestroyedStructureArgs args)
+        {
+            try
+            {
+                if (!Pref_Resources_Enable_Structure_Refunds.Value || args == null)
+                {
+                    return;
+                }
+
+                Structure structure = args.Structure;
+                Team team = args.Team;
+
+                MelonLogger.Msg("Determining structure refund amount..");
+
+                // this event should fire right before the structure is destroyed
+                if (structure == null || team == null || !structure.DamageManager || structure.DamageManager.IsDestroyed)
+                {
+                    return;
+                }
+
+                int refund = DetermineRefundAmount(structure);
+
+                MelonLogger.Msg("Refunding " + refund + " to team " + team.TeamShortName);
+
+                team.StoreResource(refund);
+
+                // find if team has commander
+                Player? commander = null;
+                if (GameMode.CurrentGameMode is GameModeExt gameModeExt)
+                {
+                    commander = gameModeExt.GetCommanderForTeam(team);
+                }
+
+                if (commander != null)
+                {
+                    HelperMethods.SendConsoleMessageToPlayer(commander, $"Sold structure ({structure.ObjectInfo.DisplayName.Replace(" ", "").Replace("-", "")}) for refund of {refund}");
+                }
+            }
+            catch (Exception error)
+            {
+                HelperMethods.PrintError(error, "Failed to run OnCommanderDestroyedStructure_Refund");
+            }
+        }
+
+        static int DetermineRefundAmount(Structure structure)
+        {
+            StructureRepairComponent.StructureRepairSetup repairSetup = StructureRepairComponent.Instance.GetRepairSetup(structure.Team);
+
+            float refundAmount = 0f;
+            float structureHealthPercent = structure.DamageManager.Health01;
+            int baseCost = structure.ObjectInfo.Cost;
+
+            // check for human refinery structures
+            if (structure.Team.Index != (int)SiConstants.ETeam.Alien && structure.ObjectInfo.StructureType == StructureType.Resource && structure.ObjectInfo.HasResourceDeposit)
+            {
+                // reduce base cost so a refund is not the cheapest option for new harvester units
+                baseCost = (int)(baseCost * 0.25);
+            }
+
+            // find refund price based on three structured tiers
+            // tier 1: building is in prestine order
+            if (structureHealthPercent > 0.96875f)
+            {
+                // 90% of structure costs
+                refundAmount = baseCost * Pref_Resources_Refund_TopRate.Value;
+            }
+            // tier 2: building is above max passive repair threshold
+            else if (structureHealthPercent >= repairSetup.MaxPassiveRepairPct)
+            {
+                refundAmount = baseCost * (structureHealthPercent - Pref_Resources_Refund_MidRatePenalty.Value);
+            }
+            // tier 3: building is below max passive repair threshold
+            else
+            {
+                refundAmount = baseCost * (1.1875f*structureHealthPercent - Pref_Resources_Refund_JunkRatePenalty.Value);
+            }
+
+            // if it's too low then don't return anything
+            if ((int)refundAmount < Pref_Resources_Refund_MinimumAmount.Value)
+            {
+                return 0;
+            }
+
+            return (int)(refundAmount);
         }
     }
 }
