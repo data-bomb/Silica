@@ -36,7 +36,7 @@ using System.Linq;
 using UnityEngine;
 using System.Runtime.CompilerServices;
 
-[assembly: MelonInfo(typeof(AntiGrief), "Anti-Grief", "1.5.2", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(AntiGrief), "Anti-Grief", "1.5.3", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 #if NET6_0
 [assembly: MelonOptionalDependencies("Admin Mod", "QList")]
@@ -518,24 +518,7 @@ namespace Si_AntiGrief
 
         private static string GetDisplayName(Target target)
         {
-            if (target.ToString().Contains('_'))
-            {
-                // is this a construction site or not?
-                if (target.OwnerConstructionSite == null)
-                {
-                    return target.ToString().Split('_')[0];
-                }
-                else
-                {
-                    return target.ToString().Split('_')[1].Split('(')[0];
-                }
-            }
-            else if (target.ToString().Contains('('))
-            {
-                return target.ToString().Split('(')[0];
-            }
-
-            return target.ToString();
+            return target.ObjectInfo.DisplayName.Replace(" ", "").Replace("-", "");
         }
 
         private static string GetDisplayName(string fullName)
