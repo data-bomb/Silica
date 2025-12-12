@@ -39,9 +39,8 @@ using System.Linq;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
-using static MelonLoader.MelonLogger;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.8.13", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.9.0", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 #if NET6_0
 [assembly: MelonOptionalDependencies("Admin Mod", "QList")]
@@ -118,16 +117,16 @@ namespace Si_Logging
             Event_Chat.OnRequestPlayerChat += OnRequestPlayerChat;
             Event_Structures.OnCommanderDestroyedStructure += OnCommanderDestroyedStructure_Log;
 
-            #if NET6_0
+#if NET6_0
             bool QListLoaded = RegisteredMelons.Any(m => m.Info.Name == "QList");
             if (QListLoaded)
             {
                 QListRegistration();
             }
-            #endif
+#endif
         }
 
-        #if NET6_0
+#if NET6_0
         [MethodImpl(MethodImplOptions.NoInlining)]
         private void QListRegistration()
         {
@@ -139,7 +138,7 @@ namespace Si_Logging
 
             QList.Options.AddOption(logAllKills);
         }
-        #endif
+#endif
 
         // 003. Change Map
         public override void OnSceneWasLoaded(int buildIndex, string sceneName)
@@ -150,7 +149,7 @@ namespace Si_Logging
                 {
                     return;
                 }
-                
+
                 PrintLogLine($"Loading map \"{sceneName}\"");
 
                 DamageDatabase.ResetRound();
@@ -167,11 +166,11 @@ namespace Si_Logging
         }
 
         // 050. Connection
-        #if NET6_0
+#if NET6_0
         [HarmonyPatch(typeof(NetworkGameServer), nameof(NetworkGameServer.OnP2PSessionRequest))]
-        #else
+#else
         [HarmonyPatch(typeof(NetworkGameServer), "OnP2PSessionRequest")]
-        #endif
+#endif
         private static class ApplyPatchOnP2PSessionRequest
         {
             public static void Postfix(NetworkGameServer __instance, P2PSessionRequest_t __0)
@@ -295,7 +294,7 @@ namespace Si_Logging
                     bool isVictimHuman = (victimPlayer != null);
                     bool isAttackerHuman = (attackerPlayer != null);
 
-                    #pragma warning disable CS8604 // Dereference of a possibly null reference.
+#pragma warning disable CS8604 // Dereference of a possibly null reference.
                     if (isVictimHuman)
                     {
                         DamageDatabase.OnPlayerDeath(victimPlayer);
@@ -386,7 +385,7 @@ namespace Si_Logging
                             HelperMethods.SendConsoleMessage($"{attackerPretty} ({instigator}) killed {AIPretty} ({victimUnit})");
                         }
                     }
-                    #pragma warning restore CS8604 // Dereference of a possibly null reference.
+#pragma warning restore CS8604 // Dereference of a possibly null reference.
                 }
                 catch (Exception error)
                 {
@@ -420,7 +419,7 @@ namespace Si_Logging
             }
 
             string playerEntry = AddPlayerLogEntry(player, theOldTeamName);
-            
+
             PrintLogLine($"{playerEntry} joined team \"{newTeam.TeamShortName}\"");
 
             if (Pref_Log_PlayerConsole_Enable.Value)
@@ -435,7 +434,7 @@ namespace Si_Logging
         [HarmonyPatch(typeof(MP_TowerDefense), nameof(MP_TowerDefense.OnPlayerChangedTeam))]
         private static class ApplyPatch_MPTowerDefense_OnPlayerChangedTeam
         {
-            public static void Postfix (MP_TowerDefense __instance, Player __0, Team __1, Team __2)
+            public static void Postfix(MP_TowerDefense __instance, Player __0, Team __1, Team __2)
             {
                 try
                 {
@@ -581,11 +580,11 @@ namespace Si_Logging
         }
 
         // 058. Injuring
-        #if NET6_0
+#if NET6_0
         [HarmonyPatch(typeof(DamageManager), nameof(DamageManager.OnDamageReceived))]
-        #else
+#else
         [HarmonyPatch(typeof(DamageManager), "OnDamageReceived")]
-        #endif
+#endif
         private static class ApplyPatchOnDamageReceived
         {
             public static void Postfix(DamageManager __instance, float __0, GameObject __1, byte __2, bool __3)
@@ -675,7 +674,7 @@ namespace Si_Logging
                     {
                         return;
                     }
-                    
+
                     string playerEntry = (isAttackerHuman ? AddPlayerLogEntry(attackerPlayer) : AddAIAttackerLogEntry(__1, attackerBase.Team));
                     string structName = GetStructureName(__0);
                     string structTeam = __0.Team.TeamShortName;
@@ -823,11 +822,11 @@ namespace Si_Logging
         }
 
         // 061. Team Objectives/Actions - Structure Complete
-        #if NET6_0
+#if NET6_0
         [HarmonyPatch(typeof(ConstructionSite), nameof(ConstructionSite.SpawnObject))]
-        #else
+#else
         [HarmonyPatch(typeof(ConstructionSite), "SpawnObject")]
-        #endif
+#endif
         private static class ApplyPatchConstructionSpawned
         {
             public static void Postfix(ConstructionSite __instance)
@@ -1023,11 +1022,11 @@ namespace Si_Logging
             }
         }
 
-        #if NET6_0
+#if NET6_0
         [HarmonyPatch(typeof(BarksHandler), nameof(BarksHandler.OnConstructionCompleted))]
-        #else
+#else
         [HarmonyPatch(typeof(BarksHandler), "OnConstructionCompleted")]
-        #endif
+#endif
         private static class ApplyPatchOnSetTechnologyTier
         {
             public static void Postfix(ConstructionSite constructionSite, bool wasCompleted)
@@ -1041,7 +1040,7 @@ namespace Si_Logging
                         currentTechTier[siteTeam.Index] = tier;
                         LogTierChange(siteTeam, tier);
                     }
-                } 
+                }
 
                 catch (Exception error)
                 {
@@ -1055,7 +1054,50 @@ namespace Si_Logging
             string teamName = GetTeamName(team);
             PrintLogLine($"Team \"{teamName}\" triggered \"technology_change\" (tier \"{tier}\")");
         }
-        
+
+        // 062. World Objectives/Actions - Resource Distribution
+        [HarmonyPatch(typeof(ResourceArea), nameof(ResourceArea.DistributeResources))]
+        private static class ApplyPatchDistributeResources
+        {
+            public static void Postfix(ResourceArea __instance, bool __0)
+            {
+                try
+                {
+                    string position = GetLogPosition(__instance.transform.position);
+                    string amount = __instance.ResourceAmountCurrent.ToString();
+                    string resource_type = GetLogResourceType(__instance.ResourceType);
+                    PrintLogLine($"World triggered \"Resource_Spawned\" (type \"{resource_type}\") (amount \"{amount}\") (position \"{position}\")");
+                }
+                catch (Exception error)
+                {
+                    HelperMethods.PrintError(error, "Failed to run ResourceArea::DistributeResources");
+                }
+            }
+        }
+
+        // 062. World Objectives/Actions - Resource Extraction
+        [HarmonyPatch(typeof(ResourceArea), nameof(ResourceArea.ExtractResource))]
+        private static class ApplyPatchExtractResource
+        {
+            public static void Postfix(ResourceArea __instance, int __result, int __0, int __1, int __2)
+            {
+                try
+                {
+                    // this ResourceArea is "depleted"
+                    if (__instance.ResourceAmountCurrent <= 0)
+                    {
+                        string position = GetLogPosition(__instance.transform.position);
+                        string resource_type = GetLogResourceType(__instance.ResourceType);
+                        PrintLogLine($"World triggered \"Resource_Depleted\" (type \"{resource_type}\") (position \"{position}\")");
+                    }
+                }
+                catch (Exception error)
+                {
+                    HelperMethods.PrintError(error, "Failed to run ResourceArea::ExtractResource");
+                }
+            }
+        }
+
         // 062. World Objectives/Actions - Round_Start
         [HarmonyPatch(typeof(MusicJukeboxHandler), nameof(MusicJukeboxHandler.OnGameStarted))]
         private static class ApplyPatchOnGameStarted
