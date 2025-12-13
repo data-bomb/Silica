@@ -39,8 +39,9 @@ using System.Linq;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
+using static MelonLoader.MelonLogger;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.9.1", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.9.2", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 #if NET6_0
 [assembly: MelonOptionalDependencies("Admin Mod", "QList")]
@@ -1055,26 +1056,6 @@ namespace Si_Logging
             PrintLogLine($"Team \"{teamName}\" triggered \"technology_change\" (tier \"{tier}\")");
         }
 
-        // 062. World Objectives/Actions - Resource Distribution
-        [HarmonyPatch(typeof(ResourceArea), nameof(ResourceArea.DistributeResources))]
-        private static class ApplyPatchDistributeResources
-        {
-            public static void Postfix(ResourceArea __instance, bool __0)
-            {
-                try
-                {
-                    string position = GetLogPosition(__instance.transform.position);
-                    string amount = __instance.ResourceAmountCurrent.ToString();
-                    string resource_type = GetLogResourceType(__instance.ResourceType);
-                    PrintLogLine($"World triggered \"Resource_Spawned\" (type \"{resource_type}\") (amount \"{amount}\") (position \"{position}\")");
-                }
-                catch (Exception error)
-                {
-                    HelperMethods.PrintError(error, "Failed to run ResourceArea::DistributeResources");
-                }
-            }
-        }
-
         // 062. World Objectives/Actions - Resource Extraction
         [HarmonyPatch(typeof(ResourceArea), nameof(ResourceArea.ExtractResource), new Type[] { typeof(int), typeof(int), typeof(int) })]
         private static class ApplyPatchExtractResource
@@ -1112,6 +1093,7 @@ namespace Si_Logging
                     string gametype = GetGameType(gameModeInstance);
                     
                     PrintLogLine($"World triggered \"Round_Start\" (gamemode \"{gamemode}\") (gametype \"{gametype}\")");
+                    LogStartingResources();
                     LogStartingStructures();
 
                     initializeRound(ref currentTechTier);
@@ -1121,6 +1103,22 @@ namespace Si_Logging
                 {
                     HelperMethods.PrintError(error, "Failed to run OnGameStarted");
                 }
+            }
+        }
+
+        public static void LogStartingResources()
+        {
+            foreach (ResourceArea resourceArea in ResourceArea.AllResourceAreas)
+            {
+                if (resourceArea == null || !resourceArea.enabled)
+                {
+                    continue;
+                }
+
+                string position = GetLogPosition(resourceArea.transform.position);
+                string amount = resourceArea.ResourceAmountCurrent.ToString();
+                string resource_type = GetLogResourceType(resourceArea.ResourceType);
+                PrintLogLine($"World triggered \"Resource_Spawned\" (type \"{resource_type}\") (amount \"{amount}\") (position \"{position}\")");
             }
         }
 

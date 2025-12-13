@@ -116,7 +116,7 @@ namespace Si_Logging
 
         public static string GetLogResourceType(Resource resourceType)
         {
-            return resourceType.ToString().Split('(')[0].Split('_')[1];
+            return resourceType.ToString().Split('(')[0].Split('_')[1].TrimEnd();
         }
 
 
