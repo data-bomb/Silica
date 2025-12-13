@@ -31,9 +31,10 @@
 7. Select <b>Install</b>
 8. Download the latest [Listen Server release](https://github.com/data-bomb/Silica/releases) and unzip all files to your `Silica` directory
 9. Review the `Silica\Mods` directory and place any undesired mods in the `disabled` directory (Note: You should NOT disable Admin Mod.)
-10. Launch Silica and then exit the game to populate configuration parameters
-11. Review and modify the configuration parameters in the `Silica\UserData\MelonPreferences.cfg` file
-12. (Optional) Install the [QList Mod](https://github.com/dodad-2/QList) to adjust configuration parameters on-the-fly
+10. Add `--melonloader.disablestartscreen` as the command line parameters in Steam for Silica
+11. Launch Silica and then exit the game to populate configuration parameters
+12. Review and modify the configuration parameters in the `Silica\UserData\MelonPreferences.cfg` file
+13. (Optional) Install the [QList Mod](https://github.com/dodad-2/QList) to adjust configuration parameters on-the-fly
 
 ## Dedicated Server Setup Instructions
 1. Install Silica Dedicated Server Tool from Steam
