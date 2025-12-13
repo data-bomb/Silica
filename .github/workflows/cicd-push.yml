@@ -278,6 +278,7 @@ jobs:
           mkdir -p release/listen/Mods/~disabled/obe
           mkdir -p release/listen/Mods/~disabled/unsafe
           mkdir -p release/listen/UserData
+          cp launch.bat release/listen/launch.bat
           cp rungame.bat release/dedi/rungame.bat
           cp launch.bat release/dedi/launch.bat
           cp LICENSE release/dedi/UserData/Mod-License.txt
