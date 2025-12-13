@@ -40,7 +40,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.9.0", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.9.1", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 #if NET6_0
 [assembly: MelonOptionalDependencies("Admin Mod", "QList")]
@@ -1076,7 +1076,7 @@ namespace Si_Logging
         }
 
         // 062. World Objectives/Actions - Resource Extraction
-        [HarmonyPatch(typeof(ResourceArea), nameof(ResourceArea.ExtractResource))]
+        [HarmonyPatch(typeof(ResourceArea), nameof(ResourceArea.ExtractResource), new Type[] { typeof(int), typeof(int), typeof(int) })]
         private static class ApplyPatchExtractResource
         {
             public static void Postfix(ResourceArea __instance, int __result, int __0, int __1, int __2)
