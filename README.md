@@ -24,11 +24,8 @@
 ## Listen Server Setup Instructions
 1. Install Silica from Steam
 2. Install [.NET 6.0 Runtime x64](https://dotnet.microsoft.com/en-us/download/dotnet/6.0)
-3. Download and install the nightly build of [MelonLoader](https://nightly.link/LavaGang/MelonLoader/workflows/build/alpha-development)
-4. Using the Automated tab, hit the <b>SELECT</b> button for Unity Game and specify `C:\Program Files (x86)\Steam\steamapps\common\Silica\Silica.exe` or your custom path to the Silica.exe in your game installation directory
-5. Ensure that the <b>Version</b> is set to v0.7.0 or later for Unity 6 engine support
-6. Ensure that the <b>Game Arch</b> is set to x64
-7. Select <b>Install</b>
+3. Download the nightly build of [MelonLoader](https://nightly.link/LavaGang/MelonLoader/workflows/build/alpha-development)
+4. Copy all of the files into the root of the game directory (`Silica\`)
 8. Download the latest [Listen Server release](https://github.com/data-bomb/Silica/releases) and unzip all files to your `Silica` directory
 9. Review the `Silica\Mods` directory and place any undesired mods in the `disabled` directory (Note: You should NOT disable Admin Mod.)
 10. Add `--melonloader.disablestartscreen` as the command line parameters in Steam for Silica
