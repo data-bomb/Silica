@@ -36,7 +36,7 @@ using Si_EarlyEncounters;
 using System.Collections.Generic;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(EarlyEncounters), "Early Encounters", "0.9.6", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(EarlyEncounters), "Early Encounters", "0.9.7", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -265,7 +265,8 @@ namespace Si_EarlyEncounters
                     }
 
                     // avoid handling anything but the containers opening. 
-                    if (!__instance.NetworkComponent.Owner.ObjectInfo.DisplayName.Equals("Container"))
+                    if (__instance.NetworkComponent.Owner.Team.Index != (int)SiConstants.ETeam.Wildlife ||
+                        !__instance.NetworkComponent.Owner.ObjectInfo.DisplayName.Equals("Container"))
                     {
                         return;
                     }
