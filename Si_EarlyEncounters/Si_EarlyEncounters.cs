@@ -36,7 +36,7 @@ using Si_EarlyEncounters;
 using System.Collections.Generic;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(EarlyEncounters), "Early Encounters", "0.9.7", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(EarlyEncounters), "Early Encounters", "0.9.8", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -259,7 +259,8 @@ namespace Si_EarlyEncounters
             {
                 try
                 {
-                    if (__instance == null || __instance.NetworkComponent == null || __1 == null || __1.NetworkComponent.Owner == null)
+                    if (__instance == null || __instance.NetworkComponent == null || __1 == null || 
+                        __1.NetworkComponent.Owner == null || __instance.NetworkComponent.Owner.Team == null)
                     {
                         return;
                     }
