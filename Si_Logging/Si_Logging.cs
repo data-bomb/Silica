@@ -41,7 +41,7 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using static MelonLoader.MelonLogger;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.9.2", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.9.3", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 #if NET6_0
 [assembly: MelonOptionalDependencies("Admin Mod", "QList")]
@@ -681,9 +681,10 @@ namespace Si_Logging
                     string structTeam = __0.Team.TeamShortName;
                     string weapon = GetNameFromObject(__1);
                     string construction = (__0.OwnerConstructionSite == null ? "no" : "yes");
-                    string position = GetLogPosition(__0.gameObject.transform.position);
+                    string structurePosition = GetLogPosition(__0.gameObject.transform.position);
+                    string attackerPosition = GetLogPosition(__1.transform.position);
 
-                    PrintLogLine($"{playerEntry} triggered \"structure_kill\" (structure \"{structName}\") (weapon \"{weapon}\") (struct_team \"{structTeam}\") (construction \"{construction}\") (building_position \"{position}\")");
+                    PrintLogLine($"{playerEntry} triggered \"structure_kill\" (structure \"{structName}\") (weapon \"{weapon}\") (struct_team \"{structTeam}\") (construction \"{construction}\") (attacker_position \"{attackerPosition}\") (building_position \"{structurePosition}\")");
 
                     if (Pref_Log_PlayerConsole_Enable.Value)
                     {
