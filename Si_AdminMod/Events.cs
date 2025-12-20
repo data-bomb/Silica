@@ -65,6 +65,30 @@ namespace SilicaAdminMod
         }
     }
 
+    public class OnRequestInviteToGroupArgs : EventArgs
+    {
+        private Player _player = null!;
+        private Target _target = null!;
+
+        public Player Player
+        {
+            get => _player;
+            set => _player = value ?? throw new ArgumentNullException("Player is required.");
+        }
+
+        public Target Target
+        {
+            get => _target;
+            set => _target = value ?? throw new ArgumentNullException("Target is required.");
+        }
+
+        public bool Block
+        {
+            get;
+            set;
+        }
+    }
+
     public class OnCommanderDestroyedStructureArgs : EventArgs
     {
         private Structure _structure = null!;

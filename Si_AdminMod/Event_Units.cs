@@ -1,6 +1,6 @@
 ﻿/*
 Silica Admin Mod
-Copyright (C) 2024 by databomb
+Copyright (C) 2024-2025 by databomb
 
 * License *
 This program is free software: you can redistribute it and/or modify
@@ -19,20 +19,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using HarmonyLib;
 using System;
-using System.Linq;
 using MelonLoader;
-using UnityEngine;
-using Newtonsoft.Json.Linq;
-using MelonLoader.ICSharpCode.SharpZipLib.Core;
-using System.Runtime.CompilerServices;
-using System.Reflection;
-using System.Data;
 
 #if NET6_0
 using Il2Cpp;
-using Il2CppSteamworks;
-#else
-using Steamworks;
 #endif
 
 namespace SilicaAdminMod
@@ -40,8 +30,9 @@ namespace SilicaAdminMod
     public static class Event_Units
     {
         public static event EventHandler<OnRequestEnterUnitArgs> OnRequestEnterUnit = delegate { };
+        public static event EventHandler<OnRequestInviteToGroupArgs> OnRequestInviteToGroup = delegate { };
 
-        // Aliens will go through OnUse
+        // Aliens will go through OnUse for OnRequestEnterUnit
         [HarmonyPatch(typeof(UseAlienTakeOver), nameof(UseAlienTakeOver.OnUse))]
         static class ApplyPatch_UseAlienTakeOver_OnUse
         {
@@ -86,7 +77,7 @@ namespace SilicaAdminMod
             }
         }
 
-        // Humans will go through AddUnit
+        // Humans will go through AddUnit for OnRequestEnterUnit
         #if NET6_0
         [HarmonyPatch(typeof(UnitCompartment), nameof(UnitCompartment.AddUnit))]
         #else
@@ -148,6 +139,63 @@ namespace SilicaAdminMod
             }
 
             return onRequestEnterUnitArgs;
+        }
+
+        // OnRequestInviteToGroup
+        #if NET6_0
+        [HarmonyPatch(typeof(FPSCommanding), nameof(FPSCommanding.InviteToGroupServer))]
+        #else
+        [HarmonyPatch(typeof(FPSCommanding), "InviteToGroupServer")]
+        #endif
+        static class ApplyPatch_FPSCommanding_InviteToGroupServer
+        {
+            public static bool Prefix(FPSCommanding __instance, Player __0, Target __1)
+            {
+                try
+                {
+                    if (__1 == null || __0 == null || !__1.OwnerUnit || __0.Group == null || __0.Group.UnitCount >= __instance.GroupUnitLimit)
+                    {
+                        return false;
+                    }
+
+                    OnRequestInviteToGroupArgs onRequestInviteToGroupArgs = FireOnRequestInviteToGroupEvent(__0, __1);
+
+                    if (onRequestInviteToGroupArgs.Block)
+                    {
+                        if (SiAdminMod.Pref_Admin_DebugLogMessages.Value)
+                        {
+                            MelonLogger.Msg("Blocking player " + __0.PlayerName + " from inviting target to group " + __1.ObjectInfo.DisplayName);
+                        }
+
+                        return false;
+                    }
+
+                    if (SiAdminMod.Pref_Admin_DebugLogMessages.Value)
+                    {
+                        MelonLogger.Msg("Allowing player to invite target to join FPS commanding group");
+                    }
+                }
+                catch (Exception error)
+                {
+                    HelperMethods.PrintError(error, "Failed to run FPSCommanding::InviteToGroupServer");
+                }
+
+                return true;
+            }
+        }
+
+        public static OnRequestInviteToGroupArgs FireOnRequestInviteToGroupEvent(Player player, Target target)
+        {
+            OnRequestInviteToGroupArgs onRequestInviteToGroupArgs = new OnRequestInviteToGroupArgs();
+            onRequestInviteToGroupArgs.Player = player;
+            onRequestInviteToGroupArgs.Target = target;
+            EventHandler<OnRequestInviteToGroupArgs> requestInviteToGroupEvent = OnRequestInviteToGroup;
+            if (requestInviteToGroupEvent != null)
+            {
+                requestInviteToGroupEvent(null, onRequestInviteToGroupArgs);
+            }
+
+            return onRequestInviteToGroupArgs;
         }
     }
 }
