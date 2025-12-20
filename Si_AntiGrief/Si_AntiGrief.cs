@@ -36,7 +36,7 @@ using System.Linq;
 using UnityEngine;
 using System.Runtime.CompilerServices;
 
-[assembly: MelonInfo(typeof(AntiGrief), "Anti-Grief", "1.5.3", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(AntiGrief), "Anti-Grief", "1.6.0", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 #if NET6_0
 [assembly: MelonOptionalDependencies("Admin Mod", "QList")]
@@ -55,6 +55,9 @@ namespace Si_AntiGrief
         static MelonPreferences_Entry<bool> _BlockShrimpControllers = null!;
         static MelonPreferences_Entry<bool> _BlockCommanderRemovingLastSpawn = null!;
         static MelonPreferences_Entry<bool> _BlockCommanderRemovingLastResearch = null!;
+        static MelonPreferences_Entry<bool> _BlockShrimpFPSCommanding = null!;
+        static MelonPreferences_Entry<bool> _BlockHarvesterFPSCommanding = null!;
+        static MelonPreferences_Entry<bool> _BlockQueenFPSCommanding = null!;
 
         static uint[] playerTransferCount = new uint[] {};
 
@@ -69,6 +72,9 @@ namespace Si_AntiGrief
             _BlockShrimpControllers ??= _modCategory.CreateEntry<bool>("Grief_BlockShrimpTakeOver", false);
             _BlockCommanderRemovingLastSpawn ??= _modCategory.CreateEntry<bool>("Grief_BlockRemoveLastSpawn", true);
             _BlockCommanderRemovingLastResearch ??= _modCategory.CreateEntry<bool>("Grief_BlockRemoveLastResearch", true);
+            _BlockShrimpFPSCommanding ??= _modCategory.CreateEntry<bool>("Grief_BlockShrimpFPSCommanding", true);
+            _BlockHarvesterFPSCommanding ??= _modCategory.CreateEntry<bool>("Grief_BlockHarvesterFPSCommanding", true);
+            _BlockQueenFPSCommanding ??= _modCategory.CreateEntry<bool>("Grief_BlockQueenFPSCommanding", false);
         }
 
         public override void OnSceneWasLoaded(int buildIndex, string sceneName)
@@ -90,6 +96,7 @@ namespace Si_AntiGrief
             //subscribing to the events
             Event_Roles.OnRoleChanged += OnRoleChanged;
             Event_Units.OnRequestEnterUnit += OnRequestEnterUnit;
+            Event_Units.OnRequestInviteToGroup += OnRequestInviteToGroup_GriefCheck;
             Event_Structures.OnRequestDestroyStructure += OnRequestDestroyStructure_GriefCheck;
 
             #if NET6_0
@@ -98,7 +105,7 @@ namespace Si_AntiGrief
             {
                 QListRegistration();
             }
-#endif
+            #endif
         }
 
         #if NET6_0
@@ -280,6 +287,60 @@ namespace Si_AntiGrief
             catch (Exception error)
             {
                 HelperMethods.PrintError(error, "Failed to run OnRequestDestroyStructure_GriefCheck");
+            }
+        }
+
+        public void OnRequestInviteToGroup_GriefCheck(object? sender, OnRequestInviteToGroupArgs args)
+        {
+            try
+            {
+                if (args == null)
+                {
+                    return;
+                }
+
+                Player player = args.Player;
+                Target target = args.Target;
+
+                if (player == null || target == null || target.OwnerUnit == null)
+                {
+                    return;
+                }
+
+                Unit unit = target.OwnerUnit;
+
+                if (player.Team.Index == (int)SiConstants.ETeam.Alien)
+                {
+                    if (_BlockShrimpFPSCommanding.Value && unit.IsResourceHolder)
+                    {
+                        args.Block = true;
+                        MelonLogger.Msg("Found " + player.PlayerName + " trying to invite an Alien shrimp to their FPS Command group.");
+                        HelperMethods.SendChatMessageToPlayer(player, HelperMethods.chatPrefix, " inviting shrimp is not permitted on this server.");
+                        return;
+                    }
+
+                    if (_BlockQueenFPSCommanding.Value && unit.ObjectInfo.Critical)
+                    {
+                        MelonLogger.Msg("Found " + player.PlayerName + " trying to invite the Alien Queen to their FPS Command group.");
+                        HelperMethods.SendChatMessageToPlayer(player, HelperMethods.chatPrefix, " inviting the Queen is not permitted on this server.");
+                        args.Block = true;
+                        return;
+                    }
+                }
+                else // human team
+                {
+                    if (_BlockHarvesterFPSCommanding.Value && unit.IsResourceHolder)
+                    {
+                        MelonLogger.Msg("Found " + player.PlayerName + " trying to invite a Harvester to their FPS Command group.");
+                        HelperMethods.SendChatMessageToPlayer(player, HelperMethods.chatPrefix, " inviting a Harvester is not permitted on this server.");
+                        args.Block = true;
+                        return;
+                    }
+                }
+            }
+            catch (Exception error)
+            {
+                HelperMethods.PrintError(error, "Failed to run OnRequestInviteToGroup_GriefCheck");
             }
         }
 
