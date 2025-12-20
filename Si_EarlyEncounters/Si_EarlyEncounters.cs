@@ -36,7 +36,7 @@ using Si_EarlyEncounters;
 using System.Collections.Generic;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(EarlyEncounters), "Early Encounters", "0.9.8", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(EarlyEncounters), "Early Encounters", "0.9.9", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -170,11 +170,19 @@ namespace Si_EarlyEncounters
                     return "Enemey Forces";
                 case EEncounterType.EnemyWorm:
                 default:
-                    AmbientLife wildLifeInstance = GameObject.FindFirstObjectByType<AmbientLife>();
-                    GameObject wormObject = Game.SpawnPrefab(wildLifeInstance.Basic[UnityEngine.Random.Range(0, wildLifeInstance.Basic.Count - 1)].Prefab, null, wildLifeInstance.Team, targetPosition, rotatedQuaternion, true, true);
+                    AmbientLife? wildLifeInstance = GameObject.FindFirstObjectByType<AmbientLife>();
+                    if (wildLifeInstance == null)
+                    {
+                        MelonLogger.Warning("Could not find AmbientLife instance.");
+                        return "a Worm";
+                    }
+                    ObjectInfo objectInfo = wildLifeInstance.Basic[UnityEngine.Random.Range(0, wildLifeInstance.Basic.Count - 1)];
+                    GameObject wormObject = Game.SpawnPrefab(objectInfo.Prefab, null, Team.Teams[(int)SiConstants.ETeam.Wildlife], targetPosition, rotatedQuaternion, true, true);
                     Unit? wormUnit = wormObject.GetBaseGameObject() as Unit;
                     if (wormUnit == null)
                     {
+                        UnityEngine.Object.Destroy(wormUnit);
+                        MelonLogger.Warning("Could not spawn enemy worm correctly.");
                         return "a Worm";
                     }
                     wormUnit.OnAttackOrder(target, target.transform.position, AgentMoveSpeed.Fast, true);
@@ -265,9 +273,16 @@ namespace Si_EarlyEncounters
                         return;
                     }
 
-                    // avoid handling anything but the containers opening. 
-                    if (__instance.NetworkComponent.Owner.Team.Index != (int)SiConstants.ETeam.Wildlife ||
-                        !__instance.NetworkComponent.Owner.ObjectInfo.DisplayName.Equals("Container"))
+                    // avoid handling anything but wildlife team crates       the containers opening. 
+                    if (__instance.NetworkComponent.Owner.Team.Index != (int)SiConstants.ETeam.Wildlife)
+                    {
+                        return;
+                    }
+
+                    MelonLogger.Msg("Checking wildlife crate.");
+
+                    ObjectInfo? crateInfo = __instance.NetworkComponent.Owner.ObjectInfo;
+                    if (crateInfo == null || !crateInfo.DisplayName.Equals("Container"))
                     {
                         return;
                     }
