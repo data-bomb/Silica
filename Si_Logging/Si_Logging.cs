@@ -41,7 +41,7 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using static MelonLoader.MelonLogger;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.9.3", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.9.4", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 #if NET6_0
 [assembly: MelonOptionalDependencies("Admin Mod", "QList")]
@@ -1125,10 +1125,17 @@ namespace Si_Logging
 
         public static void LogStartingStructures()
         {
+            if (Structure.Structures == null ||  Structure.Structures.Count == 0)
+            {
+                MelonLogger.Warning("Could not find starting structures.");
+                return;
+            }
+
             foreach (Structure structure in Structure.Structures)
             {
-                if (structure == null)
+                if (structure == null || structure.Team == null || structure.ObjectInfo == null)
                 {
+                    MelonLogger.Warning("Skipping invalid structure.");
                     continue;
                 }
 
