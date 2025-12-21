@@ -33,7 +33,7 @@ using SilicaAdminMod;
 using System;
 using Newtonsoft.Json;
 
-[assembly: MelonInfo(typeof(MatchSettingsOverride), "Match Settings Override", "2.0.0", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(MatchSettingsOverride), "Match Settings Override", "2.0.1", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -168,7 +168,7 @@ namespace Si_MatchSettings
 
                             MelonLogger.Msg("Setting Alien Tech Min/Max to: " + _Alien_TechMin.Value + "/" + _Alien_TechMax.Value);
                         }
-                        else
+                        else if (team.Index == (int)SiConstants.ETeam.Sol || team.Index == (int)SiConstants.ETeam.Centauri)
                         {
                             team.TechnologyTierLimitMin = _Human_TechMin.Value;
                             team.TechnologyTierLimitMax = _Human_TechMax.Value;
@@ -182,7 +182,7 @@ namespace Si_MatchSettings
                     #if NET6_0
                     __instance.MultStartingDist = distanceStart;
                     #else
-                    FieldInfo multStartDistField = typeof(MP_Strategy).GetField("MultStartingDist");
+                    FieldInfo multStartDistField = typeof(MP_Strategy).GetField("MultStartingDist", BindingFlags.NonPublic | BindingFlags.Instance);
                     multStartDistField.SetValue(__instance, (float)distanceStart);
                     #endif
 
@@ -207,9 +207,9 @@ namespace Si_MatchSettings
                     __instance.MultLocationRes = resourceLocations;
                     __instance.MultLocationResHide = hiddenResourceLocations;
                     #else
-                    FieldInfo multLocResField = typeof(MP_Strategy).GetField("MultLocationRes");
+                    FieldInfo multLocResField = typeof(MP_Strategy).GetField("MultLocationRes", BindingFlags.NonPublic | BindingFlags.Instance);
                     multLocResField.SetValue(__instance, (float)resourceLocations);
-                    FieldInfo multLocResHideField = typeof(MP_Strategy).GetField("MultLocationResHide");
+                    FieldInfo multLocResHideField = typeof(MP_Strategy).GetField("MultLocationResHide", BindingFlags.NonPublic | BindingFlags.Instance);
                     multLocResHideField.SetValue(__instance, (float)hiddenResourceLocations);
                     #endif
 
