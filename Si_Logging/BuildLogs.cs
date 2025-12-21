@@ -147,7 +147,7 @@ namespace Si_Logging
 
         public static string GetNameFromObject(GameObject gameObject)
         {
-            return gameObject.ToString().Split('(')[0];
+            return GetLogNameFromDisplayName(gameObject.GetBaseGameObject().ObjectInfo.DisplayName);
         }
 
         public static string GetNameFromUnit(Unit unit)
