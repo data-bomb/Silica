@@ -36,7 +36,7 @@ using Si_EarlyEncounters;
 using System.Collections.Generic;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(EarlyEncounters), "Early Encounters", "1.0.0", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(EarlyEncounters), "Early Encounters", "1.1.0", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -49,6 +49,7 @@ namespace Si_EarlyEncounters
         static MelonPreferences_Entry<int> _Pref_EarlyEncounters_Chance_FriendlyUnitEvent = null!;
         static MelonPreferences_Entry<int> _Pref_EarlyEncounters_Chance_EnemyWormEvent = null!;
         static MelonPreferences_Entry<int> _Pref_EarlyEncounters_Chance_EnemyUnitEvent = null!;
+        static MelonPreferences_Entry<int> _Pref_EarlyEncounters_Chance_RetroHatchback = null!;
         static MelonPreferences_Entry<int> _Pref_EarlyEncounters_CratesPerTeam = null!;
 
         public static Dictionary<EEncounterType, MelonPreferences_Entry<int>> encounterProbabilities = new Dictionary<EEncounterType, MelonPreferences_Entry<int>>();
@@ -61,6 +62,7 @@ namespace Si_EarlyEncounters
             _Pref_EarlyEncounters_Chance_FriendlyUnitEvent ??= _Pref_modCategory.CreateEntry<int>("EarlyEncounter_FriendlyUnitEventChance", 100);
             _Pref_EarlyEncounters_Chance_EnemyWormEvent ??= _Pref_modCategory.CreateEntry<int>("EarlyEncounter_EnemyWormEventChance", 100);
             _Pref_EarlyEncounters_Chance_EnemyUnitEvent ??= _Pref_modCategory.CreateEntry<int>("EarlyEncounter_EnemyUnitEventChance", 100);
+            _Pref_EarlyEncounters_Chance_RetroHatchback ??= _Pref_modCategory.CreateEntry<int>("EarlyEncounters_RetroHatchbackEventChance", 35);
             _Pref_EarlyEncounters_CratesPerTeam ??= _Pref_modCategory.CreateEntry<int>("EarlyEncounter_CratesPerTeam", 8);
         }
         public override void OnLateInitializeMelon()
@@ -73,7 +75,8 @@ namespace Si_EarlyEncounters
             TeamResources = 0,
             FriendlyUnit = 1,
             EnemyWorm = 2,
-            EnemyUnit = 3
+            EnemyUnit = 3,
+            RetroHatchback = 4
         }
 
         private static void FillEncounterDictionary()
@@ -83,6 +86,7 @@ namespace Si_EarlyEncounters
             encounterProbabilities.Add(EEncounterType.FriendlyUnit, _Pref_EarlyEncounters_Chance_FriendlyUnitEvent);
             encounterProbabilities.Add(EEncounterType.EnemyWorm, _Pref_EarlyEncounters_Chance_EnemyWormEvent);
             encounterProbabilities.Add(EEncounterType.EnemyUnit, _Pref_EarlyEncounters_Chance_EnemyUnitEvent);
+            encounterProbabilities.Add(EEncounterType.RetroHatchback, _Pref_EarlyEncounters_Chance_RetroHatchback);
         }
 
         private static int TotalProbabilityValue()
@@ -130,6 +134,11 @@ namespace Si_EarlyEncounters
             return EEncounterType.EnemyWorm;
         }
 
+        private static int GetResourceAwardAmount(Team team)
+        {
+            return 300;
+        }
+
         private static string GetFriendlyUnitName(Team team)
         {
             switch (team.Index)
@@ -156,10 +165,10 @@ namespace Si_EarlyEncounters
             {
                 case EEncounterType.TeamResources:
                     Team team = player.Team;
-                    team.StoreResource(300);
-                    return "a Team Resource Bonus (300)";
+                    int rewardAmount = GetResourceAwardAmount(team);
+                    team.StoreResource(rewardAmount);
+                    return "a Team Resource Bonus (" + rewardAmount.ToString() + ")";
                 case EEncounterType.FriendlyUnit:
-
                     HelperMethods.SpawnAtLocation(GetFriendlyUnitName(player.Team), spawnVector, rotatedQuaternion, (int)player.Team.Index);
                     return "a Friendly Defector";
                 case EEncounterType.EnemyUnit:
@@ -168,6 +177,9 @@ namespace Si_EarlyEncounters
                     spawnVector = targetPosition + rotatedQuaternion * Vector3.forward * UnityEngine.Random.Range(10f, 20f);
                     HelperMethods.SpawnAtLocation("Sol_Soldier_Heavy", spawnVector, rotatedQuaternion, (int)SiConstants.ETeam.Wildlife);
                     return "Enemey Forces";
+                case EEncounterType.RetroHatchback:
+                    HelperMethods.SpawnAtLocation("RetroHatchback", spawnVector, rotatedQuaternion, (int)player.Team.Index);
+                    return "a retro hatchback!";
                 case EEncounterType.EnemyWorm:
                 default:
                     AmbientLife? wildLifeInstance = GameObject.FindFirstObjectByType<AmbientLife>();
