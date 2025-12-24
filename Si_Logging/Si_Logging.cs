@@ -41,7 +41,7 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using static MelonLoader.MelonLogger;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.9.5", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.9.6", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 #if NET6_0
 [assembly: MelonOptionalDependencies("Admin Mod", "QList")]
@@ -287,6 +287,11 @@ namespace Si_Logging
                         return;
                     }
                     NetworkComponent attackerNetComp = attackerBase.NetworkComponent;
+                    if (attackerNetComp == null)
+                    {
+                        MelonLogger.Warning("Found null attackerNetComp in ApplyPatch_StrategyMode_OnUnitDestroyed");
+                        return;
+                    }
                     Player attackerPlayer = attackerNetComp.OwnerPlayer;
 
                     // Victim
@@ -295,15 +300,11 @@ namespace Si_Logging
                     bool isVictimHuman = (victimPlayer != null);
                     bool isAttackerHuman = (attackerPlayer != null);
 
-#pragma warning disable CS8604 // Dereference of a possibly null reference.
                     if (isVictimHuman)
                     {
+#pragma warning disable CS8604 // Dereference of a possibly null reference.
                         DamageDatabase.OnPlayerDeath(victimPlayer);
-
-                        if (attackerNetComp == null)
-                        {
-                            return;
-                        }
+#pragma warning restore CS8604 // Dereference of a possibly null reference.
 
                         // Attacker and Victim are both humans
                         if (isAttackerHuman)
@@ -386,7 +387,7 @@ namespace Si_Logging
                             HelperMethods.SendConsoleMessage($"{attackerPretty} ({instigator}) killed {AIPretty} ({victimUnit})");
                         }
                     }
-#pragma warning restore CS8604 // Dereference of a possibly null reference.
+
                 }
                 catch (Exception error)
                 {
