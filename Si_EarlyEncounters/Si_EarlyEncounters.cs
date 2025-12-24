@@ -36,7 +36,7 @@ using Si_EarlyEncounters;
 using System.Collections.Generic;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(EarlyEncounters), "Early Encounters", "1.1.0", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(EarlyEncounters), "Early Encounters", "1.1.1", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -140,7 +140,9 @@ namespace Si_EarlyEncounters
 
         private static int GetResourceAwardAmount(Team team)
         {
-            return 300;
+            // scale up for later tech tiers
+            int award = 250 * (1 + team.TechnologyTierHighestReached);
+            return award;
         }
 
         private static string GetFriendlySwarmUnitName(Team team)
