@@ -37,7 +37,7 @@ using System.Collections.Generic;
 using System.Text;
 using static MelonLoader.MelonLogger;
 
-[assembly: MelonInfo(typeof(RepairFacility), "Repair Facility", "1.3.0", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(RepairFacility), "Repair Facility", "1.3.1", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -58,6 +58,12 @@ namespace Si_RepairFacility
         static MelonPreferences_Entry<float> _Pref_Humans_Infantry_HealRate = null!;
         static MelonPreferences_Entry<float> _Pref_SiegeDefenders_Structure_HealRate = null!;
         static MelonPreferences_Entry<bool> _Pref_Repair_Notification = null!;
+        static Vector3 halfExtentsRepairCheck = new Vector3
+        {
+            x = 12f,
+            y = 12f,
+            z = 12f
+        };
 
         public override void OnInitializeMelon()
         {
@@ -91,157 +97,14 @@ namespace Si_RepairFacility
                     CleanRepairList();
 
                     // find all colliders in Centauri LVF repair zone
-                    Vector3 halfExtents = new Vector3
-                    {
-                        x = 12f,
-                        y = 12f,
-                        z = 12f
-                    };
-                    
-                    List<Unit> unitCollidersInArea = new List<Unit>();
-                    foreach (Structure repairShop in Structure.Structures)
-                    {
-                        // filter down to only Centauri Light Vehicle Factories
-                        if (repairShop == null || repairShop.Team == null || repairShop.Team.Index != (int)SiConstants.ETeam.Centauri || repairShop.ObjectInfo.StructureType != StructureType.Production || repairShop.ObjectInfo.StructureSelectionType != StructureSelectionType.Units2)
-                        {
-                            continue;
-                        }
-
-                        //MelonLogger.Msg("Found LVF: " + repairShop.ObjectInfo.DisplayName);
-
-                        Collider[] colliders = Physics.OverlapBox(repairShop.transform.position, halfExtents, repairShop.transform.rotation);
-                        foreach (Collider collider in colliders)
-                        {
-                            BaseGameObject colliderBase = GameFuncs.GetBaseGameObject(collider.gameObject);
-                            if (colliderBase == null)
-                            {
-                                continue;
-                            }
-
-                            Player player = colliderBase.NetworkComponent.OwnerPlayer;
-                            if (player == null)
-                            {
-                                continue;
-                            }
-
-                            // avoid repairing units from enemy base
-                            if (player.Team != repairShop.Team)
-                            {
-                                return;
-                            }
-
-                            Unit unit = player.ControlledUnit;
-                            
-                            if (!unitCollidersInArea.Contains(unit))
-                            {
-                                unitCollidersInArea.Add(unit);
-                                //MelonLogger.Msg("Found player on LVF collider: " + player.PlayerName + " " + unit.ObjectInfo.DisplayName);
-                            }
-                        }
-                    }
-
-                    // add distinct units to the repair shop list
-                    foreach (Unit unit in unitCollidersInArea)
-                    {
-                        if (!vehiclesAtRepairShop.Contains(unit))
-                        {
-                            vehiclesAtRepairShop.Add(unit);
-
-                            MelonLogger.Msg("Found player's " + (unit.IsFlyingType ? "aircraft" : "vehicle") + " entering LVF repair zone: " + unit.ControlledBy.PlayerName + " with vehicle " + unit.ObjectInfo.DisplayName);
-
-                            if (_Pref_Repair_Notification.Value)
-                            {
-                                HelperMethods.SendChatMessageToPlayer(unit.ControlledBy, HelperMethods.chatPrefix, " Entered vehicle repair zone.");
-                            }
-                        }
-                    }
-
-                    // remove distinct units from repair shop list
-                    foreach (Unit checkVehicle in vehiclesAtRepairShop.ToList())
-                    {
-                        if (!unitCollidersInArea.Contains(checkVehicle) && checkVehicle.Team.Index == (int)SiConstants.ETeam.Centauri)
-                        {
-                            vehiclesAtRepairShop.RemoveAll(vehicle => vehicle == checkVehicle);
-
-                            MelonLogger.Msg("Found player's " + (checkVehicle.IsFlyingType ? "aircraft" : "vehicle") + " entering LVF repair zone: " + checkVehicle.ControlledBy.PlayerName + " with vehicle " + checkVehicle.ObjectInfo.DisplayName);
-
-                            if (_Pref_Repair_Notification.Value)
-                            {
-                                HelperMethods.SendChatMessageToPlayer(checkVehicle.ControlledBy, HelperMethods.chatPrefix, " Left vehicle repair zone.");
-                            }
-                        }
-                    }
+                    List<Unit> unitsInRepairZone = Repair_GetCentauriUnits();
+                    Repair_HandleCentauriUnits(unitsInRepairZone);
 
                     // repair vehicles for all gamemodes
-                    foreach (Unit vehicle in vehiclesAtRepairShop)
-                    {
-                        float healAmount = vehicle.DamageManager.MaxHealth * (vehicle.IsFlyingType ? _Pref_Humans_Aircraft_HealRate.Value : _Pref_Humans_Vehicle_HealRate.Value);
-
-                        if (vehicle.DamageManager.Health == vehicle.DamageManager.MaxHealth)
-                        {
-                            if (_Pref_Repair_Notification.Value && vehicle.ControlledBy != null)
-                            {
-                                //HelperMethods.SendChatMessageToPlayer(vehicle.ControlledBy, HelperMethods.chatPrefix, " Debug Info: (Skipping) Health[" + vehicle.DamageManager.Health + "] MaxHP[" + vehicle.DamageManager.MaxHealth + "] HealAmt[" + healAmount + "]");
-                            }
-
-                            continue;
-                        }
-
-                        float newHealthUnclamped = vehicle.DamageManager.Health + healAmount;
-
-                        if (newHealthUnclamped >= vehicle.DamageManager.MaxHealth)
-                        {
-                            vehicle.DamageManager.SetHealth01(1f);
-
-                            if (_Pref_Repair_Notification.Value && vehicle.ControlledBy != null)
-                            {
-                                //HelperMethods.SendChatMessageToPlayer(vehicle.ControlledBy, HelperMethods.chatPrefix, " Debug Info: (Max) Health[" + vehicle.DamageManager.Health + "] MaxHP[" + vehicle.DamageManager.MaxHealth + "] HealAmt[" + healAmount + "]");
-                            }
-                        }
-                        else
-                        {
-                            float newHealth = Mathf.Clamp(newHealthUnclamped, 0.0f, vehicle.DamageManager.MaxHealth);
-
-                            vehicle.DamageManager.SetHealth(newHealth);
-
-                            if (_Pref_Repair_Notification.Value && vehicle.ControlledBy != null)
-                            {
-                                //HelperMethods.SendChatMessageToPlayer(vehicle.ControlledBy, HelperMethods.chatPrefix, " Debug Info: (Incremental) Health[" + vehicle.DamageManager.Health + "] MaxHP[" + vehicle.DamageManager.MaxHealth + "] HealAmt[" + healAmount + "]");
-                            }
-                        }
-                    }
+                    Repair_UnitsAtRepairShop();
 
                     // repair defending structures for Siege
-                    if (GameMode.CurrentGameMode is MP_TowerDefense)
-                    {
-                        foreach (Structure structure in Team.Teams[(int)SiConstants.ETeam.Sol].Structures)
-                        {
-                            if (!structure.DamageManager || structure.DamageManager.IsDestroyed)
-                            {
-                                continue;
-                            }
-
-                            float healAmount = structure.DamageManager.MaxHealth * _Pref_SiegeDefenders_Structure_HealRate.Value;
-
-                            if (structure.DamageManager.Health == structure.DamageManager.MaxHealth)
-                            {
-                                continue;
-                            }
-
-                            float newHealthUnclamped = structure.DamageManager.Health + healAmount;
-
-                            if (newHealthUnclamped >= structure.DamageManager.MaxHealth)
-                            {
-                                structure.DamageManager.SetHealth01(1f);
-                            }
-                            else
-                            {
-                                float newHealth = Mathf.Clamp(newHealthUnclamped, 0.0f, structure.DamageManager.MaxHealth);
-
-                                structure.DamageManager.SetHealth(newHealth);
-                            }
-                        }    
-                    }
+                    Repair_DefenderStructures();
                 }
             }
             catch (Exception error)
@@ -414,6 +277,158 @@ namespace Si_RepairFacility
                         MelonLogger.Warning("Received unknown AutoHealData type: " + __instance.name);
                         __instance.Data.HealAmountPct = _Pref_Aliens_LargeUnit_HealRate.Value;
                         break;
+                }
+            }
+        }
+
+        public static List<Unit> Repair_GetCentauriUnits()
+        {
+            List<Unit> unitsInRepairZone = new List<Unit>();
+            foreach (Structure repairShop in Structure.Structures)
+            {
+                // filter down to only Centauri Light Vehicle Factories
+                if (repairShop == null || repairShop.Team == null || repairShop.Team.Index != (int)SiConstants.ETeam.Centauri || repairShop.ObjectInfo == null || repairShop.ObjectInfo.StructureType != StructureType.Production || repairShop.ObjectInfo.StructureSelectionType != StructureSelectionType.Units2)
+                {
+                    continue;
+                }
+
+                Collider[] colliders = Physics.OverlapBox(repairShop.transform.position, halfExtentsRepairCheck, repairShop.transform.rotation);
+                foreach (Collider collider in colliders)
+                {
+                    BaseGameObject colliderBase = GameFuncs.GetBaseGameObject(collider.gameObject);
+                    if (colliderBase == null)
+                    {
+                        continue;
+                    }
+
+                    NetworkComponent networkComponent = colliderBase.NetworkComponent;
+                    if (networkComponent == null)
+                    {
+                        continue;
+                    }
+
+                    Player player = networkComponent.OwnerPlayer;
+                    if (player == null)
+                    {
+                        continue;
+                    }
+
+                    // avoid repairing units from enemy base
+                    if (player.Team != repairShop.Team)
+                    {
+                        continue;
+                    }
+
+                    Unit unit = player.ControlledUnit;
+                    if (unit == null)
+                    {
+                        MelonLogger.Warning("Found invalid unit in LVF repair zone.");
+                        continue;
+                    }
+
+                    if (!unitsInRepairZone.Contains(unit))
+                    {
+                        unitsInRepairZone.Add(unit);
+                        MelonLogger.Msg("Found player on LVF collider: " + player.PlayerName + " " + unit.ObjectInfo.DisplayName);
+                    }
+                }
+            }
+
+            return unitsInRepairZone;
+        }
+
+        public static void Repair_HandleCentauriUnits(List<Unit> centauriUnitsAtRepairShop)
+        { 
+            // add distinct units to the repair shop list
+            foreach (Unit unit in centauriUnitsAtRepairShop)
+            {
+                if (!vehiclesAtRepairShop.Contains(unit))
+                {
+                    vehiclesAtRepairShop.Add(unit);
+
+                    MelonLogger.Msg("Found player's " + (unit.IsFlyingType ? "aircraft" : "vehicle") + " entering LVF repair zone: " + unit.ControlledBy.PlayerName + " with vehicle " + unit.ObjectInfo.DisplayName);
+
+                    if (_Pref_Repair_Notification.Value)
+                    {
+                        HelperMethods.SendChatMessageToPlayer(unit.ControlledBy, HelperMethods.chatPrefix, " Entered vehicle repair zone.");
+                    }
+                }
+            }
+
+            // remove distinct units from repair shop list
+            foreach (Unit checkVehicle in vehiclesAtRepairShop.ToList())
+            {
+                if (!centauriUnitsAtRepairShop.Contains(checkVehicle) && checkVehicle.Team.Index == (int)SiConstants.ETeam.Centauri)
+                {
+                    vehiclesAtRepairShop.RemoveAll(vehicle => vehicle == checkVehicle);
+
+                    MelonLogger.Msg("Found player's " + (checkVehicle.IsFlyingType ? "aircraft" : "vehicle") + " exiting LVF repair zone: " + checkVehicle.ControlledBy.PlayerName + " with vehicle " + checkVehicle.ObjectInfo.DisplayName);
+
+                    if (_Pref_Repair_Notification.Value)
+                    {
+                        HelperMethods.SendChatMessageToPlayer(checkVehicle.ControlledBy, HelperMethods.chatPrefix, " Left vehicle repair zone.");
+                    }
+                }
+            }
+        }
+
+        public static void Repair_UnitsAtRepairShop()
+        {
+            foreach (Unit vehicle in vehiclesAtRepairShop)
+            {
+                float healAmount = vehicle.DamageManager.MaxHealth * (vehicle.IsFlyingType ? _Pref_Humans_Aircraft_HealRate.Value : _Pref_Humans_Vehicle_HealRate.Value);
+
+                if (vehicle.DamageManager.Health >= vehicle.DamageManager.MaxHealth)
+                {
+                    if (_Pref_Repair_Notification.Value && vehicle.ControlledBy != null)
+                    {
+                        HelperMethods.SendConsoleMessageToPlayer(vehicle.ControlledBy, HelperMethods.chatPrefix, " Debug Info: (Skipping Repairs) Health[" + vehicle.DamageManager.Health + "] MaxHP[" + vehicle.DamageManager.MaxHealth + "] HealAmt[" + healAmount + "]");
+                    }
+
+                    continue;
+                }
+
+                float newHealthUnclamped = vehicle.DamageManager.Health + healAmount;
+                float newHealth = Mathf.Clamp(newHealthUnclamped, 0.1f, vehicle.DamageManager.MaxHealth);
+                vehicle.DamageManager.SetHealth(newHealth);
+
+                if (_Pref_Repair_Notification.Value && vehicle.ControlledBy != null)
+                {
+                    HelperMethods.SendConsoleMessageToPlayer(vehicle.ControlledBy, HelperMethods.chatPrefix, " Debug Info: (Repair) Health[" + vehicle.DamageManager.Health + "] MaxHP[" + vehicle.DamageManager.MaxHealth + "] HealAmt[" + healAmount + "]");
+                }
+            }
+        }
+
+        public static void Repair_DefenderStructures()
+        {
+            if (GameMode.CurrentGameMode is MP_TowerDefense)
+            {
+                foreach (Structure structure in Team.Teams[(int)SiConstants.ETeam.Sol].Structures)
+                {
+                    if (!structure.DamageManager || structure.DamageManager.IsDestroyed)
+                    {
+                        continue;
+                    }
+
+                    float healAmount = structure.DamageManager.MaxHealth * _Pref_SiegeDefenders_Structure_HealRate.Value;
+
+                    if (structure.DamageManager.Health == structure.DamageManager.MaxHealth)
+                    {
+                        continue;
+                    }
+
+                    float newHealthUnclamped = structure.DamageManager.Health + healAmount;
+
+                    if (newHealthUnclamped >= structure.DamageManager.MaxHealth)
+                    {
+                        structure.DamageManager.SetHealth01(1f);
+                    }
+                    else
+                    {
+                        float newHealth = Mathf.Clamp(newHealthUnclamped, 0.0f, structure.DamageManager.MaxHealth);
+
+                        structure.DamageManager.SetHealth(newHealth);
+                    }
                 }
             }
         }
