@@ -329,9 +329,9 @@ jobs:
           # FriendlyFireLimits is disabled by default
           mv release/dedi/Mods/Si_FriendlyFireLimits.dll release/dedi/Mods/~disabled/unsafe
           mv release/listen/Mods/Si_FriendlyFireLimits.dll release/listen/Mods/~disabled/unsafe
-          # Tech Glitch is disabled because the discrepancy is happening on the server side (not client side)
-          mv release/dedi/Mods/Si_TechGlitch.dll release/dedi/Mods/~disabled/obe
-          mv release/listen/Mods/Si_TechGlitch.dll release/listen/Mods/~disabled/obe
+          # Tech Glitch is (temporarily?) re-enabled because glitch is back on client-side now
+          # mv release/dedi/Mods/Si_TechGlitch.dll release/dedi/Mods/~disabled/obe
+          # mv release/listen/Mods/Si_TechGlitch.dll release/listen/Mods/~disabled/obe
           # Better Spawns is disabled because the game added a spawn selection mechanic
           mv release/dedi/Mods/Si_BetterSpawns.dll release/dedi/Mods/~disabled/unsafe
           mv release/listen/Mods/Si_BetterSpawns.dll release/listen/Mods/~disabled/unsafe
