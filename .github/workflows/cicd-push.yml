@@ -326,9 +326,6 @@ jobs:
           # AutoTeamsSelect was addressed with a game update to vote on the next mode
           mv release/dedi/Mods/Si_AutoTeamsSelect.dll release/dedi/Mods/~disabled/obe
           mv release/listen/Mods/Si_AutoTeamsSelect.dll release/listen/Mods/~disabled/obe
-          # FriendlyFireLimits is disabled by default
-          mv release/dedi/Mods/Si_FriendlyFireLimits.dll release/dedi/Mods/~disabled/unsafe
-          mv release/listen/Mods/Si_FriendlyFireLimits.dll release/listen/Mods/~disabled/unsafe
           # Tech Glitch is (temporarily?) re-enabled because glitch is back on client-side now
           # mv release/dedi/Mods/Si_TechGlitch.dll release/dedi/Mods/~disabled/obe
           # mv release/listen/Mods/Si_TechGlitch.dll release/listen/Mods/~disabled/obe
