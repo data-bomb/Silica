@@ -173,6 +173,36 @@ namespace SilicaAdminMod
         }
     }
 
+    public class OnPreDamageReceivedArgs : EventArgs
+    {
+        private DamageManager _damageManager = null!;
+        private GameObject _instigator = null!;
+
+        public DamageManager DamageManager
+        {
+            get => _damageManager;
+            set => _damageManager = value ?? throw new ArgumentNullException("DamageManager is required.");
+        }
+
+        public float Damage
+        {
+            get;
+            set;
+        }
+
+        public GameObject Instigator
+        {
+            get => _instigator;
+            set => _instigator = value ?? throw new ArgumentNullException("Instigator GameObject is required.");
+        }
+
+        public byte HitAngle
+        {
+            get;
+            set;
+        }
+    }
+
     public class OnRequestCommanderArgs : EventArgs
     {
         private Player _requester = null!;
