@@ -20,7 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using MelonLoader;
 using SilicaAdminMod;
 
-[assembly: MelonInfo(typeof(SiAdminMod), "Admin Mod", "2.12.57", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(SiAdminMod), "Admin Mod", "2.12.61", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 // Color.Cyan
