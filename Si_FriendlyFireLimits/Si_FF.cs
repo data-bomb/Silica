@@ -34,7 +34,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using static System.Net.Mime.MediaTypeNames;
 
-[assembly: MelonInfo(typeof(FriendlyFireLimits), "Friendly Fire Limits", "1.3.0", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(FriendlyFireLimits), "Friendly Fire Limits", "1.3.1", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 #if NET6_0
 [assembly: MelonOptionalDependencies("Admin Mod", "QList")]
@@ -61,7 +61,7 @@ namespace Si_FriendlyFireLimits
         {
             _modCategory ??= MelonPreferences.CreateCategory(ModCategory);
             _UnitOnUnitNonExplosionDamageMultipler ??= _modCategory.CreateEntry<float>("FriendlyFire_Unit_ATKs_Unit_DamageRatio", 0.5f);
-            _UnitOnUnitExplosionDamageMultiplier ??= _modCategory.CreateEntry<float>("FriendlyFire_Unit)ATKs_Unit_DamageRatio_Explosion", 0.875f);
+            _UnitOnUnitExplosionDamageMultiplier ??= _modCategory.CreateEntry<float>("FriendlyFire_Unit_ATKs_Unit_DamageRatio_Explosion", 0.875f);
             _UnitOnStructureExplosionDamageMultiplier ??= _modCategory.CreateEntry<float>("FriendlyFire_Unit_ATKs_Structure_DamageRatio_Explosion", 0.625f);
             _UnitOnStructureNonExplosionDamageMultiplier ??= _modCategory.CreateEntry<float>("FriendlyFire_Unit_ATKs_Structure_DamageRatio", 0.0f);
             _StructuresAttackingUnitsDamageRatio ??= _modCategory.CreateEntry<float>("FriendlyFire_Structue_ATKs_Unit_DamageRatio", 0.25f);
@@ -199,16 +199,20 @@ namespace Si_FriendlyFireLimits
         {
             QList.Options.RegisterMod(this);
 
-            QList.OptionTypes.FloatOption unitNonExplosion = new(_UnitOnUnitNonExplosionDamageMultipler, false, _UnitOnUnitNonExplosionDamageMultipler.Value, 0.0f, 100.0f);
-            QList.OptionTypes.FloatOption unitExplosion = new(_UnitOnUnitExplosionDamageMultiplier, false, _UnitOnUnitExplosionDamageMultiplier.Value, 0.0f, 100.0f);
-            QList.OptionTypes.FloatOption structureExplosion = new(_UnitOnStructureExplosionDamageMultiplier, false, _UnitOnStructureExplosionDamageMultiplier.Value, 0.0f, 100.0f);
-            QList.OptionTypes.FloatOption structureNonExplosion = new(_UnitOnStructureNonExplosionDamageMultiplier, false, _UnitOnStructureNonExplosionDamageMultiplier.Value, 0.0f, 100.0f);
+            QList.OptionTypes.FloatOption unitNonExplosion = new(_UnitOnUnitNonExplosionDamageMultipler, false, _UnitOnUnitNonExplosionDamageMultipler.Value, 0.0f, 2.0f);
+            QList.OptionTypes.FloatOption unitExplosion = new(_UnitOnUnitExplosionDamageMultiplier, false, _UnitOnUnitExplosionDamageMultiplier.Value, 0.0f, 2.0f);
+            QList.OptionTypes.FloatOption structureExplosion = new(_UnitOnStructureExplosionDamageMultiplier, false, _UnitOnStructureExplosionDamageMultiplier.Value, 0.0f, 2.0f);
+            QList.OptionTypes.FloatOption structureNonExplosion = new(_UnitOnStructureNonExplosionDamageMultiplier, false, _UnitOnStructureNonExplosionDamageMultiplier.Value, 0.0f, 2.0f);
+            QList.OptionTypes.FloatOption structureAttacksUnits = new(_StructuresAttackingUnitsDamageRatio, false, _UnitOnStructureNonExplosionDamageMultiplier.Value, 0.0f, 2.0f);
+            QList.OptionTypes.FloatOption structureAttacksStructures = new(_StructuresAttackingStructuresDamageRatio, false, _UnitOnStructureNonExplosionDamageMultiplier.Value, 0.0f, 2.0f);
             QList.OptionTypes.BoolOption harvesterPassthrough = new(_HarvesterPassthrough, _HarvesterPassthrough.Value);
 
             QList.Options.AddOption(unitNonExplosion);
             QList.Options.AddOption(unitExplosion);
             QList.Options.AddOption(structureExplosion);
             QList.Options.AddOption(structureNonExplosion);
+            QList.Options.AddOption(structureAttacksUnits);
+            QList.Options.AddOption(structureAttacksStructures);
             QList.Options.AddOption(harvesterPassthrough);
         }
         #endif
