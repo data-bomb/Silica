@@ -108,8 +108,8 @@ namespace SilicaAdminMod
                 // subscribe to the OnRequestPlayerChat event
                 Event_Chat.OnRequestPlayerChat += ClientChatHandler.OnRequestPlayerChat;
 
-                // set the flag that allows server browser filtering on mods
-                Game.ExternalMod = true;
+                // don't set this flag yet because it causes servers to not get advertised
+                // Game.ExternalMod = true;
             }
             catch (Exception error)
             {
