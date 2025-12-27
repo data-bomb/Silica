@@ -32,8 +32,9 @@ using System;
 using SilicaAdminMod;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using static System.Net.Mime.MediaTypeNames;
 
-[assembly: MelonInfo(typeof(FriendlyFireLimits), "Friendly Fire Limits", "1.2.6", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(FriendlyFireLimits), "Friendly Fire Limits", "1.3.0", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 #if NET6_0
 [assembly: MelonOptionalDependencies("Admin Mod", "QList")]
@@ -50,6 +51,8 @@ namespace Si_FriendlyFireLimits
         static MelonPreferences_Entry<float> _UnitOnUnitExplosionDamageMultiplier = null!;
         static MelonPreferences_Entry<float> _UnitOnStructureExplosionDamageMultiplier = null!;
         static MelonPreferences_Entry<float> _UnitOnStructureNonExplosionDamageMultiplier = null!;
+        static MelonPreferences_Entry<float> _StructuresAttackingUnitsDamageRatio = null!;
+        static MelonPreferences_Entry<float> _StructuresAttackingStructuresDamageRatio = null!;
         static MelonPreferences_Entry<bool> _HarvesterPassthrough = null!;
 
         private const string ModCategory = "Silica";
@@ -57,16 +60,20 @@ namespace Si_FriendlyFireLimits
         public override void OnInitializeMelon()
         {
             _modCategory ??= MelonPreferences.CreateCategory(ModCategory);
-            _UnitOnUnitNonExplosionDamageMultipler ??= _modCategory.CreateEntry<float>("FriendlyFire_UnitAttacked_DamageMultiplier", 0.75f);
-            _UnitOnUnitExplosionDamageMultiplier ??= _modCategory.CreateEntry<float>("FriendlyFire_UnitAttacked_DamageMultiplier_Exp", 0.85f);
-            _UnitOnStructureExplosionDamageMultiplier ??= _modCategory.CreateEntry<float>("FriendlyFire_StructureAttacked_DamageMultiplier_Exp", 0.65f);
-            _UnitOnStructureNonExplosionDamageMultiplier ??= _modCategory.CreateEntry<float>("FriendlyFire_StructureAttacked_DamageMultiplier_NonExp", 0.0f);
-            _HarvesterPassthrough ??= _modCategory.CreateEntry<bool>("FriendlyFire_Passthrough_Harvester_Damage", true);
+            _UnitOnUnitNonExplosionDamageMultipler ??= _modCategory.CreateEntry<float>("FriendlyFire_Unit_ATKs_Unit_DamageRatio", 0.5f);
+            _UnitOnUnitExplosionDamageMultiplier ??= _modCategory.CreateEntry<float>("FriendlyFire_Unit)ATKs_Unit_DamageRatio_Explosion", 0.875f);
+            _UnitOnStructureExplosionDamageMultiplier ??= _modCategory.CreateEntry<float>("FriendlyFire_Unit_ATKs_Structure_DamageRatio_Explosion", 0.625f);
+            _UnitOnStructureNonExplosionDamageMultiplier ??= _modCategory.CreateEntry<float>("FriendlyFire_Unit_ATKs_Structure_DamageRatio", 0.0f);
+            _StructuresAttackingUnitsDamageRatio ??= _modCategory.CreateEntry<float>("FriendlyFire_Structue_ATKs_Unit_DamageRatio", 0.25f);
+            _StructuresAttackingStructuresDamageRatio ??= _modCategory.CreateEntry<float>("FriendlyFire_Structue_ATKs_Structure_DamageRatio", 0.25f);
+            _HarvesterPassthrough ??= _modCategory.CreateEntry<bool>("FriendlyFire_Allow_Harvester_Damage", true);
         }
 
         [MethodImpl(MethodImplOptions.NoOptimization)]
         public override void OnLateInitializeMelon()
         {
+            Event_Damage.OnPrePlayerDamageReceived += OnPreDamageReceived_FriendlyFireCheck;
+
             #if NET6_0
             bool QListLoaded = RegisteredMelons.Any(m => m.Info.Name == "QList");
             if (QListLoaded)
@@ -74,6 +81,116 @@ namespace Si_FriendlyFireLimits
                 QListRegistration();
             }
             #endif
+        }
+
+        public void OnPreDamageReceived_FriendlyFireCheck(object? sender, OnPreDamageReceivedArgs args)
+        {
+            try
+            {
+                if (args == null)
+                {
+                    return;
+                }
+
+                // not team damage?
+                if (!IsDamageFriendlyFire(args.DamageManager, args.Instigator))
+                {
+                    return;
+                }
+
+                // damaging self?
+                if (IsDamageSelfInflicted(args.DamageManager, args.Instigator))
+                {
+                    return;
+                }
+
+                // adjust FF damage
+                args.Damage = FindTeamDamage(args.DamageManager, args.Instigator, args.Damage, EDamageType.None, true);
+            }
+            catch (Exception error)
+            {
+                HelperMethods.PrintError(error, "Failed to run OnPreDamageReceived_FriendlyFireCheck");
+            }
+        }
+
+        public static bool IsDamageSelfInflicted(DamageManager victimDamageManager, UnityEngine.GameObject instigatorObject)
+        {
+            return (instigatorObject.GetBaseGameObject() == victimDamageManager.Owner);
+        }
+
+        public static bool IsDamageFriendlyFire(DamageManager victimDamageManager, UnityEngine.GameObject instigatorObject)
+        {
+            BaseGameObject instigatorBase = instigatorObject.GetBaseGameObject();
+            if (instigatorBase == null || instigatorBase.Team == null || victimDamageManager.Owner == null)
+            {
+                return false;
+            }
+
+            return (instigatorBase.Team.Index == victimDamageManager.Owner.Team.Index);
+        }
+
+        public static float FindTeamDamage(DamageManager victimDamageManager, UnityEngine.GameObject instigatorObject, float originalDamage, EDamageType damageType = EDamageType.None, bool playerControlled = false)
+        {
+            // Victim/Attacker Object Types
+            ObjectInfo victimObject = victimDamageManager.Owner.ObjectInfo;
+            ObjectInfo attackerObject = instigatorObject.GetBaseGameObject().ObjectInfo;
+            ObjectInfoType victimType = victimObject.ObjectType;
+            ObjectInfoType attackerType = attackerObject.ObjectType;
+
+            // Unit vs Unit Friendly Fire
+            if (victimType == ObjectInfoType.Unit && attackerType == ObjectInfoType.Unit)
+            {
+                // check if we should skip harvester damage adjustments
+                if (_HarvesterPassthrough.Value && victimObject.UnitType == UnitType.Harvester)
+                {
+                    return originalDamage;
+                }
+
+                // AoE explosion FF damage
+                if (damageType == EDamageType.Explosion)
+                {
+                    return originalDamage * _UnitOnUnitExplosionDamageMultiplier.Value;
+                }
+
+                // any other Unit vs Unit FF damage
+                return originalDamage * _UnitOnUnitNonExplosionDamageMultipler.Value;
+            }
+
+            // Unit vs Structure Friendly Fire
+            if (victimType == ObjectInfoType.Structure && attackerType == ObjectInfoType.Unit)
+            {
+                // AoE explosion FF damage
+                if (damageType == EDamageType.Explosion)
+                {
+                    return originalDamage * _UnitOnStructureExplosionDamageMultiplier.Value;
+                }
+
+                // any other Unit vs Structure FF damage
+                return originalDamage * _UnitOnStructureNonExplosionDamageMultiplier.Value;
+            }
+
+            // Structure vs Unit Friendly Fire
+            if (victimType == ObjectInfoType.Unit && attackerType == ObjectInfoType.Structure)
+            {
+                // check if we should skip harvester damage adjustments
+                if (_HarvesterPassthrough.Value && victimObject.UnitType == UnitType.Harvester)
+                {
+                    return originalDamage;
+                }
+
+                // any other Structure vs Unit FF damage
+                return originalDamage * _StructuresAttackingUnitsDamageRatio.Value;
+            }
+
+            // Structure vs Structure Friendly Fire
+            if (victimType == ObjectInfoType.Structure && attackerType == ObjectInfoType.Structure)
+            {
+                // any Structure vs Structure FF damage
+                return originalDamage * _StructuresAttackingStructuresDamageRatio.Value;
+            }
+
+            MelonLogger.Warning("Hit unexpected statement in FindTeamDamage");
+            return originalDamage;
         }
 
         #if NET6_0
@@ -94,194 +211,38 @@ namespace Si_FriendlyFireLimits
             QList.Options.AddOption(structureNonExplosion);
             QList.Options.AddOption(harvesterPassthrough);
         }
-#endif
+        #endif
 
-        [HarmonyPatch(typeof(GameByteStreamReader), nameof(GameByteStreamReader.GetGameByteStreamReader))]
-        static class GetGameByteStreamReaderPrePatch
-        {
-            #if NET6_0
-            public static void Prefix(GameByteStreamReader __result, Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppStructArray<byte> __0, int __1, uint __2, string __3, bool __4)
-            #else
-            public static void Prefix(GameByteStreamReader __result, byte[] __0, int __1, uint __2, string __3, bool __4)
-            #endif
-            {
-                try
-                {
-                    // byte[0] = (2) Byte
-                    // byte[1] = ENetworkPacketType
-                    ENetworkPacketType packetType = (ENetworkPacketType)__0[1];
-                    if (packetType == ENetworkPacketType.ObjectClientDamageHit)
-                    {
-                        // byte[2] = (8) PackedUInt32
-                        // byte[3:4] = NetID
-                        uint victimNetID;
-                        if (__0[3] >= 241)
-                        {
-                            victimNetID = (__0[3] * (uint)0x100 - (uint)0xf010) + __0[4];
-                        }
-                        else
-                        {
-                            victimNetID = __0[3];
-                        }
-
-                        NetworkComponent victimNetComp = NetworkComponent.GetNetObject(victimNetID);
-
-                        uint attackerNetID;
-                        if (__0[21] >= 241)
-                        {
-                            attackerNetID = (__0[21] * (uint)0x100 - (uint)0xf010) + __0[22];
-                        }
-                        else
-                        {
-                            attackerNetID = __0[21];
-                        }
-
-                        NetworkComponent attackerNetComp = NetworkComponent.GetNetObject(attackerNetID);
-
-                        // byte[5] = (8) PackedUInt32
-                        // byte[6:7] = colliderIndex
-                        uint colliderIndex;
-                        if (__0[6] >= 241)
-                        {
-                            colliderIndex = (__0[6] * (uint)0x100 - (uint)0xf010) + __0[7];
-                        }
-                        else
-                        {
-                            colliderIndex = __0[6];
-                        }
-
-                        if (victimNetComp != null && attackerNetComp != null && colliderIndex >= 1)
-                        {
-                            BaseGameObject victimBase = victimNetComp.Owner;
-                            BaseGameObject attackerBase = attackerNetComp.Owner;
-
-                            if (victimBase == null || attackerBase == null)
-                            {
-                                return;
-                            }
-
-                            Team victimTeam = victimBase.Team;
-                            Team attackerTeam = attackerBase.Team;
-
-                            // if they'rea on the same team but allow fall damage
-                            if (victimTeam == attackerTeam && victimBase != attackerBase)
-                            {
-                                // Victim Object Type
-                                ObjectInfoType victimType = victimBase.ObjectInfo.ObjectType;
-                                // Attacker Object Type
-                                ObjectInfoType attackerType = attackerBase.ObjectInfo.ObjectType;
-
-                                EDamageType damagetype = (EDamageType)__0[13];
-                                float damage = BitConverter.ToSingle(__0, 8);
-
-                                // block units attacking friendly units
-                                if (victimType == ObjectInfoType.Unit && attackerType == ObjectInfoType.Unit)
-                                {
-                                    // check if we should skip harvester damage
-                                    if (_HarvesterPassthrough.Value && victimBase.ObjectInfo.UnitType == UnitType.Harvester)
-                                    {
-                                        return;
-                                    }
-
-                                    // AoE does more damage (by default)
-                                    byte[] modifiedDamage;
-                                    if (damagetype != EDamageType.Explosion)
-                                    {
-                                        modifiedDamage = BitConverter.GetBytes(damage * _UnitOnUnitExplosionDamageMultiplier.Value);
-                                    }
-                                    else
-                                    {
-                                        modifiedDamage = BitConverter.GetBytes(damage * _UnitOnUnitNonExplosionDamageMultipler.Value);
-                                    }
-
-                                    for (int i = 0; i < modifiedDamage.Length; i++)
-                                    {
-                                        __0[8 + i] = modifiedDamage[i];
-                                    }
-
-                                    return;
-                                }
-
-                                // reduce damage of units attacking friendly structures
-                                if (victimType == ObjectInfoType.Structure && attackerType == ObjectInfoType.Unit)
-                                {
-                                    // AoE goes through with more damage (by default)
-                                    byte[] modifiedDamage;
-                                    if (damagetype == EDamageType.Explosion)
-                                    {
-                                        modifiedDamage = BitConverter.GetBytes(damage * _UnitOnStructureExplosionDamageMultiplier.Value);
-                                    }
-                                    else
-                                    {
-                                        modifiedDamage = BitConverter.GetBytes(damage * _UnitOnStructureNonExplosionDamageMultiplier.Value);
-                                    }
-
-                                    for (int i = 0; i < modifiedDamage.Length; i++)
-                                    {
-                                        __0[8 + i] = modifiedDamage[i];
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                catch (Exception error)
-                {
-                    HelperMethods.PrintError(error, "Failed to run GameByteStreamReader::GetGameByteStreamReader");
-                }
-            }
-        }
-
-        // this applies to the host
+        // use this patch for AI-instigated damage
         [HarmonyPatch(typeof(DamageManager), nameof(DamageManager.ApplyDamage))]
         static class ApplyPatchApplyDamage
         {
-            public static bool Prefix(DamageManager __instance, ref float __result, UnityEngine.Collider __0, float __1, EDamageType __2, UnityEngine.GameObject __3, UnityEngine.Vector3 __4)
+            public static bool Prefix(DamageManager __instance, float __result, UnityEngine.Collider __0, ref float __1, EDamageType __2, UnityEngine.GameObject __3, UnityEngine.Vector3 __4)
             {
                 try
                 {
-                    // Victim Team
-                    BaseGameObject victimBase = __instance.Owner;
-                    Team victimTeam = __instance.Team;
-                    // Attacker Team
+                    // is the instigator AI or player-controlled?
                     BaseGameObject attackerBase = GameFuncs.GetBaseGameObject(__3);
-                    Team attackerTeam = attackerBase.Team;
-
-                    // if they'rea on the same team but allow fall damage
-                    if (victimTeam == attackerTeam && victimBase != attackerBase)
+                    if (attackerBase.NetworkComponent.OwnerPlayer != null)
                     {
-                        // Victim Object Type
-                        ObjectInfoType victimType = victimBase.ObjectInfo.ObjectType;
-                        // Attacker Object Type
-                        ObjectInfoType attackerType = attackerBase.ObjectInfo.ObjectType;
-
-                        // block units attacking friendly units
-                        if (victimType == ObjectInfoType.Unit && attackerType == ObjectInfoType.Unit)
-                        {
-                            // but don't block AoE and don't block if victim is a harvester
-                            if (__2 != EDamageType.Explosion && victimBase.ObjectInfo.UnitType != UnitType.Harvester)
-                            {
-                                __result = __1 * _UnitOnUnitNonExplosionDamageMultipler.Value;
-                                return false;
-                            }
-                        }
-
-                        // reduce damage of units attacking friendly structures
-                        if (victimType == ObjectInfoType.Structure && attackerType == ObjectInfoType.Unit)
-                        {
-                            // AoE goes through with more damage
-                            if (__2 == EDamageType.Explosion)
-                            {
-                                __result = __1 * _UnitOnStructureExplosionDamageMultiplier.Value;
-                            }
-                            else
-                            {
-                                __result = __1 * _UnitOnStructureNonExplosionDamageMultiplier.Value;
-                            }
-
-                            return true;
-                        }
+                        MelonLogger.Msg("Aborting for player-controlled damage.");
+                        return true;
                     }
+
+                    // not team damage?
+                    if (!IsDamageFriendlyFire(__instance, __3))
+                    {
+                        return true;
+                    }
+
+                    // damaging self?
+                    if (IsDamageSelfInflicted(__instance, __3))
+                    {
+                        return true;
+                    }
+
+                    // adjust FF damage
+                    __1 = FindTeamDamage(__instance, __3, __1, __2);
                 }
                 catch (Exception error)
                 {
