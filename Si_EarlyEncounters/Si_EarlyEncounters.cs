@@ -36,7 +36,7 @@ using Si_EarlyEncounters;
 using System.Collections.Generic;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(EarlyEncounters), "Early Encounters", "1.1.1", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(EarlyEncounters), "Early Encounters", "1.1.2", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -249,7 +249,7 @@ namespace Si_EarlyEncounters
 
         private static void SpawnRandomCrate()
         {
-            Vector2 mapPercentages = new Vector2(UnityEngine.Random.Range(0f, 1f), UnityEngine.Random.Range(0f, 1f));
+            Vector2 mapPercentages = new Vector2(UnityEngine.Random.Range(0.01f, 0.99f), UnityEngine.Random.Range(0.01f, 0.99f));
             Vector2 mapCoords = GetWorldMapPositionFromPercentage(mapPercentages);
             Vector3 finalPosition = GetFinalWorldMapPosition(mapCoords);
             string crateTypeName = crateSpawnNames[UnityEngine.Random.Range(0, crateSpawnNames.Length)];
