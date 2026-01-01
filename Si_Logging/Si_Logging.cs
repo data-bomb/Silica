@@ -41,7 +41,7 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using static MelonLoader.MelonLogger;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.9.6", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.9.7", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 #if NET6_0
 [assembly: MelonOptionalDependencies("Admin Mod", "QList")]
@@ -387,7 +387,25 @@ namespace Si_Logging
                             HelperMethods.SendConsoleMessage($"{attackerPretty} ({instigator}) killed {AIPretty} ({victimUnit})");
                         }
                     }
+                    // Everyone is AI but Victim is the Queen
+                    else if (__0.ObjectInfo.Critical)
+                    {
+                        string attacker = AddAIAttackerLogEntry(__1, attackerBase.Team);
+                        string victim = AddAIVictimLogEntry(__0);
+                        string weapon = AddKilledWithEntry(__0, __1);
+                        string position = GetPlayerPosition(__0, __1);
 
+                        PrintLogLine($"{attacker} killed {victim} with {weapon} {position}");
+
+                        if (Pref_Log_PlayerConsole_Enable.Value)
+                        {
+                            string AIPretty = AddAIConsoleEntry();
+                            string instigator = GetNameFromObject(__1);
+                            string victimUnit = GetNameFromUnit(__0);
+
+                            HelperMethods.SendConsoleMessage($"{AIPretty} ({instigator}) killed {AIPretty} ({victimUnit})");
+                        }
+                    }
                 }
                 catch (Exception error)
                 {
