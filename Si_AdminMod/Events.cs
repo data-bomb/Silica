@@ -131,7 +131,7 @@ namespace SilicaAdminMod
         }
     }
 
-    public class OnRequestBuildStructureArgs : EventArgs
+    public class OnRequestBuildArgs : EventArgs
     {
         private ConstructionData _constructionData = null!;
         private Structure _structure = null!;
@@ -139,7 +139,7 @@ namespace SilicaAdminMod
         public Structure ParentStructure
         {
             get => _structure;
-            set => _structure = value ?? throw new ArgumentNullException("Structure is required.");
+            set => _structure = value ?? throw new ArgumentNullException("Parent Structure is required.");
         }
 
         public ConstructionData ConstructionData

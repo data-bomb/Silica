@@ -26,7 +26,6 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Data;
 using System.Collections.Generic;
-using static MelonLoader.MelonLogger;
 
 
 #if NET6_0
@@ -42,7 +41,7 @@ namespace SilicaAdminMod
 {
     public static class Event_Construction
     {
-        public static event EventHandler<OnRequestBuildStructureArgs> OnRequestBuildStructure = delegate { };
+        public static event EventHandler<OnRequestBuildArgs> OnRequestBuildStructure = delegate { };
 
         [HarmonyPatch(typeof(Structure), nameof(Structure.Construct))]
         static class ApplyPatch_Structure_Construct
@@ -54,13 +53,20 @@ namespace SilicaAdminMod
                     MelonLogger.Msg("Structure::Construct detour hit");
                 }
 
-                OnRequestBuildStructureArgs onRequestBuildStructureArgs = FireOnRequestBuildStructureEvent(constructionData, parentStructure, worldPosition, rotation, isClientRequest);
+                OnRequestBuildArgs onRequestBuildArgs = FireOnRequestBuildStructureEvent(constructionData, parentStructure, worldPosition, rotation, isClientRequest);
 
-                if (onRequestBuildStructureArgs.Block)
+                if (onRequestBuildArgs.Block)
                 {
                     if (SiAdminMod.Pref_Admin_DebugLogMessages.Value)
                     {
-                        MelonLogger.Msg("Blocking construction of structure (" + constructionData.name + ") on Team " + parentStructure.Team.TeamShortName);
+                        if (constructionData.ObjectInfo.ObjectType == ObjectInfoType.Unit)
+                        {
+                            MelonLogger.Msg("Blocking construction of unit (" + constructionData.ObjectInfo.DisplayName + ") on Team " + parentStructure.Team.TeamShortName);
+                        }
+                        else
+                        {
+                            MelonLogger.Msg("Blocking construction of structure (" + constructionData.ObjectInfo.DisplayName + ") on Team " + parentStructure.Team.TeamShortName);
+                        }
                     }
 
                     return true;
@@ -69,7 +75,7 @@ namespace SilicaAdminMod
                 return false;
             }
 
-            static int FindEntryPoint_Structure_Construct(List<CodeInstruction> opCodes)
+            static int FindEntryPoint_Structure_Construct_Structure(List<CodeInstruction> opCodes)
             {
                 // find the last instance of calling RequestConstructionSite method
                 var methodRequestConstructionSite = AccessTools.Method(typeof(ConstructionData), "RequestConstructionSite");
@@ -120,7 +126,7 @@ namespace SilicaAdminMod
                 return insertionPoint;
             }
 
-            static List<CodeInstruction> GenerateILPatch_Structure_Construct(ILGenerator generator)
+            static List<CodeInstruction> GenerateILPatch_Structure_Construct_Structure(ILGenerator generator)
             {
                 Label skipExit = generator.DefineLabel();
                 var detourStructureConstruct = AccessTools.Method(typeof(ApplyPatch_Structure_Construct), nameof(ApplyPatch_Structure_Construct.Detour_BeforeRequestConstructionSite));
@@ -146,7 +152,7 @@ namespace SilicaAdminMod
             static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
             {
                 var opCodes = instructions.ToList();
-                int insertionPoint = FindEntryPoint_Structure_Construct(opCodes);
+                int insertionPoint = FindEntryPoint_Structure_Construct_Structure(opCodes);
 
                 // don't make any modifications without confidence in insertionPoint
                 if (insertionPoint < 0)
@@ -155,7 +161,7 @@ namespace SilicaAdminMod
                 }
 
                 // generate the IL we need to insert before the last RequestConstructionSite call
-                var inlineOpCodes = GenerateILPatch_Structure_Construct(generator);
+                var inlineOpCodes = GenerateILPatch_Structure_Construct_Structure(generator);
 
                 // insert code before the stack adjustments start for RequestConstructionSite
                 opCodes.InsertRange(insertionPoint, inlineOpCodes);
@@ -165,15 +171,15 @@ namespace SilicaAdminMod
             #endif
         }
 
-        public static OnRequestBuildStructureArgs FireOnRequestBuildStructureEvent(ConstructionData constructionData, Structure parentStructure, Vector3 position, Quaternion rotation, bool playerInitiated)
+        public static OnRequestBuildArgs FireOnRequestBuildStructureEvent(ConstructionData constructionData, Structure parentStructure, Vector3 position, Quaternion rotation, bool playerInitiated)
         {
-            OnRequestBuildStructureArgs onRequestBuildStructureArgs = new OnRequestBuildStructureArgs();
+            OnRequestBuildArgs onRequestBuildStructureArgs = new OnRequestBuildArgs();
             onRequestBuildStructureArgs.ConstructionData = constructionData;
             onRequestBuildStructureArgs.ParentStructure = parentStructure;
             onRequestBuildStructureArgs.Position = position;
             onRequestBuildStructureArgs.Rotation = rotation;
             onRequestBuildStructureArgs.PlayerInitiated = playerInitiated;
-            EventHandler<OnRequestBuildStructureArgs> requestBuildStructureEvent = OnRequestBuildStructure;
+            EventHandler<OnRequestBuildArgs> requestBuildStructureEvent = OnRequestBuildStructure;
             if (requestBuildStructureEvent != null)
             {
                 requestBuildStructureEvent(null, onRequestBuildStructureArgs);
