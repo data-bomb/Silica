@@ -31,13 +31,10 @@ using SilicaAdminMod;
 using System;
 using System.Linq;
 using UnityEngine;
-
 using Si_RepairFacility;
 using System.Collections.Generic;
-using System.Text;
-using static MelonLoader.MelonLogger;
 
-[assembly: MelonInfo(typeof(RepairFacility), "Repair Facility", "1.3.1", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(RepairFacility), "Repair Facility", "1.3.2", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -337,6 +334,27 @@ namespace Si_RepairFacility
             return unitsInRepairZone;
         }
 
+        public static List<Unit> Repair_GetStaleCentauriUnits(List<Unit> centauriUnitsAtRepairShop)
+        {
+            List<Unit> centauriUnitsToRemoveFromRepairZone = new List<Unit>();
+
+            foreach (Unit checkVehicle in vehiclesAtRepairShop)
+            {
+                // only worried about centauri vehicles
+                if (checkVehicle.Team.Index != (int)SiConstants.ETeam.Centauri)
+                {
+                    continue;
+                }
+
+                if (!centauriUnitsAtRepairShop.Contains(checkVehicle))
+                {
+                    centauriUnitsToRemoveFromRepairZone.Add(checkVehicle);
+                }
+            }
+
+            return centauriUnitsToRemoveFromRepairZone;
+        }
+
         public static void Repair_HandleCentauriUnits(List<Unit> centauriUnitsAtRepairShop)
         { 
             // add distinct units to the repair shop list
@@ -355,19 +373,19 @@ namespace Si_RepairFacility
                 }
             }
 
-            // remove distinct units from repair shop list
-            foreach (Unit checkVehicle in vehiclesAtRepairShop.ToList())
+            // identify units to remove from repair shop list
+            List<Unit> centauriUnitsToRemove = Repair_GetStaleCentauriUnits(centauriUnitsAtRepairShop);
+
+            // remove the centauri units
+            foreach (Unit centauriUnitToRemove in centauriUnitsToRemove)
             {
-                if (!centauriUnitsAtRepairShop.Contains(checkVehicle) && checkVehicle.Team.Index == (int)SiConstants.ETeam.Centauri)
+                vehiclesAtRepairShop.RemoveAll(vehicle => vehicle == centauriUnitToRemove);
+
+                MelonLogger.Msg("Found player's " + (centauriUnitToRemove.IsFlyingType ? "aircraft" : "vehicle") + " exiting LVF repair zone: " + centauriUnitToRemove.ControlledBy.PlayerName + " with vehicle " + centauriUnitToRemove.ObjectInfo.DisplayName);
+
+                if (_Pref_Repair_Notification.Value)
                 {
-                    vehiclesAtRepairShop.RemoveAll(vehicle => vehicle == checkVehicle);
-
-                    MelonLogger.Msg("Found player's " + (checkVehicle.IsFlyingType ? "aircraft" : "vehicle") + " exiting LVF repair zone: " + checkVehicle.ControlledBy.PlayerName + " with vehicle " + checkVehicle.ObjectInfo.DisplayName);
-
-                    if (_Pref_Repair_Notification.Value)
-                    {
-                        HelperMethods.SendChatMessageToPlayer(checkVehicle.ControlledBy, HelperMethods.chatPrefix, " Left vehicle repair zone.");
-                    }
+                    HelperMethods.SendChatMessageToPlayer(centauriUnitToRemove.ControlledBy, HelperMethods.chatPrefix, " Left vehicle repair zone.");
                 }
             }
         }
