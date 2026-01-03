@@ -42,6 +42,7 @@ namespace SilicaAdminMod
     public static class Event_Construction
     {
         public static event EventHandler<OnRequestBuildArgs> OnRequestBuildStructure = delegate { };
+        public static event EventHandler<OnRequestBuildArgs> OnRequestBuildUnit = delegate { };
 
         [HarmonyPatch(typeof(Structure), nameof(Structure.Construct))]
         static class ApplyPatch_Structure_Construct
@@ -53,20 +54,15 @@ namespace SilicaAdminMod
                     MelonLogger.Msg("Structure::Construct detour hit");
                 }
 
-                OnRequestBuildArgs onRequestBuildArgs = FireOnRequestBuildStructureEvent(constructionData, parentStructure, worldPosition, rotation, isClientRequest);
+                bool isStructure = constructionData.ObjectInfo.ObjectType != ObjectInfoType.Unit;
+
+                OnRequestBuildArgs onRequestBuildArgs = FireOnRequestBuildEvent(constructionData, parentStructure, worldPosition, rotation, isClientRequest, isStructure);
 
                 if (onRequestBuildArgs.Block)
                 {
                     if (SiAdminMod.Pref_Admin_DebugLogMessages.Value)
                     {
-                        if (constructionData.ObjectInfo.ObjectType == ObjectInfoType.Unit)
-                        {
-                            MelonLogger.Msg("Blocking construction of unit (" + constructionData.ObjectInfo.DisplayName + ") on Team " + parentStructure.Team.TeamShortName);
-                        }
-                        else
-                        {
-                            MelonLogger.Msg("Blocking construction of structure (" + constructionData.ObjectInfo.DisplayName + ") on Team " + parentStructure.Team.TeamShortName);
-                        }
+                        MelonLogger.Msg("Blocking construction of " + (isStructure ? "structure" : "unit") + " (" + constructionData.ObjectInfo.DisplayName + ") on Team " + parentStructure.Team.TeamShortName);
                     }
 
                     return true;
@@ -75,26 +71,82 @@ namespace SilicaAdminMod
                 return false;
             }
 
-            static int FindEntryPoint_Structure_Construct_Structure(List<CodeInstruction> opCodes)
+            static int FindMethodCallInCode(List<CodeInstruction> opCodes, MethodInfo methodCall, bool firstMatch)
             {
-                // find the last instance of calling RequestConstructionSite method
-                var methodRequestConstructionSite = AccessTools.Method(typeof(ConstructionData), "RequestConstructionSite");
-                if (methodRequestConstructionSite == null)
+                int methodCallLocation = -1;
+
+                for (int i = 0; i < opCodes.Count; i++)
                 {
-                    MelonLogger.Warning("Transpiler failure of Structure::Construct. Cannot locate RequestConstructionSite method. Structure events will not function correctly.");
+                    if (opCodes[i].Calls(methodCall))
+                    {
+                        methodCallLocation = i;
+
+                        if (firstMatch)
+                        {
+                            return methodCallLocation;
+                        }
+                    }
+                }
+
+                return methodCallLocation;
+            }
+
+            static int FindEntryPoint_Structure_Construct_Unit(List<CodeInstruction> opCodes)
+            {
+                // find the last instance of calling RPC_Enqueue method
+                MethodInfo methodRPCEnqueueConstructionData = AccessTools.Method(typeof(Structure), "RPC_Enqueue");
+                if (methodRPCEnqueueConstructionData == null)
+                {
+                    MelonLogger.Warning("Transpiler failure of Structure::Construct. Cannot locate RPC_Enqueue method. Unit construction events will not function correctly.");
                     return -1;
                 }
 
-                int lastConstructionSiteCall = -1;
-                for (int i = 0; i < opCodes.Count; i++)
+                int lastRPCEnqueueCall = FindMethodCallInCode(opCodes, methodRPCEnqueueConstructionData, false);
+                MelonLogger.Msg("(Structure::Construct Transpiler_Unit) Found last call of RPCEnqueue at opCode[" + lastRPCEnqueueCall + "]");
+
+                // if we couldn't find any calls then the game was updated in an unexpected way
+                if (lastRPCEnqueueCall < 0)
                 {
-                    if (opCodes[i].Calls(methodRequestConstructionSite))
+                    MelonLogger.Warning("Transpiler failure of Structure::Construct. Cannot locate RPCEnqueue call. Unit construction events will not function correctly.");
+                    return -1;
+                }
+
+                // scan upwards to the beginning of the call stack for the RequestConstructionSite method
+                int insertionPoint = lastRPCEnqueueCall;
+                for (int i = lastRPCEnqueueCall; i >= 0; i--)
+                {
+                    if (opCodes[i].IsLdarg(0)) // first argument (Structure parentStructure)
                     {
-                        lastConstructionSiteCall = i;
+                        insertionPoint = i;
+                        break;
                     }
                 }
-                
-                MelonLogger.Msg("(Structure::Construct Transpiler) Found last call of ReqConSite at opCode[" + lastConstructionSiteCall + "]");
+
+                // if we're at 0 then the game was updated in an unexpected way
+                if (insertionPoint == 0)
+                {
+                    MelonLogger.Warning("Transpiler failure of Structure::Construct. Cannot locate ldarg0. Unit construction events will not function correctly.");
+                    return -1;
+                }
+
+                MelonLogger.Msg("(Structure::Construct Transpiler_Unit) Found insertion point at opCode[" + insertionPoint + "]");
+
+                return insertionPoint;
+            }
+
+            static int FindEntryPoint_Structure_Construct_Structure(List<CodeInstruction> opCodes)
+            {
+                // find the last instance of calling RequestConstructionSite method
+                MethodInfo methodRequestConstructionSite = AccessTools.Method(typeof(ConstructionData), "RequestConstructionSite");
+                if (methodRequestConstructionSite == null)
+                {
+                    MelonLogger.Warning("Transpiler failure of Structure::Construct. Cannot locate RequestConstructionSite method. Structure construction events will not function correctly.");
+                    return -1;
+                }
+
+
+                int lastConstructionSiteCall = FindMethodCallInCode(opCodes, methodRequestConstructionSite, false);
+                MelonLogger.Msg("(Structure::Construct Transpiler_Structure) Found last call of ReqConSite at opCode[" + lastConstructionSiteCall + "]");
                 
                 // if we couldn't find any calls then the game was updated in an unexpected way
                 if (lastConstructionSiteCall < 0)
@@ -121,14 +173,14 @@ namespace SilicaAdminMod
                     return -1;
                 }
 
-                MelonLogger.Msg("(Structure::Construct Transpiler) Found insertion point at opCode[" + insertionPoint + "]");
+                MelonLogger.Msg("(Structure::Construct Transpiler_Structure) Found insertion point at opCode[" + insertionPoint + "]");
 
                 return insertionPoint;
             }
 
             static List<CodeInstruction> GenerateILPatch_Structure_Construct_Structure(ILGenerator generator)
             {
-                Label skipExit = generator.DefineLabel();
+                Label skipStructureExit = generator.DefineLabel();
                 var detourStructureConstruct = AccessTools.Method(typeof(ApplyPatch_Structure_Construct), nameof(ApplyPatch_Structure_Construct.Detour_BeforeRequestConstructionSite));
 
                 return new List<CodeInstruction>()
@@ -139,17 +191,37 @@ namespace SilicaAdminMod
                     new CodeInstruction(OpCodes.Ldarg_3),           // Quarternion rotation
                     new CodeInstruction(OpCodes.Ldarg_S, (byte)4),  // bool isClientRequest
                     new CodeInstruction(OpCodes.Call, detourStructureConstruct), // call detour method
-                    new CodeInstruction(OpCodes.Brfalse_S, skipExit), // exit on true
+                    new CodeInstruction(OpCodes.Brfalse_S, skipStructureExit), // exit on true
                     new CodeInstruction(OpCodes.Ldc_I4_7), // ProductionActionResult.UnspecifiedError
                     new CodeInstruction(OpCodes.Ret), // return from Structure::Construct
-                    new CodeInstruction(OpCodes.Nop, null) { labels = new List<Label>() { skipExit } }
+                    new CodeInstruction(OpCodes.Nop, null) { labels = new List<Label>() { skipStructureExit } }
+                }; // else.. continue to call ConstructionData::RequestConstructionSite
+            }
+
+            static List<CodeInstruction> GenerateILPatch_Structure_Construct_Unit(ILGenerator generator)
+            {
+                Label skipUnitExit = generator.DefineLabel();
+                var detourStructureConstruct = AccessTools.Method(typeof(ApplyPatch_Structure_Construct), nameof(ApplyPatch_Structure_Construct.Detour_BeforeRequestConstructionSite));
+
+                return new List<CodeInstruction>()
+                {
+                    new CodeInstruction(OpCodes.Ldarg_1),           // ConstructionData constructionData
+                    new CodeInstruction(OpCodes.Ldarg_0),           // Structure parentStructure
+                    new CodeInstruction(OpCodes.Ldarg_2),           // Vector3 worldPosition
+                    new CodeInstruction(OpCodes.Ldarg_3),           // Quarternion rotation
+                    new CodeInstruction(OpCodes.Ldarg_S, (byte)4),  // bool isClientRequest
+                    new CodeInstruction(OpCodes.Call, detourStructureConstruct), // call detour method
+                    new CodeInstruction(OpCodes.Brfalse_S, skipUnitExit), // exit on true
+                    new CodeInstruction(OpCodes.Ldc_I4_7), // ProductionActionResult.UnspecifiedError
+                    new CodeInstruction(OpCodes.Ret), // return from Structure::Construct
+                    new CodeInstruction(OpCodes.Nop, null) { labels = new List<Label>() { skipUnitExit } }
                 }; // else.. continue to call ConstructionData::RequestConstructionSite
             }
 
             // an alternative approach would be needed for il2cpp
             #if !NET6_0
             [HarmonyTranspiler]
-            static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
+            static IEnumerable<CodeInstruction> Transpiler_Structure(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
             {
                 var opCodes = instructions.ToList();
                 int insertionPoint = FindEntryPoint_Structure_Construct_Structure(opCodes);
@@ -168,24 +240,55 @@ namespace SilicaAdminMod
 
                 return opCodes.AsEnumerable();
             }
+
+            [HarmonyTranspiler]
+            static IEnumerable<CodeInstruction> Transpiler_Unit(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
+            {
+                var opCodes = instructions.ToList();
+                int insertionPoint = FindEntryPoint_Structure_Construct_Unit(opCodes);
+
+                // don't make any modifications without confidence in insertionPoint
+                if (insertionPoint < 0)
+                {
+                    return instructions;
+                }
+
+                // generate the IL we need to insert before the last RPC_Enqueue call
+                var inlineOpCodes = GenerateILPatch_Structure_Construct_Unit(generator);
+
+                // insert code before the stack adjustments start for RPC_Enqueue
+                opCodes.InsertRange(insertionPoint, inlineOpCodes);
+
+                return opCodes.AsEnumerable();
+            }
             #endif
         }
 
-        public static OnRequestBuildArgs FireOnRequestBuildStructureEvent(ConstructionData constructionData, Structure parentStructure, Vector3 position, Quaternion rotation, bool playerInitiated)
+        public static OnRequestBuildArgs FireOnRequestBuildEvent(ConstructionData constructionData, Structure parentStructure, Vector3 position, Quaternion rotation, bool playerInitiated, bool isStructure)
         {
-            OnRequestBuildArgs onRequestBuildStructureArgs = new OnRequestBuildArgs();
-            onRequestBuildStructureArgs.ConstructionData = constructionData;
-            onRequestBuildStructureArgs.ParentStructure = parentStructure;
-            onRequestBuildStructureArgs.Position = position;
-            onRequestBuildStructureArgs.Rotation = rotation;
-            onRequestBuildStructureArgs.PlayerInitiated = playerInitiated;
-            EventHandler<OnRequestBuildArgs> requestBuildStructureEvent = OnRequestBuildStructure;
-            if (requestBuildStructureEvent != null)
+            OnRequestBuildArgs onRequestBuildArgs = new OnRequestBuildArgs();
+            onRequestBuildArgs.ConstructionData = constructionData;
+            onRequestBuildArgs.ParentStructure = parentStructure;
+            onRequestBuildArgs.Position = position;
+            onRequestBuildArgs.Rotation = rotation;
+            onRequestBuildArgs.PlayerInitiated = playerInitiated;
+
+            EventHandler<OnRequestBuildArgs> requestBuildEvent;
+            if (isStructure)
             {
-                requestBuildStructureEvent(null, onRequestBuildStructureArgs);
+                requestBuildEvent = OnRequestBuildStructure;
+            }
+            else
+            {
+                requestBuildEvent = OnRequestBuildUnit;
             }
 
-            return onRequestBuildStructureArgs;
+            if (requestBuildEvent != null)
+            {
+                requestBuildEvent(null, onRequestBuildArgs);
+            }
+
+            return onRequestBuildArgs;
         }
     }
 }
