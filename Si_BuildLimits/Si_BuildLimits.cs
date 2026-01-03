@@ -32,7 +32,7 @@ using SilicaAdminMod;
 using System;
 using Si_BuildLimits;
 
-[assembly: MelonInfo(typeof(BuildLimits), "Build Limits", "1.0.0", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(BuildLimits), "Build Limits", "1.0.1", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -114,7 +114,7 @@ namespace Si_BuildLimits
             }
         }
 
-        public void OnRequestBuildStructure_LimitCheck(object? sender, OnRequestBuildStructureArgs args)
+        public void OnRequestBuildStructure_LimitCheck(object? sender, OnRequestBuildArgs args)
         {
             try
             {
