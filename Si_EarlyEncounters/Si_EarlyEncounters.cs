@@ -36,7 +36,7 @@ using Si_EarlyEncounters;
 using System.Collections.Generic;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(EarlyEncounters), "Early Encounters", "1.1.2", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(EarlyEncounters), "Early Encounters", "1.1.3", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -324,22 +324,27 @@ namespace Si_EarlyEncounters
             {
                 try
                 {
-                    if (__instance == null || __instance.NetworkComponent == null || __1 == null || __1.NetworkComponent == null || 
-                        __1.NetworkComponent.Owner == null || __instance.NetworkComponent.Owner.Team == null)
+                    if (__instance == null || __instance.NetworkComponent == null ||
+                        __instance.NetworkComponent.Owner == null || __instance.NetworkComponent.Owner.Team == null)
                     {
                         return;
                     }
 
-                    // avoid handling anything but wildlife team crates       the containers opening. 
+                    // avoid handling anything but wildlife team crates
                     if (__instance.NetworkComponent.Owner.Team.Index != (int)SiConstants.ETeam.Wildlife)
                     {
                         return;
                     }
 
-                    MelonLogger.Msg("Checking wildlife crate.");
+                    MelonLogger.Msg("Checking for wildlife crate.");
 
                     ObjectInfo? crateInfo = __instance.NetworkComponent.Owner.ObjectInfo;
                     if (crateInfo == null || !crateInfo.DisplayName.Equals("Container"))
+                    {
+                        return;
+                    }
+
+                    if (__1 == null || __1.NetworkComponent == null)
                     {
                         return;
                     }
@@ -349,7 +354,7 @@ namespace Si_EarlyEncounters
                     {
                         // destroy crate
                         UnityEngine.Object.Destroy(__instance.NetworkComponent.gameObject);
-
+                        MelonLogger.Msg("Removing wildlife crate opened by AI.");
                         return;
                     }
 
