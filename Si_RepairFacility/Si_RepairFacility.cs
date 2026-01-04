@@ -34,7 +34,7 @@ using UnityEngine;
 using Si_RepairFacility;
 using System.Collections.Generic;
 
-[assembly: MelonInfo(typeof(RepairFacility), "Repair Facility", "1.3.2", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(RepairFacility), "Repair Facility", "1.3.3", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -323,10 +323,22 @@ namespace Si_RepairFacility
                         continue;
                     }
 
+                    // not a player-controlled vehivlce
+                    if (unit.DriverCompartment == null)
+                    {
+                        continue;
+                    }
+
+                    // is it destroyed?
+                    if (unit.DamageManager.IsDestroyed)
+                    {
+                        continue;
+                    }
+
                     if (!unitsInRepairZone.Contains(unit))
                     {
                         unitsInRepairZone.Add(unit);
-                        MelonLogger.Msg("Found player on LVF collider: " + player.PlayerName + " " + unit.ObjectInfo.DisplayName);
+                        MelonLogger.Msg("Found alive player-controlled unit on LVF collider: " + player.PlayerName + " " + unit.ObjectInfo.DisplayName);
                     }
                 }
             }
