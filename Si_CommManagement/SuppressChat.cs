@@ -48,7 +48,7 @@ namespace Si_CommanderManagement
                     {
                         return false;
                     }
-                    else if (CommanderManager._SuppressChangeCommanderChat.Value && callingMethod.Contains("SetCommander"))
+                    else if (callingMethod.Contains("SetCommander"))
                     {
                         return false;
                     }
