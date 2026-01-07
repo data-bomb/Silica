@@ -320,6 +320,38 @@ namespace SilicaAdminMod
             MelonLogger.Error(error);
         }
 
+        public static void SetCommander(Team team, Player? player)
+        {
+            if (GameMode.CurrentGameMode is MP_Strategy strategyInstance)
+            {
+                #if NET6_0
+                strategyInstance.SetCommander(team, player);
+                strategyInstance.RPC_SynchCommander(team);
+                #else
+                Type strategyModeType = strategyInstance.GetType();
+                MethodInfo setCommanderMethod = strategyModeType.GetMethod("SetCommander", BindingFlags.Instance | BindingFlags.NonPublic);
+                setCommanderMethod.Invoke(strategyInstance, parameters: new object?[] { team, player });
+
+                MethodInfo synchCommanderMethod = strategyModeType.GetMethod("RPC_SynchCommander", BindingFlags.Instance | BindingFlags.NonPublic);
+                synchCommanderMethod.Invoke(strategyInstance, new object[] { team });
+                #endif
+            }
+            else if (GameMode.CurrentGameMode is MP_TowerDefense defenseInstance)
+            {
+                #if NET6_0
+                defenseInstance.SetCommander(team, player);
+                defenseInstance.RPC_SynchCommander(team);
+                #else
+                Type defenseModeType = defenseInstance.GetType();
+                MethodInfo setCommanderMethod = defenseModeType.GetMethod("SetCommander", BindingFlags.Instance | BindingFlags.NonPublic);
+                setCommanderMethod.Invoke(defenseInstance, parameters: new object?[] { team, player });
+
+                MethodInfo synchCommanderMethod = defenseModeType.GetMethod("RPC_SynchCommander", BindingFlags.Instance | BindingFlags.NonPublic);
+                synchCommanderMethod.Invoke(defenseInstance, new object[] { team });
+                #endif
+            }
+        }
+
         public static Player? FindTargetPlayer(String sTarget)
         {
             Player? targetPlayer = null;

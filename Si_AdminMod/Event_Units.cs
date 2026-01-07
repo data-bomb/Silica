@@ -20,6 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using HarmonyLib;
 using System;
 using MelonLoader;
+using System.Reflection;
 
 #if NET6_0
 using Il2Cpp;
@@ -71,6 +72,58 @@ namespace SilicaAdminMod
                 catch (Exception error)
                 {
                     HelperMethods.PrintError(error, "Failed to run UseAlienTakeOver::OnUse");
+                }
+
+                return true;
+            }
+        }
+
+        // Commanders will go through GetCanSwitchToUnit
+        [HarmonyPatch(typeof(Player), nameof(Player.GetCanSwitchToUnit))]
+        static class ApplyPatch_Player_GetCanSwitchToUnit
+        {
+            public static bool Prefix(Player __instance, Unit __0)
+            {
+                try
+                {
+                    if (__instance == null || __0 == null)
+                    {
+                        return true;
+                    }
+
+                    // only interested in commanders
+                    if (!__instance.IsCommander)
+                    {
+                        return true;
+                    }
+
+                    OnRequestEnterUnitArgs onRequestEnterUnitArgs = FireOnRequestEnterUnitEvent(__instance, __0, true);
+
+                    if (onRequestEnterUnitArgs.Block)
+                    {
+                        // kick the commander out of this unit, this will put the commander into a freecam mode
+                        NetworkLayer.SendPlayerSelectUnit(__instance, null);
+
+                        if (SiAdminMod.Pref_Admin_DebugLogMessages.Value)
+                        {
+                            MelonLogger.Msg("Blocking player " + __instance.PlayerName + " from entering unit " + __0.ToString());
+                        }
+
+                        // take commander out of freecam
+                        HelperMethods.SetCommander(__instance.Team, null);
+                        HelperMethods.SetCommander(__instance.Team, __instance);
+
+                        return false;
+                    }
+
+                    if (SiAdminMod.Pref_Admin_DebugLogMessages.Value)
+                    {
+                        MelonLogger.Msg("Allowing player to direct control unit");
+                    }
+                }
+                catch (Exception error)
+                {
+                    HelperMethods.PrintError(error, "Failed to run NetworkLayer::SendPlayerSelectUnit");
                 }
 
                 return true;
