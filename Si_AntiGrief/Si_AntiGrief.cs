@@ -36,7 +36,7 @@ using System.Linq;
 using UnityEngine;
 using System.Runtime.CompilerServices;
 
-[assembly: MelonInfo(typeof(AntiGrief), "Anti-Grief", "1.6.0", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(AntiGrief), "Anti-Grief", "1.6.1", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 #if NET6_0
 [assembly: MelonOptionalDependencies("Admin Mod", "QList")]
@@ -465,6 +465,12 @@ namespace Si_AntiGrief
 
                 // if the player isn't on the alien team, we can skip this check
                 if (player.Team.Index != (int)SiConstants.ETeam.Alien)
+                {
+                    return;
+                }
+
+                // is the game already over?
+                if (GameMode.CurrentGameMode == null || GameMode.CurrentGameMode.GameOver || !GameMode.CurrentGameMode.GameOngoing)
                 {
                     return;
                 }
