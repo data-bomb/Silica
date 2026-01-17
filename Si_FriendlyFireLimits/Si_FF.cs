@@ -34,7 +34,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using static System.Net.Mime.MediaTypeNames;
 
-[assembly: MelonInfo(typeof(FriendlyFireLimits), "Friendly Fire Limits", "1.3.1", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(FriendlyFireLimits), "Friendly Fire Limits", "1.3.2", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 #if NET6_0
 [assembly: MelonOptionalDependencies("Admin Mod", "QList")]
@@ -120,8 +120,8 @@ namespace Si_FriendlyFireLimits
 
         public static bool IsDamageFriendlyFire(DamageManager victimDamageManager, UnityEngine.GameObject instigatorObject)
         {
-            BaseGameObject instigatorBase = instigatorObject.GetBaseGameObject();
-            if (instigatorBase == null || instigatorBase.Team == null || victimDamageManager.Owner == null)
+            BaseGameObject instigatorBase = GameFuncs.GetBaseGameObject(instigatorObject);
+            if (instigatorBase == null || instigatorBase.Team == null || victimDamageManager.Owner == null ||victimDamageManager.Owner.Team == null)
             {
                 return false;
             }
