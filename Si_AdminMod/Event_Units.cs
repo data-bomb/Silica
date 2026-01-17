@@ -21,6 +21,7 @@ using HarmonyLib;
 using System;
 using MelonLoader;
 using System.Reflection;
+using UnityEngine;
 
 #if NET6_0
 using Il2Cpp;
@@ -32,6 +33,7 @@ namespace SilicaAdminMod
     {
         public static event EventHandler<OnRequestEnterUnitArgs> OnRequestEnterUnit = delegate { };
         public static event EventHandler<OnRequestInviteToGroupArgs> OnRequestInviteToGroup = delegate { };
+        public static event EventHandler<OnRequestTeleportUnitArgs> OnRequestTeleportUnit = delegate { };
 
         // Aliens will go through OnUse for OnRequestEnterUnit
         [HarmonyPatch(typeof(UseAlienTakeOver), nameof(UseAlienTakeOver.OnUse))]
@@ -249,6 +251,74 @@ namespace SilicaAdminMod
             }
 
             return onRequestInviteToGroupArgs;
+        }
+
+        // OnRequestTeleportUnit
+        #if NET6_0
+        [HarmonyPatch(typeof(TeleportUI), nameof(TeleportUI.RPC_Teleport))]
+        #else
+        [HarmonyPatch(typeof(TeleportUI), "RPC_Teleport")]
+        #endif
+        private static class ApplyPatch_TeleportUI_RPC_Teleport
+        {
+            public static bool Prefix(TeleportUI __instance, Unit __0, ref Vector3 __1, ref Vector3 __2)
+            {
+                try
+                { 
+                    if (__instance == null || __0 == null || __instance.Structure == null)
+                    {
+                        return true;
+                    }
+
+                    // only broadcast player-controlled events
+                    if (__0.ControlledBy == null)
+                    {
+                        return true;
+                    }
+
+                    OnRequestTeleportUnitArgs onRequestTeleportUnitArgs = FireOnRequestTeleportUnitEvent(__0, __instance.Structure, __1, __2);
+
+                    __1 = onRequestTeleportUnitArgs.TargetPosition;
+                    __2 = onRequestTeleportUnitArgs.EffectsPosition;
+
+                    /*if (onRequestTeleportUnitArgs.Block)
+                    {
+                        if (SiAdminMod.Pref_Admin_DebugLogMessages.Value)
+                        {
+                            MelonLogger.Msg("Blocking player " + __0.ControlledBy.PlayerName + " from teleporting unit " + __0.ToString());
+                        }
+
+                        return false;
+                    }*/
+
+                    if (SiAdminMod.Pref_Admin_DebugLogMessages.Value)
+                    {
+                        MelonLogger.Msg("Allowing player " + __0.ControlledBy.PlayerName + " to teleport unit " + __0.ObjectInfo.DisplayName);
+                    }
+                }
+                catch (Exception error)
+                {
+                    HelperMethods.PrintError(error, "Failed to run TeleportUI::RPC_Teleport");
+                }
+
+                return true;
+            }
+        }
+
+        public static OnRequestTeleportUnitArgs FireOnRequestTeleportUnitEvent(Unit unit, Structure structure, Vector3 targetPosition, Vector3 fxPosition)
+        {
+            OnRequestTeleportUnitArgs onRequestTeleportUnitArgs = new OnRequestTeleportUnitArgs();
+            onRequestTeleportUnitArgs.Unit = unit;
+            onRequestTeleportUnitArgs.TeleportStructure = structure;
+            onRequestTeleportUnitArgs.TargetPosition = targetPosition;
+            onRequestTeleportUnitArgs.EffectsPosition = fxPosition;
+            EventHandler<OnRequestTeleportUnitArgs> requestTeleportUnitEvent = OnRequestTeleportUnit;
+            if (requestTeleportUnitEvent != null)
+            {
+                requestTeleportUnitEvent(null, onRequestTeleportUnitArgs);
+            }
+
+            return onRequestTeleportUnitArgs;
         }
     }
 }

@@ -65,6 +65,36 @@ namespace SilicaAdminMod
         }
     }
 
+    public class OnRequestTeleportUnitArgs : EventArgs
+    {
+        private Unit _unit = null!;
+        private Structure _structure = null!;
+
+        public Unit Unit
+        {
+            get => _unit;
+            set => _unit = value ?? throw new ArgumentNullException("Unit is required.");
+        }
+
+        public Structure TeleportStructure
+        {
+            get => _structure;
+            set => _structure = value ?? throw new ArgumentNullException("Structure is required.");
+        }
+
+        public Vector3 TargetPosition
+        {
+            get;
+            set;
+        }
+
+        public Vector3 EffectsPosition
+        {
+            get;
+            set;
+        }
+    }
+
     public class OnRequestInviteToGroupArgs : EventArgs
     {
         private Player _player = null!;
