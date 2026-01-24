@@ -772,7 +772,7 @@ namespace Si_Logging
 
                     if (__2 <= 0)
                     {
-                        teamResourcesSpent[__instance.Index] += __2;
+                        teamResourcesSpent[__instance.Index] -= __2;
                         return;
                     }
 
