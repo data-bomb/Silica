@@ -172,34 +172,27 @@ namespace Si_Logging
     {
         public static float Timer_PerfMonitorLog = HelperMethods.Timer_Inactive;
 
-        public override void OnUpdate()
+        public static void TrackPerformanceMonitor()
         {
-            try
+            // is the feature enabled?
+            if (!HL_Logging.Pref_Log_PerfMonitor_Enable.Value)
             {
-                // is the feature enabled?
-                if (!HL_Logging.Pref_Log_PerfMonitor_Enable.Value)
+                return;
+            }
+
+            // check if timer expired while the game is in-progress
+            Timer_PerfMonitorLog += Time.deltaTime;
+            if (Timer_PerfMonitorLog >= HL_Logging.Pref_Log_PerfMonitor_Interval.Value)
+            {
+                Timer_PerfMonitorLog = 0f;
+
+                // skip if there are no players on the server
+                if (Player.Players.Count <= 0)
                 {
                     return;
                 }
 
-                // check if timer expired while the game is in-progress
-                Timer_PerfMonitorLog += Time.deltaTime;
-                if (Timer_PerfMonitorLog >= HL_Logging.Pref_Log_PerfMonitor_Interval.Value)
-                {
-                    Timer_PerfMonitorLog = 0f;
-
-                    // skip if there are no players on the server
-                    if (Player.Players.Count <= 0)
-                    {
-                        return;
-                    }
-
-                    ServerPerfLogger.CapturePerformancePoint();
-                }
-            }
-            catch (Exception exception)
-            {
-                HelperMethods.PrintError(exception, "Failed in OnUpdate");
+                ServerPerfLogger.CapturePerformancePoint();
             }
         }
     }

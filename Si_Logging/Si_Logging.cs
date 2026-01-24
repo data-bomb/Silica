@@ -114,6 +114,7 @@ namespace Si_Logging
         public override void OnLateInitializeMelon()
         {
             HelperMethods.StartTimer(ref Timer_PerfMonitorLog);
+            HelperMethods.StartTimer(ref Timer_ResourceLogEvent);
 
             //subscribing to the event
             Event_Roles.OnRoleChanged += OnRoleChanged;
@@ -842,6 +843,65 @@ namespace Si_Logging
                 string position = GetLogPosition(__1);
 
                 PrintLogLine($"Team \"{teamName}\" triggered \"construction_start\" (building_name \"{structName}\") (building_position \"{position}\")");
+            }
+        }
+
+        // 061. Team Objectives/Actions - Resource Status
+        public static float Timer_ResourceLogEvent = HelperMethods.Timer_Inactive;
+
+        public override void OnUpdate()
+        {
+            try
+            {
+                // check performance monitor
+                HL_Logging.TrackPerformanceMonitor();
+
+                TrackPeriodicResourceEvent();
+            }
+            catch (Exception exception)
+            {
+                HelperMethods.PrintError(exception, "Failed in OnUpdate");
+            }
+        }
+
+        public static void TrackPeriodicResourceEvent()
+        {
+            // check if timer expired while the game is in-progress
+            Timer_ResourceLogEvent += Time.deltaTime;
+            if (Timer_ResourceLogEvent >= 60f)
+            {
+                Timer_ResourceLogEvent = 0f;
+
+                // skip if there is no game
+                if (GameMode.CurrentGameMode == null || !GameMode.CurrentGameMode.GameOngoing || GameMode.CurrentGameMode.GameOver)
+                {
+                    return;
+                }
+
+                // log
+                LogPeriodicResources();
+            }
+        }
+
+        public static void LogPeriodicResources()
+        {
+            GameModeExt? currentGameModeExt = GameMode.CurrentGameMode as GameModeExt;
+            if (currentGameModeExt == null)
+            {
+                return;
+            }
+
+            foreach (BaseTeamSetup baseTeamSetup in currentGameModeExt.BaseTeamSetups)
+            {
+                if (currentGameModeExt.GetTeamSetupActive(baseTeamSetup))
+                {
+                    
+                    string resourcesCollected = teamResourcesCollected[baseTeamSetup.Team.Index].ToString();
+                    string resourcesSpent = teamResourcesSpent[baseTeamSetup.Team.Index].ToString();
+                    string teamName = GetTeamName(baseTeamSetup.Team);
+
+                    PrintLogLine($"Team \"{teamName}\" triggered \"resource_status\" (collected \"{resourcesCollected}\") (spent \"{resourcesSpent}\")");
+                }
             }
         }
 
