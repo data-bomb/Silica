@@ -41,7 +41,7 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using static MelonLoader.MelonLogger;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.9.7", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.9.8", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 #if NET6_0
 [assembly: MelonOptionalDependencies("Admin Mod", "QList")]
@@ -55,6 +55,8 @@ namespace Si_Logging
     public partial class HL_Logging : MelonMod
     {
         static int[] teamResourcesCollected = new int[SiConstants.MaxPlayableTeams + 1];
+        static int[] teamResourcesSpent = new int[SiConstants.MaxPlayableTeams + 1];
+        
         static Player?[]? lastCommander;
 
         static MelonPreferences_Category _modCategory = null!;
@@ -769,6 +771,7 @@ namespace Si_Logging
 
                     if (__2 <= 0)
                     {
+                        teamResourcesSpent[__instance.Index] += __2;
                         return;
                     }
 
@@ -1040,6 +1043,7 @@ namespace Si_Logging
             {
                 tiers[Team.Teams[i].Index] = 0;
                 teamResourcesCollected[i] = 0;
+                teamResourcesSpent[i] = 0;
             }
         }
 
