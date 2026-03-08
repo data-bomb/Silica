@@ -34,7 +34,9 @@ using System.Threading.Tasks;
 namespace SilicaAdminMod
 { 
     public class AudioHelper
-    { 
+    {
+        const int targetFrequency = 12000;
+
         private static GameByteStreamWriter GenerateAudioStreamWriter(Player player, byte[] audioBytes, int offset)
         {
 			GameByteStreamWriter gameByteStreamWriter = GameByteStreamWriter.GetGameByteStreamWriter(0U, "NetworkLayer::SendCustomAudio", true);
@@ -52,8 +54,24 @@ namespace SilicaAdminMod
 
             return gameByteStreamWriter;
 		}
+        public static float[] ResampleToTargetFrequency(float[] inputSamples, int inputFrequency, int targetFrequency)
+        {
+            int outputLength = (int)(inputSamples.Length * ((float)targetFrequency / inputFrequency));
+            float[] output = new float[outputLength];
 
-		public static async Task SendAudioFile(string audioFilePath, Player? sendingPlayer = null)
+            for (int i = 0; i < outputLength; i++)
+            {
+                float srcIndex = i * ((float)inputFrequency / targetFrequency);
+                int indexFloor = (int)Math.Floor(srcIndex);
+                int indexCeil = Math.Min(indexFloor + 1, inputSamples.Length - 1);
+                float t = srcIndex - indexFloor;
+                output[i] = inputSamples[indexFloor] * (1 - t) + inputSamples[indexCeil] * t;
+            }
+
+            return output;
+        }
+
+        public static async Task SendAudioFile(string audioFilePath, Player? sendingPlayer = null)
 		{
 			string path = System.IO.Path.Combine(MelonEnvironment.UserDataDirectory, audioFilePath);
 			
@@ -83,6 +101,17 @@ namespace SilicaAdminMod
 			{
 				MelonLogger.Msg($"Loaded wave with frequency: {sampleRate} samples: {sampleCount} channels: {channels} format: {audioFormat} bps: {bitsPerSample}");
 			}
+
+            // the game plays at 12KHz, so check if we're too far away from the target
+			if (Math.Abs(sampleRate - targetFrequency) / (float)targetFrequency > 0.1f)
+			{
+                if (SiAdminMod.Pref_Admin_DebugLogMessages.Value)
+                {
+                    MelonLogger.Msg($"Frequency too far away from 12KHz. Performing Resampling.");
+                }
+
+                samples = ResampleToTargetFrequency(samples, sampleRate, targetFrequency);
+            }
 
 			// Stream in 1024-sample blocks
 			const int blockSize = 1024;
