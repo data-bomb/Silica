@@ -28,6 +28,7 @@ using System;
 using System.Text;
 using UnityEngine;
 using MelonLoader.Utils;
+using System.Collections;
 
 namespace SilicaAdminMod
 { 
@@ -51,7 +52,7 @@ namespace SilicaAdminMod
             return gameByteStreamWriter;
 		}
 
-		public static void SendAudioFile(string audioFilePath, Player? sendingPlayer = null)
+		public static IEnumerator SendAudioFile(string audioFilePath, Player? sendingPlayer = null)
 		{
 			string path = System.IO.Path.Combine(MelonEnvironment.UserDataDirectory, audioFilePath);
 			
@@ -65,7 +66,7 @@ namespace SilicaAdminMod
 			if (wav == null)
 			{
 				MelonLogger.Warning("Could not load wave file: " + path);
-				return;
+				yield break;
 			}
 
 			int sampleRate = wav.Frequency;
@@ -100,28 +101,23 @@ namespace SilicaAdminMod
 				byte[] packetBuffer = new byte[blockSize];
 				for (int i = 0; i < blockSize; i++)
 				{
-					float normalized = buffer[i];
-					byte b = 128; // silence
-					if (normalized > 0.01f)
-						b = (byte)Mathf.CeilToInt(normalized * 128f + 128f);
-					else if (normalized < -0.01f)
-						b = (byte)Mathf.FloorToInt(normalized * 128f + 128f);
-					packetBuffer[i] = b;
+                    float normalized = Math.Clamp(buffer[i], -1f, 1f);
+                    packetBuffer[i] = (byte)(normalized * 128f + 128f);
 				}
 
 				// Send packet
-				int startBufferOffset = offset + 1;
-				AudioHelper.SendAudioPacket(packetBuffer, startBufferOffset);
+				AudioHelper.SendAudioPacket(packetBuffer, (offset+1));
 
 				if (SiAdminMod.Pref_Admin_DebugLogMessages.Value)
 				{
-					MelonLogger.Msg("Sending audio packet with offset: " + startBufferOffset);
+					MelonLogger.Msg("Sending audio packet with offset: " + (offset+1).ToString());
 				}
 				
-
 				packetsSent++;
 				offset += count;
-			}
+
+                yield return new WaitForSecondsRealtime(0.075f);
+            }
 			if (SiAdminMod.Pref_Admin_DebugLogMessages.Value)
 			{
 				MelonLogger.Msg("Sent " + packetsSent.ToString() + " audio packets.");
