@@ -581,22 +581,14 @@ namespace SilicaAdminMod
                 return null;
             }
 
-            GameObject prefabObject = GameDatabase.GetSpawnablePrefab(prefabIndex);
-            GameObject? spawnedObject;
-            if (teamIndex > -1)
+            Team? team = (teamIndex < 0 ? null : Team.Teams[teamIndex]);
+            GameObject? prefabObject = GameDatabase.GetSpawnablePrefab(prefabIndex);
+            if (prefabObject == null)
             {
-                spawnedObject = Game.SpawnPrefab(prefabObject, null, Team.Teams[teamIndex], position, rotation, true, true);
+                DebugConsole.Log("SpawnAtLocation: Could not obtain spawnable prefab for '" + name + "'!", DebugConsole.LogLevel.Warning);
             }
-            else
-            {
-                BaseGameObject baseGameObject = prefabObject.GetBaseGameObject();
-                if (baseGameObject)
-                {
-                    teamIndex = baseGameObject.DefaultTeam.Index;
-                }
 
-                spawnedObject = Game.SpawnPrefab(prefabObject, null, Team.Teams[teamIndex], position, rotation, true, true);
-            }
+            GameObject? spawnedObject = Game.SpawnPrefab(prefabObject, null, team, position, rotation, true, true);
 
             return spawnedObject;
         }
