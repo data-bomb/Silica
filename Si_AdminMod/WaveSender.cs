@@ -29,6 +29,7 @@ using System.Text;
 using UnityEngine;
 using MelonLoader.Utils;
 using System.Collections;
+using System.Threading.Tasks;
 
 namespace SilicaAdminMod
 { 
@@ -52,7 +53,7 @@ namespace SilicaAdminMod
             return gameByteStreamWriter;
 		}
 
-		public static IEnumerator SendAudioFile(string audioFilePath, Player? sendingPlayer = null)
+		public static async Task SendAudioFile(string audioFilePath, Player? sendingPlayer = null)
 		{
 			string path = System.IO.Path.Combine(MelonEnvironment.UserDataDirectory, audioFilePath);
 			
@@ -66,7 +67,7 @@ namespace SilicaAdminMod
 			if (wav == null)
 			{
 				MelonLogger.Warning("Could not load wave file: " + path);
-				yield break;
+				return;
 			}
 
 			int sampleRate = wav.Frequency;
@@ -116,7 +117,7 @@ namespace SilicaAdminMod
 				packetsSent++;
 				offset += count;
 
-                yield return new WaitForSecondsRealtime(0.075f);
+                await Task.Delay(TimeSpan.FromMilliseconds(70));
             }
 			if (SiAdminMod.Pref_Admin_DebugLogMessages.Value)
 			{
