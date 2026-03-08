@@ -26,8 +26,8 @@ namespace SilicaAdminMod
 {
     public class WaveReader
     {
-		public const int WAVE_FORMAT_PCM = 0x0001;
-		public const int WAVE_FORMAT_IEEE_FLOAT = 0x0003;
+		public const int WAVE_FORMAT_PCM		= 1;
+		public const int WAVE_FORMAT_IEEE_FLOAT = 3;
 
 		private float[] _samples = null!;
 
@@ -139,30 +139,30 @@ namespace SilicaAdminMod
 					switch (audioFormat)
 					{
 						case WAVE_FORMAT_PCM: 
+						{
+							switch (bitsPerSample)
 							{
-								switch (bitsPerSample)
+								case 8:
 								{
-									case 8:
-									{
-										samples[i] = (dataChunk[offset] - 128) / 128f;
-										break;
-									}
-
-									case 16:
-									{
-										short s16 = BitConverter.ToInt16(dataChunk, offset);
-										samples[i] = s16 / 32768f;
-
-										break;
-									}
-
-									default:
-									{
-										throw new Exception(bitsPerSample.ToString() + " is an unsupported PCM bit depth. Use 8 or 16.");
-									}
+									samples[i] = (dataChunk[offset] - 128) / 128f;
+									break;
 								}
-								break;
+
+								case 16:
+								{
+									short s16 = BitConverter.ToInt16(dataChunk, offset);
+									samples[i] = s16 / 32768f;
+
+									break;
+								}
+
+								default:
+								{
+									throw new Exception(bitsPerSample.ToString() + " is an unsupported PCM bit depth. Use 8 or 16.");
+								}
 							}
+							break;
+						}
 
 						case WAVE_FORMAT_IEEE_FLOAT:
 						{
