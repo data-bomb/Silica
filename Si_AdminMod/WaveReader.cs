@@ -151,8 +151,7 @@ namespace SilicaAdminMod
 								case 16:
 								{
 									short s16 = BitConverter.ToInt16(dataChunk, offset);
-									samples[i] = s16 / 32768f;
-
+									samples[i] = (s16 -32768f) / 32768f;
 									break;
 								}
 
