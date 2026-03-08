@@ -71,7 +71,7 @@ namespace SilicaAdminMod
             return output;
         }
 
-        public static async Task SendAudioFile(string audioFilePath, Player? sendingPlayer = null)
+        public static async Task PlaySoundFile(string audioFilePath, Player? targetPlayer = null)
 		{
 			string path = System.IO.Path.Combine(MelonEnvironment.UserDataDirectory, audioFilePath);
 			
@@ -135,8 +135,14 @@ namespace SilicaAdminMod
                     packetBuffer[i] = (byte)(normalized * 128f + 128f);
 				}
 
-				// Send packet
-				AudioHelper.SendAudioPacket(packetBuffer, (offset+1));
+				if (targetPlayer == null)
+				{
+                    AudioHelper.SendAudioPacket(packetBuffer, (offset + 1));
+                }
+				else
+				{
+					AudioHelper.SendAudioPacketToPlayer(targetPlayer, packetBuffer, (offset + 1));
+				}
 				
 				packetsSent++;
 				offset += count;
