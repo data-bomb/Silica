@@ -137,11 +137,6 @@ namespace SilicaAdminMod
 
 				// Send packet
 				AudioHelper.SendAudioPacket(packetBuffer, (offset+1));
-
-				if (SiAdminMod.Pref_Admin_DebugLogMessages.Value)
-				{
-					MelonLogger.Msg("Sending audio packet with offset: " + (offset+1).ToString());
-				}
 				
 				packetsSent++;
 				offset += count;
