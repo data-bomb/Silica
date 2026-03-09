@@ -33,8 +33,10 @@ using System.Linq;
 using UnityEngine;
 using Si_RepairFacility;
 using System.Collections.Generic;
+using MelonLoader.Utils;
+using System.IO;
 
-[assembly: MelonInfo(typeof(RepairFacility), "Repair Facility", "1.3.3", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(RepairFacility), "Repair Facility", "1.4.0", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -55,6 +57,7 @@ namespace Si_RepairFacility
         static MelonPreferences_Entry<float> _Pref_Humans_Infantry_HealRate = null!;
         static MelonPreferences_Entry<float> _Pref_SiegeDefenders_Structure_HealRate = null!;
         static MelonPreferences_Entry<bool> _Pref_Repair_Notification = null!;
+        static MelonPreferences_Entry<bool> _Pref_Repair_SoundEffects = null!;
         static Vector3 halfExtentsRepairCheck = new Vector3
         {
             x = 12f,
@@ -78,6 +81,7 @@ namespace Si_RepairFacility
             _Pref_SiegeDefenders_Structure_HealRate ??= _modCategory.CreateEntry<float>("RepairFacility_SiegeDefender_Structure_HealRate", 0.025f);
 
             _Pref_Repair_Notification ??= _modCategory.CreateEntry<bool>("RepairFacility_ChatNotifications", false);
+            _Pref_Repair_SoundEffects ??= _modCategory.CreateEntry<bool>("RepairFacility_SoundEffects", true);
 
             vehiclesAtRepairShop = new List<Unit>();
         }
@@ -161,6 +165,8 @@ namespace Si_RepairFacility
                     {
                         HelperMethods.SendChatMessageToPlayer(__1.ControlledBy, HelperMethods.chatPrefix, " Entered vehicle repair zone.");
                     }
+
+                    HandleRepairSoundEffects(__1.ControlledBy, true);
                 }
                 catch (Exception error)
                 {
@@ -221,9 +227,14 @@ namespace Si_RepairFacility
                     
                     vehiclesAtRepairShop.RemoveAll(vehicle => vehicle == __1);
 
-                    if (_Pref_Repair_Notification.Value)
+                    if (__1.ControlledBy != null)
                     {
-                        HelperMethods.SendChatMessageToPlayer(__1.ControlledBy, HelperMethods.chatPrefix, " Left vehicle repair zone.");
+                        if (_Pref_Repair_Notification.Value)
+                        {
+                            HelperMethods.SendChatMessageToPlayer(__1.ControlledBy, HelperMethods.chatPrefix, " Left vehicle repair zone.");
+                        }
+
+                        HandleRepairSoundEffects(__1.ControlledBy, false);
                     }
                 }
                 catch (Exception error)
@@ -382,6 +393,8 @@ namespace Si_RepairFacility
                     {
                         HelperMethods.SendChatMessageToPlayer(unit.ControlledBy, HelperMethods.chatPrefix, " Entered vehicle repair zone.");
                     }
+
+                    HandleRepairSoundEffects(unit.ControlledBy, true);
                 }
             }
 
@@ -399,6 +412,8 @@ namespace Si_RepairFacility
                 {
                     HelperMethods.SendChatMessageToPlayer(centauriUnitToRemove.ControlledBy, HelperMethods.chatPrefix, " Left vehicle repair zone.");
                 }
+
+                HandleRepairSoundEffects(centauriUnitToRemove.ControlledBy, false);
             }
         }
 
@@ -426,6 +441,17 @@ namespace Si_RepairFacility
                 {
                     HelperMethods.SendConsoleMessageToPlayer(vehicle.ControlledBy, HelperMethods.chatPrefix, " Debug Info: (Repair) Health[" + vehicle.DamageManager.Health + "] MaxHP[" + vehicle.DamageManager.MaxHealth + "] HealAmt[" + healAmount + "]");
                 }
+            }
+        }
+
+        private static void HandleRepairSoundEffects(Player player, bool startingRepair)
+        {
+            if (_Pref_Repair_SoundEffects.Value)
+            {
+                string repairSound = (startingRepair ? Path.Combine(MelonEnvironment.UserDataDirectory, "sounds\\repair_start.wav") :
+                                                       Path.Combine(MelonEnvironment.UserDataDirectory, "sounds\\repair_end.wav"));
+                
+                _ = AudioHelper.PlaySoundFile(repairSound, player);
             }
         }
 
