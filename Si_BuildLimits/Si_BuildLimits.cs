@@ -1,6 +1,6 @@
 ﻿/*
 Silica Build Limits
-Copyright (C) 2025 by databomb
+Copyright (C) 2025-2026 by databomb
 
 * Description *
 Allows servers to enforce limitations on number of structures.
@@ -32,7 +32,7 @@ using SilicaAdminMod;
 using System;
 using Si_BuildLimits;
 
-[assembly: MelonInfo(typeof(BuildLimits), "Build Limits", "1.0.1", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(BuildLimits), "Build Limits", "1.0.2", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -110,7 +110,7 @@ namespace Si_BuildLimits
             {
                 string response = $"{type} structure limit ({maxStructures}) exceeded" + (maxStructures > 0 ? ". Sell/destroy before building again." : ".");
                 HelperMethods.SendConsoleMessageToPlayer(commander, response);
-                HelperMethods.ReplyToCommand_Player(commander, response);
+                HelperMethods.SendChatMessageToTeam(team, response);
             }
         }
 
