@@ -287,6 +287,8 @@ jobs:
           cp LICENSE release/listen/UserData/Mod-License.txt
           cp Multimedia/Sounds/access-denied.wav release/dedi/UserData/sounds/access-denied.wav
           cp Multimedia/Sounds/access-denied.wav release/listen/UserData/sounds/access-denied.wav
+          cp Multimedia/Sounds/teamkiller.wav release/dedi/UserData/sounds/teamkiller.wav
+          cp Multimedia/Sounds/teamkiller.wav release/listen/UserData/sounds/teamkiller.wav
           
       - uses: actions/download-artifact@v4
         with:
