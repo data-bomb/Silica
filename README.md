@@ -68,3 +68,4 @@ C# Coding Assistance:  Silentstorm, GrahamKracker, AuriRex, & nighthalk.
 
 ## Other Credits
 suntemple: Access Denied sound
+CrawiS: Unreal sounds (e.g., teamkiller)
