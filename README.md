@@ -67,5 +67,7 @@ Kind suggestion to ensure that the server name reflects that there are mods so p
 C# Coding Assistance:  Silentstorm, GrahamKracker, AuriRex, & nighthalk.
 
 ## Other Credits
-suntemple: Access Denied sound
+suntemple: access_denied sound
 CrawiS: Unreal sounds (e.g., teamkiller)
+LG: Electric screwdriver 04.wav (e.g., repair_start)
+SilverIllusionist: Craft Item (e.g., repair_end)

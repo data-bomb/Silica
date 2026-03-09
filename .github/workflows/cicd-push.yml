@@ -263,10 +263,10 @@ jobs:
         
       - uses: actions/checkout@v4
         with:
+          sparse-checkout: .
           ref: ${{ needs.beta-check.outputs.branch_identifier }}
-          sparse-checkout: |
-            Multimedia/Sounds
-      - name: Make output paths and copy static files
+          
+      - name: Make output paths
         run: |
           mkdir -p release/dedi/Plugins
           mkdir -p release/dedi/Mods/~disabled
@@ -289,6 +289,10 @@ jobs:
           cp Multimedia/Sounds/access-denied.wav release/listen/UserData/sounds/access-denied.wav
           cp Multimedia/Sounds/teamkiller.wav release/dedi/UserData/sounds/teamkiller.wav
           cp Multimedia/Sounds/teamkiller.wav release/listen/UserData/sounds/teamkiller.wav
+          cp Multimedia/Sounds/repair_start.wav release/dedi/UserData/sounds/repair_start.wav
+          cp Multimedia/Sounds/repair_start.wav release/listen/UserData/sounds/repair_start.wav
+          cp Multimedia/Sounds/repair_end.wav release/dedi/UserData/sounds/repair_end.wav
+          cp Multimedia/Sounds/repair_end.wav release/listen/UserData/sounds/repair_end.wav
           
       - uses: actions/download-artifact@v4
         with:
