@@ -286,8 +286,8 @@ jobs:
           cp launch.bat release/dedi/launch.bat
           cp LICENSE release/dedi/UserData/Mod-License.txt
           cp LICENSE release/listen/UserData/Mod-License.txt
-          cp Multimedia/Sounds/access-denied.wav release/dedi/UserData/sounds/access-denied.wav
-          cp Multimedia/Sounds/access-denied.wav release/listen/UserData/sounds/access-denied.wav
+          cp Multimedia/Sounds/access_denied.wav release/dedi/UserData/sounds/access_denied.wav
+          cp Multimedia/Sounds/access_denied.wav release/listen/UserData/sounds/access_denied.wav
           cp Multimedia/Sounds/teamkiller.wav release/dedi/UserData/sounds/teamkiller.wav
           cp Multimedia/Sounds/teamkiller.wav release/listen/UserData/sounds/teamkiller.wav
           cp Multimedia/Sounds/repair_start.wav release/dedi/UserData/sounds/repair_start.wav
