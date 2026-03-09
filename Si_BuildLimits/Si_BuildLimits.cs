@@ -31,6 +31,7 @@ using MelonLoader;
 using SilicaAdminMod;
 using System;
 using Si_BuildLimits;
+using MelonLoader.Utils;
 
 [assembly: MelonInfo(typeof(BuildLimits), "Build Limits", "1.0.2", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
@@ -111,6 +112,10 @@ namespace Si_BuildLimits
                 string response = $"{type} structure limit ({maxStructures}) exceeded" + (maxStructures > 0 ? ". Sell/destroy before building again." : ".");
                 HelperMethods.SendConsoleMessageToPlayer(commander, response);
                 HelperMethods.SendChatMessageToTeam(team, response);
+
+                // send access denied sound to commander
+                string accessDeniedPath = System.IO.Path.Combine(MelonEnvironment.UserDataDirectory, "sounds\\access_denied.wav");
+                _ = AudioHelper.PlaySoundFile(accessDeniedPath, commander);
             }
         }
 
