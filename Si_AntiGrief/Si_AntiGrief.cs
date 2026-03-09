@@ -1,6 +1,6 @@
 ﻿/*
  Silica Anti-Grief Mod
- Copyright (C) 2023-2025 by databomb
+ Copyright (C) 2023-2026 by databomb
  
  * Description *
  For Silica servers, automatically identifies players who fall below a 
@@ -35,8 +35,9 @@ using SilicaAdminMod;
 using System.Linq;
 using UnityEngine;
 using System.Runtime.CompilerServices;
+using MelonLoader.Utils;
 
-[assembly: MelonInfo(typeof(AntiGrief), "Anti-Grief", "1.6.1", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(AntiGrief), "Anti-Grief", "1.6.2", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 #if NET6_0
 [assembly: MelonOptionalDependencies("Admin Mod", "QList")]
@@ -50,6 +51,7 @@ namespace Si_AntiGrief
     {
         static MelonPreferences_Category _modCategory = null!;
         static MelonPreferences_Entry<int> _NegativeKillsThreshold = null!;
+        static MelonPreferences_Entry<bool> _PlayTeamKillerSound = null!;
         static MelonPreferences_Entry<bool> _NegativeKills_Penalty_Ban = null!;
         static MelonPreferences_Entry<bool> _StructureAntiGrief_IgnoreNodes = null!;
         static MelonPreferences_Entry<bool> _BlockShrimpControllers = null!;
@@ -67,6 +69,7 @@ namespace Si_AntiGrief
         {
             _modCategory ??= MelonPreferences.CreateCategory(ModCategory);
             _NegativeKillsThreshold ??= _modCategory.CreateEntry<int>("Grief_NegativeKills_Threshold", -9);
+            _PlayTeamKillerSound ??= _modCategory.CreateEntry<bool>("Grief_PlayTeamkillerSound", true);
             _NegativeKills_Penalty_Ban ??= _modCategory.CreateEntry<bool>("Grief_NegativeKills_Penalty_Ban", true);
             _StructureAntiGrief_IgnoreNodes ??= _modCategory.CreateEntry<bool>("Grief_IgnoreFriendlyNodesDestroyed", true);
             _BlockShrimpControllers ??= _modCategory.CreateEntry<bool>("Grief_BlockShrimpTakeOver", false);
@@ -177,6 +180,8 @@ namespace Si_AntiGrief
 
                         MelonLogger.Msg(attackerPlayer.PlayerName + " team killed a structure " + structureName);
                         HelperMethods.ReplyToCommand_Player(attackerPlayer, "killed a friendly " + (__0.OwnerConstructionSite == null ? "structure" : "construction site") + " (" + HelperMethods.GetTeamColor(attackerPlayer) + structureName + "</color>)");
+
+                        HandleTeamKillerSoundEffect(attackerPlayer);
                     }
                     // unit processing
                     else if (__0.Owner is Unit)
@@ -195,6 +200,8 @@ namespace Si_AntiGrief
                         {
                             MelonLogger.Msg(attackerPlayer.PlayerName + " team killed " + victimPlayer.PlayerName);
                             HelperMethods.ReplyToCommand_Player(attackerPlayer, "team killed " + HelperMethods.GetTeamColor(victimPlayer) + victimPlayer.PlayerName + "</color>");
+
+                            HandleTeamKillerSoundEffect(attackerPlayer);
                         }
                     }
 
@@ -534,6 +541,15 @@ namespace Si_AntiGrief
                 MelonLogger.Msg("Kicked " + sPlayerNameToKick + " (" + player.ToString() + ") for griefing (negative kills)");
                 HelperMethods.ReplyToCommand_Player(player, "was kicked for griefing (negative kills)");
                 HelperMethods.KickPlayer(player);
+            }
+        }
+
+        private static void HandleTeamKillerSoundEffect(Player player)
+        {
+            if (_PlayTeamKillerSound.Value)
+            {
+                string teamKillerSoundPath = System.IO.Path.Combine(MelonEnvironment.UserDataDirectory, "sounds\\teamkiller.wav");
+                _ = AudioHelper.PlaySoundFile(teamKillerSoundPath, player);
             }
         }
 
