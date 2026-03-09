@@ -63,5 +63,8 @@ Kind suggestion to ensure that the server name reflects that there are mods so p
 ## How to Show Love
 <a href="https://www.buymeacoffee.com/databomb" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-orange.png" alt="Buy Me A Coffee" height="41" width="174"></a>
 
-## Credits
-Special thanks to Silentstorm, GrahamKracker, AuriRex, nighthalk and others in the MelonLoader community for being welcoming and supportive to an unusual use case of MelonLoader.
+## Special Thanks
+C# Coding Assistance:  Silentstorm, GrahamKracker, AuriRex, & nighthalk.
+
+## Other Credits
+suntemple: Access Denied sound
