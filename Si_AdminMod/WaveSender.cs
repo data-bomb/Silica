@@ -30,6 +30,7 @@ using UnityEngine;
 using MelonLoader.Utils;
 using System.Collections;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 
 namespace SilicaAdminMod
 { 
@@ -54,6 +55,27 @@ namespace SilicaAdminMod
 
             return gameByteStreamWriter;
 		}
+
+		public static float[] StereoToMono(float[] inputSamples, int channels)
+		{
+            int monoLength = inputSamples.Length / channels;
+            float[] mono = new float[monoLength];
+
+            for (int i = 0; i < monoLength; i++)
+            {
+                float sum = 0f;
+
+                for (int c = 0; c < channels; c++)
+                {
+                    sum += inputSamples[i * channels + c];
+                }
+
+                mono[i] = sum / channels;
+            }
+
+            return mono;
+        }
+
         public static float[] ResampleToTargetFrequency(float[] inputSamples, int inputFrequency, int targetFrequency)
         {
             int outputLength = (int)(inputSamples.Length * ((float)targetFrequency / inputFrequency));
@@ -113,8 +135,19 @@ namespace SilicaAdminMod
                 samples = ResampleToTargetFrequency(samples, sampleRate, targetFrequency);
             }
 
-			// Stream in 1024-sample blocks
-			const int blockSize = 1024;
+            // average channels if there's more than one (needs to be mono PCM to transmit)
+			if (channels > 1)
+			{
+                if (SiAdminMod.Pref_Admin_DebugLogMessages.Value)
+                {
+					MelonLogger.Msg("More than one channel present. Converting to mono.");
+                }
+
+                samples = StereoToMono(samples, channels);
+            }
+            
+			// block size is fixed based on game client
+            const int blockSize = 1024;
 			int offset = 0;
 			int packetsSent = 0;
 
