@@ -263,10 +263,10 @@ jobs:
         
       - uses: actions/checkout@v4
         with:
-          sparse-checkout: .
           ref: ${{ needs.beta-check.outputs.branch_identifier }}
-          
-      - name: Make output paths
+          sparse-checkout: |
+            Multimedia/Sounds
+      - name: Make output paths and copy static files
         run: |
           mkdir -p release/dedi/Plugins
           mkdir -p release/dedi/Mods/~disabled
