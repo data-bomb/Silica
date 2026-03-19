@@ -41,7 +41,7 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using static MelonLoader.MelonLogger;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.9.8", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.9.9", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 #if NET6_0
 [assembly: MelonOptionalDependencies("Admin Mod", "QList")]
@@ -1108,9 +1108,9 @@ namespace Si_Logging
         }
 
 #if NET6_0
-        [HarmonyPatch(typeof(BarksHandler), nameof(BarksHandler.OnConstructionCompleted))]
+        [HarmonyPatch(typeof(GameplayEventsHandler), nameof(GameplayEventsHandler.OnConstructionCompleted))]
 #else
-        [HarmonyPatch(typeof(BarksHandler), "OnConstructionCompleted")]
+        [HarmonyPatch(typeof(GameplayEventsHandler), "OnConstructionCompleted")]
 #endif
         private static class ApplyPatchOnSetTechnologyTier
         {
@@ -1129,7 +1129,7 @@ namespace Si_Logging
 
                 catch (Exception error)
                 {
-                    HelperMethods.PrintError(error, "Failed to run OnSetConstructionSite");
+                    HelperMethods.PrintError(error, "Failed to run GameplayEventsHandler::OnConstructionCompleted");
                 }
             }
         }
