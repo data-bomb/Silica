@@ -43,6 +43,26 @@ namespace SilicaAdminMod
         public static event EventHandler<OnRequestDestroyStructureArgs> OnRequestDestroyStructure = delegate { };
         public static event EventHandler<OnCommanderDestroyedStructureArgs> OnCommanderDestroyedStructure = delegate { };
 
+        [HarmonyPatch(typeof(StrategyMode), nameof(StrategyMode.PerformDestroyStructure))]
+        static class ApplyPatch_StrategyMode_PerformDestroyStructure
+        {
+            public static bool Prefix(StrategyMode __instance, Structure __0)
+            {
+                try
+                {
+                    HandleRequestDestroyStructureEvent(__0);
+
+                }
+                catch (Exception error)
+                {
+                    HelperMethods.PrintError(error, "Failed to run StrategyMode::PerformDestroyStructure(Prefix)");
+                }
+
+                // always skip the game function (errors occur for an invalid instance otherwise)
+                return false;
+            }
+        }
+
         #if NET6_0
         [HarmonyPatch(typeof(StrategyMode), nameof(StrategyMode.RPC_DestroyStructure))]
         #else
@@ -54,31 +74,7 @@ namespace SilicaAdminMod
             {
                 try
                 {
-                    OnRequestDestroyStructureArgs onRequestDestroyStructureArgs = FireOnRequestDestroyStructureEvent(__0, __0.Team);
-
-                    if (onRequestDestroyStructureArgs.Block)
-                    {
-                        if (SiAdminMod.Pref_Admin_DebugLogMessages.Value)
-                        {
-                            MelonLogger.Msg("Blocking structure (" + __0.name + ") from being destroyed on team " + __0.Team.TeamShortName);
-                        }
-
-                        return false;
-                    }
-
-                    if (SiAdminMod.Pref_Admin_DebugLogMessages.Value)
-                    {
-                        MelonLogger.Msg("Allowing structure (" + __0.name + ") to be destroyed on team " + __0.Team.TeamShortName);
-                    }
-
-                    OnCommanderDestroyedStructureArgs onCommanderDestroyedStructureArgs = FireOnCommanderDestroyedStructure(__0, __0.Team);
-
-                    if (SiAdminMod.Pref_Admin_DebugLogMessages.Value)
-                    {
-                        MelonLogger.Msg("Structure (" + __0.name + ") destroyed by commander on team " + __0.Team.TeamShortName);
-                    }
-
-                    __0.DamageManager.SetHealth01(0f);
+                    HandleRequestDestroyStructureEvent(__0);
                 }
                 catch (Exception error)
                 {
@@ -88,6 +84,35 @@ namespace SilicaAdminMod
                 // always skip the game function (errors occur for an invalid instance otherwise)
                 return false;
             }
+        }
+
+        public static void HandleRequestDestroyStructureEvent(Structure structure)
+        {
+            OnRequestDestroyStructureArgs onRequestDestroyStructureArgs = FireOnRequestDestroyStructureEvent(structure, structure.Team);
+
+            if (onRequestDestroyStructureArgs.Block)
+            {
+                if (SiAdminMod.Pref_Admin_DebugLogMessages.Value)
+                {
+                    MelonLogger.Msg("Blocking structure (" + structure.name + ") from being destroyed on team " + structure.Team.TeamShortName);
+                }
+
+                return;
+            }
+
+            if (SiAdminMod.Pref_Admin_DebugLogMessages.Value)
+            {
+                MelonLogger.Msg("Allowing structure (" + structure.name + ") to be destroyed on team " + structure.Team.TeamShortName);
+            }
+
+            OnCommanderDestroyedStructureArgs onCommanderDestroyedStructureArgs = FireOnCommanderDestroyedStructure(structure, structure.Team);
+
+            if (SiAdminMod.Pref_Admin_DebugLogMessages.Value)
+            {
+                MelonLogger.Msg("Structure (" + structure.name + ") destroyed by commander on team " + structure.Team.TeamShortName);
+            }
+
+            structure.DamageManager.SetHealth01(0f);
         }
 
         public static OnRequestDestroyStructureArgs FireOnRequestDestroyStructureEvent(Structure structure, Team team)
