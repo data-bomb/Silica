@@ -35,7 +35,7 @@ using System.Linq;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 
-[assembly: MelonInfo(typeof(CommanderManager), "Commander Management", "1.9.11", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(CommanderManager), "Commander Management", "1.9.12", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 #if NET6_0
 [assembly: MelonOptionalDependencies("Admin Mod", "QList")]
@@ -52,7 +52,6 @@ namespace Si_CommanderManagement
         public static MelonPreferences_Entry<bool> _TeamOnlyResponses = null!;
         public static MelonPreferences_Entry<float> _MutinyVotePercent = null!;
         public static MelonPreferences_Entry<bool> _SuppressRoundStartCommanderChat = null!;
-        public static MelonPreferences_Entry<bool> _SuppressChangeCommanderChat = null!;
         public static MelonPreferences_Entry<bool> _SuppressCountdownChat = null!;
 
         public static List<Player>[] mutineerPlayers = null!;
@@ -64,7 +63,6 @@ namespace Si_CommanderManagement
             _TeamOnlyResponses ??= _modCategory.CreateEntry<bool>("CmdrMgr_CommanderResponses_TeamOnly", false);
             _MutinyVotePercent ??= _modCategory.CreateEntry<float>("CmdrMgr_Mutiny_Vote_PercentNeeded", 0.54f);
             _SuppressRoundStartCommanderChat ??= _modCategory.CreateEntry<bool>("CmdrMgr_SuppressChatSpam_RoundStart", true);
-            _SuppressChangeCommanderChat ??= _modCategory.CreateEntry<bool>("CmdrMgr_SuppressChatSpam_CommanderChanges", false);
             _SuppressCountdownChat ??= _modCategory.CreateEntry<bool>("CmdrMgr_SuppressChatSpam_AICountdown", false);
 
             try

@@ -37,7 +37,7 @@ using UnityEngine;
 using Si_WormBounty;
 
 
-[assembly: MelonInfo(typeof(WormBounty), "Worm Bounty", "1.1.2", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(WormBounty), "Worm Bounty", "1.1.3", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -169,6 +169,13 @@ namespace Si_WormBounty
                     // a Basic wildlife was destroyed, ignore that
                     if (__instance.Boss != __0.ObjectInfo)
                     {
+                        return;
+                    }
+
+                    // check if the GreatWorm was on WildLife team (avoids issues with manually-spawned GreatWorms)
+                    if (__instance.Team.Index != (int)SiConstants.ETeam.Wildlife)
+                    {
+                        MelonLogger.Warning("Ignoring bounty for GreatWorm due to worm being on team " + __instance.Team.TeamShortName);
                         return;
                     }
 

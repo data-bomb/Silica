@@ -1,6 +1,6 @@
 ﻿/*
 Silica Admin Mod
-Copyright (C) 2024 by databomb
+Copyright (C) 2024-2025 by databomb
 
 * License *
 This program is free software: you can redistribute it and/or modify
@@ -19,20 +19,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using HarmonyLib;
 using System;
-using System.Linq;
 using MelonLoader;
-using UnityEngine;
-using Newtonsoft.Json.Linq;
-using MelonLoader.ICSharpCode.SharpZipLib.Core;
-using System.Runtime.CompilerServices;
 using System.Reflection;
-using System.Data;
+using UnityEngine;
 
 #if NET6_0
 using Il2Cpp;
-using Il2CppSteamworks;
-#else
-using Steamworks;
 #endif
 
 namespace SilicaAdminMod
@@ -40,8 +32,10 @@ namespace SilicaAdminMod
     public static class Event_Units
     {
         public static event EventHandler<OnRequestEnterUnitArgs> OnRequestEnterUnit = delegate { };
+        public static event EventHandler<OnRequestInviteToGroupArgs> OnRequestInviteToGroup = delegate { };
+        public static event EventHandler<OnRequestTeleportUnitArgs> OnRequestTeleportUnit = delegate { };
 
-        // Aliens will go through OnUse
+        // Aliens will go through OnUse for OnRequestEnterUnit
         [HarmonyPatch(typeof(UseAlienTakeOver), nameof(UseAlienTakeOver.OnUse))]
         static class ApplyPatch_UseAlienTakeOver_OnUse
         {
@@ -86,7 +80,59 @@ namespace SilicaAdminMod
             }
         }
 
-        // Humans will go through AddUnit
+        // Commanders will go through GetCanSwitchToUnit
+        [HarmonyPatch(typeof(Player), nameof(Player.GetCanSwitchToUnit))]
+        static class ApplyPatch_Player_GetCanSwitchToUnit
+        {
+            public static bool Prefix(Player __instance, Unit __0)
+            {
+                try
+                {
+                    if (__instance == null || __0 == null)
+                    {
+                        return true;
+                    }
+
+                    // only interested in commanders
+                    if (!__instance.IsCommander)
+                    {
+                        return true;
+                    }
+
+                    OnRequestEnterUnitArgs onRequestEnterUnitArgs = FireOnRequestEnterUnitEvent(__instance, __0, true);
+
+                    if (onRequestEnterUnitArgs.Block)
+                    {
+                        // kick the commander out of this unit, this will put the commander into a freecam mode
+                        NetworkLayer.SendPlayerSelectUnit(__instance, null);
+
+                        if (SiAdminMod.Pref_Admin_DebugLogMessages.Value)
+                        {
+                            MelonLogger.Msg("Blocking player " + __instance.PlayerName + " from entering unit " + __0.ToString());
+                        }
+
+                        // take commander out of freecam
+                        HelperMethods.SetCommander(__instance.Team, null);
+                        HelperMethods.SetCommander(__instance.Team, __instance);
+
+                        return false;
+                    }
+
+                    if (SiAdminMod.Pref_Admin_DebugLogMessages.Value)
+                    {
+                        MelonLogger.Msg("Allowing player to direct control unit");
+                    }
+                }
+                catch (Exception error)
+                {
+                    HelperMethods.PrintError(error, "Failed to run NetworkLayer::SendPlayerSelectUnit");
+                }
+
+                return true;
+            }
+        }
+
+        // Humans will go through AddUnit for OnRequestEnterUnit
         #if NET6_0
         [HarmonyPatch(typeof(UnitCompartment), nameof(UnitCompartment.AddUnit))]
         #else
@@ -148,6 +194,131 @@ namespace SilicaAdminMod
             }
 
             return onRequestEnterUnitArgs;
+        }
+
+        // OnRequestInviteToGroup
+        #if NET6_0
+        [HarmonyPatch(typeof(FPSCommanding), nameof(FPSCommanding.InviteToGroupServer))]
+        #else
+        [HarmonyPatch(typeof(FPSCommanding), "InviteToGroupServer")]
+        #endif
+        static class ApplyPatch_FPSCommanding_InviteToGroupServer
+        {
+            public static bool Prefix(FPSCommanding __instance, Player __0, Target __1)
+            {
+                try
+                {
+                    if (__1 == null || __0 == null || !__1.OwnerUnit || __0.Group == null || __0.Group.UnitCount >= __instance.GroupUnitLimit)
+                    {
+                        return false;
+                    }
+
+                    OnRequestInviteToGroupArgs onRequestInviteToGroupArgs = FireOnRequestInviteToGroupEvent(__0, __1);
+
+                    if (onRequestInviteToGroupArgs.Block)
+                    {
+                        if (SiAdminMod.Pref_Admin_DebugLogMessages.Value)
+                        {
+                            MelonLogger.Msg("Blocking player " + __0.PlayerName + " from inviting target to group " + __1.ObjectInfo.DisplayName);
+                        }
+
+                        return false;
+                    }
+
+                    if (SiAdminMod.Pref_Admin_DebugLogMessages.Value)
+                    {
+                        MelonLogger.Msg("Allowing player to invite target to join FPS commanding group");
+                    }
+                }
+                catch (Exception error)
+                {
+                    HelperMethods.PrintError(error, "Failed to run FPSCommanding::InviteToGroupServer");
+                }
+
+                return true;
+            }
+        }
+
+        public static OnRequestInviteToGroupArgs FireOnRequestInviteToGroupEvent(Player player, Target target)
+        {
+            OnRequestInviteToGroupArgs onRequestInviteToGroupArgs = new OnRequestInviteToGroupArgs();
+            onRequestInviteToGroupArgs.Player = player;
+            onRequestInviteToGroupArgs.Target = target;
+            EventHandler<OnRequestInviteToGroupArgs> requestInviteToGroupEvent = OnRequestInviteToGroup;
+            if (requestInviteToGroupEvent != null)
+            {
+                requestInviteToGroupEvent(null, onRequestInviteToGroupArgs);
+            }
+
+            return onRequestInviteToGroupArgs;
+        }
+
+        // OnRequestTeleportUnit
+        #if NET6_0
+        [HarmonyPatch(typeof(TeleportUI), nameof(TeleportUI.RPC_Teleport))]
+        #else
+        [HarmonyPatch(typeof(TeleportUI), "RPC_Teleport")]
+        #endif
+        private static class ApplyPatch_TeleportUI_RPC_Teleport
+        {
+            public static bool Prefix(TeleportUI __instance, Unit __0, ref Vector3 __1, ref Vector3 __2)
+            {
+                try
+                { 
+                    if (__instance == null || __0 == null || __instance.Structure == null)
+                    {
+                        return true;
+                    }
+
+                    // only broadcast player-controlled events
+                    if (__0.ControlledBy == null)
+                    {
+                        return true;
+                    }
+
+                    OnRequestTeleportUnitArgs onRequestTeleportUnitArgs = FireOnRequestTeleportUnitEvent(__0, __instance.Structure, __1, __2);
+
+                    __1 = onRequestTeleportUnitArgs.TargetPosition;
+                    __2 = onRequestTeleportUnitArgs.EffectsPosition;
+
+                    /*if (onRequestTeleportUnitArgs.Block)
+                    {
+                        if (SiAdminMod.Pref_Admin_DebugLogMessages.Value)
+                        {
+                            MelonLogger.Msg("Blocking player " + __0.ControlledBy.PlayerName + " from teleporting unit " + __0.ToString());
+                        }
+
+                        return false;
+                    }*/
+
+                    if (SiAdminMod.Pref_Admin_DebugLogMessages.Value)
+                    {
+                        MelonLogger.Msg("Allowing player " + __0.ControlledBy.PlayerName + " to teleport unit " + __0.ObjectInfo.DisplayName);
+                    }
+                }
+                catch (Exception error)
+                {
+                    HelperMethods.PrintError(error, "Failed to run TeleportUI::RPC_Teleport");
+                }
+
+                return true;
+            }
+        }
+
+        public static OnRequestTeleportUnitArgs FireOnRequestTeleportUnitEvent(Unit unit, Structure structure, Vector3 targetPosition, Vector3 fxPosition)
+        {
+            OnRequestTeleportUnitArgs onRequestTeleportUnitArgs = new OnRequestTeleportUnitArgs();
+            onRequestTeleportUnitArgs.Unit = unit;
+            onRequestTeleportUnitArgs.TeleportStructure = structure;
+            onRequestTeleportUnitArgs.TargetPosition = targetPosition;
+            onRequestTeleportUnitArgs.EffectsPosition = fxPosition;
+            EventHandler<OnRequestTeleportUnitArgs> requestTeleportUnitEvent = OnRequestTeleportUnit;
+            if (requestTeleportUnitEvent != null)
+            {
+                requestTeleportUnitEvent(null, onRequestTeleportUnitArgs);
+            }
+
+            return onRequestTeleportUnitArgs;
         }
     }
 }

@@ -113,7 +113,13 @@ namespace Si_Logging
 
             return $"{x} {y} {z}";
         }
-        
+
+        public static string GetLogResourceType(Resource resourceType)
+        {
+            return resourceType.ToString().Split('(')[0].Split('_')[1].TrimEnd();
+        }
+
+
         public static string GetPlayerPosition(Unit victim)
         {
             string victimLogPosition = GetLogPosition(victim.transform.position);
@@ -141,7 +147,7 @@ namespace Si_Logging
 
         public static string GetNameFromObject(GameObject gameObject)
         {
-            return gameObject.ToString().Split('(')[0];
+            return GetLogNameFromDisplayName(gameObject.GetBaseGameObject().ObjectInfo.DisplayName);
         }
 
         public static string GetNameFromUnit(Unit unit)

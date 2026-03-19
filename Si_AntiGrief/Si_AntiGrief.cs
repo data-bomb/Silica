@@ -1,6 +1,6 @@
 ﻿/*
  Silica Anti-Grief Mod
- Copyright (C) 2023-2025 by databomb
+ Copyright (C) 2023-2026 by databomb
  
  * Description *
  For Silica servers, automatically identifies players who fall below a 
@@ -35,8 +35,9 @@ using SilicaAdminMod;
 using System.Linq;
 using UnityEngine;
 using System.Runtime.CompilerServices;
+using MelonLoader.Utils;
 
-[assembly: MelonInfo(typeof(AntiGrief), "Anti-Grief", "1.5.2", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(AntiGrief), "Anti-Grief", "1.6.2", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 #if NET6_0
 [assembly: MelonOptionalDependencies("Admin Mod", "QList")]
@@ -50,11 +51,15 @@ namespace Si_AntiGrief
     {
         static MelonPreferences_Category _modCategory = null!;
         static MelonPreferences_Entry<int> _NegativeKillsThreshold = null!;
+        static MelonPreferences_Entry<bool> _PlayTeamKillerSound = null!;
         static MelonPreferences_Entry<bool> _NegativeKills_Penalty_Ban = null!;
         static MelonPreferences_Entry<bool> _StructureAntiGrief_IgnoreNodes = null!;
         static MelonPreferences_Entry<bool> _BlockShrimpControllers = null!;
         static MelonPreferences_Entry<bool> _BlockCommanderRemovingLastSpawn = null!;
         static MelonPreferences_Entry<bool> _BlockCommanderRemovingLastResearch = null!;
+        static MelonPreferences_Entry<bool> _BlockShrimpFPSCommanding = null!;
+        static MelonPreferences_Entry<bool> _BlockHarvesterFPSCommanding = null!;
+        static MelonPreferences_Entry<bool> _BlockQueenFPSCommanding = null!;
 
         static uint[] playerTransferCount = new uint[] {};
 
@@ -64,11 +69,15 @@ namespace Si_AntiGrief
         {
             _modCategory ??= MelonPreferences.CreateCategory(ModCategory);
             _NegativeKillsThreshold ??= _modCategory.CreateEntry<int>("Grief_NegativeKills_Threshold", -9);
+            _PlayTeamKillerSound ??= _modCategory.CreateEntry<bool>("Grief_PlayTeamkillerSound", true);
             _NegativeKills_Penalty_Ban ??= _modCategory.CreateEntry<bool>("Grief_NegativeKills_Penalty_Ban", true);
             _StructureAntiGrief_IgnoreNodes ??= _modCategory.CreateEntry<bool>("Grief_IgnoreFriendlyNodesDestroyed", true);
             _BlockShrimpControllers ??= _modCategory.CreateEntry<bool>("Grief_BlockShrimpTakeOver", false);
             _BlockCommanderRemovingLastSpawn ??= _modCategory.CreateEntry<bool>("Grief_BlockRemoveLastSpawn", true);
             _BlockCommanderRemovingLastResearch ??= _modCategory.CreateEntry<bool>("Grief_BlockRemoveLastResearch", true);
+            _BlockShrimpFPSCommanding ??= _modCategory.CreateEntry<bool>("Grief_BlockShrimpFPSCommanding", true);
+            _BlockHarvesterFPSCommanding ??= _modCategory.CreateEntry<bool>("Grief_BlockHarvesterFPSCommanding", true);
+            _BlockQueenFPSCommanding ??= _modCategory.CreateEntry<bool>("Grief_BlockQueenFPSCommanding", false);
         }
 
         public override void OnSceneWasLoaded(int buildIndex, string sceneName)
@@ -90,6 +99,7 @@ namespace Si_AntiGrief
             //subscribing to the events
             Event_Roles.OnRoleChanged += OnRoleChanged;
             Event_Units.OnRequestEnterUnit += OnRequestEnterUnit;
+            Event_Units.OnRequestInviteToGroup += OnRequestInviteToGroup_GriefCheck;
             Event_Structures.OnRequestDestroyStructure += OnRequestDestroyStructure_GriefCheck;
 
             #if NET6_0
@@ -98,7 +108,7 @@ namespace Si_AntiGrief
             {
                 QListRegistration();
             }
-#endif
+            #endif
         }
 
         #if NET6_0
@@ -170,6 +180,8 @@ namespace Si_AntiGrief
 
                         MelonLogger.Msg(attackerPlayer.PlayerName + " team killed a structure " + structureName);
                         HelperMethods.ReplyToCommand_Player(attackerPlayer, "killed a friendly " + (__0.OwnerConstructionSite == null ? "structure" : "construction site") + " (" + HelperMethods.GetTeamColor(attackerPlayer) + structureName + "</color>)");
+
+                        HandleTeamKillerSoundEffect(attackerPlayer);
                     }
                     // unit processing
                     else if (__0.Owner is Unit)
@@ -188,6 +200,8 @@ namespace Si_AntiGrief
                         {
                             MelonLogger.Msg(attackerPlayer.PlayerName + " team killed " + victimPlayer.PlayerName);
                             HelperMethods.ReplyToCommand_Player(attackerPlayer, "team killed " + HelperMethods.GetTeamColor(victimPlayer) + victimPlayer.PlayerName + "</color>");
+
+                            HandleTeamKillerSoundEffect(attackerPlayer);
                         }
                     }
 
@@ -280,6 +294,60 @@ namespace Si_AntiGrief
             catch (Exception error)
             {
                 HelperMethods.PrintError(error, "Failed to run OnRequestDestroyStructure_GriefCheck");
+            }
+        }
+
+        public void OnRequestInviteToGroup_GriefCheck(object? sender, OnRequestInviteToGroupArgs args)
+        {
+            try
+            {
+                if (args == null)
+                {
+                    return;
+                }
+
+                Player player = args.Player;
+                Target target = args.Target;
+
+                if (player == null || target == null || target.OwnerUnit == null)
+                {
+                    return;
+                }
+
+                Unit unit = target.OwnerUnit;
+
+                if (player.Team.Index == (int)SiConstants.ETeam.Alien)
+                {
+                    if (_BlockShrimpFPSCommanding.Value && unit.IsResourceHolder)
+                    {
+                        args.Block = true;
+                        MelonLogger.Msg("Found " + player.PlayerName + " trying to invite an Alien shrimp to their FPS Command group.");
+                        HelperMethods.SendChatMessageToPlayer(player, HelperMethods.chatPrefix, " inviting shrimp is not permitted on this server.");
+                        return;
+                    }
+
+                    if (_BlockQueenFPSCommanding.Value && unit.ObjectInfo.Critical)
+                    {
+                        MelonLogger.Msg("Found " + player.PlayerName + " trying to invite the Alien Queen to their FPS Command group.");
+                        HelperMethods.SendChatMessageToPlayer(player, HelperMethods.chatPrefix, " inviting the Queen is not permitted on this server.");
+                        args.Block = true;
+                        return;
+                    }
+                }
+                else // human team
+                {
+                    if (_BlockHarvesterFPSCommanding.Value && unit.IsResourceHolder)
+                    {
+                        MelonLogger.Msg("Found " + player.PlayerName + " trying to invite a Harvester to their FPS Command group.");
+                        HelperMethods.SendChatMessageToPlayer(player, HelperMethods.chatPrefix, " inviting a Harvester is not permitted on this server.");
+                        args.Block = true;
+                        return;
+                    }
+                }
+            }
+            catch (Exception error)
+            {
+                HelperMethods.PrintError(error, "Failed to run OnRequestInviteToGroup_GriefCheck");
             }
         }
 
@@ -408,6 +476,12 @@ namespace Si_AntiGrief
                     return;
                 }
 
+                // is the game already over?
+                if (GameMode.CurrentGameMode == null || GameMode.CurrentGameMode.GameOver || !GameMode.CurrentGameMode.GameOngoing)
+                {
+                    return;
+                }
+
                 // if a player switches to non-infantry it will despawn their alien unit
                 if (args.Role == GameModeExt.ETeamRole.UNIT)
                 {
@@ -470,6 +544,15 @@ namespace Si_AntiGrief
             }
         }
 
+        private static void HandleTeamKillerSoundEffect(Player player)
+        {
+            if (_PlayTeamKillerSound.Value)
+            {
+                string teamKillerSoundPath = System.IO.Path.Combine(MelonEnvironment.UserDataDirectory, "sounds\\teamkiller.wav");
+                _ = AudioHelper.PlaySoundFile(teamKillerSoundPath, player);
+            }
+        }
+
         public static bool IsHighValueAlienUnit(Unit unit)
         {
             BaseGameObject? unitBase = GameFuncs.GetBaseGameObject(unit.gameObject);
@@ -518,24 +601,7 @@ namespace Si_AntiGrief
 
         private static string GetDisplayName(Target target)
         {
-            if (target.ToString().Contains('_'))
-            {
-                // is this a construction site or not?
-                if (target.OwnerConstructionSite == null)
-                {
-                    return target.ToString().Split('_')[0];
-                }
-                else
-                {
-                    return target.ToString().Split('_')[1].Split('(')[0];
-                }
-            }
-            else if (target.ToString().Contains('('))
-            {
-                return target.ToString().Split('(')[0];
-            }
-
-            return target.ToString();
+            return target.ObjectInfo.DisplayName.Replace(" ", "").Replace("-", "");
         }
 
         private static string GetDisplayName(string fullName)

@@ -263,25 +263,37 @@ jobs:
         
       - uses: actions/checkout@v4
         with:
-          sparse-checkout: .
           ref: ${{ needs.beta-check.outputs.branch_identifier }}
-          
-      - name: Make output paths
+          sparse-checkout: |
+            Multimedia/Sounds
+            
+      - name: Make output paths and copy static files
         run: |
           mkdir -p release/dedi/Plugins
           mkdir -p release/dedi/Mods/~disabled
           mkdir -p release/dedi/Mods/~disabled/obe
           mkdir -p release/dedi/Mods/~disabled/unsafe
           mkdir -p release/dedi/UserData
+          mkdir -p release/dedi/UserData/sounds
           mkdir -p release/listen/Plugins
           mkdir -p release/listen/Mods/~disabled
           mkdir -p release/listen/Mods/~disabled/obe
           mkdir -p release/listen/Mods/~disabled/unsafe
           mkdir -p release/listen/UserData
+          mkdir -p release/listen/UserData/sounds
+          cp launch.bat release/listen/launch.bat
           cp rungame.bat release/dedi/rungame.bat
           cp launch.bat release/dedi/launch.bat
           cp LICENSE release/dedi/UserData/Mod-License.txt
           cp LICENSE release/listen/UserData/Mod-License.txt
+          cp Multimedia/Sounds/access_denied.wav release/dedi/UserData/sounds/access_denied.wav
+          cp Multimedia/Sounds/access_denied.wav release/listen/UserData/sounds/access_denied.wav
+          cp Multimedia/Sounds/teamkiller.wav release/dedi/UserData/sounds/teamkiller.wav
+          cp Multimedia/Sounds/teamkiller.wav release/listen/UserData/sounds/teamkiller.wav
+          cp Multimedia/Sounds/repair_start.wav release/dedi/UserData/sounds/repair_start.wav
+          cp Multimedia/Sounds/repair_start.wav release/listen/UserData/sounds/repair_start.wav
+          cp Multimedia/Sounds/repair_end.wav release/dedi/UserData/sounds/repair_end.wav
+          cp Multimedia/Sounds/repair_end.wav release/listen/UserData/sounds/repair_end.wav
           
       - uses: actions/download-artifact@v4
         with:
@@ -325,12 +337,9 @@ jobs:
           # AutoTeamsSelect was addressed with a game update to vote on the next mode
           mv release/dedi/Mods/Si_AutoTeamsSelect.dll release/dedi/Mods/~disabled/obe
           mv release/listen/Mods/Si_AutoTeamsSelect.dll release/listen/Mods/~disabled/obe
-          # FriendlyFireLimits is disabled by default
-          mv release/dedi/Mods/Si_FriendlyFireLimits.dll release/dedi/Mods/~disabled/unsafe
-          mv release/listen/Mods/Si_FriendlyFireLimits.dll release/listen/Mods/~disabled/unsafe
-          # Tech Glitch is disabled because the discrepancy is happening on the server side (not client side)
-          mv release/dedi/Mods/Si_TechGlitch.dll release/dedi/Mods/~disabled/obe
-          mv release/listen/Mods/Si_TechGlitch.dll release/listen/Mods/~disabled/obe
+          # Tech Glitch is (temporarily?) re-enabled because glitch is back on client-side now
+          # mv release/dedi/Mods/Si_TechGlitch.dll release/dedi/Mods/~disabled/obe
+          # mv release/listen/Mods/Si_TechGlitch.dll release/listen/Mods/~disabled/obe
           # Better Spawns is disabled because the game added a spawn selection mechanic
           mv release/dedi/Mods/Si_BetterSpawns.dll release/dedi/Mods/~disabled/unsafe
           mv release/listen/Mods/Si_BetterSpawns.dll release/listen/Mods/~disabled/unsafe

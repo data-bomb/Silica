@@ -41,7 +41,7 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using static MelonLoader.MelonLogger;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.8.12", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.9.8", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 #if NET6_0
 [assembly: MelonOptionalDependencies("Admin Mod", "QList")]
@@ -55,6 +55,8 @@ namespace Si_Logging
     public partial class HL_Logging : MelonMod
     {
         static int[] teamResourcesCollected = new int[SiConstants.MaxPlayableTeams + 1];
+        static int[] teamResourcesSpent = new int[SiConstants.MaxPlayableTeams + 1];
+        
         static Player?[]? lastCommander;
 
         static MelonPreferences_Category _modCategory = null!;
@@ -112,22 +114,23 @@ namespace Si_Logging
         public override void OnLateInitializeMelon()
         {
             HelperMethods.StartTimer(ref Timer_PerfMonitorLog);
+            HelperMethods.StartTimer(ref Timer_ResourceLogEvent);
 
             //subscribing to the event
             Event_Roles.OnRoleChanged += OnRoleChanged;
             Event_Chat.OnRequestPlayerChat += OnRequestPlayerChat;
             Event_Structures.OnCommanderDestroyedStructure += OnCommanderDestroyedStructure_Log;
 
-            #if NET6_0
+#if NET6_0
             bool QListLoaded = RegisteredMelons.Any(m => m.Info.Name == "QList");
             if (QListLoaded)
             {
                 QListRegistration();
             }
-            #endif
+#endif
         }
 
-        #if NET6_0
+#if NET6_0
         [MethodImpl(MethodImplOptions.NoInlining)]
         private void QListRegistration()
         {
@@ -139,7 +142,7 @@ namespace Si_Logging
 
             QList.Options.AddOption(logAllKills);
         }
-        #endif
+#endif
 
         // 003. Change Map
         public override void OnSceneWasLoaded(int buildIndex, string sceneName)
@@ -150,7 +153,7 @@ namespace Si_Logging
                 {
                     return;
                 }
-                
+
                 PrintLogLine($"Loading map \"{sceneName}\"");
 
                 DamageDatabase.ResetRound();
@@ -167,11 +170,11 @@ namespace Si_Logging
         }
 
         // 050. Connection
-        #if NET6_0
+#if NET6_0
         [HarmonyPatch(typeof(NetworkGameServer), nameof(NetworkGameServer.OnP2PSessionRequest))]
-        #else
+#else
         [HarmonyPatch(typeof(NetworkGameServer), "OnP2PSessionRequest")]
-        #endif
+#endif
         private static class ApplyPatchOnP2PSessionRequest
         {
             public static void Postfix(NetworkGameServer __instance, P2PSessionRequest_t __0)
@@ -287,6 +290,11 @@ namespace Si_Logging
                         return;
                     }
                     NetworkComponent attackerNetComp = attackerBase.NetworkComponent;
+                    if (attackerNetComp == null)
+                    {
+                        MelonLogger.Warning("Found null attackerNetComp in ApplyPatch_StrategyMode_OnUnitDestroyed");
+                        return;
+                    }
                     Player attackerPlayer = attackerNetComp.OwnerPlayer;
 
                     // Victim
@@ -295,15 +303,11 @@ namespace Si_Logging
                     bool isVictimHuman = (victimPlayer != null);
                     bool isAttackerHuman = (attackerPlayer != null);
 
-                    #pragma warning disable CS8604 // Dereference of a possibly null reference.
                     if (isVictimHuman)
                     {
+#pragma warning disable CS8604 // Dereference of a possibly null reference.
                         DamageDatabase.OnPlayerDeath(victimPlayer);
-
-                        if (attackerNetComp == null)
-                        {
-                            return;
-                        }
+#pragma warning restore CS8604 // Dereference of a possibly null reference.
 
                         // Attacker and Victim are both humans
                         if (isAttackerHuman)
@@ -386,7 +390,25 @@ namespace Si_Logging
                             HelperMethods.SendConsoleMessage($"{attackerPretty} ({instigator}) killed {AIPretty} ({victimUnit})");
                         }
                     }
-                    #pragma warning restore CS8604 // Dereference of a possibly null reference.
+                    // Everyone is AI but Victim is the Queen
+                    else if (__0.ObjectInfo.Critical)
+                    {
+                        string attacker = AddAIAttackerLogEntry(__1, attackerBase.Team);
+                        string victim = AddAIVictimLogEntry(__0);
+                        string weapon = AddKilledWithEntry(__0, __1);
+                        string position = GetPlayerPosition(__0, __1);
+
+                        PrintLogLine($"{attacker} killed {victim} with {weapon} {position}");
+
+                        if (Pref_Log_PlayerConsole_Enable.Value)
+                        {
+                            string AIPretty = AddAIConsoleEntry();
+                            string instigator = GetNameFromObject(__1);
+                            string victimUnit = GetNameFromUnit(__0);
+
+                            HelperMethods.SendConsoleMessage($"{AIPretty} ({instigator}) killed {AIPretty} ({victimUnit})");
+                        }
+                    }
                 }
                 catch (Exception error)
                 {
@@ -420,7 +442,7 @@ namespace Si_Logging
             }
 
             string playerEntry = AddPlayerLogEntry(player, theOldTeamName);
-            
+
             PrintLogLine($"{playerEntry} joined team \"{newTeam.TeamShortName}\"");
 
             if (Pref_Log_PlayerConsole_Enable.Value)
@@ -435,7 +457,7 @@ namespace Si_Logging
         [HarmonyPatch(typeof(MP_TowerDefense), nameof(MP_TowerDefense.OnPlayerChangedTeam))]
         private static class ApplyPatch_MPTowerDefense_OnPlayerChangedTeam
         {
-            public static void Postfix (MP_TowerDefense __instance, Player __0, Team __1, Team __2)
+            public static void Postfix(MP_TowerDefense __instance, Player __0, Team __1, Team __2)
             {
                 try
                 {
@@ -581,11 +603,11 @@ namespace Si_Logging
         }
 
         // 058. Injuring
-        #if NET6_0
+#if NET6_0
         [HarmonyPatch(typeof(DamageManager), nameof(DamageManager.OnDamageReceived))]
-        #else
+#else
         [HarmonyPatch(typeof(DamageManager), "OnDamageReceived")]
-        #endif
+#endif
         private static class ApplyPatchOnDamageReceived
         {
             public static void Postfix(DamageManager __instance, float __0, GameObject __1, byte __2, bool __3)
@@ -675,15 +697,16 @@ namespace Si_Logging
                     {
                         return;
                     }
-                    
+
                     string playerEntry = (isAttackerHuman ? AddPlayerLogEntry(attackerPlayer) : AddAIAttackerLogEntry(__1, attackerBase.Team));
                     string structName = GetStructureName(__0);
                     string structTeam = __0.Team.TeamShortName;
                     string weapon = GetNameFromObject(__1);
                     string construction = (__0.OwnerConstructionSite == null ? "no" : "yes");
-                    string position = GetLogPosition(__0.gameObject.transform.position);
+                    string structurePosition = GetLogPosition(__0.gameObject.transform.position);
+                    string attackerPosition = GetLogPosition(__1.transform.position);
 
-                    PrintLogLine($"{playerEntry} triggered \"structure_kill\" (structure \"{structName}\") (weapon \"{weapon}\") (struct_team \"{structTeam}\") (construction \"{construction}\") (building_position \"{position}\")");
+                    PrintLogLine($"{playerEntry} triggered \"structure_kill\" (structure \"{structName}\") (weapon \"{weapon}\") (struct_team \"{structTeam}\") (construction \"{construction}\") (attacker_position \"{attackerPosition}\") (building_position \"{structurePosition}\")");
 
                     if (Pref_Log_PlayerConsole_Enable.Value)
                     {
@@ -749,6 +772,7 @@ namespace Si_Logging
 
                     if (__2 <= 0)
                     {
+                        teamResourcesSpent[__instance.Index] -= __2;
                         return;
                     }
 
@@ -822,12 +846,71 @@ namespace Si_Logging
             }
         }
 
+        // 061. Team Objectives/Actions - Resource Status
+        public static float Timer_ResourceLogEvent = HelperMethods.Timer_Inactive;
+
+        public override void OnUpdate()
+        {
+            try
+            {
+                // check performance monitor
+                HL_Logging.TrackPerformanceMonitor();
+
+                TrackPeriodicResourceEvent();
+            }
+            catch (Exception exception)
+            {
+                HelperMethods.PrintError(exception, "Failed in OnUpdate");
+            }
+        }
+
+        public static void TrackPeriodicResourceEvent()
+        {
+            // check if timer expired while the game is in-progress
+            Timer_ResourceLogEvent += Time.deltaTime;
+            if (Timer_ResourceLogEvent >= 60f)
+            {
+                Timer_ResourceLogEvent = 0f;
+
+                // skip if there is no game
+                if (GameMode.CurrentGameMode == null || !GameMode.CurrentGameMode.GameOngoing || GameMode.CurrentGameMode.GameOver)
+                {
+                    return;
+                }
+
+                // log
+                LogPeriodicResources();
+            }
+        }
+
+        public static void LogPeriodicResources()
+        {
+            GameModeExt? currentGameModeExt = GameMode.CurrentGameMode as GameModeExt;
+            if (currentGameModeExt == null)
+            {
+                return;
+            }
+
+            foreach (BaseTeamSetup baseTeamSetup in currentGameModeExt.BaseTeamSetups)
+            {
+                if (currentGameModeExt.GetTeamSetupActive(baseTeamSetup))
+                {
+                    
+                    string resourcesCollected = teamResourcesCollected[baseTeamSetup.Team.Index].ToString();
+                    string resourcesSpent = teamResourcesSpent[baseTeamSetup.Team.Index].ToString();
+                    string teamName = GetTeamName(baseTeamSetup.Team);
+
+                    PrintLogLine($"Team \"{teamName}\" triggered \"resource_status\" (collected \"{resourcesCollected}\") (spent \"{resourcesSpent}\")");
+                }
+            }
+        }
+
         // 061. Team Objectives/Actions - Structure Complete
-        #if NET6_0
+#if NET6_0
         [HarmonyPatch(typeof(ConstructionSite), nameof(ConstructionSite.SpawnObject))]
-        #else
+#else
         [HarmonyPatch(typeof(ConstructionSite), "SpawnObject")]
-        #endif
+#endif
         private static class ApplyPatchConstructionSpawned
         {
             public static void Postfix(ConstructionSite __instance)
@@ -1020,14 +1103,15 @@ namespace Si_Logging
             {
                 tiers[Team.Teams[i].Index] = 0;
                 teamResourcesCollected[i] = 0;
+                teamResourcesSpent[i] = 0;
             }
         }
 
-        #if NET6_0
+#if NET6_0
         [HarmonyPatch(typeof(BarksHandler), nameof(BarksHandler.OnConstructionCompleted))]
-        #else
+#else
         [HarmonyPatch(typeof(BarksHandler), "OnConstructionCompleted")]
-        #endif
+#endif
         private static class ApplyPatchOnSetTechnologyTier
         {
             public static void Postfix(ConstructionSite constructionSite, bool wasCompleted)
@@ -1041,7 +1125,7 @@ namespace Si_Logging
                         currentTechTier[siteTeam.Index] = tier;
                         LogTierChange(siteTeam, tier);
                     }
-                } 
+                }
 
                 catch (Exception error)
                 {
@@ -1055,7 +1139,30 @@ namespace Si_Logging
             string teamName = GetTeamName(team);
             PrintLogLine($"Team \"{teamName}\" triggered \"technology_change\" (tier \"{tier}\")");
         }
-        
+
+        // 062. World Objectives/Actions - Resource Extraction
+        [HarmonyPatch(typeof(ResourceArea), nameof(ResourceArea.ExtractResource), new Type[] { typeof(int), typeof(int), typeof(int) })]
+        private static class ApplyPatchExtractResource
+        {
+            public static void Postfix(ResourceArea __instance, int __result, int __0, int __1, int __2)
+            {
+                try
+                {
+                    // this ResourceArea is "depleted"
+                    if (__instance.ResourceAmountCurrent <= 0)
+                    {
+                        string position = GetLogPosition(__instance.transform.position);
+                        string resource_type = GetLogResourceType(__instance.ResourceType);
+                        PrintLogLine($"World triggered \"Resource_Depleted\" (type \"{resource_type}\") (position \"{position}\")");
+                    }
+                }
+                catch (Exception error)
+                {
+                    HelperMethods.PrintError(error, "Failed to run ResourceArea::ExtractResource");
+                }
+            }
+        }
+
         // 062. World Objectives/Actions - Round_Start
         [HarmonyPatch(typeof(MusicJukeboxHandler), nameof(MusicJukeboxHandler.OnGameStarted))]
         private static class ApplyPatchOnGameStarted
@@ -1070,6 +1177,7 @@ namespace Si_Logging
                     string gametype = GetGameType(gameModeInstance);
                     
                     PrintLogLine($"World triggered \"Round_Start\" (gamemode \"{gamemode}\") (gametype \"{gametype}\")");
+                    LogStartingResources();
                     LogStartingStructures();
 
                     initializeRound(ref currentTechTier);
@@ -1082,10 +1190,38 @@ namespace Si_Logging
             }
         }
 
+        public static void LogStartingResources()
+        {
+            foreach (ResourceArea resourceArea in ResourceArea.AllResourceAreas)
+            {
+                if (resourceArea == null || !resourceArea.enabled)
+                {
+                    continue;
+                }
+
+                string position = GetLogPosition(resourceArea.transform.position);
+                string amount = resourceArea.ResourceAmountCurrent.ToString();
+                string resource_type = GetLogResourceType(resourceArea.ResourceType);
+                PrintLogLine($"World triggered \"Resource_Spawned\" (type \"{resource_type}\") (amount \"{amount}\") (position \"{position}\")");
+            }
+        }
+
         public static void LogStartingStructures()
         {
+            if (Structure.Structures == null ||  Structure.Structures.Count == 0)
+            {
+                MelonLogger.Warning("Could not find starting structures.");
+                return;
+            }
+
             foreach (Structure structure in Structure.Structures)
             {
+                if (structure == null || structure.Team == null || structure.ObjectInfo == null)
+                {
+                    MelonLogger.Warning("Skipping invalid structure.");
+                    continue;
+                }
+
                 if (structure.Team.BaseStructure == structure.ObjectInfo)
                 {
                     string teamName = GetTeamName(structure.Team);

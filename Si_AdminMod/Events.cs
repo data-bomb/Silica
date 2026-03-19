@@ -65,6 +65,60 @@ namespace SilicaAdminMod
         }
     }
 
+    public class OnRequestTeleportUnitArgs : EventArgs
+    {
+        private Unit _unit = null!;
+        private Structure _structure = null!;
+
+        public Unit Unit
+        {
+            get => _unit;
+            set => _unit = value ?? throw new ArgumentNullException("Unit is required.");
+        }
+
+        public Structure TeleportStructure
+        {
+            get => _structure;
+            set => _structure = value ?? throw new ArgumentNullException("Structure is required.");
+        }
+
+        public Vector3 TargetPosition
+        {
+            get;
+            set;
+        }
+
+        public Vector3 EffectsPosition
+        {
+            get;
+            set;
+        }
+    }
+
+    public class OnRequestInviteToGroupArgs : EventArgs
+    {
+        private Player _player = null!;
+        private Target _target = null!;
+
+        public Player Player
+        {
+            get => _player;
+            set => _player = value ?? throw new ArgumentNullException("Player is required.");
+        }
+
+        public Target Target
+        {
+            get => _target;
+            set => _target = value ?? throw new ArgumentNullException("Target is required.");
+        }
+
+        public bool Block
+        {
+            get;
+            set;
+        }
+    }
+
     public class OnCommanderDestroyedStructureArgs : EventArgs
     {
         private Structure _structure = null!;
@@ -107,7 +161,7 @@ namespace SilicaAdminMod
         }
     }
 
-    public class OnRequestBuildStructureArgs : EventArgs
+    public class OnRequestBuildArgs : EventArgs
     {
         private ConstructionData _constructionData = null!;
         private Structure _structure = null!;
@@ -115,7 +169,7 @@ namespace SilicaAdminMod
         public Structure ParentStructure
         {
             get => _structure;
-            set => _structure = value ?? throw new ArgumentNullException("Structure is required.");
+            set => _structure = value ?? throw new ArgumentNullException("Parent Structure is required.");
         }
 
         public ConstructionData ConstructionData
@@ -143,6 +197,36 @@ namespace SilicaAdminMod
         }
 
         public bool Block
+        {
+            get;
+            set;
+        }
+    }
+
+    public class OnPreDamageReceivedArgs : EventArgs
+    {
+        private DamageManager _damageManager = null!;
+        private GameObject _instigator = null!;
+
+        public DamageManager DamageManager
+        {
+            get => _damageManager;
+            set => _damageManager = value ?? throw new ArgumentNullException("DamageManager is required.");
+        }
+
+        public float Damage
+        {
+            get;
+            set;
+        }
+
+        public GameObject Instigator
+        {
+            get => _instigator;
+            set => _instigator = value ?? throw new ArgumentNullException("Instigator GameObject is required.");
+        }
+
+        public byte HitAngle
         {
             get;
             set;

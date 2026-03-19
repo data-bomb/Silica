@@ -34,7 +34,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(ResourceConfig), "Resource Configuration", "1.4.4", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(ResourceConfig), "Resource Configuration", "1.4.5", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 #if NET6_0
 [assembly: MelonOptionalDependencies("Admin Mod", "QList")]
@@ -62,6 +62,7 @@ namespace Si_Resources
         static MelonPreferences_Entry<float> Pref_Resources_Refund_TopRate = null!;
         static MelonPreferences_Entry<float> Pref_Resources_Refund_MidRatePenalty = null!;
         static MelonPreferences_Entry<float> Pref_Resources_Refund_JunkRatePenalty = null!;
+        static MelonPreferences_Entry<float> Pref_Resources_Refund_DisfunctionalPenalty = null!;
         static MelonPreferences_Entry<int> Pref_Resources_Refund_MinimumAmount = null!;
         static MelonPreferences_Entry<int> Pref_Resources_Centauri_StartingAmount = null!;
         static MelonPreferences_Entry<int> Pref_Resources_Sol_StartingAmount = null!;
@@ -79,6 +80,7 @@ namespace Si_Resources
             Pref_Resources_Refund_TopRate ??= _modCategory.CreateEntry<float>("Resources_Refund_TopRate", 0.875f);
             Pref_Resources_Refund_MidRatePenalty ??= _modCategory.CreateEntry<float>("Resources_Refund_Midline_PenaltyPct", 0.09375f);
             Pref_Resources_Refund_JunkRatePenalty ??= _modCategory.CreateEntry<float>("Resources_Refund_Junk_PenaltyPct", 0.1875f);
+            Pref_Resources_Refund_DisfunctionalPenalty ??= _modCategory.CreateEntry<float>("Resources_Refund_Disfunctional_PenaltyPct", 0.5f);
             Pref_Resources_Refund_MinimumAmount ??= _modCategory.CreateEntry<int>("Resources_Refund_MinimumRefundAmount", 100);
             Pref_Resources_Centauri_StartingAmount ??= _modCategory.CreateEntry<int>("Resources_Centauri_StartingAmount", defaultStrategyStartingResources);
             Pref_Resources_Sol_StartingAmount ??= _modCategory.CreateEntry<int>("Resources_Sol_StartingAmount", defaultStrategyStartingResources);
@@ -482,6 +484,12 @@ namespace Si_Resources
             else
             {
                 refundAmount = baseCost * (1.1875f*structureHealthPercent - Pref_Resources_Refund_JunkRatePenalty.Value);
+            }
+
+            // apply the penalty for a non-functional structure (e.g., actively decaying)
+            if (!structure.IsFunctional)
+            {
+                refundAmount = refundAmount * (1f - Pref_Resources_Refund_DisfunctionalPenalty.Value);
             }
 
             // if it's too low then don't return anything

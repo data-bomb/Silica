@@ -3,7 +3,7 @@ Silica Tech Glitch Command Mod
 Copyright (C) 2023-2025 by databomb
 
 * Description *
-For Silica listen servers, provides a command (!techglitch) which
+For Silica servers, provides a command (!techglitch) which
 allows each team's commander to use if there is a synchronization
 issue between the server and commander's tech status.
 
@@ -35,7 +35,7 @@ using SilicaAdminMod;
 using System;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(TechGlitch), "Tech Glitch Command", "1.0.4", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(TechGlitch), "Tech Glitch Command", "1.1.0", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -43,107 +43,43 @@ namespace Si_TechGlitch
 {
     public class TechGlitch : MelonMod
     {
-        public static bool IsCommander(Player thePlayer)
+        public override void OnLateInitializeMelon()
         {
-            if (thePlayer == null)
-            {
-                return false;
-            }
-
-            Team theTeam = thePlayer.Team;
-            if (theTeam == null)
-            {
-                return false;
-            }
-
-            MP_Strategy strategyInstance = GameObject.FindFirstObjectByType<MP_Strategy>();
-            Player teamCommander = strategyInstance.GetCommanderForTeam(theTeam);
-
-            if (teamCommander == thePlayer)
-            {
-                return true;
-            }
-
-            return false;
+            HelperMethods.CommandCallback techGlitchCallback = Command_TechGlitch;
+            HelperMethods.RegisterPlayerCommand("techglitch", techGlitchCallback, false);
         }
 
-        #if NET6_0
-        [HarmonyPatch(typeof(Il2CppSilica.UI.Chat), nameof(Il2CppSilica.UI.Chat.MessageReceived))]
-        #else
-        [HarmonyPatch(typeof(Silica.UI.Chat), "MessageReceived")]
-        #endif
-        private static class TechGlitch_Chat_MessageReceived
+        public static void Command_TechGlitch(Player? callerPlayer, String args)
         {
-            #if NET6_0
-            public static void Postfix(Il2CppSilica.UI.Chat __instance, Player __0, string __1, bool __2)
-            #else
-            public static void Postfix(Silica.UI.Chat __instance, Player __0, string __1, bool __2)
-            #endif
+            if (callerPlayer == null || callerPlayer.Team == null)
             {
-                try
-                {
-                    // each faction has its own chat manager but by looking at alien and only global messages this catches commands only once
-                    if (!__instance.ToString().Contains("alien") || __2)
-                    {
-                        return;
-                    }
-                    
-                    bool isTechGlitchCommand = String.Equals(__1, "!techglitch", StringComparison.OrdinalIgnoreCase);
-                    if (!isTechGlitchCommand)
-                    {
-                        return;
-                    }
-
-                    // check if we are actually a commander
-                    bool isCommander = IsCommander(__0);
-
-                    if (!isCommander)
-                    {
-                        // notify player on invalid usage
-                        HelperMethods.ReplyToCommand_Player(__0, ": only commanders can use !techglitch");
-                        return;
-                    }
-
-                    // is there a game currently started?
-                    if (!GameMode.CurrentGameMode.GameOngoing)
-                    {
-                        return;
-                    }
-
-                    HelperMethods.ReplyToCommand(__0.Team.TeamShortName + " is at tech level " + __0.Team.TechnologyTier.ToString());
-
-                    // look for ResearchFacility and QuantumCortex
-                    String techStructureName = __0.Team.TeamName.Contains("Human") ? "ResearchF" : "QuantumC";
-                    int techStructures = 0;
-
-                    for (int i = 0; i < __0.Team.Structures.Count; i++)
-                    {
-                        if (__0.Team.Structures[i].ToString().StartsWith(techStructureName))
-                        {
-                            techStructures++;
-
-                            #if NET6_0
-                            __0.Team.RPC_SynchTechnologyTier();
-                            #else
-                            Type structureType = typeof(Structure);
-                            MethodInfo synchTechMethod = structureType.GetMethod("RPC_SynchTechnologyTier");
-
-                            synchTechMethod.Invoke(structureType, null);
-                            #endif
-                        }
-                    }
-
-                    // notify all players
-                    HelperMethods.ReplyToCommand_Player(__0, "forced sync on " + techStructures.ToString() + " tech structure" + (techStructures > 1 ? "s" : ""));
-
-                    __0.Team.UpdateTechnologyTier();
-                }
-                catch (Exception error)
-                {
-                    HelperMethods.PrintError(error, "Failed to run Chat::MessageReceived");
-                }
+                return;
             }
-        }
 
+            GameModeExt? gameModeExt = GameMode.CurrentGameMode as GameModeExt;
+            if (gameModeExt == null)
+            {
+                MelonLogger.Warning("Could not find GameModeExt instance from CurrentGameMode.");
+                return;
+            }
+
+            if (gameModeExt.GameOngoing)
+            {
+                HelperMethods.ReplyToCommand_Player(callerPlayer, ": game must be active to use !techglitch");
+                return;
+            }
+
+            if (gameModeExt.GetCommanderForTeam(callerPlayer.Team) != callerPlayer)
+            {
+                HelperMethods.ReplyToCommand_Player(callerPlayer, ": only the commander can use !techglitch");
+                return;
+            }
+
+            HelperMethods.SendChatMessageToTeam(callerPlayer.Team, "Server has you at Tech Tier " + callerPlayer.Team.TechnologyTier + "/" + callerPlayer.Team.TechnologyTierLimitMax + " with a watermark tech tier of " + callerPlayer.Team.TechnologyTierHighestReached);
+
+            callerPlayer.Team.UpdateTechnologyTier(false, true);
+
+            HelperMethods.ReplyToCommand_Player(callerPlayer, "forced tech sync.");
+        }
     }
 }

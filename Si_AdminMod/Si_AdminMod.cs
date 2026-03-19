@@ -107,6 +107,9 @@ namespace SilicaAdminMod
 
                 // subscribe to the OnRequestPlayerChat event
                 Event_Chat.OnRequestPlayerChat += ClientChatHandler.OnRequestPlayerChat;
+
+                // don't set this flag yet because it causes servers to not get advertised
+                // Game.ExternalMod = true;
             }
             catch (Exception error)
             {
