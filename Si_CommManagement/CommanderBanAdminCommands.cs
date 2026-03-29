@@ -1,6 +1,6 @@
 ﻿/*
 Silica Commander Management Mod
-Copyright (C) 2023-2024 by databomb
+Copyright (C) 2023-2026 by databomb
 
 * License *
 This program is free software: you can redistribute it and/or modify
@@ -124,7 +124,7 @@ namespace Si_CommanderManagement
             Team targetTeam = Team.GetTeamByIndex(targetTeamIndex);
             if (targetTeam == null)
             {
-                HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": No valid team found");
+                HelperMethods.ReplyToCommand(commandName + ": No valid team found");
                 return;
             }
 
@@ -134,7 +134,7 @@ namespace Si_CommanderManagement
             // team has a commander if targetPlayer isn't null
             if (targetPlayer == null)
             {
-                HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": No commander found on specified team");
+                HelperMethods.ReplyToCommand(commandName + ": No commander found on specified team");
                 return;
             }
 
@@ -175,7 +175,7 @@ namespace Si_CommanderManagement
 
             if (playerToUnCmdrBan == null)
             {
-                HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Ambiguous or invalid target");
+                HelperMethods.ReplyToCommand(commandName + ": Ambiguous or invalid target");
                 return;
             }
 

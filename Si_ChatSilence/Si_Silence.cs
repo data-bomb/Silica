@@ -1,6 +1,6 @@
 ﻿/*
 Silica Chat Silence
-Copyright (C) 2023-2025 by databomb
+Copyright (C) 2023-2026 by databomb
 
 * Description *
 Provides an admin command to silence a player, which prevents that 
@@ -37,7 +37,7 @@ using System;
 using System.Linq;
 
 
-[assembly: MelonInfo(typeof(ChatSilence), "Chat Silence", "2.0.2", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(ChatSilence), "Chat Silence", "2.0.3", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -97,7 +97,7 @@ namespace Si_ChatSilence
 
             if (playerTarget == null)
             {
-                HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Ambiguous or invalid target");
+                HelperMethods.ReplyToCommand(commandName + ": Ambiguous or invalid target");
                 return;
             }
 
@@ -109,7 +109,7 @@ namespace Si_ChatSilence
 
             if (IsPlayerSilenced(playerTarget))
             {
-                HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Target player already silenced");
+                HelperMethods.ReplyToCommand(commandName + ": Target player already silenced");
             }
             else
             {
@@ -141,7 +141,7 @@ namespace Si_ChatSilence
 
             if (playerTarget == null)
             {
-                HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Ambiguous or invalid target");
+                HelperMethods.ReplyToCommand(commandName + ": Ambiguous or invalid target");
                 return;
             }
 
@@ -158,7 +158,7 @@ namespace Si_ChatSilence
             }
             else
             {
-                HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Target player not silenced");
+                HelperMethods.ReplyToCommand(commandName + ": Target player not silenced");
             }
         }
 
@@ -244,7 +244,7 @@ namespace Si_ChatSilence
 
             if (playerTarget == null)
             {
-                HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Ambiguous or invalid target");
+                HelperMethods.ReplyToCommand(commandName + ": Ambiguous or invalid target");
                 return;
             }
 
@@ -256,7 +256,7 @@ namespace Si_ChatSilence
 
             if (IsPlayerMuted(playerTarget))
             {
-                HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Target player already muted");
+                HelperMethods.ReplyToCommand(commandName + ": Target player already muted");
             }
             else
             {
@@ -288,7 +288,7 @@ namespace Si_ChatSilence
 
             if (playerTarget == null)
             {
-                HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Ambiguous or invalid target");
+                HelperMethods.ReplyToCommand(commandName + ": Ambiguous or invalid target");
                 return;
             }
 
@@ -305,7 +305,7 @@ namespace Si_ChatSilence
             }
             else
             {
-                HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Target player not muted");
+                HelperMethods.ReplyToCommand(commandName + ": Target player not muted");
             }
         }
 
