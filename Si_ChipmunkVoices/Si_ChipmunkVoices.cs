@@ -84,8 +84,7 @@ namespace Si_ChipmunkVoices
                     // artificially speed up by skipping every other sample
                     const int skip = 2;
 
-                    int writeIndex = 23;
-                    /* start at offset 23
+                    /* NetworkLayer bytes processed by client
                      *  [2] ProcessMessage networkPacketType [ReadType(Byte) + Byte]
                      *  [9] ProcessMessage(VoiceStream) networkID [ReadType(UInt64) + UInt64]
                      *  [2] ProcessMessage(VoiceStream) channel [ReadType(Byte) + Byte]
@@ -96,6 +95,18 @@ namespace Si_ChipmunkVoices
                      *  [2] ByteArray length
                      *  [N] ByteArray bytes
                      */
+
+                    const int silenceOffset = 15;
+                    const int byteArrayOffset = 23;
+                    
+                    // check if the silence flag is set
+                    if (__0[silenceOffset] > 0)
+                    {
+                        return;
+                    }
+
+                    int writeIndex = byteArrayOffset;
+
 
                     for (int readIndex = writeIndex; readIndex < __1; readIndex += skip)
                     {
