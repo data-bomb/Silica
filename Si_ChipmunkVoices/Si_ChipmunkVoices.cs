@@ -96,9 +96,10 @@ namespace Si_ChipmunkVoices
                      *  [N] ByteArray bytes
                      */
 
-                    const int silenceOffset = 15;
+                    const int silenceOffset = 16;
                     const int byteArrayOffset = 23;
                     
+
                     // check if the silence flag is set
                     if (__0[silenceOffset] > 0)
                     {
@@ -106,18 +107,16 @@ namespace Si_ChipmunkVoices
                     }
 
                     int writeIndex = byteArrayOffset;
-
-
                     for (int readIndex = writeIndex; readIndex < __1; readIndex += skip)
                     {
                         __0[writeIndex++] = __0[readIndex];
                     }
 
-                    // fill remaining with last byte sample to avoid noise
+                    // fill remaining with silence
                     int lastIndex = writeIndex - 1;
                     while (writeIndex < __1)
                     {
-                        __0[writeIndex++] = __0[lastIndex];
+                        __0[writeIndex++] = (byte)128;
                     }
                 }
                 catch (Exception error)
