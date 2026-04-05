@@ -84,17 +84,19 @@ namespace Si_ChipmunkVoices
                     // artificially speed up by skipping every other sample
                     const int skip = 2;
 
-                    /* start at offset 8
-                     *  [1] ReadType (Bool)
-                     *  [1] Bool
-                     *  [1] ReadType (UInt16)
-                     *  [2] UInt16
+                    int writeIndex = 23;
+                    /* start at offset 23
+                     *  [2] ProcessMessage networkPacketType [ReadType(Byte) + Byte]
+                     *  [9] ProcessMessage(VoiceStream) networkID [ReadType(UInt64) + UInt64]
+                     *  [2] ProcessMessage(VoiceStream) channel [ReadType(Byte) + Byte]
+                     *  [2] ProcessMessage(VoiceStream) proximity [ReadType(Bool) + Byte]
+                     *  [2] DecompressVoice silence [ReadType(Bool) + Byte]
+                     *  [3] DecompressVoice offset [ReadType(UInt16) + UInt16]
                      *  [1] ReadType (ByteArray)
                      *  [2] ByteArray length
                      *  [N] ByteArray bytes
                      */
 
-                    int writeIndex = 8;
                     for (int readIndex = writeIndex; readIndex < __1; readIndex += skip)
                     {
                         __0[writeIndex++] = __0[readIndex];
