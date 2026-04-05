@@ -31,7 +31,7 @@ using SilicaAdminMod;
 using System;
 using Si_ChipmunkVoices;
 
-[assembly: MelonInfo(typeof(ChipmunkVoices), "Chipmunk Voices", "0.9.0", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(ChipmunkVoices), "Chipmunk Voices", "0.9.1", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -39,12 +39,26 @@ namespace Si_ChipmunkVoices
 {
     public class ChipmunkVoices : MelonMod
     {
-        static bool chipmunkMode = true;
+        static bool chipmunkMode = ShouldHaveChipmunks();
 
         public override void OnLateInitializeMelon()
         {
             HelperMethods.CommandCallback chipmunkCallback = Command_Chipmunk;
             HelperMethods.RegisterAdminCommand("chipmunk", chipmunkCallback, Power.Slay, "Toggles chipmunk voices. Usage: !chipmunk");
+        }
+
+        public static bool ShouldHaveChipmunks()
+        {
+            DateTime currentDateTime = DateTime.Today;
+            if (currentDateTime.Month == 4)
+            {
+                if (currentDateTime.Day == 1)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         public static void Command_Chipmunk(Player? callerPlayer, String args)
