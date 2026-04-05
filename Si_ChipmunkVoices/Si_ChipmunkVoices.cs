@@ -31,7 +31,7 @@ using SilicaAdminMod;
 using System;
 using Si_ChipmunkVoices;
 
-[assembly: MelonInfo(typeof(ChipmunkVoices), "Chipmunk Voices", "0.9.1", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(ChipmunkVoices), "Chipmunk Voices", "0.9.2", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -40,6 +40,8 @@ namespace Si_ChipmunkVoices
     public class ChipmunkVoices : MelonMod
     {
         static bool chipmunkMode = ShouldHaveChipmunks();
+        static byte[,] playerVoiceSamples = new byte[68, 512];
+        static bool[] playerSamplesStaged = new bool[68];
 
         public override void OnLateInitializeMelon()
         {
@@ -72,17 +74,14 @@ namespace Si_ChipmunkVoices
         [HarmonyPatch(typeof(NetworkLayer), nameof(NetworkLayer.RelayVoiceStreamPacket))]
         public class ApplyPatch_NetworkLayer_RelayVoiceStreamPacket
         {
-            private static void Prefix(ref byte[] __0, uint __1, ENetworkPacketSend __2, Player __3, bool __4)
+            private static bool Prefix(ref byte[] __0, uint __1, ENetworkPacketSend __2, Player __3, bool __4)
             {
                 try
                 {
                     if (!chipmunkMode || __0 == null)
                     {
-                        return;
+                        return true;
                     }
-
-                    // artificially speed up by skipping every other sample
-                    const int skip = 2;
 
                     /* NetworkLayer bytes processed by client
                      *  [2] ProcessMessage networkPacketType [ReadType(Byte) + Byte]
@@ -98,31 +97,68 @@ namespace Si_ChipmunkVoices
 
                     const int silenceOffset = 16;
                     const int byteArrayOffset = 23;
-                    
 
-                    // check if the silence flag is set
-                    if (__0[silenceOffset] > 0)
+                    // artificially speed up by skipping every other sample
+                    const int skip = 2;
+
+                    // check if the silence flag is set and we're ready to continue
+                    if (__0[silenceOffset] > 0 || __3 == null)
                     {
-                        return;
+                        return true;
                     }
 
-                    int writeIndex = byteArrayOffset;
-                    for (int readIndex = writeIndex; readIndex < __1; readIndex += skip)
+                    int playerIndex = __3.GetIndex();
+                    if (playerSamplesStaged[playerIndex])
                     {
-                        __0[writeIndex++] = __0[readIndex];
-                    }
+                        // collect every other sample from current packet first
+                        byte[] tempBuffer = new byte[512];
+                        int tempBufferIndex = 0;
+                        for (int readIndex = byteArrayOffset; readIndex < __1; readIndex += skip)
+                        {
+                            tempBuffer[tempBufferIndex++] = __0[readIndex];
+                        }
 
-                    // fill remaining with silence
-                    int lastIndex = writeIndex - 1;
-                    while (writeIndex < __1)
+                        // copy stored samples from last packet
+                        int writeIndex = byteArrayOffset;
+                        for (int storedSampleIndex = 0; storedSampleIndex < 512; storedSampleIndex++)
+                        {
+                            __0[writeIndex++] = playerVoiceSamples[playerIndex, storedSampleIndex];
+                        }
+
+                        // copy samples from current packet
+                        for (tempBufferIndex = 0; tempBufferIndex < 512; tempBufferIndex++)
+                        {
+                            __0[writeIndex++] = tempBuffer[tempBufferIndex];
+                        }
+
+                        MelonLogger.Msg("Finished writing buffer of sample count: " + writeIndex.ToString());
+
+                        // collect samples from next packet
+                        playerSamplesStaged[playerIndex] = false;
+                    }
+                    else
                     {
-                        __0[writeIndex++] = (byte)128;
+                        // store every other sample for next time
+                        playerSamplesStaged[playerIndex] = true;
+
+                        int storedSamplesIndex = 0;
+                        for (int readIndex = byteArrayOffset; readIndex < __1; readIndex += skip)
+                        {
+                            __0[storedSamplesIndex] = __0[readIndex];
+                            playerVoiceSamples[playerIndex, storedSamplesIndex++] = __0[readIndex];
+                        }
+
+                        MelonLogger.Msg("Stored voice with sample count: " + storedSamplesIndex.ToString());
+
+                        return false;
                     }
                 }
                 catch (Exception error)
                 {
                     HelperMethods.PrintError(error, "Failed to run NetworkLayer::RelayVoiceStreamPacket");
                 }
+
+                return true;
             }
         }
     }
