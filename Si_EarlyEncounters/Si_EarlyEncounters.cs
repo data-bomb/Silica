@@ -1,6 +1,6 @@
 ﻿/*
 Silica Early Encounters
-Copyright (C) 2025 by databomb
+Copyright (C) 2025-2026 by databomb
 
 * Description *
 Sets up random early-game encounters for FPS players.
@@ -36,7 +36,7 @@ using Si_EarlyEncounters;
 using System.Collections.Generic;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(EarlyEncounters), "Early Encounters", "1.1.4", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(EarlyEncounters), "Early Encounters", "1.1.5", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -237,7 +237,6 @@ namespace Si_EarlyEncounters
 
                     return "a Friendly Swarm!";
                 case EEncounterType.EnemyWorm:
-                default:
                     AmbientLife? wildLifeInstance = GameObject.FindFirstObjectByType<AmbientLife>();
                     if (wildLifeInstance == null)
                     {
@@ -254,9 +253,11 @@ namespace Si_EarlyEncounters
                         MelonLogger.Warning("Could not spawn enemy worm correctly.");
                         return "a Worm";
                     }
-                    wormUnit.OnAttackOrder(target, target.transform.position, AgentMoveSpeed.Fast, true);
-
+                    
+                    wormUnit.OnAttackOrder(target, target.transform.position, AgentMoveSpeed.Fast, true, true, false);
                     return "a Worm";
+                default:
+                    return "an invalid encounter (ERROR)";
             }
         }
 
