@@ -1,6 +1,6 @@
 ﻿/*
  Silica Surrender Command Mod
- Copyright (C) 2023-2025 by databomb
+ Copyright (C) 2023-2026 by databomb
  
  * Description *
  For Silica servers, provides a command (!surrender) which each
@@ -24,6 +24,7 @@
 
 #if NET6_0
 using Il2Cpp;
+using Il2CppInterop.Runtime;
 #endif
 
 using HarmonyLib;
@@ -34,7 +35,7 @@ using System;
 using UnityEngine;
 using System.Collections.Generic;
 
-[assembly: MelonInfo(typeof(SurrenderCommand), "Surrender Command", "1.6.3", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(SurrenderCommand), "Surrender Command", "1.6.4", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -83,6 +84,25 @@ namespace Si_SurrenderCommand
         {
             HelperMethods.CommandCallback surrenderCallback = Command_Surrender;
             HelperMethods.RegisterPlayerCommand("surrender", surrenderCallback, true);
+
+            #if NET6_0
+            GameEvents.OnPlayerLeft += DelegateSupport.ConvertDelegate<Il2CppSystem.Action<Player>>(OnPlayerLeft_SurrenderCheck);
+            #else
+            GameEvents.OnPlayerLeft = (Action<Player>)Delegate.Combine(GameEvents.OnPlayerLeft, new Action<Player>(OnPlayerLeft_SurrenderCheck));
+            #endif
+        }
+
+        private void OnPlayerLeft_SurrenderCheck(Player player)
+        {
+            if (player == null || player.Team == null)
+            {
+                return;
+            }
+
+            if (votesToSurrender[player.Team.Index].Remove(player))
+            {
+                MelonLogger.Msg("Removed surrender vote from disconnected player.");
+            }
         }
 
         public override void OnSceneWasLoaded(int buildIndex, string sceneName)

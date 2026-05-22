@@ -1,6 +1,6 @@
 ﻿/*
  Silica Basic Banlist Mod
- Copyright (C) 2023-2025 by databomb
+ Copyright (C) 2023-2026 by databomb
  
  * Description *
  For Silica listen servers, retains history of kicked players across
@@ -36,7 +36,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 
-[assembly: MelonInfo(typeof(BasicBanlist), "Basic Banlist", "1.5.8", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(BasicBanlist), "Basic Banlist", "1.5.9", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 #if NET6_0
 [assembly: MelonOptionalDependencies("Admin Mod", "QList")]
@@ -273,7 +273,7 @@ namespace Si_BasicBanlist
 
             if (playerToBan == null)
             {
-                HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Ambiguous or invalid target");
+                HelperMethods.ReplyToCommand(commandName + ": Ambiguous or invalid target");
                 return;
             }
 
@@ -303,7 +303,7 @@ namespace Si_BasicBanlist
 
             if (!UnbanPlayer(unbanTarget, callerPlayer))
             {
-                HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Unable to find " + unbanTarget + " on banlist");
+                HelperMethods.ReplyToCommand(commandName + ": Unable to find " + unbanTarget + " on banlist");
                 return;
             }
         }

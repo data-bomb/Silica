@@ -1,6 +1,6 @@
 ﻿/*
 Silica AFK Manager
-Copyright (C) 2023-2025 by databomb
+Copyright (C) 2023-2026 by databomb
 
 * Description *
 For Silica listen servers, allows hosts to use the !kick or !afk command
@@ -36,7 +36,7 @@ using System.Collections;
 using UnityEngine;
 using System.Runtime.CompilerServices;
 
-[assembly: MelonInfo(typeof(AwayFromKeyboard), "AFK Manager", "1.3.6", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(AwayFromKeyboard), "AFK Manager", "1.3.7", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 #if NET6_0
 [assembly: MelonOptionalDependencies("Admin Mod", "QList")]
@@ -150,7 +150,7 @@ namespace Si_AFKManager
 
             if (playerToKick == null)
             {
-                HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Ambiguous or invalid target");
+                HelperMethods.ReplyToCommand(commandName + ": Ambiguous or invalid target");
                 return;
             }
 
@@ -222,7 +222,7 @@ namespace Si_AFKManager
 
                 if(playersToKick.Count <= 0)
                 {
-                    HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": no players were AFK for too long");
+                    HelperMethods.ReplyToCommand(commandName + ": no players were AFK for too long");
                 }
                 else
                 {
@@ -245,7 +245,7 @@ namespace Si_AFKManager
             }
             else
             {
-                HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": server already immediately kicks AFK players");
+                HelperMethods.ReplyToCommand(commandName + ": server already immediately kicks AFK players");
             }
         }
 

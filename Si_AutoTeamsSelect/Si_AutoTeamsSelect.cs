@@ -1,6 +1,6 @@
 ﻿/*
 Silica Versus Auto-Select
-Copyright (C) 2024-2025 by databomb
+Copyright (C) 2023-2026 by databomb
 
 * Description *
 For Silica listen servers, automatically sets the versus mode after
@@ -36,7 +36,7 @@ using SilicaAdminMod;
 using System;
 using System.Runtime.CompilerServices;
 
-[assembly: MelonInfo(typeof(VersusTeamsAutoSelectMod), "Versus Auto-Select Team", "1.1.7", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(VersusTeamsAutoSelectMod), "Versus Auto-Select Team", "1.1.8", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 #if NET6_0
 [assembly: MelonOptionalDependencies("Admin Mod", "QList")]
@@ -146,7 +146,7 @@ namespace VersusTeamsAutoSelect
 
             // indicate we want to manually select the next mode
             requestedMode = desiredVersusMode;
-            HelperMethods.ReplyToCommand(args.Split(' ')[0] + ": Selected next mode as " + desiredVersusMode.ToString());
+            HelperMethods.ReplyToCommand(commandName + ": Selected next mode as " + desiredVersusMode.ToString());
         }
 
         private static void HandleTimerAutoRestart(object? source, ElapsedEventArgs e)
