@@ -32,10 +32,8 @@ using System;
 using SilicaAdminMod;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using static System.Net.Mime.MediaTypeNames;
-using static MelonLoader.MelonLogger;
 
-[assembly: MelonInfo(typeof(FriendlyFireLimits), "Friendly Fire Limits", "1.3.3", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(FriendlyFireLimits), "Friendly Fire Limits", "1.3.4", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 #if NET6_0
 [assembly: MelonOptionalDependencies("Admin Mod", "QList")]
@@ -47,9 +45,8 @@ namespace Si_FriendlyFireLimits
 {
     public class FriendlyFireLimits : MelonMod
     {
-        const float damageCutoff = 5f;
-
         static MelonPreferences_Category _modCategory = null!;
+        static MelonPreferences_Entry<float> _FriendlyFireDamageCutoff = null!;
         static MelonPreferences_Entry<float> _UnitOnUnitNonExplosionDamageMultipler = null!;
         static MelonPreferences_Entry<float> _UnitOnUnitExplosionDamageMultiplier = null!;
         static MelonPreferences_Entry<float> _UnitOnStructureExplosionDamageMultiplier = null!;
@@ -63,6 +60,7 @@ namespace Si_FriendlyFireLimits
         public override void OnInitializeMelon()
         {
             _modCategory ??= MelonPreferences.CreateCategory(ModCategory);
+            _FriendlyFireDamageCutoff ??= _modCategory.CreateEntry<float>("FriendlyFire_Allow_Damage_Below_Cutoff", 5f);
             _UnitOnUnitNonExplosionDamageMultipler ??= _modCategory.CreateEntry<float>("FriendlyFire_Unit_ATKs_Unit_DamageRatio", 0.5f);
             _UnitOnUnitExplosionDamageMultiplier ??= _modCategory.CreateEntry<float>("FriendlyFire_Unit_ATKs_Unit_DamageRatio_Explosion", 0.875f);
             _UnitOnStructureExplosionDamageMultiplier ??= _modCategory.CreateEntry<float>("FriendlyFire_Unit_ATKs_Structure_DamageRatio_Explosion", 0.625f);
@@ -225,7 +223,6 @@ namespace Si_FriendlyFireLimits
                     BaseGameObject attackerBase = GameFuncs.GetBaseGameObject(__3);
                     if (attackerBase.NetworkComponent.OwnerPlayer != null)
                     {
-                        MelonLogger.Msg("Aborting for player-controlled damage.");
                         return true;
                     }
 
@@ -261,7 +258,7 @@ namespace Si_FriendlyFireLimits
             }
 
             // too low to care?
-            if (damageAmount < damageCutoff)
+            if (damageAmount < _FriendlyFireDamageCutoff.Value)
             {
                 return false;
             }
