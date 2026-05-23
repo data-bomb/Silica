@@ -1,6 +1,6 @@
 ﻿/*
  Silica Friendly-Fire Adjustments Mod
- Copyright (C) 2023-2025 by databomb
+ Copyright (C) 2023-2026 by databomb
  
  * Description *
  For Silica listen servers, adjust the amount of friendly fire damage 
@@ -33,8 +33,9 @@ using SilicaAdminMod;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using static System.Net.Mime.MediaTypeNames;
+using static MelonLoader.MelonLogger;
 
-[assembly: MelonInfo(typeof(FriendlyFireLimits), "Friendly Fire Limits", "1.3.2", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(FriendlyFireLimits), "Friendly Fire Limits", "1.3.3", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 #if NET6_0
 [assembly: MelonOptionalDependencies("Admin Mod", "QList")]
@@ -46,6 +47,8 @@ namespace Si_FriendlyFireLimits
 {
     public class FriendlyFireLimits : MelonMod
     {
+        const float damageCutoff = 5f;
+
         static MelonPreferences_Category _modCategory = null!;
         static MelonPreferences_Entry<float> _UnitOnUnitNonExplosionDamageMultipler = null!;
         static MelonPreferences_Entry<float> _UnitOnUnitExplosionDamageMultiplier = null!;
@@ -92,14 +95,7 @@ namespace Si_FriendlyFireLimits
                     return;
                 }
 
-                // not team damage?
-                if (!IsDamageFriendlyFire(args.DamageManager, args.Instigator))
-                {
-                    return;
-                }
-
-                // damaging self?
-                if (IsDamageSelfInflicted(args.DamageManager, args.Instigator))
+                if (!ShouldProcessDamageModifier(args.DamageManager, args.Instigator, args.Damage))
                 {
                     return;
                 }
@@ -233,14 +229,7 @@ namespace Si_FriendlyFireLimits
                         return true;
                     }
 
-                    // not team damage?
-                    if (!IsDamageFriendlyFire(__instance, __3))
-                    {
-                        return true;
-                    }
-
-                    // damaging self?
-                    if (IsDamageSelfInflicted(__instance, __3))
+                    if (!ShouldProcessDamageModifier(__instance, __3, __1))
                     {
                         return true;
                     }
@@ -255,6 +244,29 @@ namespace Si_FriendlyFireLimits
 
                 return true;
             }
+        }
+
+        public static bool ShouldProcessDamageModifier(DamageManager damageManager, UnityEngine.GameObject gameObject, float damageAmount)
+        {
+            // not team damage?
+            if (!IsDamageFriendlyFire(damageManager, gameObject))
+            {
+                return false;
+            }
+
+            // damaging self?
+            if (IsDamageSelfInflicted(damageManager, gameObject))
+            {
+                return false;
+            }
+
+            // too low to care?
+            if (damageAmount < damageCutoff)
+            {
+                return false;
+            }
+
+            return true;
         }
     }
 }
