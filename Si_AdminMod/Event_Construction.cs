@@ -1,6 +1,6 @@
 ﻿/*
 Silica Admin Mod
-Copyright (C) 2025 by databomb
+Copyright (C) 2025-2026 by databomb
 
 * License *
 This program is free software: you can redistribute it and/or modify
@@ -102,7 +102,10 @@ namespace SilicaAdminMod
                 }
 
                 int lastRPCEnqueueCall = FindMethodCallInCode(opCodes, methodRPCEnqueueConstructionData, false);
-                MelonLogger.Msg("(Structure::Construct Transpiler_Unit) Found last call of RPCEnqueue at opCode[" + lastRPCEnqueueCall + "]");
+                if (SiAdminMod.Pref_Admin_DebugLogMessages.Value)
+                {
+                    MelonLogger.Msg("(Structure::Construct Transpiler_Unit) Found last call of RPCEnqueue at opCode[" + lastRPCEnqueueCall + "]");
+                }
 
                 // if we couldn't find any calls then the game was updated in an unexpected way
                 if (lastRPCEnqueueCall < 0)
@@ -129,7 +132,10 @@ namespace SilicaAdminMod
                     return -1;
                 }
 
-                MelonLogger.Msg("(Structure::Construct Transpiler_Unit) Found insertion point at opCode[" + insertionPoint + "]");
+                if (SiAdminMod.Pref_Admin_DebugLogMessages.Value)
+                {
+                    MelonLogger.Msg("(Structure::Construct Transpiler_Unit) Found insertion point at opCode[" + insertionPoint + "]");
+                }
 
                 return insertionPoint;
             }
@@ -146,8 +152,11 @@ namespace SilicaAdminMod
 
 
                 int lastConstructionSiteCall = FindMethodCallInCode(opCodes, methodRequestConstructionSite, false);
-                MelonLogger.Msg("(Structure::Construct Transpiler_Structure) Found last call of ReqConSite at opCode[" + lastConstructionSiteCall + "]");
-                
+                if (SiAdminMod.Pref_Admin_DebugLogMessages.Value)
+                {
+                    MelonLogger.Msg("(Structure::Construct Transpiler_Structure) Found last call of ReqConSite at opCode[" + lastConstructionSiteCall + "]");
+                }
+
                 // if we couldn't find any calls then the game was updated in an unexpected way
                 if (lastConstructionSiteCall < 0)
                 {
@@ -173,7 +182,10 @@ namespace SilicaAdminMod
                     return -1;
                 }
 
-                MelonLogger.Msg("(Structure::Construct Transpiler_Structure) Found insertion point at opCode[" + insertionPoint + "]");
+                if (SiAdminMod.Pref_Admin_DebugLogMessages.Value)
+                {
+                    MelonLogger.Msg("(Structure::Construct Transpiler_Structure) Found insertion point at opCode[" + insertionPoint + "]");
+                }
 
                 return insertionPoint;
             }

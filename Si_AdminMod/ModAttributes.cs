@@ -1,6 +1,6 @@
 ﻿/*
 Silica Admin Mod
-Copyright (C) 2023-2025 by databomb
+Copyright (C) 2023-2026 by databomb
 
 * License *
 This program is free software: you can redistribute it and/or modify
@@ -20,7 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using MelonLoader;
 using SilicaAdminMod;
 
-[assembly: MelonInfo(typeof(SiAdminMod), "Admin Mod", "2.13.19", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(SiAdminMod), "Admin Mod", "2.13.36", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 
 // Color.Cyan
