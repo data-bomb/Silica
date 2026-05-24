@@ -33,7 +33,7 @@ using System;
 using Si_BuildLimits;
 using MelonLoader.Utils;
 
-[assembly: MelonInfo(typeof(BuildLimits), "Build Limits", "1.0.2", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(BuildLimits), "Build Limits", "1.0.3", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -176,7 +176,12 @@ namespace Si_BuildLimits
                 }
 
                 // check for production limits
-                if (constructionData.ObjectInfo.StructureType == StructureType.Production)
+                // exclude SelectionType.HQ — Headquarters/Nest carry StructureType.Production but
+                // their SelectionType is HQ, which none of the Units1..5 checks below match. Without
+                // this guard the request would be consumed by this block (via the outer return) and
+                // the base limit check at the bottom of the method would never run.
+                if (constructionData.ObjectInfo.StructureType == StructureType.Production &&
+                        constructionData.ObjectInfo.StructureSelectionType != StructureSelectionType.HQ)
                 {
                     if (constructionData.ObjectInfo.StructureSelectionType == StructureSelectionType.Units1)
                     {
@@ -330,7 +335,7 @@ namespace Si_BuildLimits
                 }
 
                 // check for base limits (Headquarters, Nest)
-                if (parentStructure.Team.BaseStructure == constructionData.ObjectInfo)
+                if (parentStructure.Team.BaseStructure && parentStructure.Team.BaseStructure == constructionData.ObjectInfo)
                 {
                     int baseStructureLimit = (parentStructure.Team.Index == (int)SiConstants.ETeam.Alien ? _Pref_Limit_Bases_Aliens.Value : _Pref_Limit_Bases_Humans.Value);
 
@@ -342,7 +347,7 @@ namespace Si_BuildLimits
                     int baseStructureCount = parentStructure.Team.GetStructureCount(constructionData.ObjectInfo);
                     if (baseStructureCount >= baseStructureLimit)
                     {
-                        NotifyLimitsEnforced(parentStructure.Team, baseStructureLimit, "Base");
+                        NotifyLimitsEnforced(parentStructure.Team, baseStructureLimit, (parentStructure.Team.Index == (int)SiConstants.ETeam.Alien ? "Nest" : "Headquarters"));
                         args.Block = true;
                     }
 
