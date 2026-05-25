@@ -76,10 +76,7 @@ namespace SilicaAdminMod
                     }
                 }
 
-                if (SiAdminMod.Pref_Admin_DebugLogMessages.Value)
-                {
-                    MelonLogger.Msg("(DamageManager::OnReceiveClientDamageHitPacket Transpiler) Found last call of OnDamageReceived at opCode[" + lastOnDamageReceivedCall + "]");
-                }
+                MelonLogger.Msg("(DamageManager::OnReceiveClientDamageHitPacket Transpiler) Found last call of OnDamageReceived at opCode[" + lastOnDamageReceivedCall + "]");
                 
                 // if we couldn't find any calls then the game was updated in an unexpected way
                 if (lastOnDamageReceivedCall < 0)
@@ -106,10 +103,7 @@ namespace SilicaAdminMod
                     return -1;
                 }
 
-                if (SiAdminMod.Pref_Admin_DebugLogMessages.Value)
-                {
-                    MelonLogger.Msg("(DamageManager::OnReceiveClientDamageHitPacket Transpiler) Found insertion point at opCode[" + insertionPoint + "]");
-                }
+                MelonLogger.Msg("(DamageManager::OnReceiveClientDamageHitPacket Transpiler) Found insertion point at opCode[" + insertionPoint + "]");
                 
                 return insertionPoint;
             }
