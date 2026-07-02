@@ -1,6 +1,6 @@
 ﻿/*
  Silica Friendly-Fire Adjustments Mod
- Copyright (C) 2023-2025 by databomb
+ Copyright (C) 2023-2026 by databomb
  
  * Description *
  For Silica listen servers, adjust the amount of friendly fire damage 
@@ -32,9 +32,8 @@ using System;
 using SilicaAdminMod;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using static System.Net.Mime.MediaTypeNames;
 
-[assembly: MelonInfo(typeof(FriendlyFireLimits), "Friendly Fire Limits", "1.3.2", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(FriendlyFireLimits), "Friendly Fire Limits", "1.3.4", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 #if NET6_0
 [assembly: MelonOptionalDependencies("Admin Mod", "QList")]
@@ -47,6 +46,7 @@ namespace Si_FriendlyFireLimits
     public class FriendlyFireLimits : MelonMod
     {
         static MelonPreferences_Category _modCategory = null!;
+        static MelonPreferences_Entry<float> _FriendlyFireDamageCutoff = null!;
         static MelonPreferences_Entry<float> _UnitOnUnitNonExplosionDamageMultipler = null!;
         static MelonPreferences_Entry<float> _UnitOnUnitExplosionDamageMultiplier = null!;
         static MelonPreferences_Entry<float> _UnitOnStructureExplosionDamageMultiplier = null!;
@@ -60,6 +60,7 @@ namespace Si_FriendlyFireLimits
         public override void OnInitializeMelon()
         {
             _modCategory ??= MelonPreferences.CreateCategory(ModCategory);
+            _FriendlyFireDamageCutoff ??= _modCategory.CreateEntry<float>("FriendlyFire_Allow_Damage_Below_Cutoff", 5f);
             _UnitOnUnitNonExplosionDamageMultipler ??= _modCategory.CreateEntry<float>("FriendlyFire_Unit_ATKs_Unit_DamageRatio", 0.5f);
             _UnitOnUnitExplosionDamageMultiplier ??= _modCategory.CreateEntry<float>("FriendlyFire_Unit_ATKs_Unit_DamageRatio_Explosion", 0.875f);
             _UnitOnStructureExplosionDamageMultiplier ??= _modCategory.CreateEntry<float>("FriendlyFire_Unit_ATKs_Structure_DamageRatio_Explosion", 0.625f);
@@ -92,14 +93,7 @@ namespace Si_FriendlyFireLimits
                     return;
                 }
 
-                // not team damage?
-                if (!IsDamageFriendlyFire(args.DamageManager, args.Instigator))
-                {
-                    return;
-                }
-
-                // damaging self?
-                if (IsDamageSelfInflicted(args.DamageManager, args.Instigator))
+                if (!ShouldProcessDamageModifier(args.DamageManager, args.Instigator, args.Damage))
                 {
                     return;
                 }
@@ -229,18 +223,10 @@ namespace Si_FriendlyFireLimits
                     BaseGameObject attackerBase = GameFuncs.GetBaseGameObject(__3);
                     if (attackerBase.NetworkComponent.OwnerPlayer != null)
                     {
-                        MelonLogger.Msg("Aborting for player-controlled damage.");
                         return true;
                     }
 
-                    // not team damage?
-                    if (!IsDamageFriendlyFire(__instance, __3))
-                    {
-                        return true;
-                    }
-
-                    // damaging self?
-                    if (IsDamageSelfInflicted(__instance, __3))
+                    if (!ShouldProcessDamageModifier(__instance, __3, __1))
                     {
                         return true;
                     }
@@ -255,6 +241,29 @@ namespace Si_FriendlyFireLimits
 
                 return true;
             }
+        }
+
+        public static bool ShouldProcessDamageModifier(DamageManager damageManager, UnityEngine.GameObject gameObject, float damageAmount)
+        {
+            // not team damage?
+            if (!IsDamageFriendlyFire(damageManager, gameObject))
+            {
+                return false;
+            }
+
+            // damaging self?
+            if (IsDamageSelfInflicted(damageManager, gameObject))
+            {
+                return false;
+            }
+
+            // too low to care?
+            if (damageAmount < _FriendlyFireDamageCutoff.Value)
+            {
+                return false;
+            }
+
+            return true;
         }
     }
 }

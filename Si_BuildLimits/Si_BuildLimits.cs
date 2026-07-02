@@ -33,7 +33,7 @@ using System;
 using Si_BuildLimits;
 using MelonLoader.Utils;
 
-[assembly: MelonInfo(typeof(BuildLimits), "Build Limits", "1.0.2", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(BuildLimits), "Build Limits", "1.0.4", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -43,6 +43,16 @@ namespace Si_BuildLimits
     {
         const int nolimit = -1;
 
+        public enum EDefenseRating
+        {
+            RadarStation = 0,
+            Human_AntiAir = 1,
+            HiveSpire = 2,
+            Human_Turret = 3,
+            Human_HeavyTurret = 4,
+            ThornSpire = 4
+        }
+
         static MelonPreferences_Category _modCategory = null!;
         static MelonPreferences_Entry<bool> _Pref_Block_BotCommanders = null!;
         static MelonPreferences_Entry<int> _Pref_Limit_Bases_Humans = null!;
@@ -51,6 +61,7 @@ namespace Si_BuildLimits
         static MelonPreferences_Entry<int> _Pref_Limit_Turrets_Aliens = null!;
         static MelonPreferences_Entry<int> _Pref_Limit_Research_Humans = null!;
         static MelonPreferences_Entry<int> _Pref_Limit_Research_Alien = null!;
+        static MelonPreferences_Entry<int> _Pref_Limit_Radar = null!; 
         static MelonPreferences_Entry<int> _Pref_Limit_Nodes = null!;
         static MelonPreferences_Entry<int> _Pref_Limit_Silos = null!;
         static MelonPreferences_Entry<int> _Pref_Limit_Deposits_Humans = null!;
@@ -69,10 +80,11 @@ namespace Si_BuildLimits
         public override void OnInitializeMelon()
         {
             _modCategory ??= MelonPreferences.CreateCategory("Silica");
-            _Pref_Block_BotCommanders ??= _modCategory.CreateEntry<bool>("BuildLimits_EnforceLimitsOnAI", true);
+            _Pref_Block_BotCommanders ??= _modCategory.CreateEntry<bool>("BuildLimits_EnforceLimitsOnAI",     true);
             _Pref_Limit_Bases_Humans ??= _modCategory.CreateEntry<int>("BuildLimits_Humans_Bases",         nolimit); // HQ
             _Pref_Limit_Bases_Aliens ??= _modCategory.CreateEntry<int>("BuildLimits_Aliens_Bases",         nolimit); // Nest
-            _Pref_Limit_Turrets_Humans ??= _modCategory.CreateEntry<int>("BuildLimits_Humans_Turrets",          15); // Turrets + RadarStations
+            _Pref_Limit_Turrets_Humans ??= _modCategory.CreateEntry<int>("BuildLimits_Humans_Turrets",          15); // Turrets
+            _Pref_Limit_Radar ??= _modCategory.CreateEntry<int>("BuildLimits_Humans_RadarStations",        nolimit); // RadarStations
             _Pref_Limit_Turrets_Aliens ??= _modCategory.CreateEntry<int>("BuildLimits_Aliens_Turrets",          25); // Spires
             _Pref_Limit_Research_Humans ??= _modCategory.CreateEntry<int>("BuildLimits_Humans_Research",   nolimit); // ResearchFactory
             _Pref_Limit_Research_Alien ??= _modCategory.CreateEntry<int>("BuildLimits_Aliens_Research",    nolimit); // QuantumCortex
@@ -155,28 +167,52 @@ namespace Si_BuildLimits
                     return;
                 }
                 
-                // check for turret limits (HeavyTurret, ThornSpire, HiveSpire, etc.) [note: includes RadarStation]
+                // defensive structures include both turrets (HeavyTurret, ThornSpire, HiveSpire, etc.) and RadarStation
                 if (constructionData.ObjectInfo.StructureType == StructureType.Defense)
                 {
-                    int defenseStructureLimit = (parentStructure.Team.Index == (int)SiConstants.ETeam.Alien ? _Pref_Limit_Turrets_Aliens.Value : _Pref_Limit_Turrets_Humans.Value);
-
-                    if (defenseStructureLimit <= nolimit)
+                    if (constructionData.ObjectInfo.DefenseRating > (int)EDefenseRating.RadarStation)
                     {
-                        return;
+                        int defenseStructureLimit = (parentStructure.Team.Index == (int)SiConstants.ETeam.Alien ? _Pref_Limit_Turrets_Aliens.Value : _Pref_Limit_Turrets_Humans.Value);
+
+                        if (defenseStructureLimit <= nolimit)
+                        {
+                            return;
+                        }
+
+                        int structureTypeCount = GetStructureTypeCount(parentStructure.Team, constructionData.ObjectInfo);
+                        if (structureTypeCount >= defenseStructureLimit)
+                        {
+                            NotifyLimitsEnforced(parentStructure.Team, defenseStructureLimit, "Turret");
+                            args.Block = true;
+                        }
                     }
-
-                    int structureTypeCount = GetStructureTypeCount(parentStructure.Team, constructionData.ObjectInfo);
-                    if (structureTypeCount >= defenseStructureLimit)
+                    // or else it is a RadarStation
+                    else
                     {
-                        NotifyLimitsEnforced(parentStructure.Team, defenseStructureLimit, "Turret");
-                        args.Block = true;
+                        int radarStructureLimit = _Pref_Limit_Radar.Value;
+                        if (radarStructureLimit <= nolimit)
+                        {
+                            return;
+                        }
+
+                        int radarStructureCount = GetStructureTypeCount(parentStructure.Team, constructionData.ObjectInfo);
+                        if (radarStructureCount >= radarStructureLimit)
+                        {
+                            NotifyLimitsEnforced(parentStructure.Team, radarStructureLimit, "Radar Station");
+                            args.Block = true;
+                        }
                     }
 
                     return;
                 }
 
                 // check for production limits
-                if (constructionData.ObjectInfo.StructureType == StructureType.Production)
+                // exclude SelectionType.HQ — Headquarters/Nest carry StructureType.Production but
+                // their SelectionType is HQ, which none of the Units1..5 checks below match. Without
+                // this guard the request would be consumed by this block (via the outer return) and
+                // the base limit check at the bottom of the method would never run.
+                if (constructionData.ObjectInfo.StructureType == StructureType.Production &&
+                        constructionData.ObjectInfo.StructureSelectionType != StructureSelectionType.HQ)
                 {
                     if (constructionData.ObjectInfo.StructureSelectionType == StructureSelectionType.Units1)
                     {
@@ -330,7 +366,7 @@ namespace Si_BuildLimits
                 }
 
                 // check for base limits (Headquarters, Nest)
-                if (parentStructure.Team.BaseStructure == constructionData.ObjectInfo)
+                if (parentStructure.Team.BaseStructure && parentStructure.Team.BaseStructure == constructionData.ObjectInfo)
                 {
                     int baseStructureLimit = (parentStructure.Team.Index == (int)SiConstants.ETeam.Alien ? _Pref_Limit_Bases_Aliens.Value : _Pref_Limit_Bases_Humans.Value);
 
@@ -342,7 +378,7 @@ namespace Si_BuildLimits
                     int baseStructureCount = parentStructure.Team.GetStructureCount(constructionData.ObjectInfo);
                     if (baseStructureCount >= baseStructureLimit)
                     {
-                        NotifyLimitsEnforced(parentStructure.Team, baseStructureLimit, "Base");
+                        NotifyLimitsEnforced(parentStructure.Team, baseStructureLimit, (parentStructure.Team.Index == (int)SiConstants.ETeam.Alien ? "Nest" : "Headquarters"));
                         args.Block = true;
                     }
 

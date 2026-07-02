@@ -1,6 +1,6 @@
 ﻿/*
 Silica Admin Mod
-Copyright (C) 2025 by databomb
+Copyright (C) 2025-2026 by databomb
 
 * License *
 This program is free software: you can redistribute it and/or modify
@@ -147,7 +147,7 @@ namespace SilicaAdminMod
 
                 int lastConstructionSiteCall = FindMethodCallInCode(opCodes, methodRequestConstructionSite, false);
                 MelonLogger.Msg("(Structure::Construct Transpiler_Structure) Found last call of ReqConSite at opCode[" + lastConstructionSiteCall + "]");
-                
+
                 // if we couldn't find any calls then the game was updated in an unexpected way
                 if (lastConstructionSiteCall < 0)
                 {

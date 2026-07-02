@@ -1,6 +1,6 @@
 ﻿/*
 Silica Admin Mod
-Copyright (C) 2025 by databomb
+Copyright (C) 2025-2026 by databomb
 
 * License *
 This program is free software: you can redistribute it and/or modify
@@ -75,7 +75,7 @@ namespace SilicaAdminMod
                         lastOnDamageReceivedCall = i;
                     }
                 }
-                
+
                 MelonLogger.Msg("(DamageManager::OnReceiveClientDamageHitPacket Transpiler) Found last call of OnDamageReceived at opCode[" + lastOnDamageReceivedCall + "]");
                 
                 // if we couldn't find any calls then the game was updated in an unexpected way
@@ -104,7 +104,7 @@ namespace SilicaAdminMod
                 }
 
                 MelonLogger.Msg("(DamageManager::OnReceiveClientDamageHitPacket Transpiler) Found insertion point at opCode[" + insertionPoint + "]");
-
+                
                 return insertionPoint;
             }
 
