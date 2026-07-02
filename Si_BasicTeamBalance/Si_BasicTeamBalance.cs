@@ -1,6 +1,6 @@
 ﻿/*
  Silica Basic Team Balance Mod
- Copyright (C) 2023-2025 by databomb
+ Copyright (C) 2023-2026 by databomb
  
  * Description *
  For Silica servers, allows server operators to configure the exact
@@ -40,7 +40,7 @@ using System.Linq;
 using static MelonLoader.MelonLogger;
 using System.Runtime.CompilerServices;
 
-[assembly: MelonInfo(typeof(BasicTeamBalance), "Basic Team Balance", "1.4.5", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(BasicTeamBalance), "Basic Team Balance", "1.4.6", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 #if NET6_0
 [assembly: MelonOptionalDependencies("Admin Mod", "QList")]
@@ -319,7 +319,7 @@ namespace Si_BasicTeamBalance
             NetworkLayer.SendPlayerSelectTeam(player, team);
 
             // respawn
-            GameMode.CurrentGameMode.SpawnUnitForPlayer(player, team);
+            GameMode.CurrentGameMode.TrySpawnPlayerAtSpawnPoint(player, team);
         }
 
         [HarmonyPatch(typeof(MP_TowerDefense), nameof(MP_TowerDefense.ProcessNetRPC))]
