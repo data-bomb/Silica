@@ -8,7 +8,7 @@
   </PropertyGroup>
   
   <ItemGroup>
-    <PackageReference Include="Silica-MelonLoader-AdminMod" Version="*" />
+    <PackageReference Include="Silica-MelonLoader-AdminMod" Version="*"/>
   </ItemGroup>
   
   <Import Project="..\include\netstandard21.csproj" Condition="'$(TargetFramework)' == 'netstandard2.1'"/>
