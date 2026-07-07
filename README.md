@@ -33,6 +33,23 @@
 12. Review and modify the configuration parameters in the `Silica\UserData\MelonPreferences.cfg` file
 13. (Optional) Install the [QList Mod](https://github.com/dodad-2/QList) to adjust configuration parameters on-the-fly
 
+### Linux Listen Server Setup Instructions
+1. Install Silica from Steam
+2. Install `protontricks` from your preferred package manager
+3. Type `protontricks` in a Terminal window to launch the interactive interface
+4. Select `Silica: 1494420`
+5. Select `Select the default wineprefix`
+6. Select `Install a Windows DLL or component`
+7. Select `dotnet6` and follow any on-screen prompts
+8. Launch Steam
+9. Right-click Silica from the Game Library and navigate to Manage -> Browse local files
+10. Download the Windows build (`MelonLoader.x64.zip`) of [MelonLoader v0.7.3](https://github.com/LavaGang/MelonLoader/releases/tag/v0.7.3) and unzip all files to your `Silica` directory
+11. Download the latest [Listen Server release](https://github.com/data-bomb/Silica/releases) and unzip all files to your `Silica` directory
+12. Review the `Silica\Mods` directory and place any undesired mods in the `disabled` directory (Note: You should NOT disable Admin Mod.)
+13. Add `WINEDLLOVERRIDES="version=n,b" %command% --melonloader.hideconsole --melonloader.disablestartscreen` as the command line parameters in Steam for Silica
+14. Launch Silica and then exit the game to populate configuration parameters
+15. Review and modify the configuration parameters in the `Silica\UserData\MelonPreferences.cfg` file
+
 ## Dedicated Server Setup Instructions
 1. Install Silica Dedicated Server Tool from Steam
 2. Download and run the [MelonLoader.Installer.exe](https://github.com/LavaGang/MelonLoader/releases)
