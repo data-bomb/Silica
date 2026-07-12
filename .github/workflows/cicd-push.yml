@@ -141,9 +141,12 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
+      - name: Save branch name
+        shell: bash
+        run: echo "BRANCH_NAME=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
       - uses: actions/checkout@v4
         with:
-          ref: ${{ needs.beta-check.outputs.branch_identifier }}
+          ref: ${{ env.BRANCH_NAME }}
       - name: Generate matrix with all modules of the repo
         id: set-matrix
         run: |
