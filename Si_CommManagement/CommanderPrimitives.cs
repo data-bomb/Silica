@@ -1,6 +1,6 @@
 ﻿/*
 Silica Commander Management Mod
-Copyright (C) 2023-2024 by databomb
+Copyright (C) 2023-2026 by databomb
 
 * License *
 This program is free software: you can redistribute it and/or modify
@@ -63,7 +63,7 @@ namespace Si_CommanderManagement
             // need to get the player back to Infantry and not stuck in no-clip
             SendToRole(DemotedCommander, GameModeExt.ETeamRole.UNIT);
             // respawn
-            GameMode.CurrentGameMode.SpawnUnitForPlayer(DemotedCommander, TargetTeam);
+            GameMode.CurrentGameMode.TrySpawnPlayerAtSpawnPoint(DemotedCommander, TargetTeam);
         }
 
         private static void SetCommander(Team team, Player? player)

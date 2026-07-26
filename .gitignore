@@ -11,3 +11,6 @@ QList.dll
 .DS_Store
 # ignore VSCode environment
 .vscode/*
+# ignore Rider environment
+.idea/*
+**/.idea/*

@@ -1,6 +1,6 @@
 /*
 Silica Admin Mod
-Copyright (C) 2025 by databomb
+Copyright (C) 2025-2026 by databomb
 
 * Description *
 Provides basic admin mod system to allow additional admins beyond
@@ -33,6 +33,9 @@ namespace SilicaAdminMod
 {
 	public partial class SiAdminMod
 	{
+		private static string[] welcomeBanner = Array.Empty<string>();
+		private static bool bannerGenerated = false;
+		
 		[HarmonyPatch(typeof(GameMode), nameof(GameMode.OnPlayerJoinedBase))]
 		private static class ApplyPatch_GameMode_OnPlayerJoinedBase
 		{
@@ -45,7 +48,13 @@ namespace SilicaAdminMod
 						return;
 					}
 
-					string[] welcomeBanner = GenerateWelcomeBanner(__0);
+					// only generate this once until hot load/unload of mods is feasible
+					if (!bannerGenerated)
+					{
+						welcomeBanner = GenerateWelcomeBanner(__0);
+						bannerGenerated = true;
+					}
+					
 					HelperMethods.SendConsoleMessageToPlayer(__0, welcomeBanner);
 				}
 				catch (Exception error)

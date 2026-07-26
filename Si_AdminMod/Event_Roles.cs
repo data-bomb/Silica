@@ -1,6 +1,6 @@
 ﻿/*
 Silica Admin Mod
-Copyright (C) 2023-2024 by databomb
+Copyright (C) 2023-2026 by databomb
 
 * License *
 This program is free software: you can redistribute it and/or modify
@@ -149,7 +149,7 @@ namespace SilicaAdminMod
                     {
                         MelonLogger.Msg("Preventing Spawn");
                     }
-                    gameModeInstance.SpawnUnitForPlayer(requestingPlayer, requestingPlayer.Team);
+                    gameModeInstance.TrySpawnPlayerAtSpawnPoint(requestingPlayer, requestingPlayer.Team);
                     FireOnRoleChangedEvent(requestingPlayer, GameModeExt.ETeamRole.UNIT);
                 }
 

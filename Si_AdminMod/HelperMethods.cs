@@ -19,6 +19,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using MelonLoader;
 using System;
+using System.Collections.Generic;
+using System.Text;
+using HarmonyLib;
 using UnityEngine;
 
 #if NET6_0
@@ -27,7 +30,6 @@ using Il2CppSteamworks;
 using Il2CppDebugTools;
 #else
 using DebugTools;
-using System.Collections.Generic;
 using Steamworks;
 using System.Reflection;
 #endif
@@ -275,13 +277,64 @@ namespace SilicaAdminMod
                 return;
             }
             #endif
+            
+            // break up into chunks if it exceeds the single-packet size constraint of 2400-bytes
+            List<List<string>> messageChunks = GetMessageChunks(messages);
+            if (SiAdminMod.Pref_Admin_DebugLogMessages.Value)
+            {
+                MelonLogger.Msg("Entering loop for NetworkSendConsole_Netcode with chunk size " + messageChunks.Count);
+            }
+            
+            foreach (List<string> chunk in messageChunks)
+            {
+                NetworkSendConsole_Netcode(recipient, chunk);
+            }
+        }
 
+        private static List<List<string>> GetMessageChunks(string[] messages)
+        {
+            List<List<string>> messageChunks = new List<List<string>>();
+            
+            const uint maxMessageBytes = 2400; // upper limit from game netcode
+            const uint headerBytes = 16; // packet type, player, channel, & length
+            const uint perMessageOverhead = 4; // 2 for WriteString, 2 for WriteByte
+            
+            // build out each chunk
+            List<string> currentChunk = new List<string>();
+            uint runningSize = headerBytes;
+            
+            foreach (string message in messages)
+            {
+                uint messageSize = (uint)Encoding.UTF8.GetByteCount(message) + perMessageOverhead;
+                if (runningSize + messageSize >= maxMessageBytes)
+                {
+                    MelonLogger.Warning("Encountered large console message. Rolling over..");
+                    messageChunks.Add(currentChunk);
+                    currentChunk = new List<string>();
+                    runningSize = 0;
+                }
+                currentChunk.Add(message);
+                runningSize += messageSize;
+            }
+
+            // check if we have anything to add to a new chunk
+            if (currentChunk.Count > 0)
+            {
+                messageChunks.Add(currentChunk);
+            }
+
+            return messageChunks;
+        }
+        
+        private static void NetworkSendConsole_Netcode(Player recipient, List<string> messages)
+        {
             GameByteStreamWriter gameByteStreamWriter = GameByteStreamWriter.GetGameByteStreamWriter(0U, "Si_AdminMod::NetworkSendConsole", true);
             gameByteStreamWriter.WriteByte((byte)ENetworkPacketType.RemoteCommandResult);
             gameByteStreamWriter.WriteUInt64((ulong)recipient.PlayerID);
             gameByteStreamWriter.WriteByte((byte)recipient.PlayerChannel);
-            short stringCount = (short)messages.Length;
+            short stringCount = (short)messages.Count;
             gameByteStreamWriter.WriteInt16(stringCount);
+            
             int i = 0;
             while (i < stringCount)
             {
@@ -290,22 +343,22 @@ namespace SilicaAdminMod
                 i++;
             }
             uint byteDataSize = (uint)gameByteStreamWriter.GetByteDataSize();
-            #if NET6_0
+#if NET6_0
             NetworkLayer.NetBitsSent += byteDataSize * 8U;
-            #else
+#else
             FieldInfo netBitsSentField = typeof(NetworkLayer).GetField("NetBitsSent", BindingFlags.NonPublic | BindingFlags.Static);
             uint bitsSent = (uint)netBitsSentField.GetValue(null);
             bitsSent += byteDataSize * 8U;
             netBitsSentField.SetValue(null, bitsSent);
-            #endif
+#endif
 
-            #if NET6_0
+#if NET6_0
             NetworkLayer.SendServerPacket(recipient.PlayerID, gameByteStreamWriter.GetByteData(), byteDataSize, ENetworkPacketSend.Reliable, recipient.PlayerChannel);
-            #else
+#else
             Type networkLayerType = typeof(NetworkLayer);
             MethodInfo sendServerPacketMethod = networkLayerType.GetMethod("SendServerPacket", BindingFlags.NonPublic | BindingFlags.Static);
             sendServerPacketMethod.Invoke(null, new object[] { recipient.PlayerID, gameByteStreamWriter.GetByteData(), byteDataSize, ENetworkPacketSend.Reliable, recipient.PlayerChannel });
-            #endif
+#endif
         }
 
         public static void PrintError(Exception exception, string? message = null)

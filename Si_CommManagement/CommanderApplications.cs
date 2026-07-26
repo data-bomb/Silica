@@ -1,6 +1,6 @@
 ﻿/*
 Silica Commander Management Mod
-Copyright (C) 2023-2024 by databomb
+Copyright (C) 2023-2026 by databomb
 
 * License *
 This program is free software: you can redistribute it and/or modify
@@ -103,7 +103,7 @@ namespace Si_CommanderManagement
                 commanderApplicants[callerPlayer.Team.Index].Remove(callerPlayer);
 
                 // spawn a unit for them
-                GameMode.CurrentGameMode.SpawnUnitForPlayer(callerPlayer, callerPlayer.Team);
+                GameMode.CurrentGameMode.TrySpawnPlayerAtSpawnPoint(callerPlayer, callerPlayer.Team);
 
                 HelperMethods.ReplyToCommand_Player(callerPlayer, "removed themselves from commander lottery");
             }
@@ -225,7 +225,7 @@ namespace Si_CommanderManagement
                         if (RemovePlayer != null)
                         {
                             MelonLogger.Msg("Removing applicant from 2 rounds ago from random selection: " + RemovePlayer.PlayerName);
-                            GameMode.CurrentGameMode.SpawnUnitForPlayer(RemovePlayer, RemovePlayer.Team);
+                            GameMode.CurrentGameMode.TrySpawnPlayerAtSpawnPoint(RemovePlayer, RemovePlayer.Team);
                             commanderApplicants[i].Remove(RemovePlayer);
                         }
                     }
@@ -266,7 +266,7 @@ namespace Si_CommanderManagement
                     }
 
                     MelonLogger.Msg("Player " + infantryPlayer.PlayerName + " lost commander lottery. Spawning as infantry.");
-                    GameMode.CurrentGameMode.SpawnUnitForPlayer(infantryPlayer, infantryPlayer.Team);
+                    GameMode.CurrentGameMode.TrySpawnPlayerAtSpawnPoint(infantryPlayer, infantryPlayer.Team);
                 }
 
                 // everyone is promoted or moved to infantry, clear for the next round
