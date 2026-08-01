@@ -33,7 +33,7 @@ using SilicaAdminMod;
 using System.Linq;
 using System.Runtime.CompilerServices;
 
-[assembly: MelonInfo(typeof(FriendlyFireLimits), "Friendly Fire Limits", "1.3.4", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(FriendlyFireLimits), "Friendly Fire Limits", "1.3.5", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 #if NET6_0
 [assembly: MelonOptionalDependencies("Admin Mod", "QList")]
@@ -219,13 +219,19 @@ namespace Si_FriendlyFireLimits
             {
                 try
                 {
-                    // is the instigator AI or player-controlled?
-                    BaseGameObject attackerBase = GameFuncs.GetBaseGameObject(__3);
-                    if (attackerBase.NetworkComponent.OwnerPlayer != null)
+                    // skip if this is null
+                    if (__3 == null || __instance == null)
                     {
                         return true;
                     }
-
+                    
+                    // is the instigator AI or player-controlled?
+                    BaseGameObject attackerBase = GameFuncs.GetBaseGameObject(__3);
+                    if (attackerBase == null || attackerBase.NetworkComponent.OwnerPlayer != null)
+                    {
+                        return true;
+                    }
+                    
                     if (!ShouldProcessDamageModifier(__instance, __3, __1))
                     {
                         return true;

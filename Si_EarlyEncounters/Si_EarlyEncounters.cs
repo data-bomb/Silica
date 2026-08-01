@@ -36,7 +36,7 @@ using Si_EarlyEncounters;
 using System.Collections.Generic;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(EarlyEncounters), "Early Encounters", "1.1.5", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(EarlyEncounters), "Early Encounters", "1.1.6", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -173,11 +173,22 @@ namespace Si_EarlyEncounters
             }
         }
 
+        private static void SpawnNearby(Player player, string name, float startOffset, bool friendlyUnit = true)
+        {
+            Vector3 playerPosition = player.ControlledUnit.WorldPhysicalCenter;
+            Quaternion rotatedQuaternion = GameMath.GetRotatedQuaternion(Quaternion.identity, Vector3.up * UnityEngine.Random.Range(-180f, 180f));
+            Vector3 spawnVector = playerPosition + rotatedQuaternion * Vector3.forward * UnityEngine.Random.Range(startOffset, startOffset + 10f);
+            Vector2 spawnCoords = new Vector2(spawnVector.x, spawnVector.z);
+            spawnVector = GetFinalWorldMapPosition(spawnCoords);
+            
+            int teamIndex = (friendlyUnit ? player.Team.Index : (int)SiConstants.ETeam.Wildlife);
+            HelperMethods.SpawnAtLocation(name, spawnVector, rotatedQuaternion, teamIndex);
+        }
+
         // handle random event
         public static string HandleCrateEncounter(EEncounterType encounterType, Player player)
         {
             Vector3 targetPosition = player.ControlledUnit.WorldPhysicalCenter;
-            Target target = Target.GetTargetByNetID(player.ControlledUnit.NetworkComponent.NetID);
             
             switch (encounterType)
             {
@@ -190,18 +201,14 @@ namespace Si_EarlyEncounters
                 case EEncounterType.FriendlyUnit:
                     for (int i = 0; i < 1; i++)
                     {
-                        Quaternion rotatedQuaternion = GameMath.GetRotatedQuaternion(Quaternion.identity, Vector3.up * UnityEngine.Random.Range(-180f, 180f));
-                        Vector3 spawnVector = targetPosition + rotatedQuaternion * Vector3.forward * UnityEngine.Random.Range(10f, 20f);
-                        HelperMethods.SpawnAtLocation(GetFriendlyUnitName(player.Team), spawnVector, rotatedQuaternion, (int)player.Team.Index);
+                        SpawnNearby(player, GetFriendlyUnitName(player.Team), 10f);
                     }
 
                     return "a Friendly Defector";
                 case EEncounterType.EnemyUnit:
                     for (int i = 0; i < 2; i++)
                     {
-                        Quaternion rotatedQuaternion = GameMath.GetRotatedQuaternion(Quaternion.identity, Vector3.up * UnityEngine.Random.Range(-180f, 180f));
-                        Vector3 spawnVector = targetPosition + rotatedQuaternion * Vector3.forward * UnityEngine.Random.Range(10f, 20f);
-                        HelperMethods.SpawnAtLocation("Sol_Soldier_Heavy", spawnVector, rotatedQuaternion, (int)SiConstants.ETeam.Wildlife);
+                        SpawnNearby(player, "Sol_Soldier_Heavy", 10f, false);
                     }
 
                     return "Enemey Forces";
@@ -210,9 +217,7 @@ namespace Si_EarlyEncounters
                     {
                         for (int i = 0; i < 2; i++)
                         {
-                            Quaternion rotatedQuaternion = GameMath.GetRotatedQuaternion(Quaternion.identity, Vector3.up * UnityEngine.Random.Range(-180f, 180f));
-                            Vector3 spawnVector = targetPosition + rotatedQuaternion * Vector3.forward * UnityEngine.Random.Range(20f, 30f);
-                            HelperMethods.SpawnAtLocation("Worm", spawnVector, rotatedQuaternion, (int)player.Team.Index);
+                            SpawnNearby(player, "Worm", 20f);
                         }
 
                         return "Friendly Worms!";
@@ -221,18 +226,14 @@ namespace Si_EarlyEncounters
                     {
                         for (int i = 0; i < 1; i++)
                         {
-                            Quaternion rotatedQuaternion = GameMath.GetRotatedQuaternion(Quaternion.identity, Vector3.up * UnityEngine.Random.Range(-180f, 180f));
-                            Vector3 spawnVector = targetPosition + rotatedQuaternion * Vector3.forward * UnityEngine.Random.Range(20f, 30f);
-                            HelperMethods.SpawnAtLocation("RetroHatchback", spawnVector, rotatedQuaternion, (int)player.Team.Index);
+                            SpawnNearby(player, "RetroHatchback", 20f);
                         }
                     }
                     return "a retro hatchback!";
                 case EEncounterType.FriendlySwarm:
                     for (int i = 0; i < 4; i++)
                     {
-                        Quaternion rotatedQuaternion = GameMath.GetRotatedQuaternion(Quaternion.identity, Vector3.up * UnityEngine.Random.Range(-180f, 180f));
-                        Vector3 spawnVector = targetPosition + rotatedQuaternion * Vector3.forward * UnityEngine.Random.Range(15f, 25f);
-                        HelperMethods.SpawnAtLocation(GetFriendlySwarmUnitName(player.Team), spawnVector, rotatedQuaternion, (int)player.Team.Index);
+                        SpawnNearby(player, GetFriendlySwarmUnitName(player.Team), 15f);
                     }
 
                     return "a Friendly Swarm!";
@@ -243,6 +244,8 @@ namespace Si_EarlyEncounters
                         MelonLogger.Warning("Could not find AmbientLife instance.");
                         return "a Worm";
                     }
+                    
+                    Target target = Target.GetTargetByNetID(player.ControlledUnit.NetworkComponent.NetID);
                     ObjectInfo objectInfo = wildLifeInstance.Basic[UnityEngine.Random.Range(0, wildLifeInstance.Basic.Count - 1)];
                     Quaternion rotatedQuaternion2 = GameMath.GetRotatedQuaternion(Quaternion.identity, Vector3.up * UnityEngine.Random.Range(-180f, 180f));
                     GameObject wormObject = Game.SpawnPrefab(objectInfo.Prefab, null, Team.Teams[(int)SiConstants.ETeam.Wildlife], targetPosition, rotatedQuaternion2, true, true);

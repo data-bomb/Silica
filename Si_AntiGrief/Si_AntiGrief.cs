@@ -37,7 +37,7 @@ using UnityEngine;
 using System.Runtime.CompilerServices;
 using MelonLoader.Utils;
 
-[assembly: MelonInfo(typeof(AntiGrief), "Anti-Grief", "1.6.2", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(AntiGrief), "Anti-Grief", "1.6.3", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 #if NET6_0
 [assembly: MelonOptionalDependencies("Admin Mod", "QList")]
@@ -511,7 +511,7 @@ namespace Si_AntiGrief
                 HelperMethods.ReplyToCommand_Player(player, "tried to despawn a unit (" + HelperMethods.GetTeamColor(player) + unitName + "</color>)");
 
                 // work-around to spawn a temp replacement before all the player's units are taken by DestroyAllUnitsForPlayer
-                GameMode.CurrentGameMode.SpawnUnitForPlayer(player, player.Team);
+                GameMode.CurrentGameMode.TrySpawnPlayerAtSpawnPoint(player, player.Team);
             }
             catch (Exception error)
             {
