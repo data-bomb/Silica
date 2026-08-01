@@ -391,6 +391,24 @@ namespace Si_BuildLimits
                 HelperMethods.PrintError(error, "Failed to run OnRequestBuildStructure_LimitCheck");
             }
         }
+
+        public int GetUnitTypeCount(Team team, ObjectInfo unitInfo)
+        {
+            int num = 0;
+            foreach (Unit unit in Units)
+            {
+                if (!unit)
+                {
+                    MelonLogger.Error("GetUnitTypeCount: A unit is NULL for team '" + team.TeamShortName + "', skipping it...");
+                }
+                if ((unit.ObjectInfo.UnitType == unitInfo.UnitType) && !unit.IsDestroyed)
+                {
+                    num++;
+                }
+            }
+            return num;
+        }
+        
         public int GetStructureTypeCount(Team team, ObjectInfo structureInfo)
         {
             int num = 0;
@@ -405,6 +423,7 @@ namespace Si_BuildLimits
                     num++;
                 }
             }
+            
             return num;
         }
 
@@ -422,6 +441,7 @@ namespace Si_BuildLimits
                     num++;
                 }
             }
+            
             return num;
         }
     }
