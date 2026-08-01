@@ -33,7 +33,7 @@ using System;
 using Si_BuildLimits;
 using MelonLoader.Utils;
 
-[assembly: MelonInfo(typeof(BuildLimits), "Build Limits", "1.0.4", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(BuildLimits), "Build Limits", "1.0.5", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -110,7 +110,7 @@ namespace Si_BuildLimits
             Event_Construction.OnRequestBuildStructure += OnRequestBuildStructure_LimitCheck;
         }
 
-        public void NotifyLimitsEnforced(Team team, int maxStructures, string type)
+        public void NotifyLimitsEnforced(Team team, int maxAmount, string type, bool structure = true)
         {
             // find if team has commander
             Player? commander = null;
@@ -121,7 +121,8 @@ namespace Si_BuildLimits
 
             if (commander != null)
             {
-                string response = $"{type} structure limit ({maxStructures}) exceeded" + (maxStructures > 0 ? ". Sell/destroy before building again." : ".");
+                string category = (structure ? "structure" : "unit");
+                string response = $"{type} {category} limit ({maxAmount}) exceeded." + (maxAmount > 0 ? (structure ? "Sell" : "Destroy") + " more before purchasing." : "");
                 HelperMethods.SendConsoleMessageToPlayer(commander, response);
                 HelperMethods.SendChatMessageToTeam(team, response);
 
