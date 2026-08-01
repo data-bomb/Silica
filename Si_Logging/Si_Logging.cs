@@ -41,7 +41,7 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using static MelonLoader.MelonLogger;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.9.9", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.9.10", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 #if NET6_0
 [assembly: MelonOptionalDependencies("Admin Mod", "QList")]
@@ -271,10 +271,10 @@ namespace Si_Logging
 
         // 053. Suicides
         // 057. Kills
-        [HarmonyPatch(typeof(StrategyMode), nameof(StrategyMode.OnUnitDestroyed))]
-        private static class ApplyPatch_StrategyMode_OnUnitDestroyed
+        [HarmonyPatch(typeof(MP_Strategy), nameof(MP_Strategy.OnUnitDestroyed))]
+        private static class ApplyPatch_MPStrategy_OnUnitDestroyed
         {
-            public static void Postfix(StrategyMode __instance, Unit __0, UnityEngine.GameObject __1)
+            public static void Postfix(MP_Strategy __instance, Unit __0, UnityEngine.GameObject __1)
             {
                 try
                 {
@@ -292,7 +292,7 @@ namespace Si_Logging
                     NetworkComponent attackerNetComp = attackerBase.NetworkComponent;
                     if (attackerNetComp == null)
                     {
-                        MelonLogger.Warning("Found null attackerNetComp in ApplyPatch_StrategyMode_OnUnitDestroyed");
+                        MelonLogger.Warning("Found null attackerNetComp in ApplyPatch_MPStrategy_OnUnitDestroyed");
                         return;
                     }
                     Player attackerPlayer = attackerNetComp.OwnerPlayer;
