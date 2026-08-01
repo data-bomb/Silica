@@ -33,7 +33,7 @@ using System;
 using Si_BuildLimits;
 using MelonLoader.Utils;
 
-[assembly: MelonInfo(typeof(BuildLimits), "Build Limits", "1.0.5", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(BuildLimits), "Build Limits", "1.0.6", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -395,13 +395,13 @@ namespace Si_BuildLimits
         public int GetUnitTypeCount(Team team, ObjectInfo unitInfo)
         {
             int num = 0;
-            foreach (Unit unit in Units)
+            foreach (Unit unit in team.Units)
             {
                 if (!unit)
                 {
                     MelonLogger.Error("GetUnitTypeCount: A unit is NULL for team '" + team.TeamShortName + "', skipping it...");
                 }
-                if ((unit.ObjectInfo.UnitType == unitInfo.UnitType) && !unit.IsDestroyed)
+                else if ((unit.ObjectInfo.UnitType == unitInfo.UnitType) && !unit.IsDestroyed)
                 {
                     num++;
                 }
