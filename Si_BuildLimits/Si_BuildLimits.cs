@@ -33,7 +33,7 @@ using System;
 using Si_BuildLimits;
 using MelonLoader.Utils;
 
-[assembly: MelonInfo(typeof(BuildLimits), "Build Limits", "1.1.0", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(BuildLimits), "Build Limits", "1.1.1", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -80,8 +80,8 @@ namespace Si_BuildLimits
         // units
         static MelonPreferences_Entry<int> _Pref_Limit_Aircraft_Siege_Alien = null!;
         static MelonPreferences_Entry<int> _Pref_Limit_Aircraft_Siege_Human = null!;
-        static MelonPreferences_Entry<int> _Pref_Limit_Heavy_Siege_Alien = null!;
         static MelonPreferences_Entry<int> _Pref_Limit_Heavy_Siege_Human = null!;
+        static MelonPreferences_Entry<int> _Pref_Limit_Heavy_Tank_Human = null!;
         
         public override void OnInitializeMelon()
         {
@@ -112,8 +112,8 @@ namespace Si_BuildLimits
             // units
             _Pref_Limit_Aircraft_Siege_Alien ??= _modCategory.CreateEntry<int>("BuildLimits_Aliens_SiegeAircraft", nolimit); // Colossus
             _Pref_Limit_Aircraft_Siege_Human ??= _modCategory.CreateEntry<int>("BuildLimits_Humans_SiegeAircraft", nolimit); // Freighter, Bomber
-            _Pref_Limit_Heavy_Siege_Alien ??= _modCategory.CreateEntry<int>("BuildLimits_Aliens_HeavySiege",       nolimit); // (undefined)
             _Pref_Limit_Heavy_Siege_Human ??= _modCategory.CreateEntry<int>("BuildLimits_Humans_HeavySiege",       nolimit); // Siege Tank, Crimson Tank
+            _Pref_Limit_Heavy_Tank_Human ??= _modCategory.CreateEntry<int>("BuildLimits_Humans_HeavyTank",         nolimit); // Railgun Tank, Heavy Tank
         }
 
         public override void OnLateInitializeMelon()
@@ -454,7 +454,13 @@ namespace Si_BuildLimits
                     constructionData.ObjectInfo.UnitWeight == UnitWeight.Heavy &&
                     constructionData.ObjectInfo.OffenseRating == 5)
                 {
-                    int heavySiegeUnitLimit = (parentStructure.Team.Index == (int)SiConstants.ETeam.Alien ? _Pref_Limit_Heavy_Siege_Alien.Value : _Pref_Limit_Heavy_Siege_Human.Value);
+                    // no alien equivalent (yet..)
+                    if (parentStructure.Team.Index == (int)SiConstants.ETeam.Alien)
+                    {
+                        return;
+                    }
+                    
+                    int heavySiegeUnitLimit = _Pref_Limit_Heavy_Siege_Human.Value;
 
                     if (heavySiegeUnitLimit <= nolimit)
                     {
@@ -470,6 +476,35 @@ namespace Si_BuildLimits
 
                     return;
                 }
+                
+                // check for heavy tanks
+                if (constructionData.ObjectInfo.UnitType == UnitType.Tank &&
+                    constructionData.ObjectInfo.UnitWeight == UnitWeight.Heavy &&
+                    constructionData.ObjectInfo.OffenseRating >= 4)
+                {
+                    // no alien equivalent (yet..)
+                    if (parentStructure.Team.Index == (int)SiConstants.ETeam.Alien)
+                    {
+                        return;
+                    }
+                    
+                    int heavyTankUnitLimit = _Pref_Limit_Heavy_Tank_Human.Value;
+
+                    if (heavyTankUnitLimit <= nolimit)
+                    {
+                        return;
+                    }
+
+                    int unitTypeCount = GetUnitTypeCount(parentStructure.Team, constructionData.ObjectInfo);
+                    if (unitTypeCount >= heavyTankUnitLimit)
+                    {
+                        NotifyLimitsEnforced(parentStructure.Team, heavyTankUnitLimit, "Heavy Tank");
+                        args.Block = true;
+                    }
+
+                    return;
+                }
+                //_Pref_Limit_Heavy_Tank_Human
             }
             catch (Exception error)
             {
