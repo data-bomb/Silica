@@ -33,7 +33,7 @@ using System;
 using Si_BuildLimits;
 using MelonLoader.Utils;
 
-[assembly: MelonInfo(typeof(BuildLimits), "Build Limits", "1.0.6", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(BuildLimits), "Build Limits", "1.1.0", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -55,6 +55,7 @@ namespace Si_BuildLimits
 
         static MelonPreferences_Category _modCategory = null!;
         static MelonPreferences_Entry<bool> _Pref_Block_BotCommanders = null!;
+        // structures
         static MelonPreferences_Entry<int> _Pref_Limit_Bases_Humans = null!;
         static MelonPreferences_Entry<int> _Pref_Limit_Bases_Aliens = null!;
         static MelonPreferences_Entry<int> _Pref_Limit_Turrets_Humans = null!;
@@ -76,11 +77,15 @@ namespace Si_BuildLimits
         static MelonPreferences_Entry<int> _Pref_Limit_Prod4_Aliens = null!;
         static MelonPreferences_Entry<int> _Pref_Limit_Prod5_Humans = null!;
         static MelonPreferences_Entry<int> _Pref_Limit_Prod5_Aliens = null!;
-
+        // units
+        static MelonPreferences_Entry<int> _Pref_Limit_Aircraft_Siege_Alien = null!;
+        static MelonPreferences_Entry<int> _Pref_Limit_Aircraft_Siege_Human = null!;
+        
         public override void OnInitializeMelon()
         {
             _modCategory ??= MelonPreferences.CreateCategory("Silica");
             _Pref_Block_BotCommanders ??= _modCategory.CreateEntry<bool>("BuildLimits_EnforceLimitsOnAI",     true);
+            // structures
             _Pref_Limit_Bases_Humans ??= _modCategory.CreateEntry<int>("BuildLimits_Humans_Bases",         nolimit); // HQ
             _Pref_Limit_Bases_Aliens ??= _modCategory.CreateEntry<int>("BuildLimits_Aliens_Bases",         nolimit); // Nest
             _Pref_Limit_Turrets_Humans ??= _modCategory.CreateEntry<int>("BuildLimits_Humans_Turrets",          15); // Turrets
@@ -102,12 +107,16 @@ namespace Si_BuildLimits
             _Pref_Limit_Prod4_Aliens ??= _modCategory.CreateEntry<int>("BuildLimits_Aliens_Production_L4", nolimit); // Colossal Spawning Cyst
             _Pref_Limit_Prod5_Humans ??= _modCategory.CreateEntry<int>("BuildLimits_Humans_Production_L5", nolimit); // Air Factory
             _Pref_Limit_Prod5_Aliens ??= _modCategory.CreateEntry<int>("BuildLimits_Aliens_Production_L5", nolimit); // (undefined)
+            // units
+            _Pref_Limit_Aircraft_Siege_Alien ??= _modCategory.CreateEntry<int>("BuildLimits_Aliens_SiegeAircraft", nolimit); // Colossus
+            _Pref_Limit_Aircraft_Siege_Human ??= _modCategory.CreateEntry<int>("BuildLimits_Humans_SiegeAircraft", nolimit); // Freighter, Bomber
         }
 
         public override void OnLateInitializeMelon()
         {
             //subscribing to the events
             Event_Construction.OnRequestBuildStructure += OnRequestBuildStructure_LimitCheck;
+            Event_Construction.OnRequestBuildUnit += OnRequestBuildUnit_LimitCheck;
         }
 
         public void NotifyLimitsEnforced(Team team, int maxAmount, string type, bool structure = true)
@@ -389,6 +398,56 @@ namespace Si_BuildLimits
             catch (Exception error)
             {
                 HelperMethods.PrintError(error, "Failed to run OnRequestBuildStructure_LimitCheck");
+            }
+        }
+        
+        public void OnRequestBuildUnit_LimitCheck(object? sender, OnRequestBuildArgs args)
+        {
+            try
+            {
+                if (args == null)
+                {
+                    return;
+                }
+
+                // ignore AI build depending on preferences
+                if (!_Pref_Block_BotCommanders.Value && !args.PlayerInitiated)
+                {
+                    return;
+                }
+                
+                ConstructionData constructionData = args.ConstructionData;
+                Structure parentStructure = args.ParentStructure;
+                if (!constructionData || !constructionData.IsUnit || !constructionData.ObjectToBuild || !parentStructure || !parentStructure.Team)
+                {
+                    return;
+                }
+                
+                // check for aircraft super-siege units
+                if (constructionData.ObjectInfo.UnitType == UnitType.Aircraft &&
+                    constructionData.ObjectInfo.UnitWeight == UnitWeight.Heavy &&
+                    constructionData.ObjectInfo.OffenseRating == 5)
+                {
+                    int superSiegeAircraftLimit = (parentStructure.Team.Index == (int)SiConstants.ETeam.Alien ? _Pref_Limit_Aircraft_Siege_Alien.Value : _Pref_Limit_Aircraft_Siege_Human.Value);
+
+                    if (superSiegeAircraftLimit <= nolimit)
+                    {
+                        return;
+                    }
+
+                    int unitTypeCount = GetUnitTypeCount(parentStructure.Team, constructionData.ObjectInfo);
+                    if (unitTypeCount >= superSiegeAircraftLimit)
+                    {
+                        NotifyLimitsEnforced(parentStructure.Team, superSiegeAircraftLimit, "Siege Aircraft");
+                        args.Block = true;
+                    }
+
+                    return;
+                }
+            }
+            catch (Exception error)
+            {
+                HelperMethods.PrintError(error, "Failed to run OnRequestBuildUnit_LimitCheck");
             }
         }
 
