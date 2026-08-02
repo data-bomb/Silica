@@ -80,6 +80,8 @@ namespace Si_BuildLimits
         // units
         static MelonPreferences_Entry<int> _Pref_Limit_Aircraft_Siege_Alien = null!;
         static MelonPreferences_Entry<int> _Pref_Limit_Aircraft_Siege_Human = null!;
+        static MelonPreferences_Entry<int> _Pref_Limit_Heavy_Siege_Alien = null!;
+        static MelonPreferences_Entry<int> _Pref_Limit_Heavy_Siege_Human = null!;
         
         public override void OnInitializeMelon()
         {
@@ -110,6 +112,8 @@ namespace Si_BuildLimits
             // units
             _Pref_Limit_Aircraft_Siege_Alien ??= _modCategory.CreateEntry<int>("BuildLimits_Aliens_SiegeAircraft", nolimit); // Colossus
             _Pref_Limit_Aircraft_Siege_Human ??= _modCategory.CreateEntry<int>("BuildLimits_Humans_SiegeAircraft", nolimit); // Freighter, Bomber
+            _Pref_Limit_Heavy_Siege_Alien ??= _modCategory.CreateEntry<int>("BuildLimits_Aliens_HeavySiege",       nolimit); // (undefined)
+            _Pref_Limit_Heavy_Siege_Human ??= _modCategory.CreateEntry<int>("BuildLimits_Humans_HeavySiege",       nolimit); // Siege Tank, Crimson Tank
         }
 
         public override void OnLateInitializeMelon()
@@ -439,6 +443,28 @@ namespace Si_BuildLimits
                     if (unitTypeCount >= superSiegeAircraftLimit)
                     {
                         NotifyLimitsEnforced(parentStructure.Team, superSiegeAircraftLimit, "Siege Aircraft");
+                        args.Block = true;
+                    }
+
+                    return;
+                }
+                
+                // check for ultra-heavy siege units
+                if (constructionData.ObjectInfo.UnitType == UnitType.Siege &&
+                    constructionData.ObjectInfo.UnitWeight == UnitWeight.Heavy &&
+                    constructionData.ObjectInfo.OffenseRating == 5)
+                {
+                    int heavySiegeUnitLimit = (parentStructure.Team.Index == (int)SiConstants.ETeam.Alien ? _Pref_Limit_Heavy_Siege_Alien.Value : _Pref_Limit_Heavy_Siege_Human.Value);
+
+                    if (heavySiegeUnitLimit <= nolimit)
+                    {
+                        return;
+                    }
+
+                    int unitTypeCount = GetUnitTypeCount(parentStructure.Team, constructionData.ObjectInfo);
+                    if (unitTypeCount >= heavySiegeUnitLimit)
+                    {
+                        NotifyLimitsEnforced(parentStructure.Team, heavySiegeUnitLimit, "Heavy Siege");
                         args.Block = true;
                     }
 
