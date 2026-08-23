@@ -33,7 +33,7 @@ using System;
 using Si_BuildLimits;
 using MelonLoader.Utils;
 
-[assembly: MelonInfo(typeof(BuildLimits), "Build Limits", "1.2.0", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(BuildLimits), "Build Limits", "1.2.1", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -48,7 +48,9 @@ namespace Si_BuildLimits
             ObjectInfoExact = 0,
             StructureTypeComparison = 1,
             StructureSelectionTypeComparison = 2,
-            UnitTypeComparison = 3
+            UnitTypeComparison = 3,
+            StructureSelectionTypeComparisonAboveZeroDefense = 4,
+            StructureSelectionTypeComparisonAtZeroDefense = 5
         }
 
         public enum EDefenseRating
@@ -629,6 +631,11 @@ namespace Si_BuildLimits
                         break;
                     }
                 }
+            }
+            
+            if (_Pref_Check_UnderConstruction.Value)
+            {
+                count += GetObjectUnderConstructionCount(team, constructionData, false, objectComparison);
             }
             
             return count;
