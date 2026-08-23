@@ -570,5 +570,39 @@ namespace Si_BuildLimits
             
             return num;
         }
+
+        public int GetObjectUnderConstructionCount(Team team, ConstructionData constructionData, bool checkStructures)
+        {
+            int count = 0;
+            
+            foreach (ConstructionSite constructionSite in ConstructionSite.ConstructionSites)
+            {
+                if (!constructionSite)
+                {
+                    MelonLogger.Error("GetObjectUnderConstructionCount: A construction site is NULL for team '" + team.TeamShortName + "', skipping it...");
+                    continue;
+                }
+
+                if (constructionSite.Team.Index != team.Index)
+                {
+                    continue;
+                }
+                
+                // check if it should be a structure but it's not
+                // check if it should be a unit but it's not
+                if ((checkStructures && !constructionSite.ConstructionData.IsStructure) ||
+                    (!checkStructures && !constructionSite.ConstructionData.IsUnit))
+                {
+                    continue;
+                }
+
+                if (constructionSite.ConstructionData == constructionData)
+                {
+                    count++;                    
+                }
+            }
+
+            return count;
+        }
     }
 }
