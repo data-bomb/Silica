@@ -45,9 +45,10 @@ namespace Si_BuildLimits
 
         public enum EObjectComparison
         {
-            InfoExact = 0,
+            ObjectInfoExact = 0,
             StructureTypeComparison = 1,
-            StructureSelectionTypeComparison = 2
+            StructureSelectionTypeComparison = 2,
+            UnitTypeComparison = 3
         }
 
         public enum EDefenseRating
@@ -459,7 +460,7 @@ namespace Si_BuildLimits
                         return;
                     }
 
-                    int unitTypeCount = GetUnitTypeCount(parentStructure.Team, constructionData.ObjectInfo);
+                    int unitTypeCount = GetUnitCount(parentStructure.Team, constructionData, EObjectComparison.UnitTypeComparison);
                     if (unitTypeCount >= superSiegeAircraftLimit)
                     {
                         NotifyLimitsEnforced(parentStructure.Team, superSiegeAircraftLimit, "Siege Aircraft");
@@ -487,7 +488,7 @@ namespace Si_BuildLimits
                         return;
                     }
 
-                    int unitTypeCount = GetUnitTypeCount(parentStructure.Team, constructionData.ObjectInfo);
+                    int unitTypeCount = GetUnitCount(parentStructure.Team, constructionData, EObjectComparison.UnitTypeComparison);
                     if (unitTypeCount >= heavySiegeUnitLimit)
                     {
                         NotifyLimitsEnforced(parentStructure.Team, heavySiegeUnitLimit, "Heavy Siege");
@@ -515,7 +516,7 @@ namespace Si_BuildLimits
                         return;
                     }
 
-                    int unitTypeCount = GetUnitTypeCount(parentStructure.Team, constructionData.ObjectInfo);
+                    int unitTypeCount = GetUnitCount(parentStructure.Team, constructionData, EObjectComparison.UnitTypeComparison);
                     if (unitTypeCount >= heavyTankUnitLimit)
                     {
                         NotifyLimitsEnforced(parentStructure.Team, heavyTankUnitLimit, "Heavy Tank");
@@ -532,7 +533,7 @@ namespace Si_BuildLimits
             }
         }
 
-        public int GetStructureCount(Team team, ConstructionData constructionData, EObjectComparison objectComparison = EObjectComparison.InfoExact)
+        public int GetStructureCount(Team team, ConstructionData constructionData, EObjectComparison objectComparison = EObjectComparison.ObjectInfoExact)
         {
             int count = 0;
             
@@ -552,7 +553,7 @@ namespace Si_BuildLimits
 
                 switch (objectComparison)
                 {
-                    case EObjectComparison.InfoExact:
+                    case EObjectComparison.ObjectInfoExact:
                     {
                         if (structure.ObjectInfo == constructionData.ObjectInfo)
                         {
@@ -590,21 +591,47 @@ namespace Si_BuildLimits
             return count;
         }
 
-        public int GetUnitTypeCount(Team team, ObjectInfo unitInfo)
+        public int GetUnitCount(Team team, ConstructionData constructionData, EObjectComparison objectComparison)
         {
-            int num = 0;
+            int count = 0;
+            
             foreach (Unit unit in team.Units)
             {
                 if (!unit)
                 {
                     MelonLogger.Error("GetUnitTypeCount: A unit is NULL for team '" + team.TeamShortName + "', skipping it...");
+                    continue;
                 }
-                else if ((unit.ObjectInfo.UnitType == unitInfo.UnitType) && !unit.IsDestroyed)
+
+                if (unit.IsDestroyed)
                 {
-                    num++;
+                    continue;
+                }
+                
+                switch (objectComparison)
+                {
+                    case EObjectComparison.ObjectInfoExact:
+                    {
+                        if (unit.ObjectInfo == constructionData.ObjectInfo)
+                        {
+                            count++;
+                        }
+
+                        break;
+                    }
+                    case EObjectComparison.UnitTypeComparison:
+                    {
+                        if (unit.ObjectInfo.UnitType == constructionData.ObjectInfo.UnitType)
+                        {
+                            count++;
+                        }
+
+                        break;
+                    }
                 }
             }
-            return num;
+            
+            return count;
         }
         
         public int GetObjectUnderConstructionCount(Team team, ConstructionData constructionData, bool checkStructures, EObjectComparison objectComparison)
@@ -634,7 +661,7 @@ namespace Si_BuildLimits
 
                 switch (objectComparison)
                 {
-                    case EObjectComparison.InfoExact:
+                    case EObjectComparison.ObjectInfoExact:
                     {
                         if (constructionSite.ConstructionData.ObjectInfo == constructionData.ObjectInfo)
                         {
@@ -659,6 +686,15 @@ namespace Si_BuildLimits
                             count++;
                         }
 
+                        break;
+                    }
+                    case EObjectComparison.UnitTypeComparison:
+                    {
+                        if (constructionSite.ConstructionData.ObjectInfo.UnitType == constructionData.ObjectInfo.UnitType)
+                        {
+                            count++;
+                        }
+                        
                         break;
                     }
                 }
