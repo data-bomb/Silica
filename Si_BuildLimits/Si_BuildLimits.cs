@@ -3,7 +3,7 @@ Silica Build Limits
 Copyright (C) 2025-2026 by databomb
 
 * Description *
-Allows servers to enforce limitations on number of structures.
+Allows servers to enforce limitations on number of structures & units.
 
 * License *
 This program is free software: you can redistribute it and/or modify
@@ -33,7 +33,7 @@ using System;
 using Si_BuildLimits;
 using MelonLoader.Utils;
 
-[assembly: MelonInfo(typeof(BuildLimits), "Build Limits", "1.1.1", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(BuildLimits), "Build Limits", "1.2.0", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -55,6 +55,8 @@ namespace Si_BuildLimits
 
         static MelonPreferences_Category _modCategory = null!;
         static MelonPreferences_Entry<bool> _Pref_Block_BotCommanders = null!;
+        static MelonPreferences_Entry<bool> _Pref_Check_UnderConstruction = null!;
+        
         // structures
         static MelonPreferences_Entry<int> _Pref_Limit_Bases_Humans = null!;
         static MelonPreferences_Entry<int> _Pref_Limit_Bases_Aliens = null!;
@@ -77,6 +79,7 @@ namespace Si_BuildLimits
         static MelonPreferences_Entry<int> _Pref_Limit_Prod4_Aliens = null!;
         static MelonPreferences_Entry<int> _Pref_Limit_Prod5_Humans = null!;
         static MelonPreferences_Entry<int> _Pref_Limit_Prod5_Aliens = null!;
+        
         // units
         static MelonPreferences_Entry<int> _Pref_Limit_Aircraft_Siege_Alien = null!;
         static MelonPreferences_Entry<int> _Pref_Limit_Aircraft_Siege_Human = null!;
@@ -86,29 +89,32 @@ namespace Si_BuildLimits
         public override void OnInitializeMelon()
         {
             _modCategory ??= MelonPreferences.CreateCategory("Silica");
-            _Pref_Block_BotCommanders ??= _modCategory.CreateEntry<bool>("BuildLimits_EnforceLimitsOnAI",     true);
+            _Pref_Block_BotCommanders ??= _modCategory.CreateEntry<bool>("BuildLimits_EnforceLimitsOnAI",             true);
+            _Pref_Check_UnderConstruction ??= _modCategory.CreateEntry<bool>("BuildLimits_CheckUnderConstruction",    true);
+            
             // structures
-            _Pref_Limit_Bases_Humans ??= _modCategory.CreateEntry<int>("BuildLimits_Humans_Bases",         nolimit); // HQ
-            _Pref_Limit_Bases_Aliens ??= _modCategory.CreateEntry<int>("BuildLimits_Aliens_Bases",         nolimit); // Nest
-            _Pref_Limit_Turrets_Humans ??= _modCategory.CreateEntry<int>("BuildLimits_Humans_Turrets",          15); // Turrets
-            _Pref_Limit_Radar ??= _modCategory.CreateEntry<int>("BuildLimits_Humans_RadarStations",        nolimit); // RadarStations
-            _Pref_Limit_Turrets_Aliens ??= _modCategory.CreateEntry<int>("BuildLimits_Aliens_Turrets",          25); // Spires
-            _Pref_Limit_Research_Humans ??= _modCategory.CreateEntry<int>("BuildLimits_Humans_Research",   nolimit); // ResearchFactory
-            _Pref_Limit_Research_Alien ??= _modCategory.CreateEntry<int>("BuildLimits_Aliens_Research",    nolimit); // QuantumCortex
-            _Pref_Limit_Nodes ??= _modCategory.CreateEntry<int>("BuildLimits_Nodes",                       nolimit); // Nodes
-            _Pref_Limit_Silos ??= _modCategory.CreateEntry<int>("BuildLimits_Silos",                       nolimit); // Silos
-            _Pref_Limit_Deposits_Humans ??= _modCategory.CreateEntry<int>("BuildLimits_Humans_Deposits",   nolimit); // Refinery
-            _Pref_Limit_Deposits_Aliens ??= _modCategory.CreateEntry<int>("BuildLimits_Aliens_Deposits",   nolimit); // BioCache
-            _Pref_Limit_Prod1_Humans ??= _modCategory.CreateEntry<int>("BuildLimits_Humans_Production_L1", nolimit); // Barracks
-            _Pref_Limit_Prod1_Aliens ??= _modCategory.CreateEntry<int>("BuildLimits_Aliens_Production_L1", nolimit); // Lesser Spawning Cyst
-            _Pref_Limit_Prod2_Humans ??= _modCategory.CreateEntry<int>("BuildLimits_Humans_Production_L2", nolimit); // LVF
-            _Pref_Limit_Prod2_Aliens ??= _modCategory.CreateEntry<int>("BuildLimits_Aliens_Production_L2", nolimit); // Greater Spawning Cyst
-            _Pref_Limit_Prod3_Humans ??= _modCategory.CreateEntry<int>("BuildLimits_Humans_Production_L3", nolimit); // HVF
-            _Pref_Limit_Prod3_Aliens ??= _modCategory.CreateEntry<int>("BuildLimits_Aliens_Production_L3", nolimit); // Grand Spawning Cyst
-            _Pref_Limit_Prod4_Humans ??= _modCategory.CreateEntry<int>("BuildLimits_Humans_Production_L4", nolimit); // UHVF
-            _Pref_Limit_Prod4_Aliens ??= _modCategory.CreateEntry<int>("BuildLimits_Aliens_Production_L4", nolimit); // Colossal Spawning Cyst
-            _Pref_Limit_Prod5_Humans ??= _modCategory.CreateEntry<int>("BuildLimits_Humans_Production_L5", nolimit); // Air Factory
-            _Pref_Limit_Prod5_Aliens ??= _modCategory.CreateEntry<int>("BuildLimits_Aliens_Production_L5", nolimit); // (undefined)
+            _Pref_Limit_Bases_Humans ??= _modCategory.CreateEntry<int>("BuildLimits_Humans_Bases",                 nolimit); // HQ
+            _Pref_Limit_Bases_Aliens ??= _modCategory.CreateEntry<int>("BuildLimits_Aliens_Bases",                 nolimit); // Nest
+            _Pref_Limit_Turrets_Humans ??= _modCategory.CreateEntry<int>("BuildLimits_Humans_Turrets",                  15); // Turrets
+            _Pref_Limit_Radar ??= _modCategory.CreateEntry<int>("BuildLimits_Humans_RadarStations",                nolimit); // RadarStations
+            _Pref_Limit_Turrets_Aliens ??= _modCategory.CreateEntry<int>("BuildLimits_Aliens_Turrets",                  25); // Spires
+            _Pref_Limit_Research_Humans ??= _modCategory.CreateEntry<int>("BuildLimits_Humans_Research",           nolimit); // ResearchFactory
+            _Pref_Limit_Research_Alien ??= _modCategory.CreateEntry<int>("BuildLimits_Aliens_Research",            nolimit); // QuantumCortex
+            _Pref_Limit_Nodes ??= _modCategory.CreateEntry<int>("BuildLimits_Nodes",                               nolimit); // Nodes
+            _Pref_Limit_Silos ??= _modCategory.CreateEntry<int>("BuildLimits_Silos",                               nolimit); // Silos
+            _Pref_Limit_Deposits_Humans ??= _modCategory.CreateEntry<int>("BuildLimits_Humans_Deposits",           nolimit); // Refinery
+            _Pref_Limit_Deposits_Aliens ??= _modCategory.CreateEntry<int>("BuildLimits_Aliens_Deposits",           nolimit); // BioCache
+            _Pref_Limit_Prod1_Humans ??= _modCategory.CreateEntry<int>("BuildLimits_Humans_Production_L1",         nolimit); // Barracks
+            _Pref_Limit_Prod1_Aliens ??= _modCategory.CreateEntry<int>("BuildLimits_Aliens_Production_L1",         nolimit); // Lesser Spawning Cyst
+            _Pref_Limit_Prod2_Humans ??= _modCategory.CreateEntry<int>("BuildLimits_Humans_Production_L2",         nolimit); // LVF
+            _Pref_Limit_Prod2_Aliens ??= _modCategory.CreateEntry<int>("BuildLimits_Aliens_Production_L2",         nolimit); // Greater Spawning Cyst
+            _Pref_Limit_Prod3_Humans ??= _modCategory.CreateEntry<int>("BuildLimits_Humans_Production_L3",         nolimit); // HVF
+            _Pref_Limit_Prod3_Aliens ??= _modCategory.CreateEntry<int>("BuildLimits_Aliens_Production_L3",         nolimit); // Grand Spawning Cyst
+            _Pref_Limit_Prod4_Humans ??= _modCategory.CreateEntry<int>("BuildLimits_Humans_Production_L4",         nolimit); // UHVF
+            _Pref_Limit_Prod4_Aliens ??= _modCategory.CreateEntry<int>("BuildLimits_Aliens_Production_L4",         nolimit); // Colossal Spawning Cyst
+            _Pref_Limit_Prod5_Humans ??= _modCategory.CreateEntry<int>("BuildLimits_Humans_Production_L5",         nolimit); // Air Factory
+            _Pref_Limit_Prod5_Aliens ??= _modCategory.CreateEntry<int>("BuildLimits_Aliens_Production_L5",         nolimit); // (undefined)
+            
             // units
             _Pref_Limit_Aircraft_Siege_Alien ??= _modCategory.CreateEntry<int>("BuildLimits_Aliens_SiegeAircraft", nolimit); // Colossus
             _Pref_Limit_Aircraft_Siege_Human ??= _modCategory.CreateEntry<int>("BuildLimits_Humans_SiegeAircraft", nolimit); // Freighter, Bomber
