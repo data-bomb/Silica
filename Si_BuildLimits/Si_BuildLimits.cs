@@ -177,7 +177,7 @@ namespace Si_BuildLimits
                 if (_Pref_Limit_Nodes.Value > nolimit && constructionData.ObjectInfo.StructureType == StructureType.Resource &&
                         !constructionData.ObjectInfo.HasResourceDeposit && !constructionData.ObjectInfo.HasResourceStorage)
                 {
-                    int nodeStructureCount = parentStructure.Team.GetStructureCount(constructionData.ObjectInfo);
+                    int nodeStructureCount = GetStructureCount(parentStructure.Team, constructionData);
                     if (nodeStructureCount >= _Pref_Limit_Nodes.Value)
                     {
                         NotifyLimitsEnforced(parentStructure.Team, _Pref_Limit_Nodes.Value, "Node");
@@ -341,7 +341,7 @@ namespace Si_BuildLimits
                         return;
                     }
 
-                    int depositStructureCount = parentStructure.Team.GetStructureCount(constructionData.ObjectInfo);
+                    int depositStructureCount = GetStructureCount(parentStructure.Team, constructionData);
                     if (depositStructureCount >= depositStructureLimit)
                     {
                         NotifyLimitsEnforced(parentStructure.Team, depositStructureLimit, (parentStructure.Team.Index == (int)SiConstants.ETeam.Alien ? "BioCache" : "Refinery"));
@@ -375,7 +375,7 @@ namespace Si_BuildLimits
                 if (_Pref_Limit_Silos.Value > nolimit && constructionData.ObjectInfo.StructureType == StructureType.Resource &&
                         !constructionData.ObjectInfo.HasResourceDeposit && constructionData.ObjectInfo.HasResourceStorage)
                 {
-                    int siloStructureCount = parentStructure.Team.GetStructureCount(constructionData.ObjectInfo);
+                    int siloStructureCount = GetStructureCount(parentStructure.Team, constructionData);
                     if (siloStructureCount >= _Pref_Limit_Silos.Value)
                     {
                         NotifyLimitsEnforced(parentStructure.Team, _Pref_Limit_Silos.Value, "Silo");
@@ -395,7 +395,7 @@ namespace Si_BuildLimits
                         return;
                     }
 
-                    int baseStructureCount = parentStructure.Team.GetStructureCount(constructionData.ObjectInfo);
+                    int baseStructureCount = GetStructureCount(parentStructure.Team, constructionData);
                     if (baseStructureCount >= baseStructureLimit)
                     {
                         NotifyLimitsEnforced(parentStructure.Team, baseStructureLimit, (parentStructure.Team.Index == (int)SiConstants.ETeam.Alien ? "Nest" : "Headquarters"));
@@ -516,6 +516,33 @@ namespace Si_BuildLimits
             {
                 HelperMethods.PrintError(error, "Failed to run OnRequestBuildUnit_LimitCheck");
             }
+        }
+
+        public int GetStructureCount(Team team, ConstructionData constructionData)
+        {
+            int count = 0;
+            
+            foreach (Structure structure in team.Structures)
+            {
+                if (!structure)
+                {
+                    // note add extra "." to distinguish between built-in GetStructureCount method
+                    MelonLogger.Error("GetStructureCount: A structure is NULL for team '" + team.TeamShortName + "', skipping it....");
+                    continue;
+                }
+                
+                if ((structure.ObjectInfo == constructionData.ObjectInfo) && !structure.IsDestroyed)
+                {
+                    count++;
+                }
+            }
+
+            if (_Pref_Check_UnderConstruction.Value)
+            {
+                count += GetObjectUnderConstructionCount(team, constructionData, true);
+            }
+            
+            return count;
         }
 
         public int GetUnitTypeCount(Team team, ObjectInfo unitInfo)
