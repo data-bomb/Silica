@@ -43,6 +43,13 @@ namespace Si_BuildLimits
     {
         const int nolimit = -1;
 
+        public enum EObjectComparison
+        {
+            InfoExact = 0,
+            StructureTypeComparison = 1,
+            StructureSelectionTypeComparison = 2
+        }
+
         public enum EDefenseRating
         {
             RadarStation = 0,
@@ -199,7 +206,8 @@ namespace Si_BuildLimits
                             return;
                         }
 
-                        int structureTypeCount = GetStructureTypeCount(parentStructure.Team, constructionData.ObjectInfo);
+                        int structureTypeCount = GetStructureCount(parentStructure.Team, constructionData,
+                            EObjectComparison.StructureTypeComparison);
                         if (structureTypeCount >= defenseStructureLimit)
                         {
                             NotifyLimitsEnforced(parentStructure.Team, defenseStructureLimit, "Turret");
@@ -215,7 +223,8 @@ namespace Si_BuildLimits
                             return;
                         }
 
-                        int radarStructureCount = GetStructureTypeCount(parentStructure.Team, constructionData.ObjectInfo);
+                        int radarStructureCount = GetStructureCount(parentStructure.Team, constructionData,
+                            EObjectComparison.StructureTypeComparison);
                         if (radarStructureCount >= radarStructureLimit)
                         {
                             NotifyLimitsEnforced(parentStructure.Team, radarStructureLimit, "Radar Station");
@@ -243,7 +252,8 @@ namespace Si_BuildLimits
                             return;
                         }
 
-                        int structureSelectionTypeCount = GetStructureSelectionTypeCount(parentStructure.Team, constructionData.ObjectInfo);
+                        int structureSelectionTypeCount = GetStructureCount(parentStructure.Team, constructionData,
+                            EObjectComparison.StructureSelectionTypeComparison);
                         if (structureSelectionTypeCount >= productionStructureLimit)
                         {
                             NotifyLimitsEnforced(parentStructure.Team, productionStructureLimit, (parentStructure.Team.Index == (int)SiConstants.ETeam.Alien ? "Lesser Spawning Cyst" : "Barracks"));
@@ -262,7 +272,8 @@ namespace Si_BuildLimits
                             return;
                         }
 
-                        int structureSelectionTypeCount = GetStructureSelectionTypeCount(parentStructure.Team, constructionData.ObjectInfo);
+                        int structureSelectionTypeCount = GetStructureCount(parentStructure.Team, constructionData,
+                            EObjectComparison.StructureSelectionTypeComparison);
                         if (structureSelectionTypeCount >= productionStructureLimit)
                         {
                             NotifyLimitsEnforced(parentStructure.Team, productionStructureLimit, (parentStructure.Team.Index == (int)SiConstants.ETeam.Alien ? "Greater Spawning Cyst" : "Light Vehicle Factory"));
@@ -281,7 +292,8 @@ namespace Si_BuildLimits
                             return;
                         }
 
-                        int structureSelectionTypeCount = GetStructureSelectionTypeCount(parentStructure.Team, constructionData.ObjectInfo);
+                        int structureSelectionTypeCount = GetStructureCount(parentStructure.Team, constructionData,
+                            EObjectComparison.StructureSelectionTypeComparison);
                         if (structureSelectionTypeCount >= productionStructureLimit)
                         {
                             NotifyLimitsEnforced(parentStructure.Team, productionStructureLimit, (parentStructure.Team.Index == (int)SiConstants.ETeam.Alien ? "Grand Spawning Cyst" : "Heavy Vehicle Factory"));
@@ -300,7 +312,8 @@ namespace Si_BuildLimits
                             return;
                         }
 
-                        int structureSelectionTypeCount = GetStructureSelectionTypeCount(parentStructure.Team, constructionData.ObjectInfo);
+                        int structureSelectionTypeCount = GetStructureCount(parentStructure.Team, constructionData,
+                            EObjectComparison.StructureSelectionTypeComparison);
                         if (structureSelectionTypeCount >= productionStructureLimit)
                         {
                             NotifyLimitsEnforced(parentStructure.Team, productionStructureLimit, (parentStructure.Team.Index == (int)SiConstants.ETeam.Alien ? "Colossal Spawning Cyst" : "Ultra Heavy Vehicle Factory"));
@@ -319,7 +332,8 @@ namespace Si_BuildLimits
                             return;
                         }
 
-                        int structureSelectionTypeCount = GetStructureSelectionTypeCount(parentStructure.Team, constructionData.ObjectInfo);
+                        int structureSelectionTypeCount = GetStructureCount(parentStructure.Team, constructionData,
+                            EObjectComparison.StructureSelectionTypeComparison);
                         if (structureSelectionTypeCount >= productionStructureLimit)
                         {
                             NotifyLimitsEnforced(parentStructure.Team, productionStructureLimit, (parentStructure.Team.Index == (int)SiConstants.ETeam.Alien ? "tbd" : "Air Factory"));
@@ -361,7 +375,7 @@ namespace Si_BuildLimits
                         return;
                     }
 
-                    int structureTypeCount = GetStructureTypeCount(parentStructure.Team, constructionData.ObjectInfo);
+                    int structureTypeCount = GetStructureCount(parentStructure.Team, constructionData, EObjectComparison.StructureTypeComparison);
                     if (structureTypeCount >= researchStructureLimit)
                     {
                         NotifyLimitsEnforced(parentStructure.Team, researchStructureLimit, "Research");
@@ -518,7 +532,7 @@ namespace Si_BuildLimits
             }
         }
 
-        public int GetStructureCount(Team team, ConstructionData constructionData)
+        public int GetStructureCount(Team team, ConstructionData constructionData, EObjectComparison objectComparison = EObjectComparison.InfoExact)
         {
             int count = 0;
             
@@ -530,16 +544,47 @@ namespace Si_BuildLimits
                     MelonLogger.Error("GetStructureCount: A structure is NULL for team '" + team.TeamShortName + "', skipping it....");
                     continue;
                 }
-                
-                if ((structure.ObjectInfo == constructionData.ObjectInfo) && !structure.IsDestroyed)
+
+                if (structure.IsDestroyed)
                 {
-                    count++;
+                    continue;
+                }
+
+                switch (objectComparison)
+                {
+                    case EObjectComparison.InfoExact:
+                    {
+                        if (structure.ObjectInfo == constructionData.ObjectInfo)
+                        {
+                            count++;
+                        }
+
+                        break;
+                    }
+                    case EObjectComparison.StructureTypeComparison:
+                    {
+                        if (structure.ObjectInfo.StructureType == constructionData.ObjectInfo.StructureType)
+                        {
+                            count++;
+                        }
+
+                        break;
+                    }
+                    case EObjectComparison.StructureSelectionTypeComparison:
+                    {
+                        if (structure.ObjectInfo.StructureSelectionType == constructionData.ObjectInfo.StructureSelectionType)
+                        {
+                            count++;
+                        }
+
+                        break;
+                    }
                 }
             }
 
             if (_Pref_Check_UnderConstruction.Value)
             {
-                count += GetObjectUnderConstructionCount(team, constructionData, true);
+                count += GetObjectUnderConstructionCount(team, constructionData, true, objectComparison);
             }
             
             return count;
@@ -562,43 +607,7 @@ namespace Si_BuildLimits
             return num;
         }
         
-        public int GetStructureTypeCount(Team team, ObjectInfo structureInfo)
-        {
-            int num = 0;
-            foreach (Structure structure in team.Structures)
-            {
-                if (!structure)
-                {
-                    MelonLogger.Error("GetStructureTypeCount: A structure is NULL for team '" + team.TeamShortName + "', skipping it...");
-                }
-                else if ((structure.ObjectInfo.StructureType == structureInfo.StructureType) && !structure.IsDestroyed)
-                {
-                    num++;
-                }
-            }
-            
-            return num;
-        }
-
-        public int GetStructureSelectionTypeCount(Team team, ObjectInfo structureInfo)
-        {
-            int num = 0;
-            foreach (Structure structure in team.Structures)
-            {
-                if (!structure)
-                {
-                    MelonLogger.Error("GetStructureSelectionTypeCount: A structure is NULL for team '" + team.TeamShortName + "', skipping it...");
-                }
-                else if ((structure.ObjectInfo.StructureSelectionType == structureInfo.StructureSelectionType) && !structure.IsDestroyed)
-                {
-                    num++;
-                }
-            }
-            
-            return num;
-        }
-
-        public int GetObjectUnderConstructionCount(Team team, ConstructionData constructionData, bool checkStructures)
+        public int GetObjectUnderConstructionCount(Team team, ConstructionData constructionData, bool checkStructures, EObjectComparison objectComparison)
         {
             int count = 0;
             
@@ -623,9 +632,35 @@ namespace Si_BuildLimits
                     continue;
                 }
 
-                if (constructionSite.ConstructionData == constructionData)
+                switch (objectComparison)
                 {
-                    count++;                    
+                    case EObjectComparison.InfoExact:
+                    {
+                        if (constructionSite.ConstructionData.ObjectInfo == constructionData.ObjectInfo)
+                        {
+                            count++;                    
+                        }
+
+                        break;
+                    }
+                    case EObjectComparison.StructureTypeComparison:
+                    {
+                        if (constructionSite.ConstructionData.ObjectInfo.StructureType == constructionData.ObjectInfo.StructureType)
+                        {
+                            count++;
+                        }
+
+                        break;
+                    }
+                    case EObjectComparison.StructureSelectionTypeComparison:
+                    {
+                        if (constructionSite.ConstructionData.ObjectInfo.StructureSelectionType == constructionData.ObjectInfo.StructureSelectionType)
+                        {
+                            count++;
+                        }
+
+                        break;
+                    }
                 }
             }
 
