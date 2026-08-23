@@ -49,8 +49,7 @@ namespace Si_BuildLimits
             StructureTypeComparison = 1,
             StructureSelectionTypeComparison = 2,
             UnitTypeComparison = 3,
-            StructureSelectionTypeComparisonAboveZeroDefense = 4,
-            StructureSelectionTypeComparisonAtZeroDefense = 5
+            StructureSelectionTypeComparisonSimilarDefense = 4
         }
 
         public enum EDefenseRating
@@ -210,7 +209,7 @@ namespace Si_BuildLimits
                         }
 
                         int structureTypeCount = GetStructureCount(parentStructure.Team, constructionData,
-                            EObjectComparison.StructureTypeComparison);
+                            EObjectComparison.StructureSelectionTypeComparisonSimilarDefense);
                         if (structureTypeCount >= defenseStructureLimit)
                         {
                             NotifyLimitsEnforced(parentStructure.Team, defenseStructureLimit, "Turret");
@@ -227,7 +226,7 @@ namespace Si_BuildLimits
                         }
 
                         int radarStructureCount = GetStructureCount(parentStructure.Team, constructionData,
-                            EObjectComparison.StructureTypeComparison);
+                            EObjectComparison.StructureSelectionTypeComparisonSimilarDefense);
                         if (radarStructureCount >= radarStructureLimit)
                         {
                             NotifyLimitsEnforced(parentStructure.Team, radarStructureLimit, "Radar Station");
@@ -582,6 +581,30 @@ namespace Si_BuildLimits
 
                         break;
                     }
+                    case EObjectComparison.StructureSelectionTypeComparisonSimilarDefense:
+                    {
+                        if (structure.ObjectInfo.StructureSelectionType == constructionData.ObjectInfo.StructureSelectionType)
+                        {
+                            // defense rating 0 
+                            if (constructionData.ObjectInfo.DefenseRating == (int)EDefenseRating.RadarStation)
+                            {
+                                if (structure.ObjectInfo.DefenseRating == (int)EDefenseRating.RadarStation)
+                                {
+                                    count++;    
+                                }
+                            }
+                            // defense rating 1+
+                            else
+                            {
+                                if (structure.ObjectInfo.DefenseRating > (int)EDefenseRating.RadarStation)
+                                {
+                                    count++;
+                                }
+                            }
+                        }
+                        
+                        break;
+                    }
                 }
             }
 
@@ -700,6 +723,30 @@ namespace Si_BuildLimits
                         if (constructionSite.ConstructionData.ObjectInfo.UnitType == constructionData.ObjectInfo.UnitType)
                         {
                             count++;
+                        }
+                        
+                        break;
+                    }
+                    case EObjectComparison.StructureSelectionTypeComparisonSimilarDefense:
+                    {
+                        if (constructionSite.ConstructionData.ObjectInfo.StructureSelectionType == constructionData.ObjectInfo.StructureSelectionType)
+                        {
+                            // defense rating 0 
+                            if (constructionData.ObjectInfo.DefenseRating == (int)EDefenseRating.RadarStation)
+                            {
+                                if (constructionSite.ConstructionData.ObjectInfo.DefenseRating == (int)EDefenseRating.RadarStation)
+                                {
+                                    count++;    
+                                }
+                            }
+                            // defense rating 1+
+                            else
+                            {
+                                if (constructionSite.ConstructionData.ObjectInfo.DefenseRating > (int)EDefenseRating.RadarStation)
+                                {
+                                    count++;
+                                }
+                            }
                         }
                         
                         break;
