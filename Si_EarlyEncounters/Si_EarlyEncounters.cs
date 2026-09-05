@@ -36,7 +36,7 @@ using Si_EarlyEncounters;
 using System.Collections.Generic;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(EarlyEncounters), "Early Encounters", "1.1.6", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(EarlyEncounters), "Early Encounters", "1.1.7", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -257,7 +257,8 @@ namespace Si_EarlyEncounters
                         return "a Worm";
                     }
                     
-                    wormUnit.OnAttackOrder(target, target.transform.position, AgentMoveSpeed.Fast, true, true, false);
+                    // TODO: add attack orders based on AI changes
+                    //wormUnit.OnAttackOrder(target, target.transform.position, AgentMoveSpeed.Fast, true, true, false);
                     return "a Worm";
                 default:
                     return "an invalid encounter (ERROR)";
