@@ -37,7 +37,7 @@ using UnityEngine;
 using System.Runtime.CompilerServices;
 using MelonLoader.Utils;
 
-[assembly: MelonInfo(typeof(AntiGrief), "Anti-Grief", "1.6.3", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(AntiGrief), "Anti-Grief", "1.6.4", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 #if NET6_0
 [assembly: MelonOptionalDependencies("Admin Mod", "QList")]
@@ -432,6 +432,7 @@ namespace Si_AntiGrief
             }
 
             // we don't want the user to be able to delete an endless supply of starting units
+            // currently for Alien this includes: Crab, CrabHorned, Wasp, Dragonfly, and Shocker
             if (GameMode.CurrentGameMode.GetCanDeletePlayerControlledUnit(player, currentUnit))
             {
                 // GetIndex() will return -1 if this is not a valid player on the list
@@ -499,8 +500,8 @@ namespace Si_AntiGrief
                     return;
                 }
 
-                // if this is a low tier unit then we don't care if it disappears
-                if (!IsHighValueAlienUnit(unit))
+                // if this is a low tier unit or spawn unit then we don't care if it disappears
+                if (!IsHighValueAlienUnit(unit, player))
                 {
                     return;
                 }
@@ -553,7 +554,7 @@ namespace Si_AntiGrief
             }
         }
 
-        public static bool IsHighValueAlienUnit(Unit unit)
+        public static bool IsHighValueAlienUnit(Unit unit, Player player)
         {
             BaseGameObject? unitBase = GameFuncs.GetBaseGameObject(unit.gameObject);
             if (unitBase == null)
@@ -566,7 +567,13 @@ namespace Si_AntiGrief
             {
                 return false;
             }
-
+            
+            // if it's a default Alien spawn unit then don't consider high-value regardless of cost
+            if (GameMode.CurrentGameMode.GetCanDeletePlayerControlledUnit(player, unit))
+            {
+                return false;
+            }
+            
             if (unitConstructionData.ResourceCost >= 500)
             {
                 return true;
