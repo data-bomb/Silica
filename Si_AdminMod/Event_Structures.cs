@@ -40,107 +40,84 @@ namespace SilicaAdminMod
 {
     public static class Event_Structures
     {
-        public static event EventHandler<OnRequestDestroyStructureArgs> OnRequestDestroyStructure = delegate { };
-        public static event EventHandler<OnCommanderDestroyedStructureArgs> OnCommanderDestroyedStructure = delegate { };
+        public static event EventHandler<OnRequestSellStructureArgs> OnRequestSellStructure = delegate { };
+        public static event EventHandler<OnCommanderSoldStructureArgs> OnCommanderSoldStructure = delegate { };
 
-        [HarmonyPatch(typeof(StrategyMode), nameof(StrategyMode.PerformDestroyStructure))]
-        static class ApplyPatch_StrategyMode_PerformDestroyStructure
+        [HarmonyPatch(typeof(StructureSellComponent), nameof(StructureSellComponent.GetCanSell))]
+        static class ApplyPatch_StructureSellComponent_GetCanSell
         {
-            public static bool Prefix(StrategyMode __instance, Structure __0)
+            public static void Postfix(StructureSellComponent __instance, ref bool __result, Structure __0)
             {
                 try
                 {
-                    HandleRequestDestroyStructureEvent(__0);
+                    OnRequestSellStructureArgs onRequestSellStructureArgs = FireOnRequestSellStructureEvent(__0, __0.Team, __result);
 
+                    if (onRequestSellStructureArgs.Override)
+                    {
+                        // overriding a sale
+                        if (__result)
+                        {
+                            if (SiAdminMod.Pref_Admin_DebugLogMessages.Value)
+                            {
+                                MelonLogger.Msg("Blocking structure (" + __0.name + ") from being sold on team " + __0.Team.TeamShortName);
+                            }
+
+                            __result = false;
+                            return;
+                        }
+                        // overriding a blocked sale
+                        else
+                        {
+                            __result = true;
+                        }
+                    }
+
+                    if (SiAdminMod.Pref_Admin_DebugLogMessages.Value)
+                    {
+                        MelonLogger.Msg("Allowing structure (" + __0.name + ") to be sold on team " + __0.Team.TeamShortName);
+                    }
+
+                    OnCommanderSoldStructureArgs onCommanderSoldStructureArgs = FireOnCommanderSoldStructure(__0, __0.Team);
+
+                    if (SiAdminMod.Pref_Admin_DebugLogMessages.Value)
+                    {
+                        MelonLogger.Msg("Structure (" + __0.name + ") sold by commander on team " + __0.Team.TeamShortName);
+                    }
                 }
                 catch (Exception error)
                 {
-                    HelperMethods.PrintError(error, "Failed to run StrategyMode::PerformDestroyStructure(Prefix)");
+                    HelperMethods.PrintError(error, "Failed to run StructureSellComponent::GetCanSell");
                 }
-
-                // always skip the game function (errors occur for an invalid instance otherwise)
-                return false;
             }
         }
 
-        #if NET6_0
-        [HarmonyPatch(typeof(StrategyMode), nameof(StrategyMode.RPC_DestroyStructure))]
-        #else
-        [HarmonyPatch(typeof(StrategyMode), "RPC_DestroyStructure")]
-        #endif
-        static class ApplyPatch_StrategyMode_RPC_DestroyStructure
+        public static OnRequestSellStructureArgs FireOnRequestSellStructureEvent(Structure structure, Team team, bool gameDecision)
         {
-            public static bool Prefix(StrategyMode __instance, Structure __0)
+            OnRequestSellStructureArgs onRequestSellStructureArgs = new OnRequestSellStructureArgs();
+            onRequestSellStructureArgs.Structure = structure;
+            onRequestSellStructureArgs.Team = team;
+            onRequestSellStructureArgs.GameDecision = gameDecision;
+            EventHandler<OnRequestSellStructureArgs> requestSellStructureEvent = OnRequestSellStructure;
+            if (requestSellStructureEvent != null)
             {
-                try
-                {
-                    HandleRequestDestroyStructureEvent(__0);
-                }
-                catch (Exception error)
-                {
-                    HelperMethods.PrintError(error, "Failed to run StrategyMode::RPC_DestroyStructure(Prefix)");
-                }
-
-                // always skip the game function (errors occur for an invalid instance otherwise)
-                return false;
+                requestSellStructureEvent(null, onRequestSellStructureArgs);
             }
+
+            return onRequestSellStructureArgs;
         }
 
-        public static void HandleRequestDestroyStructureEvent(Structure structure)
+        public static OnCommanderSoldStructureArgs FireOnCommanderSoldStructure(Structure structure, Team team)
         {
-            OnRequestDestroyStructureArgs onRequestDestroyStructureArgs = FireOnRequestDestroyStructureEvent(structure, structure.Team);
-
-            if (onRequestDestroyStructureArgs.Block)
-            {
-                if (SiAdminMod.Pref_Admin_DebugLogMessages.Value)
-                {
-                    MelonLogger.Msg("Blocking structure (" + structure.name + ") from being destroyed on team " + structure.Team.TeamShortName);
-                }
-
-                return;
-            }
-
-            if (SiAdminMod.Pref_Admin_DebugLogMessages.Value)
-            {
-                MelonLogger.Msg("Allowing structure (" + structure.name + ") to be destroyed on team " + structure.Team.TeamShortName);
-            }
-
-            OnCommanderDestroyedStructureArgs onCommanderDestroyedStructureArgs = FireOnCommanderDestroyedStructure(structure, structure.Team);
-
-            if (SiAdminMod.Pref_Admin_DebugLogMessages.Value)
-            {
-                MelonLogger.Msg("Structure (" + structure.name + ") destroyed by commander on team " + structure.Team.TeamShortName);
-            }
-
-            structure.DamageManager.SetHealth01(0f);
-        }
-
-        public static OnRequestDestroyStructureArgs FireOnRequestDestroyStructureEvent(Structure structure, Team team)
-        {
-            OnRequestDestroyStructureArgs onRequestDestroyStructureArgs = new OnRequestDestroyStructureArgs();
-            onRequestDestroyStructureArgs.Structure = structure;
-            onRequestDestroyStructureArgs.Team = team;
-            EventHandler<OnRequestDestroyStructureArgs> requestDestroyStructureEvent = OnRequestDestroyStructure;
-            if (requestDestroyStructureEvent != null)
-            {
-                requestDestroyStructureEvent(null, onRequestDestroyStructureArgs);
-            }
-
-            return onRequestDestroyStructureArgs;
-        }
-
-        public static OnCommanderDestroyedStructureArgs FireOnCommanderDestroyedStructure(Structure structure, Team team)
-        {
-            OnCommanderDestroyedStructureArgs onCommanderDestroyedStructureArgs = new OnCommanderDestroyedStructureArgs();
-            onCommanderDestroyedStructureArgs.Structure = structure;
-            onCommanderDestroyedStructureArgs.Team = team;
-            EventHandler<OnCommanderDestroyedStructureArgs> commanderDestroyedStructureEvent = OnCommanderDestroyedStructure;
+            OnCommanderSoldStructureArgs onCommanderSoldStructureArgs = new OnCommanderSoldStructureArgs();
+            onCommanderSoldStructureArgs.Structure = structure;
+            onCommanderSoldStructureArgs.Team = team;
+            EventHandler<OnCommanderSoldStructureArgs> commanderDestroyedStructureEvent = OnCommanderSoldStructure;
             if (commanderDestroyedStructureEvent != null)
             {
-                commanderDestroyedStructureEvent(null, onCommanderDestroyedStructureArgs);
+                commanderDestroyedStructureEvent(null, onCommanderSoldStructureArgs);
             }
 
-            return onCommanderDestroyedStructureArgs;
+            return onCommanderSoldStructureArgs;
         }
     }
 }

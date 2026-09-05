@@ -119,7 +119,7 @@ namespace SilicaAdminMod
         }
     }
 
-    public class OnCommanderDestroyedStructureArgs : EventArgs
+    public class OnCommanderSoldStructureArgs : EventArgs
     {
         private Structure _structure = null!;
         private Team _team = null!;
@@ -137,7 +137,7 @@ namespace SilicaAdminMod
         }
     }
 
-    public class OnRequestDestroyStructureArgs : EventArgs
+    public class OnRequestSellStructureArgs : EventArgs
     {
         private Structure _structure = null!;
         private Team _team = null!;
@@ -154,7 +154,13 @@ namespace SilicaAdminMod
             set => _team = value ?? throw new ArgumentNullException("Team is required.");
         }
 
-        public bool Block
+        public bool GameDecision
+        {
+            get;
+            set;
+        }
+
+        public bool Override
         {
             get;
             set;
