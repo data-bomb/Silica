@@ -37,7 +37,7 @@ using UnityEngine;
 using System.Runtime.CompilerServices;
 using MelonLoader.Utils;
 
-[assembly: MelonInfo(typeof(AntiGrief), "Anti-Grief", "1.6.5", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(AntiGrief), "Anti-Grief", "1.6.6", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 #if NET6_0
 [assembly: MelonOptionalDependencies("Admin Mod", "QList")]
@@ -260,14 +260,14 @@ namespace Si_AntiGrief
                     return;
                 }
 
-                MelonLogger.Msg("OnRequestDestroyStructure StructureType: " + structure.ObjectInfo.StructureType + " SelectionType: " + structure.ObjectInfo.StructureSelectionType);
+                MelonLogger.Msg("OnRequestSellStructure StructureType: " + structure.ObjectInfo.StructureType + " SelectionType: " + structure.ObjectInfo.StructureSelectionType);
 
                 // did the commander try and sell a barracks/lesser spawn or research facility?
                 if ((_BlockCommanderRemovingLastSpawn.Value && structure.ObjectInfo.StructureSelectionType == StructureSelectionType.Units1) || 
                     (_BlockCommanderRemovingLastResearch.Value && structure.ObjectInfo.StructureType == StructureType.Research))
                 {
                     int remainingStructures = team.GetStructureCount(structure.ObjectInfo);
-                    MelonLogger.Msg("OnRequestDestroyStructure Remaining Structures: " + remainingStructures);
+                    MelonLogger.Msg("OnRequestSellStructure Remaining Structures: " + remainingStructures);
 
                     // prevent getting rid of the last structure
                     if (remainingStructures <= 1)
@@ -286,14 +286,18 @@ namespace Si_AntiGrief
                             HelperMethods.ReplyToCommand_Player(commander, "tried to destroy the last ", structure.ObjectInfo.DisplayName);
                         }
 
-                        args.Block = true;
+                        // check if game is not blocking it
+                        if (!args.GameDecision)
+                        {
+                            args.Override = true;
+                            MelonLogger.Msg("Anti-Grief is disallowing structure selling command.");
+                        }
                     }
-
                 }
             }
             catch (Exception error)
             {
-                HelperMethods.PrintError(error, "Failed to run OnRequestDestroyStructure_GriefCheck");
+                HelperMethods.PrintError(error, "Failed to run OnRequestSellStructure_GriefCheck");
             }
         }
 
