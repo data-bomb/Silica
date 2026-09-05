@@ -31,6 +31,6 @@
     <PackageReference Include="Samboy063.Tomlet" Version="*"/>
   </ItemGroup>
 
-  <Import Project="..\include\net6.csproj" Condition="'$(TargetFramework)' == 'net6.0'"/>
-  <Import Project="..\include\netstandard21.csproj" Condition="'$(TargetFramework)' == 'netstandard2.1'"/>
+  <Import Project="..\include\net6.csproj" Condition="'$(TargetFramework)' == 'net6.0'" />
+  <Import Project="..\include\netstandard21.csproj" Condition="'$(TargetFramework)' == 'netstandard2.1'" />
 </Project>

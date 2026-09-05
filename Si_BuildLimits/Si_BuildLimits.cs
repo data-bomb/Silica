@@ -3,7 +3,7 @@ Silica Build Limits
 Copyright (C) 2025-2026 by databomb
 
 * Description *
-Allows servers to enforce limitations on number of structures.
+Allows servers to enforce limitations on number of structures & units.
 
 * License *
 This program is free software: you can redistribute it and/or modify
@@ -33,7 +33,7 @@ using System;
 using Si_BuildLimits;
 using MelonLoader.Utils;
 
-[assembly: MelonInfo(typeof(BuildLimits), "Build Limits", "1.0.4", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(BuildLimits), "Build Limits", "1.2.1", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -42,6 +42,15 @@ namespace Si_BuildLimits
     public class BuildLimits : MelonMod
     {
         const int nolimit = -1;
+
+        public enum EObjectComparison
+        {
+            ObjectInfoExact = 0,
+            StructureTypeComparison = 1,
+            StructureSelectionTypeComparison = 2,
+            UnitTypeComparison = 3,
+            StructureSelectionTypeComparisonSimilarDefense = 4
+        }
 
         public enum EDefenseRating
         {
@@ -55,6 +64,9 @@ namespace Si_BuildLimits
 
         static MelonPreferences_Category _modCategory = null!;
         static MelonPreferences_Entry<bool> _Pref_Block_BotCommanders = null!;
+        static MelonPreferences_Entry<bool> _Pref_Check_UnderConstruction = null!;
+        
+        // structures
         static MelonPreferences_Entry<int> _Pref_Limit_Bases_Humans = null!;
         static MelonPreferences_Entry<int> _Pref_Limit_Bases_Aliens = null!;
         static MelonPreferences_Entry<int> _Pref_Limit_Turrets_Humans = null!;
@@ -76,41 +88,57 @@ namespace Si_BuildLimits
         static MelonPreferences_Entry<int> _Pref_Limit_Prod4_Aliens = null!;
         static MelonPreferences_Entry<int> _Pref_Limit_Prod5_Humans = null!;
         static MelonPreferences_Entry<int> _Pref_Limit_Prod5_Aliens = null!;
-
+        
+        // units
+        static MelonPreferences_Entry<int> _Pref_Limit_Aircraft_Siege_Alien = null!;
+        static MelonPreferences_Entry<int> _Pref_Limit_Aircraft_Siege_Human = null!;
+        static MelonPreferences_Entry<int> _Pref_Limit_Heavy_Siege_Human = null!;
+        static MelonPreferences_Entry<int> _Pref_Limit_Heavy_Tank_Human = null!;
+        
         public override void OnInitializeMelon()
         {
             _modCategory ??= MelonPreferences.CreateCategory("Silica");
-            _Pref_Block_BotCommanders ??= _modCategory.CreateEntry<bool>("BuildLimits_EnforceLimitsOnAI",     true);
-            _Pref_Limit_Bases_Humans ??= _modCategory.CreateEntry<int>("BuildLimits_Humans_Bases",         nolimit); // HQ
-            _Pref_Limit_Bases_Aliens ??= _modCategory.CreateEntry<int>("BuildLimits_Aliens_Bases",         nolimit); // Nest
-            _Pref_Limit_Turrets_Humans ??= _modCategory.CreateEntry<int>("BuildLimits_Humans_Turrets",          15); // Turrets
-            _Pref_Limit_Radar ??= _modCategory.CreateEntry<int>("BuildLimits_Humans_RadarStations",        nolimit); // RadarStations
-            _Pref_Limit_Turrets_Aliens ??= _modCategory.CreateEntry<int>("BuildLimits_Aliens_Turrets",          25); // Spires
-            _Pref_Limit_Research_Humans ??= _modCategory.CreateEntry<int>("BuildLimits_Humans_Research",   nolimit); // ResearchFactory
-            _Pref_Limit_Research_Alien ??= _modCategory.CreateEntry<int>("BuildLimits_Aliens_Research",    nolimit); // QuantumCortex
-            _Pref_Limit_Nodes ??= _modCategory.CreateEntry<int>("BuildLimits_Nodes",                       nolimit); // Nodes
-            _Pref_Limit_Silos ??= _modCategory.CreateEntry<int>("BuildLimits_Silos",                       nolimit); // Silos
-            _Pref_Limit_Deposits_Humans ??= _modCategory.CreateEntry<int>("BuildLimits_Humans_Deposits",   nolimit); // Refinery
-            _Pref_Limit_Deposits_Aliens ??= _modCategory.CreateEntry<int>("BuildLimits_Aliens_Deposits",   nolimit); // BioCache
-            _Pref_Limit_Prod1_Humans ??= _modCategory.CreateEntry<int>("BuildLimits_Humans_Production_L1", nolimit); // Barracks
-            _Pref_Limit_Prod1_Aliens ??= _modCategory.CreateEntry<int>("BuildLimits_Aliens_Production_L1", nolimit); // Lesser Spawning Cyst
-            _Pref_Limit_Prod2_Humans ??= _modCategory.CreateEntry<int>("BuildLimits_Humans_Production_L2", nolimit); // LVF
-            _Pref_Limit_Prod2_Aliens ??= _modCategory.CreateEntry<int>("BuildLimits_Aliens_Production_L2", nolimit); // Greater Spawning Cyst
-            _Pref_Limit_Prod3_Humans ??= _modCategory.CreateEntry<int>("BuildLimits_Humans_Production_L3", nolimit); // HVF
-            _Pref_Limit_Prod3_Aliens ??= _modCategory.CreateEntry<int>("BuildLimits_Aliens_Production_L3", nolimit); // Grand Spawning Cyst
-            _Pref_Limit_Prod4_Humans ??= _modCategory.CreateEntry<int>("BuildLimits_Humans_Production_L4", nolimit); // UHVF
-            _Pref_Limit_Prod4_Aliens ??= _modCategory.CreateEntry<int>("BuildLimits_Aliens_Production_L4", nolimit); // Colossal Spawning Cyst
-            _Pref_Limit_Prod5_Humans ??= _modCategory.CreateEntry<int>("BuildLimits_Humans_Production_L5", nolimit); // Air Factory
-            _Pref_Limit_Prod5_Aliens ??= _modCategory.CreateEntry<int>("BuildLimits_Aliens_Production_L5", nolimit); // (undefined)
+            _Pref_Block_BotCommanders ??= _modCategory.CreateEntry<bool>("BuildLimits_EnforceLimitsOnAI",             true);
+            _Pref_Check_UnderConstruction ??= _modCategory.CreateEntry<bool>("BuildLimits_CheckUnderConstruction",    true);
+            
+            // structures
+            _Pref_Limit_Bases_Humans ??= _modCategory.CreateEntry<int>("BuildLimits_Humans_Bases",                 nolimit); // HQ
+            _Pref_Limit_Bases_Aliens ??= _modCategory.CreateEntry<int>("BuildLimits_Aliens_Bases",                 nolimit); // Nest
+            _Pref_Limit_Turrets_Humans ??= _modCategory.CreateEntry<int>("BuildLimits_Humans_Turrets",                  15); // Turrets
+            _Pref_Limit_Radar ??= _modCategory.CreateEntry<int>("BuildLimits_Humans_RadarStations",                nolimit); // RadarStations
+            _Pref_Limit_Turrets_Aliens ??= _modCategory.CreateEntry<int>("BuildLimits_Aliens_Turrets",                  25); // Spires
+            _Pref_Limit_Research_Humans ??= _modCategory.CreateEntry<int>("BuildLimits_Humans_Research",           nolimit); // ResearchFactory
+            _Pref_Limit_Research_Alien ??= _modCategory.CreateEntry<int>("BuildLimits_Aliens_Research",            nolimit); // QuantumCortex
+            _Pref_Limit_Nodes ??= _modCategory.CreateEntry<int>("BuildLimits_Nodes",                               nolimit); // Nodes
+            _Pref_Limit_Silos ??= _modCategory.CreateEntry<int>("BuildLimits_Silos",                               nolimit); // Silos
+            _Pref_Limit_Deposits_Humans ??= _modCategory.CreateEntry<int>("BuildLimits_Humans_Deposits",           nolimit); // Refinery
+            _Pref_Limit_Deposits_Aliens ??= _modCategory.CreateEntry<int>("BuildLimits_Aliens_Deposits",           nolimit); // BioCache
+            _Pref_Limit_Prod1_Humans ??= _modCategory.CreateEntry<int>("BuildLimits_Humans_Production_L1",         nolimit); // Barracks
+            _Pref_Limit_Prod1_Aliens ??= _modCategory.CreateEntry<int>("BuildLimits_Aliens_Production_L1",         nolimit); // Lesser Spawning Cyst
+            _Pref_Limit_Prod2_Humans ??= _modCategory.CreateEntry<int>("BuildLimits_Humans_Production_L2",         nolimit); // LVF
+            _Pref_Limit_Prod2_Aliens ??= _modCategory.CreateEntry<int>("BuildLimits_Aliens_Production_L2",         nolimit); // Greater Spawning Cyst
+            _Pref_Limit_Prod3_Humans ??= _modCategory.CreateEntry<int>("BuildLimits_Humans_Production_L3",         nolimit); // HVF
+            _Pref_Limit_Prod3_Aliens ??= _modCategory.CreateEntry<int>("BuildLimits_Aliens_Production_L3",         nolimit); // Grand Spawning Cyst
+            _Pref_Limit_Prod4_Humans ??= _modCategory.CreateEntry<int>("BuildLimits_Humans_Production_L4",         nolimit); // UHVF
+            _Pref_Limit_Prod4_Aliens ??= _modCategory.CreateEntry<int>("BuildLimits_Aliens_Production_L4",         nolimit); // Colossal Spawning Cyst
+            _Pref_Limit_Prod5_Humans ??= _modCategory.CreateEntry<int>("BuildLimits_Humans_Production_L5",         nolimit); // Air Factory
+            _Pref_Limit_Prod5_Aliens ??= _modCategory.CreateEntry<int>("BuildLimits_Aliens_Production_L5",         nolimit); // (undefined)
+            
+            // units
+            _Pref_Limit_Aircraft_Siege_Alien ??= _modCategory.CreateEntry<int>("BuildLimits_Aliens_SiegeAircraft", nolimit); // Colossus
+            _Pref_Limit_Aircraft_Siege_Human ??= _modCategory.CreateEntry<int>("BuildLimits_Humans_SiegeAircraft", nolimit); // Freighter, Bomber
+            _Pref_Limit_Heavy_Siege_Human ??= _modCategory.CreateEntry<int>("BuildLimits_Humans_HeavySiege",       nolimit); // Siege Tank, Crimson Tank
+            _Pref_Limit_Heavy_Tank_Human ??= _modCategory.CreateEntry<int>("BuildLimits_Humans_HeavyTank",         nolimit); // Railgun Tank, Heavy Tank
         }
 
         public override void OnLateInitializeMelon()
         {
             //subscribing to the events
             Event_Construction.OnRequestBuildStructure += OnRequestBuildStructure_LimitCheck;
+            Event_Construction.OnRequestBuildUnit += OnRequestBuildUnit_LimitCheck;
         }
 
-        public void NotifyLimitsEnforced(Team team, int maxStructures, string type)
+        public void NotifyLimitsEnforced(Team team, int maxAmount, string type, bool structure = true)
         {
             // find if team has commander
             Player? commander = null;
@@ -121,7 +149,8 @@ namespace Si_BuildLimits
 
             if (commander != null)
             {
-                string response = $"{type} structure limit ({maxStructures}) exceeded" + (maxStructures > 0 ? ". Sell/destroy before building again." : ".");
+                string category = (structure ? "structure" : "unit");
+                string response = $"{type} {category} limit ({maxAmount}) exceeded." + (maxAmount > 0 ? (structure ? "Sell" : "Destroy") + " more before purchasing." : "");
                 HelperMethods.SendConsoleMessageToPlayer(commander, response);
                 HelperMethods.SendChatMessageToTeam(team, response);
 
@@ -157,7 +186,7 @@ namespace Si_BuildLimits
                 if (_Pref_Limit_Nodes.Value > nolimit && constructionData.ObjectInfo.StructureType == StructureType.Resource &&
                         !constructionData.ObjectInfo.HasResourceDeposit && !constructionData.ObjectInfo.HasResourceStorage)
                 {
-                    int nodeStructureCount = parentStructure.Team.GetStructureCount(constructionData.ObjectInfo);
+                    int nodeStructureCount = GetStructureCount(parentStructure.Team, constructionData);
                     if (nodeStructureCount >= _Pref_Limit_Nodes.Value)
                     {
                         NotifyLimitsEnforced(parentStructure.Team, _Pref_Limit_Nodes.Value, "Node");
@@ -179,7 +208,8 @@ namespace Si_BuildLimits
                             return;
                         }
 
-                        int structureTypeCount = GetStructureTypeCount(parentStructure.Team, constructionData.ObjectInfo);
+                        int structureTypeCount = GetStructureCount(parentStructure.Team, constructionData,
+                            EObjectComparison.StructureSelectionTypeComparisonSimilarDefense);
                         if (structureTypeCount >= defenseStructureLimit)
                         {
                             NotifyLimitsEnforced(parentStructure.Team, defenseStructureLimit, "Turret");
@@ -195,7 +225,8 @@ namespace Si_BuildLimits
                             return;
                         }
 
-                        int radarStructureCount = GetStructureTypeCount(parentStructure.Team, constructionData.ObjectInfo);
+                        int radarStructureCount = GetStructureCount(parentStructure.Team, constructionData,
+                            EObjectComparison.StructureSelectionTypeComparisonSimilarDefense);
                         if (radarStructureCount >= radarStructureLimit)
                         {
                             NotifyLimitsEnforced(parentStructure.Team, radarStructureLimit, "Radar Station");
@@ -223,7 +254,8 @@ namespace Si_BuildLimits
                             return;
                         }
 
-                        int structureSelectionTypeCount = GetStructureSelectionTypeCount(parentStructure.Team, constructionData.ObjectInfo);
+                        int structureSelectionTypeCount = GetStructureCount(parentStructure.Team, constructionData,
+                            EObjectComparison.StructureSelectionTypeComparison);
                         if (structureSelectionTypeCount >= productionStructureLimit)
                         {
                             NotifyLimitsEnforced(parentStructure.Team, productionStructureLimit, (parentStructure.Team.Index == (int)SiConstants.ETeam.Alien ? "Lesser Spawning Cyst" : "Barracks"));
@@ -242,7 +274,8 @@ namespace Si_BuildLimits
                             return;
                         }
 
-                        int structureSelectionTypeCount = GetStructureSelectionTypeCount(parentStructure.Team, constructionData.ObjectInfo);
+                        int structureSelectionTypeCount = GetStructureCount(parentStructure.Team, constructionData,
+                            EObjectComparison.StructureSelectionTypeComparison);
                         if (structureSelectionTypeCount >= productionStructureLimit)
                         {
                             NotifyLimitsEnforced(parentStructure.Team, productionStructureLimit, (parentStructure.Team.Index == (int)SiConstants.ETeam.Alien ? "Greater Spawning Cyst" : "Light Vehicle Factory"));
@@ -261,7 +294,8 @@ namespace Si_BuildLimits
                             return;
                         }
 
-                        int structureSelectionTypeCount = GetStructureSelectionTypeCount(parentStructure.Team, constructionData.ObjectInfo);
+                        int structureSelectionTypeCount = GetStructureCount(parentStructure.Team, constructionData,
+                            EObjectComparison.StructureSelectionTypeComparison);
                         if (structureSelectionTypeCount >= productionStructureLimit)
                         {
                             NotifyLimitsEnforced(parentStructure.Team, productionStructureLimit, (parentStructure.Team.Index == (int)SiConstants.ETeam.Alien ? "Grand Spawning Cyst" : "Heavy Vehicle Factory"));
@@ -280,7 +314,8 @@ namespace Si_BuildLimits
                             return;
                         }
 
-                        int structureSelectionTypeCount = GetStructureSelectionTypeCount(parentStructure.Team, constructionData.ObjectInfo);
+                        int structureSelectionTypeCount = GetStructureCount(parentStructure.Team, constructionData,
+                            EObjectComparison.StructureSelectionTypeComparison);
                         if (structureSelectionTypeCount >= productionStructureLimit)
                         {
                             NotifyLimitsEnforced(parentStructure.Team, productionStructureLimit, (parentStructure.Team.Index == (int)SiConstants.ETeam.Alien ? "Colossal Spawning Cyst" : "Ultra Heavy Vehicle Factory"));
@@ -299,7 +334,8 @@ namespace Si_BuildLimits
                             return;
                         }
 
-                        int structureSelectionTypeCount = GetStructureSelectionTypeCount(parentStructure.Team, constructionData.ObjectInfo);
+                        int structureSelectionTypeCount = GetStructureCount(parentStructure.Team, constructionData,
+                            EObjectComparison.StructureSelectionTypeComparison);
                         if (structureSelectionTypeCount >= productionStructureLimit)
                         {
                             NotifyLimitsEnforced(parentStructure.Team, productionStructureLimit, (parentStructure.Team.Index == (int)SiConstants.ETeam.Alien ? "tbd" : "Air Factory"));
@@ -321,7 +357,7 @@ namespace Si_BuildLimits
                         return;
                     }
 
-                    int depositStructureCount = parentStructure.Team.GetStructureCount(constructionData.ObjectInfo);
+                    int depositStructureCount = GetStructureCount(parentStructure.Team, constructionData);
                     if (depositStructureCount >= depositStructureLimit)
                     {
                         NotifyLimitsEnforced(parentStructure.Team, depositStructureLimit, (parentStructure.Team.Index == (int)SiConstants.ETeam.Alien ? "BioCache" : "Refinery"));
@@ -341,7 +377,7 @@ namespace Si_BuildLimits
                         return;
                     }
 
-                    int structureTypeCount = GetStructureTypeCount(parentStructure.Team, constructionData.ObjectInfo);
+                    int structureTypeCount = GetStructureCount(parentStructure.Team, constructionData, EObjectComparison.StructureTypeComparison);
                     if (structureTypeCount >= researchStructureLimit)
                     {
                         NotifyLimitsEnforced(parentStructure.Team, researchStructureLimit, "Research");
@@ -355,7 +391,7 @@ namespace Si_BuildLimits
                 if (_Pref_Limit_Silos.Value > nolimit && constructionData.ObjectInfo.StructureType == StructureType.Resource &&
                         !constructionData.ObjectInfo.HasResourceDeposit && constructionData.ObjectInfo.HasResourceStorage)
                 {
-                    int siloStructureCount = parentStructure.Team.GetStructureCount(constructionData.ObjectInfo);
+                    int siloStructureCount = GetStructureCount(parentStructure.Team, constructionData);
                     if (siloStructureCount >= _Pref_Limit_Silos.Value)
                     {
                         NotifyLimitsEnforced(parentStructure.Team, _Pref_Limit_Silos.Value, "Silo");
@@ -375,7 +411,7 @@ namespace Si_BuildLimits
                         return;
                     }
 
-                    int baseStructureCount = parentStructure.Team.GetStructureCount(constructionData.ObjectInfo);
+                    int baseStructureCount = GetStructureCount(parentStructure.Team, constructionData);
                     if (baseStructureCount >= baseStructureLimit)
                     {
                         NotifyLimitsEnforced(parentStructure.Team, baseStructureLimit, (parentStructure.Team.Index == (int)SiConstants.ETeam.Alien ? "Nest" : "Headquarters"));
@@ -390,38 +426,335 @@ namespace Si_BuildLimits
                 HelperMethods.PrintError(error, "Failed to run OnRequestBuildStructure_LimitCheck");
             }
         }
-        public int GetStructureTypeCount(Team team, ObjectInfo structureInfo)
+        
+        public void OnRequestBuildUnit_LimitCheck(object? sender, OnRequestBuildArgs args)
         {
-            int num = 0;
-            foreach (Structure structure in team.Structures)
+            try
             {
-                if (!structure)
+                if (args == null)
                 {
-                    MelonLogger.Error("GetStructureTypeCount: A structure is NULL for team '" + team.TeamShortName + "', skipping it...");
+                    return;
                 }
-                else if ((structure.ObjectInfo.StructureType == structureInfo.StructureType) && !structure.IsDestroyed)
+
+                // ignore AI build depending on preferences
+                if (!_Pref_Block_BotCommanders.Value && !args.PlayerInitiated)
                 {
-                    num++;
+                    return;
                 }
+                
+                ConstructionData constructionData = args.ConstructionData;
+                Structure parentStructure = args.ParentStructure;
+                if (!constructionData || !constructionData.IsUnit || !constructionData.ObjectToBuild || !parentStructure || !parentStructure.Team)
+                {
+                    return;
+                }
+                
+                // check for aircraft super-siege units
+                if (constructionData.ObjectInfo.UnitType == UnitType.Aircraft &&
+                    constructionData.ObjectInfo.UnitWeight == UnitWeight.Heavy &&
+                    constructionData.ObjectInfo.OffenseRating == 5)
+                {
+                    int superSiegeAircraftLimit = (parentStructure.Team.Index == (int)SiConstants.ETeam.Alien ? _Pref_Limit_Aircraft_Siege_Alien.Value : _Pref_Limit_Aircraft_Siege_Human.Value);
+
+                    if (superSiegeAircraftLimit <= nolimit)
+                    {
+                        return;
+                    }
+
+                    int unitTypeCount = GetUnitCount(parentStructure.Team, constructionData, EObjectComparison.UnitTypeComparison);
+                    if (unitTypeCount >= superSiegeAircraftLimit)
+                    {
+                        NotifyLimitsEnforced(parentStructure.Team, superSiegeAircraftLimit, "Siege Aircraft");
+                        args.Block = true;
+                    }
+
+                    return;
+                }
+                
+                // check for ultra-heavy siege units
+                if (constructionData.ObjectInfo.UnitType == UnitType.Siege &&
+                    constructionData.ObjectInfo.UnitWeight == UnitWeight.Heavy &&
+                    constructionData.ObjectInfo.OffenseRating == 5)
+                {
+                    // no alien equivalent (yet..)
+                    if (parentStructure.Team.Index == (int)SiConstants.ETeam.Alien)
+                    {
+                        return;
+                    }
+                    
+                    int heavySiegeUnitLimit = _Pref_Limit_Heavy_Siege_Human.Value;
+
+                    if (heavySiegeUnitLimit <= nolimit)
+                    {
+                        return;
+                    }
+
+                    int unitTypeCount = GetUnitCount(parentStructure.Team, constructionData, EObjectComparison.UnitTypeComparison);
+                    if (unitTypeCount >= heavySiegeUnitLimit)
+                    {
+                        NotifyLimitsEnforced(parentStructure.Team, heavySiegeUnitLimit, "Heavy Siege");
+                        args.Block = true;
+                    }
+
+                    return;
+                }
+                
+                // check for heavy tanks
+                if (constructionData.ObjectInfo.UnitType == UnitType.Tank &&
+                    constructionData.ObjectInfo.UnitWeight == UnitWeight.Heavy &&
+                    constructionData.ObjectInfo.OffenseRating >= 4)
+                {
+                    // no alien equivalent (yet..)
+                    if (parentStructure.Team.Index == (int)SiConstants.ETeam.Alien)
+                    {
+                        return;
+                    }
+                    
+                    int heavyTankUnitLimit = _Pref_Limit_Heavy_Tank_Human.Value;
+
+                    if (heavyTankUnitLimit <= nolimit)
+                    {
+                        return;
+                    }
+
+                    int unitTypeCount = GetUnitCount(parentStructure.Team, constructionData, EObjectComparison.UnitTypeComparison);
+                    if (unitTypeCount >= heavyTankUnitLimit)
+                    {
+                        NotifyLimitsEnforced(parentStructure.Team, heavyTankUnitLimit, "Heavy Tank");
+                        args.Block = true;
+                    }
+
+                    return;
+                }
+                //_Pref_Limit_Heavy_Tank_Human
             }
-            return num;
+            catch (Exception error)
+            {
+                HelperMethods.PrintError(error, "Failed to run OnRequestBuildUnit_LimitCheck");
+            }
         }
 
-        public int GetStructureSelectionTypeCount(Team team, ObjectInfo structureInfo)
+        public int GetStructureCount(Team team, ConstructionData constructionData, EObjectComparison objectComparison = EObjectComparison.ObjectInfoExact)
         {
-            int num = 0;
+            int count = 0;
+            
             foreach (Structure structure in team.Structures)
             {
                 if (!structure)
                 {
-                    MelonLogger.Error("GetStructureSelectionTypeCount: A structure is NULL for team '" + team.TeamShortName + "', skipping it...");
+                    // note add extra "." to distinguish between built-in GetStructureCount method
+                    MelonLogger.Error("GetStructureCount: A structure is NULL for team '" + team.TeamShortName + "', skipping it....");
+                    continue;
                 }
-                else if ((structure.ObjectInfo.StructureSelectionType == structureInfo.StructureSelectionType) && !structure.IsDestroyed)
+
+                if (structure.IsDestroyed)
                 {
-                    num++;
+                    continue;
+                }
+
+                switch (objectComparison)
+                {
+                    case EObjectComparison.ObjectInfoExact:
+                    {
+                        if (structure.ObjectInfo == constructionData.ObjectInfo)
+                        {
+                            count++;
+                        }
+
+                        break;
+                    }
+                    case EObjectComparison.StructureTypeComparison:
+                    {
+                        if (structure.ObjectInfo.StructureType == constructionData.ObjectInfo.StructureType)
+                        {
+                            count++;
+                        }
+
+                        break;
+                    }
+                    case EObjectComparison.StructureSelectionTypeComparison:
+                    {
+                        if (structure.ObjectInfo.StructureSelectionType == constructionData.ObjectInfo.StructureSelectionType)
+                        {
+                            count++;
+                        }
+
+                        break;
+                    }
+                    case EObjectComparison.StructureSelectionTypeComparisonSimilarDefense:
+                    {
+                        if (structure.ObjectInfo.StructureSelectionType == constructionData.ObjectInfo.StructureSelectionType)
+                        {
+                            // defense rating 0 
+                            if (constructionData.ObjectInfo.DefenseRating == (int)EDefenseRating.RadarStation)
+                            {
+                                if (structure.ObjectInfo.DefenseRating == (int)EDefenseRating.RadarStation)
+                                {
+                                    count++;    
+                                }
+                            }
+                            // defense rating 1+
+                            else
+                            {
+                                if (structure.ObjectInfo.DefenseRating > (int)EDefenseRating.RadarStation)
+                                {
+                                    count++;
+                                }
+                            }
+                        }
+                        
+                        break;
+                    }
                 }
             }
-            return num;
+
+            if (_Pref_Check_UnderConstruction.Value)
+            {
+                count += GetObjectUnderConstructionCount(team, constructionData, true, objectComparison);
+            }
+            
+            return count;
+        }
+
+        public int GetUnitCount(Team team, ConstructionData constructionData, EObjectComparison objectComparison)
+        {
+            int count = 0;
+            
+            foreach (Unit unit in team.Units)
+            {
+                if (!unit)
+                {
+                    MelonLogger.Error("GetUnitTypeCount: A unit is NULL for team '" + team.TeamShortName + "', skipping it...");
+                    continue;
+                }
+
+                if (unit.IsDestroyed)
+                {
+                    continue;
+                }
+                
+                switch (objectComparison)
+                {
+                    case EObjectComparison.ObjectInfoExact:
+                    {
+                        if (unit.ObjectInfo == constructionData.ObjectInfo)
+                        {
+                            count++;
+                        }
+
+                        break;
+                    }
+                    case EObjectComparison.UnitTypeComparison:
+                    {
+                        if (unit.ObjectInfo.UnitType == constructionData.ObjectInfo.UnitType)
+                        {
+                            count++;
+                        }
+
+                        break;
+                    }
+                }
+            }
+            
+            if (_Pref_Check_UnderConstruction.Value)
+            {
+                count += GetObjectUnderConstructionCount(team, constructionData, false, objectComparison);
+            }
+            
+            return count;
+        }
+        
+        public int GetObjectUnderConstructionCount(Team team, ConstructionData constructionData, bool checkStructures, EObjectComparison objectComparison)
+        {
+            int count = 0;
+            
+            foreach (ConstructionSite constructionSite in ConstructionSite.ConstructionSites)
+            {
+                if (!constructionSite)
+                {
+                    MelonLogger.Error("GetObjectUnderConstructionCount: A construction site is NULL for team '" + team.TeamShortName + "', skipping it...");
+                    continue;
+                }
+
+                if (constructionSite.Team.Index != team.Index)
+                {
+                    continue;
+                }
+                
+                // check if it should be a structure but it's not
+                // check if it should be a unit but it's not
+                if ((checkStructures && !constructionSite.ConstructionData.IsStructure) ||
+                    (!checkStructures && !constructionSite.ConstructionData.IsUnit))
+                {
+                    continue;
+                }
+
+                switch (objectComparison)
+                {
+                    case EObjectComparison.ObjectInfoExact:
+                    {
+                        if (constructionSite.ConstructionData.ObjectInfo == constructionData.ObjectInfo)
+                        {
+                            count++;                    
+                        }
+
+                        break;
+                    }
+                    case EObjectComparison.StructureTypeComparison:
+                    {
+                        if (constructionSite.ConstructionData.ObjectInfo.StructureType == constructionData.ObjectInfo.StructureType)
+                        {
+                            count++;
+                        }
+
+                        break;
+                    }
+                    case EObjectComparison.StructureSelectionTypeComparison:
+                    {
+                        if (constructionSite.ConstructionData.ObjectInfo.StructureSelectionType == constructionData.ObjectInfo.StructureSelectionType)
+                        {
+                            count++;
+                        }
+
+                        break;
+                    }
+                    case EObjectComparison.UnitTypeComparison:
+                    {
+                        if (constructionSite.ConstructionData.ObjectInfo.UnitType == constructionData.ObjectInfo.UnitType)
+                        {
+                            count++;
+                        }
+                        
+                        break;
+                    }
+                    case EObjectComparison.StructureSelectionTypeComparisonSimilarDefense:
+                    {
+                        if (constructionSite.ConstructionData.ObjectInfo.StructureSelectionType == constructionData.ObjectInfo.StructureSelectionType)
+                        {
+                            // defense rating 0 
+                            if (constructionData.ObjectInfo.DefenseRating == (int)EDefenseRating.RadarStation)
+                            {
+                                if (constructionSite.ConstructionData.ObjectInfo.DefenseRating == (int)EDefenseRating.RadarStation)
+                                {
+                                    count++;    
+                                }
+                            }
+                            // defense rating 1+
+                            else
+                            {
+                                if (constructionSite.ConstructionData.ObjectInfo.DefenseRating > (int)EDefenseRating.RadarStation)
+                                {
+                                    count++;
+                                }
+                            }
+                        }
+                        
+                        break;
+                    }
+                }
+            }
+
+            return count;
         }
     }
 }
