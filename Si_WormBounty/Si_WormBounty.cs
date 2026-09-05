@@ -1,6 +1,6 @@
 ﻿/*
 Silica Worm Bounty
-Copyright (C) 2024-2025 by databomb
+Copyright (C) 2024-2026 by databomb
 
 * Description *
 Allows players who kill a Great Worm to receive a bounty, and allows
@@ -36,8 +36,7 @@ using System;
 using UnityEngine;
 using Si_WormBounty;
 
-
-[assembly: MelonInfo(typeof(WormBounty), "Worm Bounty", "1.1.3", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(WormBounty), "Worm Bounty", "1.1.4", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -115,9 +114,10 @@ namespace Si_WormBounty
             {
                 return;
             }
-
-            greatWormUnit.OnAttackOrder(target, target.transform.position, AgentMoveSpeed.Fast, true);
-            greatWormUnit.OnMoveOrder(targetPosition, AgentMoveSpeed.Fast, true);
+            
+            // TODO: leverage AI changes to issue attack & movement orders
+            //greatWormUnit.OnAttackOrder(target, target.transform.position, AgentMoveSpeed.Fast, true);
+            //greatWormUnit.OnMoveOrder(targetPosition, AgentMoveSpeed.Fast, true);
 
             MelonLogger.Msg("Spawning Great Worm to devour player (" + targetPlayer.PlayerName + ")");
             HelperMethods.AlertAdminActivity(callerPlayer, targetPlayer, "devoured");
