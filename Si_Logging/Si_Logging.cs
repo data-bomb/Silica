@@ -1,6 +1,6 @@
 ﻿/*
  Silica Logging Mod
- Copyright (C) 2023-2025 by databomb
+ Copyright (C) 2023-2026 by databomb
  
  * Description *
  For Silica servers, creates a log file with console replication
@@ -23,8 +23,10 @@
 
 #if NET6_0
 using Il2Cpp;
+using Il2CppSilica;
 using Il2CppSteamworks;
 #else
+using Silica;
 using Steamworks;
 #endif
 
@@ -39,9 +41,8 @@ using System.Linq;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
-using static MelonLoader.MelonLogger;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.9.10", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.9.11", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 #if NET6_0
 [assembly: MelonOptionalDependencies("Admin Mod", "QList")]
@@ -119,7 +120,7 @@ namespace Si_Logging
             //subscribing to the event
             Event_Roles.OnRoleChanged += OnRoleChanged;
             Event_Chat.OnRequestPlayerChat += OnRequestPlayerChat;
-            Event_Structures.OnCommanderDestroyedStructure += OnCommanderDestroyedStructure_Log;
+            Event_Structures.OnCommanderSoldStructure += OnCommanderSoldStructure_Log;
 
 #if NET6_0
             bool QListLoaded = RegisteredMelons.Any(m => m.Info.Name == "QList");
@@ -786,7 +787,7 @@ namespace Si_Logging
         }
 
         // 061. Team Objectives/Actions - Structure Deletion
-        public void OnCommanderDestroyedStructure_Log(object? sender, OnCommanderDestroyedStructureArgs args)
+        public void OnCommanderSoldStructure_Log(object? sender, OnCommanderSoldStructureArgs args)
         {
             try
             {
