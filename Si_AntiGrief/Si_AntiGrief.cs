@@ -37,7 +37,7 @@ using UnityEngine;
 using System.Runtime.CompilerServices;
 using MelonLoader.Utils;
 
-[assembly: MelonInfo(typeof(AntiGrief), "Anti-Grief", "1.6.4", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(AntiGrief), "Anti-Grief", "1.6.5", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 #if NET6_0
 [assembly: MelonOptionalDependencies("Admin Mod", "QList")]
@@ -100,7 +100,7 @@ namespace Si_AntiGrief
             Event_Roles.OnRoleChanged += OnRoleChanged;
             Event_Units.OnRequestEnterUnit += OnRequestEnterUnit;
             Event_Units.OnRequestInviteToGroup += OnRequestInviteToGroup_GriefCheck;
-            Event_Structures.OnRequestDestroyStructure += OnRequestDestroyStructure_GriefCheck;
+            Event_Structures.OnRequestSellStructure += OnRequestSellStructure_GriefCheck;
 
             #if NET6_0
             bool QListLoaded = RegisteredMelons.Any(m => m.Info.Name == "QList");
@@ -243,7 +243,7 @@ namespace Si_AntiGrief
             }
         }
 
-        public void OnRequestDestroyStructure_GriefCheck(object? sender, OnRequestDestroyStructureArgs args)
+        public void OnRequestSellStructure_GriefCheck(object? sender, OnRequestSellStructureArgs args)
         {
             try
             {
