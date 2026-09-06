@@ -21,7 +21,7 @@ jobs:
   beta-check:
     runs-on: ubuntu-latest
     steps:
-      - name: generate new branch variable for checkout@v4
+      - name: generate new branch variable for checkout@v5
         id: branch-ident
         run: echo "branch_identifier=$(echo ${GITHUB_REF#refs/heads/})" >> "$GITHUB_OUTPUT"
       - name: beta branch detected
@@ -36,7 +36,7 @@ jobs:
   get-commit-number:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
       with:
         fetch-depth: 0
     - name: Generate the commit number
@@ -53,7 +53,7 @@ jobs:
       - name: Save branch name
         shell: bash
         run: echo "BRANCH_NAME=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           ref: ${{ env.BRANCH_NAME }}
       - uses: dorny/paths-filter@v3
@@ -82,11 +82,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{ needs.beta-check.outputs.branch_identifier }}
       - name: Game References
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: ${{ secrets.PRIV_R }}
           token: ${{ secrets.FGAT_PRIV_R }}
@@ -96,7 +96,7 @@ jobs:
         run: |
           cp -r references/. include
       - name: Download FixNullableAttribute
-        uses: robinraju/release-downloader@v1.9
+        uses: robinraju/release-downloader@v1
         with:
           repository: "data-bomb/FixNullableAttribute"
           latest: true
@@ -107,7 +107,7 @@ jobs:
         run: |
           mv FixNullableAttribute.dll include/net6.0/
       - name: Setup .NET SDK
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: 6.0.x
       - name: Restore
@@ -144,7 +144,7 @@ jobs:
       - name: Save branch name
         shell: bash
         run: echo "BRANCH_NAME=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           ref: ${{ env.BRANCH_NAME }}
       - name: Generate matrix with all modules of the repo
@@ -180,11 +180,11 @@ jobs:
     - name: main branch detected
       if: ${{ github.ref == 'refs/heads/main' }}
       run: echo "Using main branch"
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
       with:
         ref: ${{ env.BRANCH_NAME }}
     - name: Game References
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         repository: ${{ secrets.PRIV_R }}
         token: ${{ secrets.FGAT_PRIV_R }}
@@ -196,7 +196,7 @@ jobs:
         cp -r references/. include
         
     - name: Download FixNullableAttribute
-      uses: robinraju/release-downloader@v1.9
+      uses: robinraju/release-downloader@v1
       with:
         repository: "data-bomb/FixNullableAttribute"
         latest: true
@@ -209,7 +209,7 @@ jobs:
         mv FixNullableAttribute.dll include/net6.0/
 
     - name: Download QList
-      uses: robinraju/release-downloader@v1.9
+      uses: robinraju/release-downloader@v1
       with:
         repository: "dodad-2/QList"
         latest: true
@@ -222,7 +222,7 @@ jobs:
         mv QList.dll include/
         
     - name: Setup .NET 6
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v5
       with:
         dotnet-version: 6.0.x
         
@@ -236,17 +236,17 @@ jobs:
         cd ${{ matrix.path }}
         dotnet build --no-restore -c ${{env.BUILD_TYPE}}
         
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v6
       with:
         name: ${{ matrix.path }}-build-${{ env.GITHUB_SHA_SHORT }}
         path: ${{ matrix.path }}/bin/${{env.BUILD_TYPE}}/**/${{ matrix.path }}.dll
         
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v6
       with:
         name: dedicated-server-${{ matrix.path }}-build-${{ env.GITHUB_SHA_SHORT }}
         path: ${{ matrix.path }}/bin/${{env.BUILD_TYPE}}/netstandard2.1/${{ matrix.path }}.dll
         
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v6
       with:
         name: listen-server-${{ matrix.path }}-build-${{ env.GITHUB_SHA_SHORT }}
         path: ${{ matrix.path }}/bin/${{env.BUILD_TYPE}}/net6.0/${{ matrix.path }}.dll
@@ -264,7 +264,7 @@ jobs:
         shell: bash
         run: echo "GITHUB_SHA_SHORT=${GITHUB_SHA::7}" >> $GITHUB_ENV
         
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           ref: ${{ needs.beta-check.outputs.branch_identifier }}
           sparse-checkout: |
@@ -311,7 +311,7 @@ jobs:
           path: release/listen/Mods
 
       - name: Download Updater Plugin
-        uses: robinraju/release-downloader@v1.9
+        uses: robinraju/release-downloader@v1
         with:
           repository: "data-bomb/MelonLoader_SilicaUpdater"
           latest: true
@@ -320,7 +320,7 @@ jobs:
           zipBall: false
           
       - name: Download Discord Status Plugin
-        uses: robinraju/release-downloader@v1.9
+        uses: robinraju/release-downloader@v1
         with:
           repository: "data-bomb/MelonLoader_SilicaDiscordRP"
           latest: true
