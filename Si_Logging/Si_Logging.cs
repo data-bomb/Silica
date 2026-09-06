@@ -42,7 +42,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.9.11", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.9.12", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 #if NET6_0
 [assembly: MelonOptionalDependencies("Admin Mod", "QList")]
@@ -57,6 +57,7 @@ namespace Si_Logging
     {
         static int[] teamResourcesCollected = new int[SiConstants.MaxPlayableTeams + 1];
         static int[] teamResourcesSpent = new int[SiConstants.MaxPlayableTeams + 1];
+        static int[] currentTechTier = new int[SiConstants.MaxPlayableTeams + 1];
         
         static Player?[]? lastCommander;
 
@@ -1092,7 +1093,6 @@ namespace Si_Logging
         }
 
         // 061. Team Objectives/Actions - Research Tier
-        public static int[] currentTechTier = new int[SiConstants.MaxPlayableTeams];
         public static int getHighestTechTier(Team team)
         {
             return team.TechnologyTier;
