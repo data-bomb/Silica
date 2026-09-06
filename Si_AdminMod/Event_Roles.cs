@@ -165,7 +165,7 @@ namespace SilicaAdminMod
             if (gameModeInstance is MP_Strategy strategyInstance)
             {
                 strategyInstance.SetCommander(baseTeamSetup.Team, requestingPlayer);
-                strategyInstance.RPC_SynchCommander(baseTeamSetup.Team);
+                strategyInstance.RPC_SynchCommander(baseTeamSetup.Team, false);
             }
             else if (gameModeInstance is MP_TowerDefense defenseInstance)
             { 
@@ -178,7 +178,14 @@ namespace SilicaAdminMod
             setCommanderMethod.Invoke(gameModeInstance, parameters: new object?[] { baseTeamSetup.Team, requestingPlayer });
 
             MethodInfo synchCommanderMethod = gameModeType.GetMethod("RPC_SynchCommander", BindingFlags.Instance | BindingFlags.NonPublic);
-            synchCommanderMethod.Invoke(gameModeInstance, new object[] { baseTeamSetup.Team });
+            if (gameModeInstance is MP_Strategy)
+            {
+                synchCommanderMethod.Invoke(gameModeInstance, parameters: new object?[] { baseTeamSetup.Team, false });    
+            }
+            else
+            {
+                synchCommanderMethod.Invoke(gameModeInstance, new object[] { baseTeamSetup.Team });
+            }
             #endif
 
             FireOnRoleChangedEvent(requestingPlayer, GameModeExt.ETeamRole.COMMANDER);
