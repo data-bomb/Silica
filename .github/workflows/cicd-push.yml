@@ -364,7 +364,7 @@ jobs:
           mv ListenServer-v${{ needs.get-commit-number.outputs.comnum }}-${{ env.GITHUB_SHA_SHORT }}.zip Beta_ListenServer-v${{ needs.get-commit-number.outputs.comnum }}-${{ env.GITHUB_SHA_SHORT }}.zip
           
       - name: Main Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         if: needs.beta-check.outputs.branch_identifier == 'main'
         with:
           tag_name: v${{ needs.get-commit-number.outputs.comnum }}
@@ -375,7 +375,7 @@ jobs:
             ListenServer-v${{ needs.get-commit-number.outputs.comnum }}-${{ env.GITHUB_SHA_SHORT }}.zip
 
       - name: Beta Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         if: needs.beta-check.outputs.branch_identifier == 'beta'
         with:
           tag_name: v${{ needs.get-commit-number.outputs.comnum }}-Beta
