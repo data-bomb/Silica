@@ -36,7 +36,7 @@ using Silica.UI.Menus;
 using Sandbox.Flow.Gizmos;
 using Baltarus.Blueprints;
 
-[assembly: MelonInfo(typeof(Optimizer), "Server Optimizer", "0.7.1", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(Optimizer), "Server Optimizer", "0.7.2", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -115,8 +115,6 @@ namespace Si_ServerOptimizer
         internal class Patch_Disable_LOD8 { static bool Prefix() { return false; } }
 
         // animation
-        [HarmonyPatch(typeof(UnitAnimator), "Awake")]
-        internal class Patch_Disable_Animator_Unit1 { static bool Prefix() { return false; } }
         [HarmonyPatch(typeof(UnitAnimator), nameof(UnitAnimator.OnAnimatorUpdate))]
         internal class Patch_Disable_Animator_Unit2 { static bool Prefix() { return false; } }
 
