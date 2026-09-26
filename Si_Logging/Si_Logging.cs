@@ -1100,7 +1100,22 @@ namespace Si_Logging
 
         public static void initializeRound(ref int[] tiers)
         {
-            for (int i = 0; i < Team.NumTeams; i++)
+            // Team.NumTeams counts every team in the database (e.g. the *_Allied teams), which can exceed MaxPlayableTeams
+            int numTeams = Team.NumTeams;
+            if (tiers.Length < numTeams)
+            {
+                tiers = new int[numTeams];
+            }
+            if (teamResourcesCollected.Length < numTeams)
+            {
+                teamResourcesCollected = new int[numTeams];
+            }
+            if (teamResourcesSpent.Length < numTeams)
+            {
+                teamResourcesSpent = new int[numTeams];
+            }
+
+            for (int i = 0; i < numTeams; i++)
             {
                 tiers[Team.Teams[i].Index] = 0;
                 teamResourcesCollected[i] = 0;
@@ -1174,15 +1189,17 @@ namespace Si_Logging
                 {
                     GameModeExt gameModeInstance = GameObject.FindFirstObjectByType<GameModeExt>();
 
+                    // reset first so a failure below can't suppress the next Round_Win
+                    firedRoundEndOnce = false;
+
                     string gamemode = GetGameMode();
                     string gametype = GetGameType(gameModeInstance);
-                    
+
                     PrintLogLine($"World triggered \"Round_Start\" (gamemode \"{gamemode}\") (gametype \"{gametype}\")");
                     LogStartingResources();
                     LogStartingStructures();
 
                     initializeRound(ref currentTechTier);
-                    firedRoundEndOnce = false;
                 }
                 catch (Exception error)
                 {

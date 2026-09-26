@@ -227,7 +227,7 @@ namespace Si_FriendlyFireLimits
                     
                     // is the instigator AI or player-controlled?
                     BaseGameObject attackerBase = GameFuncs.GetBaseGameObject(__3);
-                    if (attackerBase == null || attackerBase.NetworkComponent.OwnerPlayer != null)
+                    if (attackerBase == null || attackerBase.NetworkComponent == null || attackerBase.NetworkComponent.OwnerPlayer != null)
                     {
                         return true;
                     }
