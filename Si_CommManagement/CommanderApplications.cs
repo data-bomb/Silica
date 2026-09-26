@@ -184,6 +184,41 @@ namespace Si_CommanderManagement
             }
         }
 
+        // the vanilla commander lottery bypasses OnRequestCommander, so drop commander-banned entrants before it draws
+        [HarmonyPatch(typeof(MP_Strategy), "ResolveCommanderLottery")]
+        private static class ApplyPatch_MPStrategy_ResolveCommanderLottery
+        {
+            public static void Prefix(MP_Strategy __instance)
+            {
+                try
+                {
+                    if (__instance == null || CommanderBans.BanList == null)
+                    {
+                        return;
+                    }
+
+                    Dictionary<Team, List<Player>>? lottery = Traverse.Create(__instance).Field("CommanderLottery").GetValue<Dictionary<Team, List<Player>>>();
+                    if (lottery == null)
+                    {
+                        return;
+                    }
+
+                    foreach (List<Player> entrants in lottery.Values)
+                    {
+                        int removed = entrants.RemoveAll(player => player != null && CommanderBans.IsBanned(player));
+                        if (removed > 0)
+                        {
+                            MelonLogger.Msg("Removed " + removed + " commander-banned player(s) from the vanilla commander lottery.");
+                        }
+                    }
+                }
+                catch (Exception error)
+                {
+                    HelperMethods.PrintError(error, "Failed to run MP_Strategy::ResolveCommanderLottery");
+                }
+            }
+        }
+
         public static void HoldCommanderLottery()
         {
             Mutineer.ClearMutineerList();
