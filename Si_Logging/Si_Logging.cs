@@ -42,7 +42,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.9.12", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.9.13", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 #if NET6_0
 [assembly: MelonOptionalDependencies("Admin Mod", "QList")]
@@ -1100,22 +1100,7 @@ namespace Si_Logging
 
         public static void initializeRound(ref int[] tiers)
         {
-            // Team.NumTeams counts every team in the database (e.g. the *_Allied teams), which can exceed MaxPlayableTeams
-            int numTeams = Team.NumTeams;
-            if (tiers.Length < numTeams)
-            {
-                tiers = new int[numTeams];
-            }
-            if (teamResourcesCollected.Length < numTeams)
-            {
-                teamResourcesCollected = new int[numTeams];
-            }
-            if (teamResourcesSpent.Length < numTeams)
-            {
-                teamResourcesSpent = new int[numTeams];
-            }
-
-            for (int i = 0; i < numTeams; i++)
+            for (int i = 0; i <= SiConstants.MaxPlayableTeams; i++)
             {
                 tiers[Team.Teams[i].Index] = 0;
                 teamResourcesCollected[i] = 0;
