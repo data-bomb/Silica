@@ -109,6 +109,58 @@ namespace SilicaAdminMod
             }
         }
 
+        // the vanilla commander lottery (entered before the round starts) assigns commanders without a REQUEST_ROLE RPC
+        [HarmonyPatch(typeof(MP_Strategy), "ResolveCommanderLottery")]
+        static class ApplyPatch_MPStrategy_ResolveCommanderLottery
+        {
+            public static void Prefix(MP_Strategy __instance, out Player?[]? __state)
+            {
+                __state = null;
+
+                try
+                {
+                    if (__instance == null)
+                    {
+                        return;
+                    }
+
+                    __state = new Player?[SiConstants.MaxPlayableTeams];
+                    for (int i = 0; i < SiConstants.MaxPlayableTeams; i++)
+                    {
+                        __state[i] = __instance.GetCommanderForTeam(Team.Teams[i]);
+                    }
+                }
+                catch (Exception error)
+                {
+                    HelperMethods.PrintError(error, "Failed to run MP_Strategy::ResolveCommanderLottery");
+                }
+            }
+
+            public static void Postfix(MP_Strategy __instance, Player?[]? __state)
+            {
+                try
+                {
+                    if (__instance == null || __state == null)
+                    {
+                        return;
+                    }
+
+                    for (int i = 0; i < __state.Length && i < SiConstants.MaxPlayableTeams; i++)
+                    {
+                        Player? commander = __instance.GetCommanderForTeam(Team.Teams[i]);
+                        if (commander != null && commander != __state[i])
+                        {
+                            FireOnRoleChangedEvent(commander, GameModeExt.ETeamRole.COMMANDER);
+                        }
+                    }
+                }
+                catch (Exception error)
+                {
+                    HelperMethods.PrintError(error, "Failed to run MP_Strategy::ResolveCommanderLottery");
+                }
+            }
+        }
+
         public static bool ProcessRequestRole<T>(T gameModeInstance, ref GameByteStreamReader reader, byte rpcIndex) where T : GameModeExt
         {
             Player requestingPlayer = Player.FindPlayer((NetworkID)reader.ReadUInt64(), (int)reader.ReadByte());
