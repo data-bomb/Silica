@@ -34,7 +34,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(ResourceConfig), "Resource Configuration", "1.4.6", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(ResourceConfig), "Resource Configuration", "1.4.7", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 #if NET6_0
 [assembly: MelonOptionalDependencies("Admin Mod", "QList")]
@@ -245,41 +245,7 @@ namespace Si_Resources
                         }
 
                         // re-adjust starting resources immediately after the game sets it
-                        strategyTeamSetup.Team.StartingResources = GetTeamStartingResources(__instance, strategyTeamSetup.Team);
-                        MelonLogger.Msg("Set starting resources for Team (" + strategyTeamSetup.Team.TeamShortName + ") to " + strategyTeamSetup.Team.StartingResources);
-
-                        // check if we should make the first biotics/balterium resource area visible to the team
-                        if (!MakeClosestResearchAreaVisible(strategyTeamSetup.Team))
-                        {
-                            continue;
-                        }
-
-                        Resource? resourceType = GetTeamResourceType(strategyTeamSetup.Team);
-                        if (resourceType == null)
-                        {
-                            MelonLogger.Warning("Could not find default resource type for team: " + strategyTeamSetup.Team.TeamShortName);
-                            continue;
-                        }
-
-                        if (ResourceArea.GetNumKnownResourcesAreas(strategyTeamSetup.Team, resourceType) > 0)
-                        {
-                            MelonLogger.Msg("Already a visible resource type for team: " + strategyTeamSetup.Team.TeamShortName);
-                            continue;
-                        }
-
-                        ResourceArea? closestStartingResourceArea = GetTeamClosestResourceArea(strategyTeamSetup.Team, resourceType);
-                        if (closestStartingResourceArea == null)
-                        {
-                            MelonLogger.Warning("Could not find closest resource area for team: " + strategyTeamSetup.Team.TeamShortName);
-                            continue;
-                        }
-
-                        UnityEngine.Vector3 unitSpawnPosition = closestStartingResourceArea.transform.position;
-                        unitSpawnPosition[1] += 7f;
-
-                        // make this visible by spawning a starting unit
-                        string prefabName = (strategyTeamSetup.Team.Index == (int)SiConstants.ETeam.Alien ? "Crab" : "Soldier_Scout");
-                        HelperMethods.SpawnAtLocation(prefabName, unitSpawnPosition, UnityEngine.Quaternion.identity, strategyTeamSetup.Team.Index);
+                        SetStrategyStartingResources(__instance, strategyTeamSetup.Team);
                     }
                 }
                 catch (Exception error)
@@ -287,6 +253,82 @@ namespace Si_Resources
                     HelperMethods.PrintError(error, "Failed to run MP_Strategy::SetTeamVersusMode");
                 }
             }
+        }
+
+        // the base structure spawn is queued by SetTeamVersusMode and runs when the first player joins a team;
+        // it recalculates Team.StartingResources from the team setup, so re-apply ours afterwards
+        [HarmonyPatch(typeof(MP_Strategy), "SpawnStructuresAndStartingResources")]
+        private static class Resources_Patch_MPStrategy_SpawnStructuresAndStartingResources
+        {
+            public static void Postfix(MP_Strategy __instance)
+            {
+                try
+                {
+                    if (__instance.TeamsVersus == GameModeExt.ETeamsVersus.NONE)
+                    {
+                        return;
+                    }
+
+                    foreach (StrategyTeamSetup strategyTeamSetup in __instance.TeamSetups)
+                    {
+                        if (!__instance.GetTeamSetupActive(strategyTeamSetup))
+                        {
+                            continue;
+                        }
+
+                        SetStrategyStartingResources(__instance, strategyTeamSetup.Team);
+
+                        // base structures exist now, so the closest resource area can be found
+                        RevealClosestResourceArea(strategyTeamSetup.Team);
+                    }
+                }
+                catch (Exception error)
+                {
+                    HelperMethods.PrintError(error, "Failed to run MP_Strategy::SpawnStructuresAndStartingResources");
+                }
+            }
+        }
+
+        static void SetStrategyStartingResources(MP_Strategy gameModeInstance, Team team)
+        {
+            team.StartingResources = GetTeamStartingResources(gameModeInstance, team);
+            MelonLogger.Msg("Set starting resources for Team (" + team.TeamShortName + ") to " + team.StartingResources);
+        }
+
+        static void RevealClosestResourceArea(Team team)
+        {
+            // check if we should make the first biotics/balterium resource area visible to the team
+            if (!MakeClosestResearchAreaVisible(team))
+            {
+                return;
+            }
+
+            Resource? resourceType = GetTeamResourceType(team);
+            if (resourceType == null)
+            {
+                MelonLogger.Warning("Could not find default resource type for team: " + team.TeamShortName);
+                return;
+            }
+
+            if (ResourceArea.GetNumKnownResourcesAreas(team, resourceType) > 0)
+            {
+                MelonLogger.Msg("Already a visible resource type for team: " + team.TeamShortName);
+                return;
+            }
+
+            ResourceArea? closestStartingResourceArea = GetTeamClosestResourceArea(team, resourceType);
+            if (closestStartingResourceArea == null)
+            {
+                MelonLogger.Warning("Could not find closest resource area for team: " + team.TeamShortName);
+                return;
+            }
+
+            UnityEngine.Vector3 unitSpawnPosition = closestStartingResourceArea.transform.position;
+            unitSpawnPosition[1] += 7f;
+
+            // make this visible by spawning a starting unit
+            string prefabName = (team.Index == (int)SiConstants.ETeam.Alien ? "Crab" : "Soldier_Scout");
+            HelperMethods.SpawnAtLocation(prefabName, unitSpawnPosition, UnityEngine.Quaternion.identity, team.Index);
         }
 
         static bool MakeClosestResearchAreaVisible(Team team)
