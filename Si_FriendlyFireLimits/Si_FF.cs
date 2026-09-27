@@ -33,7 +33,7 @@ using SilicaAdminMod;
 using System.Linq;
 using System.Runtime.CompilerServices;
 
-[assembly: MelonInfo(typeof(FriendlyFireLimits), "Friendly Fire Limits", "1.3.5", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(FriendlyFireLimits), "Friendly Fire Limits", "1.3.6", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 #if NET6_0
 [assembly: MelonOptionalDependencies("Admin Mod", "QList")]
