@@ -34,7 +34,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(ResourceConfig), "Resource Configuration", "1.4.6", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(ResourceConfig), "Resource Configuration", "1.4.7", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 #if NET6_0
 [assembly: MelonOptionalDependencies("Admin Mod", "QList")]
