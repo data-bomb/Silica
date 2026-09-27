@@ -1,6 +1,6 @@
 /*
 Silica Admin Mod
-Copyright (C) 2024-2025 by databomb
+Copyright (C) 2024-2026 by databomb
 
 * License *
 This program is free software: you can redistribute it and/or modify
@@ -34,7 +34,7 @@ namespace SilicaAdminMod
     {
         public const string SAM_AddAdmin_Usage = " usage: <player> <powers> <level>";
 
-        public const int MaxPlayableTeams = 5;
+        public const int MaxPlayableTeams = 8;
 
         public enum ETeam
         {
@@ -42,7 +42,10 @@ namespace SilicaAdminMod
             Wildlife = 1,
             Gamemaster = 2,
             Centauri = 3,
-            Sol = 4
+            Sol = 4,
+            Centauri_Allied = 5,
+            Sol_Allied = 6,
+            Alien_Allied = 7
         }
     }
 }
