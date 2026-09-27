@@ -124,8 +124,8 @@ namespace SilicaAdminMod
                         return;
                     }
 
-                    __state = new Player?[Team.NumTeams];
-                    for (int i = 0; i < Team.NumTeams; i++)
+                    __state = new Player?[SiConstants.MaxPlayableTeams];
+                    for (int i = 0; i < SiConstants.MaxPlayableTeams; i++)
                     {
                         __state[i] = __instance.GetCommanderForTeam(Team.Teams[i]);
                     }
@@ -145,7 +145,7 @@ namespace SilicaAdminMod
                         return;
                     }
 
-                    for (int i = 0; i < __state.Length && i < Team.NumTeams; i++)
+                    for (int i = 0; i < __state.Length && i < SiConstants.MaxPlayableTeams; i++)
                     {
                         Player? commander = __instance.GetCommanderForTeam(Team.Teams[i]);
                         if (commander != null && commander != __state[i])
