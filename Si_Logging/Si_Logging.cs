@@ -42,7 +42,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.9.12", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.9.13", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 #if NET6_0
 [assembly: MelonOptionalDependencies("Admin Mod", "QList")]
@@ -1100,7 +1100,7 @@ namespace Si_Logging
 
         public static void initializeRound(ref int[] tiers)
         {
-            for (int i = 0; i < Team.NumTeams; i++)
+            for (int i = 0; i <= SiConstants.MaxPlayableTeams; i++)
             {
                 tiers[Team.Teams[i].Index] = 0;
                 teamResourcesCollected[i] = 0;
@@ -1174,15 +1174,17 @@ namespace Si_Logging
                 {
                     GameModeExt gameModeInstance = GameObject.FindFirstObjectByType<GameModeExt>();
 
+                    // reset first so a failure below can't suppress the next Round_Win
+                    firedRoundEndOnce = false;
+
                     string gamemode = GetGameMode();
                     string gametype = GetGameType(gameModeInstance);
-                    
+
                     PrintLogLine($"World triggered \"Round_Start\" (gamemode \"{gamemode}\") (gametype \"{gametype}\")");
                     LogStartingResources();
                     LogStartingStructures();
 
                     initializeRound(ref currentTechTier);
-                    firedRoundEndOnce = false;
                 }
                 catch (Exception error)
                 {
