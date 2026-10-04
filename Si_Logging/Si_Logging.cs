@@ -1,6 +1,6 @@
 ﻿/*
  Silica Logging Mod
- Copyright (C) 2023-2025 by databomb
+ Copyright (C) 2023-2026 by databomb
  
  * Description *
  For Silica servers, creates a log file with console replication
@@ -23,8 +23,10 @@
 
 #if NET6_0
 using Il2Cpp;
+using Il2CppSilica;
 using Il2CppSteamworks;
 #else
+using Silica;
 using Steamworks;
 #endif
 
@@ -39,9 +41,8 @@ using System.Linq;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
-using static MelonLoader.MelonLogger;
 
-[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.9.10", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(HL_Logging), "Half-Life Logger", "1.9.13", "databomb&zawedcvg", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 #if NET6_0
 [assembly: MelonOptionalDependencies("Admin Mod", "QList")]
@@ -56,6 +57,7 @@ namespace Si_Logging
     {
         static int[] teamResourcesCollected = new int[SiConstants.MaxPlayableTeams + 1];
         static int[] teamResourcesSpent = new int[SiConstants.MaxPlayableTeams + 1];
+        static int[] currentTechTier = new int[SiConstants.MaxPlayableTeams + 1];
         
         static Player?[]? lastCommander;
 
@@ -119,7 +121,7 @@ namespace Si_Logging
             //subscribing to the event
             Event_Roles.OnRoleChanged += OnRoleChanged;
             Event_Chat.OnRequestPlayerChat += OnRequestPlayerChat;
-            Event_Structures.OnCommanderDestroyedStructure += OnCommanderDestroyedStructure_Log;
+            Event_Structures.OnCommanderSoldStructure += OnCommanderSoldStructure_Log;
 
 #if NET6_0
             bool QListLoaded = RegisteredMelons.Any(m => m.Info.Name == "QList");
@@ -786,7 +788,7 @@ namespace Si_Logging
         }
 
         // 061. Team Objectives/Actions - Structure Deletion
-        public void OnCommanderDestroyedStructure_Log(object? sender, OnCommanderDestroyedStructureArgs args)
+        public void OnCommanderSoldStructure_Log(object? sender, OnCommanderSoldStructureArgs args)
         {
             try
             {
@@ -1091,7 +1093,6 @@ namespace Si_Logging
         }
 
         // 061. Team Objectives/Actions - Research Tier
-        public static int[] currentTechTier = new int[SiConstants.MaxPlayableTeams];
         public static int getHighestTechTier(Team team)
         {
             return team.TechnologyTier;
@@ -1099,7 +1100,7 @@ namespace Si_Logging
 
         public static void initializeRound(ref int[] tiers)
         {
-            for (int i = 0; i < Team.NumTeams; i++)
+            for (int i = 0; i <= SiConstants.MaxPlayableTeams; i++)
             {
                 tiers[Team.Teams[i].Index] = 0;
                 teamResourcesCollected[i] = 0;
@@ -1173,15 +1174,17 @@ namespace Si_Logging
                 {
                     GameModeExt gameModeInstance = GameObject.FindFirstObjectByType<GameModeExt>();
 
+                    // reset first so a failure below can't suppress the next Round_Win
+                    firedRoundEndOnce = false;
+
                     string gamemode = GetGameMode();
                     string gametype = GetGameType(gameModeInstance);
-                    
+
                     PrintLogLine($"World triggered \"Round_Start\" (gamemode \"{gamemode}\") (gametype \"{gametype}\")");
                     LogStartingResources();
                     LogStartingStructures();
 
                     initializeRound(ref currentTechTier);
-                    firedRoundEndOnce = false;
                 }
                 catch (Exception error)
                 {

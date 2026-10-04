@@ -1,6 +1,6 @@
 ﻿/*
 Silica Resources Mod
-Copyright (C) 2024-2025 by databomb
+Copyright (C) 2024-2026 by databomb
 
 * Description *
 Provides a server host the ability to configure different starting 
@@ -34,7 +34,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(ResourceConfig), "Resource Configuration", "1.4.5", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(ResourceConfig), "Resource Configuration", "1.4.7", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 #if NET6_0
 [assembly: MelonOptionalDependencies("Admin Mod", "QList")]
@@ -98,7 +98,7 @@ namespace Si_Resources
             HelperMethods.RegisterAdminCommand("resources", resourcesCallback, Power.Cheat, "Provides resources to a team. Usage: !resources <amount> [optional:<teamname>]");
 
             //subscribing to the events
-            Event_Structures.OnCommanderDestroyedStructure += OnCommanderDestroyedStructure_Refund;
+            //Event_Structures.OnCommanderSoldStructure += OnCommanderSoldStructure_Refund;
 
             #if NET6_0
             bool QListLoaded = RegisteredMelons.Any(m => m.Info.Name == "QList");
@@ -245,41 +245,7 @@ namespace Si_Resources
                         }
 
                         // re-adjust starting resources immediately after the game sets it
-                        strategyTeamSetup.Team.StartingResources = GetTeamStartingResources(__instance, strategyTeamSetup.Team);
-                        MelonLogger.Msg("Set starting resources for Team (" + strategyTeamSetup.Team.TeamShortName + ") to " + strategyTeamSetup.Team.StartingResources);
-
-                        // check if we should make the first biotics/balterium resource area visible to the team
-                        if (!MakeClosestResearchAreaVisible(strategyTeamSetup.Team))
-                        {
-                            continue;
-                        }
-
-                        Resource? resourceType = GetTeamResourceType(strategyTeamSetup.Team);
-                        if (resourceType == null)
-                        {
-                            MelonLogger.Warning("Could not find default resource type for team: " + strategyTeamSetup.Team.TeamShortName);
-                            continue;
-                        }
-
-                        if (ResourceArea.GetNumKnownResourcesAreas(strategyTeamSetup.Team, resourceType) > 0)
-                        {
-                            MelonLogger.Msg("Already a visible resource type for team: " + strategyTeamSetup.Team.TeamShortName);
-                            continue;
-                        }
-
-                        ResourceArea? closestStartingResourceArea = GetTeamClosestResourceArea(strategyTeamSetup.Team, resourceType);
-                        if (closestStartingResourceArea == null)
-                        {
-                            MelonLogger.Warning("Could not find closest resource area for team: " + strategyTeamSetup.Team.TeamShortName);
-                            continue;
-                        }
-
-                        UnityEngine.Vector3 unitSpawnPosition = closestStartingResourceArea.transform.position;
-                        unitSpawnPosition[1] += 7f;
-
-                        // make this visible by spawning a starting unit
-                        string prefabName = (strategyTeamSetup.Team.Index == (int)SiConstants.ETeam.Alien ? "Crab" : "Soldier_Scout");
-                        HelperMethods.SpawnAtLocation(prefabName, unitSpawnPosition, UnityEngine.Quaternion.identity, strategyTeamSetup.Team.Index);
+                        SetStrategyStartingResources(__instance, strategyTeamSetup.Team);
                     }
                 }
                 catch (Exception error)
@@ -287,6 +253,82 @@ namespace Si_Resources
                     HelperMethods.PrintError(error, "Failed to run MP_Strategy::SetTeamVersusMode");
                 }
             }
+        }
+
+        // the base structure spawn is queued by SetTeamVersusMode and runs when the first player joins a team;
+        // it recalculates Team.StartingResources from the team setup, so re-apply ours afterwards
+        [HarmonyPatch(typeof(MP_Strategy), "SpawnStructuresAndStartingResources")]
+        private static class Resources_Patch_MPStrategy_SpawnStructuresAndStartingResources
+        {
+            public static void Postfix(MP_Strategy __instance)
+            {
+                try
+                {
+                    if (__instance.TeamsVersus == GameModeExt.ETeamsVersus.NONE)
+                    {
+                        return;
+                    }
+
+                    foreach (StrategyTeamSetup strategyTeamSetup in __instance.TeamSetups)
+                    {
+                        if (!__instance.GetTeamSetupActive(strategyTeamSetup))
+                        {
+                            continue;
+                        }
+
+                        SetStrategyStartingResources(__instance, strategyTeamSetup.Team);
+
+                        // base structures exist now, so the closest resource area can be found
+                        RevealClosestResourceArea(strategyTeamSetup.Team);
+                    }
+                }
+                catch (Exception error)
+                {
+                    HelperMethods.PrintError(error, "Failed to run MP_Strategy::SpawnStructuresAndStartingResources");
+                }
+            }
+        }
+
+        static void SetStrategyStartingResources(MP_Strategy gameModeInstance, Team team)
+        {
+            team.StartingResources = GetTeamStartingResources(gameModeInstance, team);
+            MelonLogger.Msg("Set starting resources for Team (" + team.TeamShortName + ") to " + team.StartingResources);
+        }
+
+        static void RevealClosestResourceArea(Team team)
+        {
+            // check if we should make the first biotics/balterium resource area visible to the team
+            if (!MakeClosestResearchAreaVisible(team))
+            {
+                return;
+            }
+
+            Resource? resourceType = GetTeamResourceType(team);
+            if (resourceType == null)
+            {
+                MelonLogger.Warning("Could not find default resource type for team: " + team.TeamShortName);
+                return;
+            }
+
+            if (ResourceArea.GetNumKnownResourcesAreas(team, resourceType) > 0)
+            {
+                MelonLogger.Msg("Already a visible resource type for team: " + team.TeamShortName);
+                return;
+            }
+
+            ResourceArea? closestStartingResourceArea = GetTeamClosestResourceArea(team, resourceType);
+            if (closestStartingResourceArea == null)
+            {
+                MelonLogger.Warning("Could not find closest resource area for team: " + team.TeamShortName);
+                return;
+            }
+
+            UnityEngine.Vector3 unitSpawnPosition = closestStartingResourceArea.transform.position;
+            unitSpawnPosition[1] += 7f;
+
+            // make this visible by spawning a starting unit
+            string prefabName = (team.Index == (int)SiConstants.ETeam.Alien ? "Crab" : "Soldier_Scout");
+            HelperMethods.SpawnAtLocation(prefabName, unitSpawnPosition, UnityEngine.Quaternion.identity, team.Index);
         }
 
         static bool MakeClosestResearchAreaVisible(Team team)
@@ -407,98 +449,6 @@ namespace Si_Resources
 
             MelonLogger.Error("Could not determine gamemode. Returning strategy default resources for team: " + team.TeamShortName);
             return defaultStrategyStartingResources;
-        }
-
-        public void OnCommanderDestroyedStructure_Refund(object? sender, OnCommanderDestroyedStructureArgs args)
-        {
-            try
-            {
-                if (!Pref_Resources_Enable_Structure_Refunds.Value || args == null)
-                {
-                    return;
-                }
-
-                Structure structure = args.Structure;
-                Team team = args.Team;
-
-                MelonLogger.Msg("Determining structure refund amount..");
-
-                // this event should fire right before the structure is destroyed
-                if (structure == null || team == null || !structure.DamageManager || structure.DamageManager.IsDestroyed)
-                {
-                    return;
-                }
-
-                int refund = DetermineRefundAmount(structure);
-
-                MelonLogger.Msg("Refunding " + refund + " to team " + team.TeamShortName);
-
-                team.StoreResource(refund);
-
-                // find if team has commander
-                Player? commander = null;
-                if (GameMode.CurrentGameMode is GameModeExt gameModeExt)
-                {
-                    commander = gameModeExt.GetCommanderForTeam(team);
-                }
-
-                if (commander != null)
-                {
-                    HelperMethods.SendConsoleMessageToPlayer(commander, $"Sold structure ({structure.ObjectInfo.DisplayName.Replace(" ", "").Replace("-", "")}) for refund of {refund}");
-                }
-            }
-            catch (Exception error)
-            {
-                HelperMethods.PrintError(error, "Failed to run OnCommanderDestroyedStructure_Refund");
-            }
-        }
-
-        static int DetermineRefundAmount(Structure structure)
-        {
-            StructureRepairComponent.StructureRepairSetup repairSetup = StructureRepairComponent.Instance.GetRepairSetup(structure.Team);
-
-            float refundAmount = 0f;
-            float structureHealthPercent = structure.DamageManager.Health01;
-            int baseCost = structure.ObjectInfo.Cost;
-
-            // check for human refinery structures
-            if (structure.Team.Index != (int)SiConstants.ETeam.Alien && structure.ObjectInfo.StructureType == StructureType.Resource && structure.ObjectInfo.HasResourceDeposit)
-            {
-                // reduce base cost so a refund is not the cheapest option for new harvester units
-                baseCost = (int)(baseCost * 0.25);
-            }
-
-            // find refund price based on three structured tiers
-            // tier 1: building is in prestine order
-            if (structureHealthPercent > 0.96875f)
-            {
-                // 90% of structure costs
-                refundAmount = baseCost * Pref_Resources_Refund_TopRate.Value;
-            }
-            // tier 2: building is above max passive repair threshold
-            else if (structureHealthPercent >= repairSetup.MaxPassiveRepairPct)
-            {
-                refundAmount = baseCost * (structureHealthPercent - Pref_Resources_Refund_MidRatePenalty.Value);
-            }
-            // tier 3: building is below max passive repair threshold
-            else
-            {
-                refundAmount = baseCost * (1.1875f*structureHealthPercent - Pref_Resources_Refund_JunkRatePenalty.Value);
-            }
-
-            // apply the penalty for a non-functional structure (e.g., actively decaying)
-            if (!structure.IsFunctional)
-            {
-                refundAmount = refundAmount * (1f - Pref_Resources_Refund_DisfunctionalPenalty.Value);
-            }
-
-            // if it's too low then don't return anything
-            if ((int)refundAmount < Pref_Resources_Refund_MinimumAmount.Value)
-            {
-                return 0;
-            }
-
-            return (int)(refundAmount);
         }
     }
 }
