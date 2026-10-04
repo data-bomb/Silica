@@ -38,13 +38,14 @@ namespace SilicaAdminMod
     {
         #if !NET6_0
         public static byte ERPC_Strategy_RequestRole = HelperMethods.FindByteValueInEnum(typeof(MP_Strategy), "ERPCs", "REQUEST_ROLE");
+        public static byte ERPC_Strategy_RequestCommanderLotto = HelperMethods.FindByteValueInEnum(typeof(MP_Strategy), "ERPCs", "REQUEST_COMMANDER_LOTTERY_ENTRY");
         public static byte ERPC_TowerDefense_RequestRole = HelperMethods.FindByteValueInEnum(typeof(MP_TowerDefense), "ERPCs", "REQUEST_ROLE");
         #endif
         public static event EventHandler<OnRequestCommanderArgs> OnRequestCommander = delegate { };
         public static event EventHandler<OnRoleChangedArgs> OnRoleChanged = delegate { };
 
         [HarmonyPatch(typeof(MP_Strategy), nameof(MP_Strategy.ProcessNetRPC))]
-        static class ApplyPatch_MPStrategy_RequestRole
+        static class ApplyPatch_MPStrategy_ProcessNetRPC
         {
             public static bool Prefix(MP_Strategy __instance, ref GameByteStreamReader __0, byte __1)
             {
@@ -54,18 +55,26 @@ namespace SilicaAdminMod
                     {
                         return true;
                     }
-
-                    // only look at RPC_RequestRole
+                    
                     #if NET6_0
-                    if (__1 != (byte)MP_Strategy.ERPCs.REQUEST_ROLE)
+                    if (__1 == (byte)MP_Strategy.ERPCs.REQUEST_ROLE)
                     #else
-                    if (__1 != ERPC_Strategy_RequestRole)
+                    if (__1 == ERPC_Strategy_RequestRole)
                     #endif
                     {
-                        return true;
+                        return ProcessRequestRole(__instance, ref __0, __1);
+                    }
+                    
+                    #if NET6_0
+                    if (__1 == (byte)MP_Strategy.ERPCs.REQUEST_COMMANDER_LOTTERY_ENTRY)
+                    #else
+                    if (__1 == ERPC_Strategy_RequestCommanderLotto)
+                    #endif
+                    {
+                        return ProcessRequestCommanderLotto(__instance, __0, __1);
                     }
 
-                    return ProcessRequestRole(__instance, ref __0, __1);
+                    return true;
                 }
                 catch (Exception error)
                 {
@@ -159,6 +168,53 @@ namespace SilicaAdminMod
                     HelperMethods.PrintError(error, "Failed to run MP_Strategy::ResolveCommanderLottery");
                 }
             }
+        }
+
+        public static bool ProcessRequestCommanderLotto<T>(T gameModeInstance, GameByteStreamReader reader, byte rpcIndex)
+            where T : GameModeExt
+        {
+            Player requestingPlayer = Player.FindPlayer((NetworkID)reader.ReadUInt64());
+            Team playerTeam = reader.ReadTeam();
+            
+            if (requestingPlayer == null)
+            {
+                MelonLogger.Warning("Cannot find player in commander lotto request.");
+                return false;
+            }
+            
+            OnRequestCommanderArgs onRequestCommanderArgs = FireOnRequestCommanderEvent(requestingPlayer);
+            
+            if (onRequestCommanderArgs.Block)
+            {
+                if (SiAdminMod.Pref_Admin_DebugLogMessages.Value)
+                {
+                    MelonLogger.Msg("Blocking commander lottery request for " + onRequestCommanderArgs.Requester.PlayerName);
+                }
+
+                return false;
+            }
+            
+            if (SiAdminMod.Pref_Admin_DebugLogMessages.Value)
+            {
+                MelonLogger.Msg("Allowing commander lottery request for player " + onRequestCommanderArgs.Requester.PlayerName);
+            }
+            
+            #if NET6_0
+            if (gameModeInstance is MP_Strategy strategyInstance)
+            {
+                strategyInstance.Sync_AddPlayerToCommanderLottery(playerTeam, requestingPlayer);
+            }
+            #else
+            Type gameModeType = gameModeInstance.GetType();
+
+            MethodInfo synchCommanderLottoMethod = gameModeType.GetMethod("Sync_AddPlayerToCommanderLottery", BindingFlags.Instance | BindingFlags.NonPublic);
+            if (gameModeInstance is MP_Strategy)
+            {
+                synchCommanderLottoMethod.Invoke(gameModeInstance, parameters: new object?[] { playerTeam, requestingPlayer }); 
+            }
+            #endif
+            
+            return false;
         }
 
         public static bool ProcessRequestRole<T>(T gameModeInstance, ref GameByteStreamReader reader, byte rpcIndex) where T : GameModeExt
