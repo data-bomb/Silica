@@ -66,6 +66,32 @@ namespace Si_CommanderManagement
             GameMode.CurrentGameMode.TrySpawnPlayerAtSpawnPoint(DemotedCommander, TargetTeam);
         }
 
+        #if !NET6_0
+        // 0.9.47: MP_Strategy.RPC_SynchCommander(Team team, bool kicked = false) grew an optional
+        // second parameter. MethodInfo.Invoke does not fill optional parameters, so invoking it
+        // with one argument threw "Number of parameters specified does not match the expected
+        // number" after SetCommander had already run: the commander was set server-side but
+        // never synced to clients. Fill any trailing optional parameters from their defaults
+        // instead of assuming the arity (MP_TowerDefense still has the single-parameter form).
+        private static object?[] FillOptionalParameters(MethodInfo method, params object?[] args)
+        {
+            ParameterInfo[] parameters = method.GetParameters();
+            object?[] filled = new object?[parameters.Length];
+            for (int i = 0; i < parameters.Length; i++)
+            {
+                if (i < args.Length)
+                {
+                    filled[i] = args[i];
+                }
+                else
+                {
+                    filled[i] = parameters[i].HasDefaultValue ? parameters[i].DefaultValue : null;
+                }
+            }
+            return filled;
+        }
+        #endif
+
         private static void SetCommander(Team team, Player? player)
         {
             if (GameMode.CurrentGameMode is MP_Strategy strategyInstance)
@@ -79,7 +105,7 @@ namespace Si_CommanderManagement
                 setCommanderMethod.Invoke(strategyInstance, parameters: new object?[] { team, player });
 
                 MethodInfo synchCommanderMethod = strategyModeType.GetMethod("RPC_SynchCommander", BindingFlags.Instance | BindingFlags.NonPublic);
-                synchCommanderMethod.Invoke(strategyInstance, new object[] { team });
+                synchCommanderMethod.Invoke(strategyInstance, FillOptionalParameters(synchCommanderMethod, team));
                 #endif
             }
             else if (GameMode.CurrentGameMode is MP_TowerDefense defenseInstance)
@@ -93,7 +119,7 @@ namespace Si_CommanderManagement
                 setCommanderMethod.Invoke(defenseInstance, parameters: new object?[] { team, player });
 
                 MethodInfo synchCommanderMethod = defenseModeType.GetMethod("RPC_SynchCommander", BindingFlags.Instance | BindingFlags.NonPublic);
-                synchCommanderMethod.Invoke(defenseInstance, new object[] { team });
+                synchCommanderMethod.Invoke(defenseInstance, FillOptionalParameters(synchCommanderMethod, team));
                 #endif
             }
         }
