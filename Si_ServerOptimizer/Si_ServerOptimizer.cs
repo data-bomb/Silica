@@ -35,8 +35,9 @@ using DebugTools;
 using Silica.UI.Menus;
 using Sandbox.Flow.Gizmos;
 using Baltarus.Blueprints;
+using UnityEngine;
 
-[assembly: MelonInfo(typeof(Optimizer), "Server Optimizer", "0.7.2", "databomb", "https://github.com/data-bomb/Silica")]
+[assembly: MelonInfo(typeof(Optimizer), "Server Optimizer", "0.7.3", "databomb", "https://github.com/data-bomb/Silica")]
 [assembly: MelonGame("Bohemia Interactive", "Silica")]
 [assembly: MelonOptionalDependencies("Admin Mod")]
 
@@ -44,6 +45,54 @@ namespace Si_ServerOptimizer
 {
     public partial class Optimizer : MelonMod
     {
+        static MelonPreferences_Category? _modCategory;
+        static MelonPreferences_Entry<int>? _Pref_Optimizer_MaxFPS;
+
+        public override void OnInitializeMelon()
+        {
+            _modCategory ??= MelonPreferences.CreateCategory("Silica");
+            _Pref_Optimizer_MaxFPS ??= _modCategory.CreateEntry<int>("Optimizer_MaxFPS", 240);
+        }
+
+        public override void OnLateInitializeMelon()
+        {
+            ApplyMaxFPS();
+        }
+
+        public override void OnSceneWasLoaded(int buildIndex, string sceneName)
+        {
+            ApplyMaxFPS();
+        }
+
+        // Frame-rate cap. Patch_Disable_GameSettings below skips GameSettings.Load, so GameSettings.Apply never runs on
+        // the server and Application.targetFrameRate stays at Unity's default of -1: the server spins frames as fast
+        // as it can (1000+ fps on an idle map) and burns a core. GameSettings.xml, the MaxFPS console command and the
+        // -MaxFPS launch flag all run through that skipped path. Pin the target here instead; 240 is the game's own
+        // VideoSettings default, 0 restores the uncapped behaviour.
+        static void ApplyMaxFPS()
+        {
+            if (_Pref_Optimizer_MaxFPS == null)
+            {
+                return;
+            }
+
+            int maxFPS = _Pref_Optimizer_MaxFPS.Value;
+            int target = maxFPS > 0 ? maxFPS : -1;
+            if (Application.targetFrameRate == target)
+            {
+                return;
+            }
+
+            if (target > 0)
+            {
+                // Unity ignores targetFrameRate while vSyncCount is non-zero
+                QualitySettings.vSyncCount = 0;
+            }
+
+            Application.targetFrameRate = target;
+            MelonLogger.Msg("Max FPS set to " + (target > 0 ? target.ToString() : "unlimited"));
+        }
+
         // save CPU cycles on the server by patching out calls related to strictly UI matters
 
         // skip graphics settings for servers
