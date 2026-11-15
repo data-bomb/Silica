@@ -31,8 +31,6 @@ using SilicaAdminMod;
 // Instruct MelonLoader to load SAM before other mods
 [assembly: MelonPriority(-100)]
 
-[assembly: MelonPlatform(MelonPlatformAttribute.CompatiblePlatforms.WINDOWS_X64)]
-
 [assembly: VerifyLoaderVersion(0, 6, 1, true)]
 
 #if NET6_0
